@@ -6,12 +6,6 @@ import { AuthService } from '../../services/auth.service';
 import { KYCStatus, UserRole } from '../../types/enums';
 import { APIError } from '../../errors/api.error';
 
-interface IAuthMessage {
-  address: string;
-  signature: string;
-  nonce: string;
-}
-
 interface IKYCRequest {
   address: string;
   documents: {
@@ -20,19 +14,30 @@ interface IKYCRequest {
   }[];
 }
 
+interface IAuthMessage {
+  address: string;
+  signature: string;
+  nonce: string;
+  timestamp: number;
+  version?: string;
+  chainId?: number;
+}
+
 export default async function authRoutes(fastify: FastifyInstance) {
   const authService = new AuthService();
 
-  // Проверка подписи и выдача JWT
   fastify.post<{ Body: IAuthMessage }>('/verify', {
     schema: {
       body: {
         type: 'object',
-        required: ['address', 'signature', 'nonce'],
+        required: ['address', 'signature', 'nonce', 'timestamp'],
         properties: {
           address: { type: 'string' },
           signature: { type: 'string' },
           nonce: { type: 'string' },
+          timestamp: { type: 'number' },
+          version: { type: 'string' },
+          chainId: { type: 'number' },
         },
       },
       response: {
@@ -54,10 +59,18 @@ export default async function authRoutes(fastify: FastifyInstance) {
     },
     handler: async (request, reply) => {
       try {
-        const { address, signature, nonce } = request.body;
+        const { address, signature, nonce, timestamp, version, chainId } = request.body;
         const authService = new AuthService();
 
-        const user = await authService.verifyAuth(address, signature, nonce);
+        const user = await authService.verifyAuth(
+          address,
+          signature,
+          nonce,
+          timestamp,
+          version,
+          chainId
+        );
+
         const token = await authService.generateToken(user);
 
         return {
