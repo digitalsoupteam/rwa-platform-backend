@@ -51,34 +51,45 @@ export async function registerPlugins(fastify: FastifyInstance) {
 
     await fastify.register(fastifyAuth);
 
+
     // API Documentation
     await fastify.register(fastifySwagger, {
-      openapi: {
+      swagger: {  // используем swagger вместо openapi
         info: {
           title: 'API Documentation',
           description: 'API Documentation',
-          version: '1.0.0',
+          version: '1.0.0'
         },
-        components: {
-          securitySchemes: {
-            bearerAuth: {
-              type: 'http',
-              scheme: 'bearer',
-              bearerFormat: 'JWT',
-            },
-          },
-        },
-        security: [{ bearerAuth: [] }],
-      },
+        host: 'localhost:3000', // добавьте ваш хост
+        schemes: ['http', 'https'],
+        consumes: ['application/json'],
+        produces: ['application/json'],
+        tags: [
+          { name: 'auth', description: 'Authentication endpoints' },
+        ],
+        securityDefinitions: {
+          bearerAuth: {
+            type: 'apiKey',
+            name: 'Authorization',
+            in: 'header'
+          }
+        }
+      }
     });
+    
+
+    
 
     await fastify.register(fastifySwaggerUi, {
       routePrefix: '/documentation',
+      initOAuth: {},
       uiConfig: {
         docExpansion: 'full',
-        deepLinking: false,
+        deepLinking: false
       },
-    });
+      staticCSP: true,
+      transformStaticCSP: (header) => header
+    }); 
 
     // Versioning
     await fastify.register(versionPlugin);
