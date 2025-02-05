@@ -18,10 +18,12 @@ interface KYCDocument {
 export class AuthService {
   private readonly JWT_SECRET: string;
   private readonly JWT_EXPIRES_IN: number;
+  private readonly SIGNATURE_EXPIRATION: number;
 
   constructor() {
     this.JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
     this.JWT_EXPIRES_IN = parseInt(process.env.JWT_EXPIRES_IN || '86400'); // 24 часа в секундах
+    this.SIGNATURE_EXPIRATION = 300;
   }
 
   /**
@@ -31,15 +33,53 @@ export class AuthService {
     return Buffer.from(ethers.randomBytes(32)).toString('hex');
   }
 
-  /**
-   * Проверка подписи сообщения
-   */
-  public verifySignature(message: string, signature: string, address: string): boolean {
+  public async verifyEIP712Signature(
+    address: string,
+    signature: string,
+    nonce: string,
+    timestamp: number,
+    version: string,
+    chainId: number
+  ): Promise<boolean> {
+    // Проверяем timestamp
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (currentTime - timestamp > this.SIGNATURE_EXPIRATION) {
+      throw new APIError(400, 'Signature timestamp expired');
+    }
+
+    const domain = {
+      name: 'RWA Protocol',
+      version,
+      chainId,
+      verifyingContract: '0x0000000000000000000000000000000000000000'
+    };
+
+    const types = {
+      Authentication: [
+        { name: 'wallet', type: 'address' },
+        { name: 'nonce', type: 'string' },
+        { name: 'timestamp', type: 'uint256' }
+      ]
+    };
+
+    const value = {
+      wallet: address,
+      nonce,
+      timestamp
+    };
+
     try {
-      const recoveredAddress = ethers.verifyMessage(message, signature);
+      const recoveredAddress = ethers.verifyTypedData(
+        domain,
+        types,
+        value,
+        signature
+      );
+
       if (recoveredAddress.toLowerCase() !== address.toLowerCase()) {
         throw new APIError(400, 'Invalid signature');
       }
+
       return true;
     } catch (error) {
       throw new APIError(400, 'Invalid signature format');
@@ -47,9 +87,12 @@ export class AuthService {
   }
 
   public async verifyAuth(
-    address: string,
-    signature: string,
-    nonce: string
+    address: string, 
+    signature: string, 
+    nonce: string,
+    timestamp: number,
+    version: string = '1',
+    chainId: number = 1
   ): Promise<UserDocument> {
     const user = await User.findOne({ address: address.toLowerCase() });
     if (!user) {
@@ -60,8 +103,15 @@ export class AuthService {
       throw new APIError(400, 'Invalid nonce');
     }
 
-    const message = `Welcome to RWA Protocol!\nNonce: ${nonce}`;
-    this.verifySignature(message, signature, address);
+    // Используем EIP-712 верификацию вместо простой подписи
+    await this.verifyEIP712Signature(
+      address,
+      signature,
+      nonce,
+      timestamp,
+      version,
+      chainId
+    );
 
     // Генерируем новый nonce после успешной аутентификации
     user.nonce = this.generateNonce();
