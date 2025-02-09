@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import config from './config/config';
 import v1Routes from './routes/v1';
 import { registerPlugins } from './plugins';
+import { BlockchainWorker } from './workers/blockchain/worker';
 
 export const createServer = async (): Promise<FastifyInstance> => {
   const fastify = Fastify({
@@ -61,6 +62,31 @@ export const startServer = async () => {
 
     await server.listen({ port: config.server.port });
     console.log(`Server running at port ${config.server.port}`);
+
+    // Запуск blockchain worker'а
+    const worker = new BlockchainWorker({
+      ethereum: {
+        rpcUrl: 'http://localhost:8545',
+        networkId: 1,
+        confirmations: 12,
+      },
+      sync: {
+        batchSize: 10,
+        maxRetries: 3,
+        retryDelay: 1000,
+      },
+      mongodb: {
+        uri: 'mongodb://localhost:27017',
+        collection: 'blockchain_sync',
+      },
+      rabbitmq: {
+        url: 'amqp://localhost',
+        exchange: 'blockchain_events',
+      },
+    });
+
+    await worker.initialize();
+    await worker.start();
 
     return server;
   } catch (err) {
