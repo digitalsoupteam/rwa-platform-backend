@@ -1,0 +1,18 @@
+type Mutation {
+  getNonce(address: String!): String!
+  authenticate(address: String!, signature: String!): AuthResponse!
+}
+
+type AuthResponse {
+  token: String!
+  address: String!
+}
+
+type Query {
+  me: User
+}
+
+type User {
+  address: String!
+  lastLogin: String
+}

@@ -1,0 +1,213 @@
+version: '3.8'
+
+services:
+  gateway:
+    build: 
+      context: .
+      dockerfile: ./services/gateway-service/Dockerfile
+    ports:
+      - "3000:3000"
+    networks:
+      - trading-network
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+      - REDIS_URI=redis://redis:6379
+
+  auth:
+    build:
+      context: .
+      dockerfile: ./services/auth-service/Dockerfile
+    ports:
+      - "3001:3001"
+    networks:
+      - trading-network
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+      - REDIS_URI=redis://redis:6379
+
+  notification:
+    build:
+      context: .
+      dockerfile: ./services/notification-service/Dockerfile
+    ports:
+      - "3002:3002"
+    networks:
+      - trading-network
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+      - REDIS_URI=redis://redis:6379
+      - RABBITMQ_URI=amqp://rabbitmq:5672
+
+  trading:
+    build:
+      context: .
+      dockerfile: ./services/trading-service/Dockerfile
+    ports:
+      - "3003:3003"
+    networks:
+      - trading-network
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+      - REDIS_URI=redis://redis:6379
+
+  market:
+    build:
+      context: .
+      dockerfile: ./services/market-data-service/Dockerfile
+    ports:
+      - "3004:3004"
+    networks:
+      - trading-network
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+      - REDIS_URI=redis://redis:6379
+
+  blockchain:
+    build:
+      context: .
+      dockerfile: ./services/blockchain-scanner/Dockerfile
+    ports:
+      - "3005:3005"
+    networks:
+      - trading-network
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+      - REDIS_URI=redis://redis:6379
+
+  worker:
+    build:
+      context: .
+      dockerfile: ./services/worker-service/Dockerfile
+    ports:
+      - "3006:3006"
+    networks:
+      - trading-network
+    depends_on:
+      - mongodb
+      - redis
+      - rabbitmq
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+      - REDIS_URI=redis://redis:6379
+      - RABBITMQ_URI=amqp://rabbitmq:5672
+
+  kyc:
+    build:
+      context: .
+      dockerfile: ./services/kyc-service/Dockerfile
+    ports:
+      - "3007:3007"
+    networks:
+      - trading-network
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+      - REDIS_URI=redis://redis:6379
+
+  ai:
+    build:
+      context: .
+      dockerfile: ./services/ai-service/Dockerfile
+    ports:
+      - "3008:3008"
+    networks:
+      - trading-network
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+      - REDIS_URI=redis://redis:6379
+
+  risk:
+    build:
+      context: .
+      dockerfile: ./services/risk-management/Dockerfile
+    ports:
+      - "3009:3009"
+    networks:
+      - trading-network
+    depends_on:
+      - mongodb
+      - redis
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+      - REDIS_URI=redis://redis:6379
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    networks:
+      - trading-network
+    volumes:
+      - mongodb_data:/data/db
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - trading-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - trading-network
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=password
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus:/etc/prometheus
+    networks:
+      - trading-network
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3010:3000"
+    networks:
+      - trading-network
+    depends_on:
+      - prometheus
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+
+networks:
+  trading-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  grafana_data:
