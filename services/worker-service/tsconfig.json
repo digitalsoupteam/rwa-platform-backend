@@ -8,10 +8,6 @@
     "strict": true,
     "skipLibCheck": true,
     "baseUrl": ".",
-    "paths": {
-      "@rwa-platform/*": ["packages/*"]
-    }
-  },
-  "include": ["packages/**/*", "services/**/*", "tests/**/*"],
-  "exclude": ["node_modules", "dist"]
+    "outDir": "dist"
+  }
 }
