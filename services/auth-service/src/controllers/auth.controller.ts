@@ -39,7 +39,7 @@ export const authController = {
           message: {
             wallet: address,
             nonce: nonce,
-            message: `Welcome to Trading Platform! Please sign this message to authenticate.\n\nNonce: ${nonce}`,
+            message: `Welcome to RWA Platform!\n\nWe prioritize the security of your assets and personal data. To ensure secure access to your account, we kindly request you to verify ownership of your wallet by signing this message.\n\n`,
           },
         },
       };
