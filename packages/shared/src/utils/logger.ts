@@ -8,13 +8,17 @@ class Logger {
     this.service = service;
   }
 
-  private formatMessage(level: LogMessage['level'], message: string, metadata?: Record<string, any>): LogMessage {
+  private formatMessage(
+    level: LogMessage['level'],
+    message: string,
+    metadata?: Record<string, any>
+  ): LogMessage {
     return {
       service: this.service,
       level,
       message,
       timestamp: new Date().toISOString(),
-      metadata
+      metadata,
     };
   }
 

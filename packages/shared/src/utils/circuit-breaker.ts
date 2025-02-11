@@ -6,7 +6,7 @@ interface CircuitBreakerOptions {
 enum CircuitState {
   CLOSED,
   OPEN,
-  HALF_OPEN
+  HALF_OPEN,
 }
 
 export class CircuitBreaker {
@@ -19,14 +19,12 @@ export class CircuitBreaker {
     this.options = {
       failureThreshold: 5,
       resetTimeout: 60000, // 1 minute
-      ...options
+      ...options,
     };
   }
 
   private async resetAfterTimeout(): Promise<void> {
-    await new Promise(resolve => 
-      setTimeout(resolve, this.options.resetTimeout)
-    );
+    await new Promise((resolve) => setTimeout(resolve, this.options.resetTimeout));
     this.state = CircuitState.HALF_OPEN;
   }
 
@@ -40,12 +38,12 @@ export class CircuitBreaker {
 
     try {
       const result = await fn();
-      
+
       if (this.state === CircuitState.HALF_OPEN) {
         this.state = CircuitState.CLOSED;
         this.failures = 0;
       }
-      
+
       return result;
     } catch (error) {
       this.failures++;

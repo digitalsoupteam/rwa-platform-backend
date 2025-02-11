@@ -14,5 +14,5 @@ export const jwtService = {
 
   verify(token: string): JWTPayload {
     return jwt.verify(token, JWT_SECRET) as JWTPayload;
-  }
+  },
 };
