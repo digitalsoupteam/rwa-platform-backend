@@ -1,9 +1,7 @@
 import { ethers } from 'ethers';
 import { randomBytes } from 'crypto';
 import { User } from '../models/user.model';
-import { generateToken } from '../middleware/jwt.middleware';
-import { logger, metrics, CircuitBreaker } from '@rwa-platform/shared/src';
-
+import { logger, metrics, CircuitBreaker, jwtService } from '@rwa-platform/shared/src';
 
 const circuitBreaker = new CircuitBreaker();
 
@@ -11,20 +9,40 @@ const EIP712_DOMAIN = {
   name: 'Trading Platform',
   version: '1',
   chainId: 1,
-};
+} as const;
+
+const EIP712_TYPES = {
+  EIP712Domain: [
+    { name: 'name', type: 'string' },
+    { name: 'version', type: 'string' },
+    { name: 'chainId', type: 'uint256' },
+  ],
+  Message: [
+    { name: 'wallet', type: 'address' },
+    { name: 'nonce', type: 'string' },
+    { name: 'message', type: 'string' },
+  ],
+} as const;
 
 export const authController = {
-  async getNonce(address: string): Promise<string> {
+  async getNonce(address: string) {
     try {
       const nonce = randomBytes(32).toString('hex');
-      await User.findOneAndUpdate(
-        { address: address.toLowerCase() },
-        { nonce },
-        { upsert: true }
-      );
-      
-      metrics.increment('auth.nonce.generated');
-      return nonce;
+      await User.findOneAndUpdate({ address: address.toLowerCase() }, { nonce }, { upsert: true });
+
+      return {
+        nonce,
+        typedData: {
+          domain: EIP712_DOMAIN,
+          primaryType: 'Message',
+          types: EIP712_TYPES,
+          message: {
+            wallet: address,
+            nonce: nonce,
+            message: `Welcome to Trading Platform! Please sign this message to authenticate.\n\nNonce: ${nonce}`,
+          },
+        },
+      };
     } catch (error: any) {
       logger.error(`Failed to generate nonce: ${error.message}`);
       metrics.increment('auth.nonce.error');
@@ -43,15 +61,18 @@ export const authController = {
         const message = {
           domain: EIP712_DOMAIN,
           types: {
-            Authentication: [
-              { name: 'address', type: 'address' },
-              { name: 'nonce', type: 'string' }
-            ]
+            Message: [
+              // Измените Authentication на Message
+              { name: 'wallet', type: 'address' },
+              { name: 'nonce', type: 'string' },
+              { name: 'message', type: 'string' },
+            ],
           },
           value: {
-            address: address,
-            nonce: user.nonce
-          }
+            wallet: address,
+            nonce: user.nonce,
+            message: `Welcome to Trading Platform! Please sign this message to authenticate.\n\nNonce: ${user.nonce}`,
+          },
         };
 
         const recoveredAddress = ethers.verifyTypedData(
@@ -65,18 +86,17 @@ export const authController = {
           throw new Error('Invalid signature');
         }
 
-        // Generate new nonce for next login
         user.nonce = randomBytes(32).toString('hex');
         user.lastLogin = new Date();
         await user.save();
 
-        metrics.increment('auth.login.success');
-        return generateToken(address);
+        const token = jwtService.generate(address);
+        return token; // Убедимся что токен возвращается
       } catch (error: any) {
         logger.error(`Authentication failed: ${error.message}`);
         metrics.increment('auth.login.failure');
         throw error;
       }
     });
-  }
+  },
 };
