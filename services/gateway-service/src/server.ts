@@ -1,20 +1,26 @@
 import { Elysia } from 'elysia';
 import { cors } from '@elysiajs/cors';
 import { yoga } from '@elysiajs/graphql-yoga';
-import { swagger } from '@elysiajs/swagger';
-import mongoose from 'mongoose';
+import { connect } from 'amqplib';
+import { makeExecutableSchema } from '@graphql-tools/schema';
 import { loadSchemaSync } from '@graphql-tools/load';
 import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
 import path from 'path';
-import { makeExecutableSchema } from '@graphql-tools/schema';
 import { authResolver } from './resolvers/auth.resolver';
 import { healthResolver } from './resolvers/health.resolver';
+import { kycResolver } from './resolvers/kyc.resolver';
+import { KYCAPI } from './datasources/kyc.api';
+import { pubsub, EVENTS } from './pubsub';
+import { logger } from '@rwa-platform/shared/src';
+
+import { swagger } from '@elysiajs/swagger';
+import mongoose from 'mongoose';
 import { AuthAPI } from './datasources/auth.api';
 import { authMiddleware, createAuthHandler } from './middleware/auth.middleware';
 
 // Загрузка схемы
 const typeDefs = loadSchemaSync(path.join(__dirname, './schemas/**/*.graphql'), {
-  loaders: [new GraphQLFileLoader()]
+  loaders: [new GraphQLFileLoader()],
 });
 
 // Объединение резолверов
@@ -22,17 +28,39 @@ const resolvers = {
   Query: {
     ...authResolver.Query,
     ...healthResolver.Query,
+    ...kycResolver.Query,
   },
   Mutation: {
-    ...authResolver.Mutation
-  }
+    ...authResolver.Mutation,
+    ...kycResolver.Mutation,
+  },
+  Subscription: {
+    ...kycResolver.Subscription,
+  },
 };
 
-// Создание исполняемой схемы
-const schema = makeExecutableSchema({
-  typeDefs,
-  resolvers
-});
+// Настройка RabbitMQ для KYC обновлений
+async function setupKYCUpdates() {
+  try {
+    const connection = await connect(process.env.RABBITMQ_URL || 'amqp://localhost');
+    const channel = await connection.createChannel();
+
+    await channel.assertQueue('kyc_updates');
+    channel.consume('kyc_updates', (msg: any) => {
+      if (msg) {
+        const update = JSON.parse(msg.content.toString());
+        pubsub.publish(EVENTS.KYC_STATUS_UPDATED, {
+          kycStatusUpdated: update,
+        });
+        channel.ack(msg);
+      }
+    });
+
+    logger.info('KYC updates subscription initialized');
+  } catch (error: any) {
+    logger.error('Failed to setup KYC updates:', error);
+  }
+}
 
 const app = new Elysia()
   .use(cors())
@@ -40,22 +68,25 @@ const app = new Elysia()
   .use(authMiddleware)
   .use(
     yoga({
-      schema,
+      schema: makeExecutableSchema({ typeDefs, resolvers }),
       context: ({ request }) => {
         const authAPI = new AuthAPI();
-        
+        const kycAPI = new KYCAPI();
+
         return {
           dataSources: {
-            authAPI
+            authAPI,
+            kycAPI,
           },
-          auth: createAuthHandler(request)
+          pubsub,
+          auth: createAuthHandler(request),
         };
-      }
+      },
     })
   )
 
   .get('/health', () => ({
-    status: 'ok', 
+    status: 'ok',
     service: 'gateway-service',
     timestamp: new Date().toISOString(),
   }))
@@ -70,6 +101,8 @@ const app = new Elysia()
     hostname: '0.0.0.0',
     port: 3000,
   });
+
+setupKYCUpdates().catch(console.error);
 
 console.log(`🚀 gateway-service is running at ${app.server?.hostname}:${app.server?.port}`);
 

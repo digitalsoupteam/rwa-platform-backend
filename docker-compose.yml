@@ -15,6 +15,7 @@ services:
     environment:
       - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
       - REDIS_URI=redis://redis:6379
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
 
   auth:
     build:
@@ -46,7 +47,7 @@ services:
     environment:
       - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
       - REDIS_URI=redis://redis:6379
-      - RABBITMQ_URI=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
 
   trading:
     build:
@@ -108,7 +109,7 @@ services:
     environment:
       - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
       - REDIS_URI=redis://redis:6379
-      - RABBITMQ_URI=amqp://rabbitmq:5672
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
 
   kyc:
     build:
@@ -124,6 +125,7 @@ services:
     environment:
       - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
       - REDIS_URI=redis://redis:6379
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
 
   ai:
     build:
