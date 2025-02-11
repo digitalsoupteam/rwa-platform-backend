@@ -10,9 +10,12 @@
     "elysia": "^1.2.12",
     "@elysiajs/cors": "^1.2.0",
     "@elysiajs/swagger": "^1.2.0",
+    "amqplib": "^0.10.5",
+    "bull": "^4.16.5",
     "mongoose": "^8.10.0"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.5",
     "bun-types": "latest",
     "typescript": "^5.0.0"
   }
