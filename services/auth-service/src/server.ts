@@ -4,13 +4,11 @@ import { cors } from '@elysiajs/cors';
 import { swagger } from '@elysiajs/swagger';
 import mongoose from 'mongoose';
 import { authController } from './controllers/auth.controller';
-import { jwtMiddleware } from './middleware/jwt.middleware';
 import { logger } from '@rwa-platform/shared/src';
 
 const app = new Elysia()
   .use(cors())
   .use(swagger())
-  .use(jwtMiddleware)
 
   .get('/', () => ({
     message: 'Welcome to auth-service',
@@ -30,13 +28,29 @@ const app = new Elysia()
   }))
 
   .post('/auth/nonce', async ({ body }) => {
-    const { address } = body as any;
-    return await authController.getNonce(address);
+    try {
+      const { address } = body as any;
+      const result = await authController.getNonce(address);
+      return result; // Возвращаем структурированный ответ
+    } catch (error: any) {
+      return { 
+        success: false, 
+        error: error.message 
+      };
+    }
   })
-
+  
   .post('/auth/verify', async ({ body }) => {
-    const { address, signature } = body as any;
-    return await authController.verifySignature(address, signature);
+    try {
+      const { address, signature } = body as any;
+      const token = await authController.verifySignature(address, signature);
+      return {  token };
+    } catch (error: any) {
+      return { 
+        success: false, 
+        error: error.message 
+      };
+    }
   })
 
   .listen({

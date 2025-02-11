@@ -1,17 +1,16 @@
 import { Elysia } from 'elysia';
 import { cors } from '@elysiajs/cors';
 import { yoga } from '@elysiajs/graphql-yoga';
-import { createSchema } from 'graphql-yoga'
 import { swagger } from '@elysiajs/swagger';
 import mongoose from 'mongoose';
 import { loadSchemaSync } from '@graphql-tools/load';
 import { GraphQLFileLoader } from '@graphql-tools/graphql-file-loader';
 import path from 'path';
-import { mergeResolvers } from '@graphql-tools/merge';
-import { loadFilesSync } from '@graphql-tools/load-files';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { authResolver } from './resolvers/auth.resolver';
 import { healthResolver } from './resolvers/health.resolver';
+import { AuthAPI } from './datasources/auth.api';
+import { authMiddleware, createAuthHandler } from './middleware/auth.middleware';
 
 // Загрузка схемы
 const typeDefs = loadSchemaSync(path.join(__dirname, './schemas/**/*.graphql'), {
@@ -38,9 +37,20 @@ const schema = makeExecutableSchema({
 const app = new Elysia()
   .use(cors())
   .use(swagger())
+  .use(authMiddleware)
   .use(
     yoga({
-      schema
+      schema,
+      context: ({ request }) => {
+        const authAPI = new AuthAPI();
+        
+        return {
+          dataSources: {
+            authAPI
+          },
+          auth: createAuthHandler(request)
+        };
+      }
     })
   )
 
