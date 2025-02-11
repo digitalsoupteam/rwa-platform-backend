@@ -24,9 +24,12 @@
     "clean": "rm -rf **/dist **/node_modules",
     "docker:build": "docker compose build",
     "docker:up": "docker compose up",
-    "docker:down": "docker compose down"
+    "docker:down": "docker compose down",
+
+    "format": "prettier --write \"{packages,services}/**/*.{js,jsx,ts,tsx,json,css,scss,md}\""
   },
   "devDependencies": {
+    "prettier": "^3.4.2",
     "typescript": "^5.0.0",
     "bun-types": "latest"
   }

@@ -39,7 +39,7 @@ export class AuthAPI {
         method: 'POST',
         body: JSON.stringify({ address }),
       });
-      
+
       metrics.increment('gateway.auth.getNonce.success');
       return result;
     } catch (error: any) {
@@ -54,7 +54,7 @@ export class AuthAPI {
         method: 'POST',
         body: JSON.stringify({ address, signature }),
       });
-      
+
       if (!response.token) {
         throw new Error('No token in response');
       }
@@ -65,5 +65,5 @@ export class AuthAPI {
       metrics.increment('gateway.auth.verify.failure');
       throw new Error(`Failed to verify signature: ${error.message}`);
     }
-}
+  }
 }

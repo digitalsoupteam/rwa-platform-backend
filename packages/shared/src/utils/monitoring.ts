@@ -17,23 +17,23 @@ class Metrics {
   increment(metric: string, labels: Record<string, string> = {}) {
     const name = this.formatMetricName(metric);
     const existing = this.metrics.get(name);
-    
+
     this.metrics.set(name, {
       name,
       value: (existing?.value || 0) + 1,
       labels,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
   gauge(metric: string, value: number, labels: Record<string, string> = {}) {
     const name = this.formatMetricName(metric);
-    
+
     this.metrics.set(name, {
       name,
       value,
       labels,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -44,11 +44,11 @@ class Metrics {
   // Метод для Prometheus формата
   prometheusFormat(): string {
     return Array.from(this.metrics.values())
-      .map(metric => {
+      .map((metric) => {
         const labels = Object.entries(metric.labels || {})
           .map(([k, v]) => `${k}="${v}"`)
           .join(',');
-        
+
         return `${metric.name}${labels ? `{${labels}}` : ''} ${metric.value} ${metric.timestamp}`;
       })
       .join('\n');
