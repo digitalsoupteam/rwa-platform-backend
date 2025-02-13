@@ -80,6 +80,7 @@ bun run start:auth
 | Prometheus | http://localhost:9090 | 9090 |
 | Grafana | http://localhost:3010 | 3010 |
 | Swagger | http://localhost:3000/swagger | 3000 |
+| Bull Board | http://localhost:3006/admin/queues | 3006 |
 
 ## Команды для разработки
 
