@@ -10,7 +10,10 @@
     "elysia": "^1.2.12",
     "@elysiajs/cors": "^1.2.0",
     "@elysiajs/swagger": "^1.2.0",
-    "mongoose": "^8.10.0"
+    "mongoose": "^8.10.0",
+    "amqplib": "^0.10.5",
+    "bull": "^4.16.5",
+    "ethers": "^6.13.5"
   },
   "devDependencies": {
     "bun-types": "latest",
