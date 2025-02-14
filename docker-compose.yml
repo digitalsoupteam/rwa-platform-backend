@@ -165,7 +165,7 @@ services:
     networks:
       - trading-network
     volumes:
-      - mongodb_data:/data/db
+      - ./docker/mongodb:/data/db
 
   redis:
     image: redis:alpine
@@ -173,6 +173,8 @@ services:
       - "6379:6379"
     networks:
       - trading-network
+    volumes:
+      - ./docker/redis:/data
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -184,6 +186,8 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=user
       - RABBITMQ_DEFAULT_PASS=password
+    volumes:
+      - ./docker/rabbitmq:/var/lib/rabbitmq
 
   prometheus:
     image: prom/prometheus
@@ -191,6 +195,7 @@ services:
       - "9090:9090"
     volumes:
       - ./docker/prometheus:/etc/prometheus
+      - ./docker/prometheus-data:/prometheus
     networks:
       - trading-network
 
@@ -205,12 +210,8 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
-      - grafana_data:/var/lib/grafana
+      - ./docker/grafana:/var/lib/grafana
 
 networks:
   trading-network:
     driver: bridge
-
-volumes:
-  mongodb_data:
-  grafana_data:
