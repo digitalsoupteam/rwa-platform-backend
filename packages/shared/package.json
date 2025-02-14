@@ -9,11 +9,13 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "amqplib": "^0.10.5"
   },
   "devDependencies": {
     "typescript": "^5.0.0",
     "@types/jsonwebtoken": "^9.0.7",
+    "@types/amqplib": "^0.10.5",
     "bun-types": "latest"
   }
 }
