@@ -32,67 +32,67 @@ services:
       - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
       - REDIS_URI=redis://redis:6379
 
-  notification:
-    build:
-      context: .
-      dockerfile: ./services/notification-service/Dockerfile
-    ports:
-      - "3002:3002"
-    networks:
-      - trading-network
-    depends_on:
-      - mongodb
-      - redis
-      - rabbitmq
-    environment:
-      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
-      - REDIS_URI=redis://redis:6379
-      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+  # notification:
+  #   build:
+  #     context: .
+  #     dockerfile: ./services/notification-service/Dockerfile
+  #   ports:
+  #     - "3002:3002"
+  #   networks:
+  #     - trading-network
+  #   depends_on:
+  #     - mongodb
+  #     - redis
+  #     - rabbitmq
+  #   environment:
+  #     - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+  #     - REDIS_URI=redis://redis:6379
+  #     - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
 
-  trading:
-    build:
-      context: .
-      dockerfile: ./services/trading-service/Dockerfile
-    ports:
-      - "3003:3003"
-    networks:
-      - trading-network
-    depends_on:
-      - mongodb
-      - redis
-    environment:
-      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
-      - REDIS_URI=redis://redis:6379
+  # trading:
+  #   build:
+  #     context: .
+  #     dockerfile: ./services/trading-service/Dockerfile
+  #   ports:
+  #     - "3003:3003"
+  #   networks:
+  #     - trading-network
+  #   depends_on:
+  #     - mongodb
+  #     - redis
+  #   environment:
+  #     - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+  #     - REDIS_URI=redis://redis:6379
 
-  market:
-    build:
-      context: .
-      dockerfile: ./services/market-data-service/Dockerfile
-    ports:
-      - "3004:3004"
-    networks:
-      - trading-network
-    depends_on:
-      - mongodb
-      - redis
-    environment:
-      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
-      - REDIS_URI=redis://redis:6379
+  # market:
+  #   build:
+  #     context: .
+  #     dockerfile: ./services/market-data-service/Dockerfile
+  #   ports:
+  #     - "3004:3004"
+  #   networks:
+  #     - trading-network
+  #   depends_on:
+  #     - mongodb
+  #     - redis
+  #   environment:
+  #     - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+  #     - REDIS_URI=redis://redis:6379
 
-  blockchain:
-    build:
-      context: .
-      dockerfile: ./services/blockchain-scanner/Dockerfile
-    ports:
-      - "3005:3005"
-    networks:
-      - trading-network
-    depends_on:
-      - mongodb
-      - redis
-    environment:
-      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
-      - REDIS_URI=redis://redis:6379
+  # blockchain:
+  #   build:
+  #     context: .
+  #     dockerfile: ./services/blockchain-scanner/Dockerfile
+  #   ports:
+  #     - "3005:3005"
+  #   networks:
+  #     - trading-network
+  #   depends_on:
+  #     - mongodb
+  #     - redis
+  #   environment:
+  #     - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+  #     - REDIS_URI=redis://redis:6379
 
   worker:
     build:
@@ -127,35 +127,35 @@ services:
       - REDIS_URI=redis://redis:6379
       - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
 
-  ai:
-    build:
-      context: .
-      dockerfile: ./services/ai-service/Dockerfile
-    ports:
-      - "3008:3008"
-    networks:
-      - trading-network
-    depends_on:
-      - mongodb
-      - redis
-    environment:
-      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
-      - REDIS_URI=redis://redis:6379
+  # ai:
+  #   build:
+  #     context: .
+  #     dockerfile: ./services/ai-service/Dockerfile
+  #   ports:
+  #     - "3008:3008"
+  #   networks:
+  #     - trading-network
+  #   depends_on:
+  #     - mongodb
+  #     - redis
+  #   environment:
+  #     - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+  #     - REDIS_URI=redis://redis:6379
 
-  risk:
-    build:
-      context: .
-      dockerfile: ./services/risk-management/Dockerfile
-    ports:
-      - "3009:3009"
-    networks:
-      - trading-network
-    depends_on:
-      - mongodb
-      - redis
-    environment:
-      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
-      - REDIS_URI=redis://redis:6379
+  # risk:
+  #   build:
+  #     context: .
+  #     dockerfile: ./services/risk-management/Dockerfile
+  #   ports:
+  #     - "3009:3009"
+  #   networks:
+  #     - trading-network
+  #   depends_on:
+  #     - mongodb
+  #     - redis
+  #   environment:
+  #     - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+  #     - REDIS_URI=redis://redis:6379
 
   mongodb:
     image: mongo:latest
