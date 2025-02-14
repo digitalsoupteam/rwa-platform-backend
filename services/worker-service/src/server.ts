@@ -14,15 +14,13 @@ import { tasks } from './tasks/tasks';
 const startServer = async () => {
   // Initialize RabbitMQ
   const rabbitmq = new RabbitMQClient({
-    url: process.env.RABBITMQ_URL || 'amqp://localhost',
+    url: process.env.RABBITMQ_URL || 'amqp://user:password@rabbitmq:5672',
   });
   await rabbitmq.connect();
 
   // Initialize Task Manager
   const taskManager = new TaskManager(rabbitmq, tasks, {
-    port: 6379,
-    host: process.env.REDIS_HOST || 'localhost',
-    password: process.env.REDIS_PASSWORD,
+    url: process.env.REDIS_URI || 'redis://redis:6379',
   });
   await taskManager.initialize();
 
