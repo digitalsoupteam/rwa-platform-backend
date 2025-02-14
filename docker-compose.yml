@@ -122,6 +122,7 @@ services:
     depends_on:
       - mongodb
       - redis
+      - rabbitmq
     environment:
       - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
       - REDIS_URI=redis://redis:6379
