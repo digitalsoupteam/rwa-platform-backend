@@ -1,0 +1,53 @@
+type Query {
+  rooms: [Room!]!
+  room(id: ID!): Room
+  messages(roomId: ID!, limit: Int, before: String): [Message!]!
+}
+
+type Mutation {
+  sendMessage(roomId: ID!, content: String!): Message!
+}
+
+type Subscription {
+  messageReceived(roomId: ID!): Message!
+  roomUpdated(roomId: ID!): Room!
+}
+
+type Room {
+  id: ID!
+  type: RoomType!
+  productId: String
+  participants: [Participant!]!
+  metadata: JSON
+  isActive: Boolean!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type Participant {
+  address: String!
+  role: ParticipantRole!
+}
+
+type Message {
+  id: ID!
+  roomId: ID!
+  sender: Participant!
+  content: String!
+  metadata: JSON
+  createdAt: String!
+}
+
+enum RoomType {
+  AI_ASSISTANT
+  PRODUCT_OWNER
+  DAO
+}
+
+enum ParticipantRole {
+  USER
+  AI
+  PRODUCT_OWNER
+}
+
+scalar JSON
