@@ -94,39 +94,39 @@ services:
   #     - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
   #     - REDIS_URI=redis://redis:6379
 
-  worker:
-    build:
-      context: .
-      dockerfile: ./services/worker-service/Dockerfile
-    ports:
-      - "3006:3006"
-    networks:
-      - trading-network
-    depends_on:
-      - mongodb
-      - redis
-      - rabbitmq
-    environment:
-      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
-      - REDIS_URI=redis://redis:6379
-      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+  # worker:
+  #   build:
+  #     context: .
+  #     dockerfile: ./services/worker-service/Dockerfile
+  #   ports:
+  #     - "3006:3006"
+  #   networks:
+  #     - trading-network
+  #   depends_on:
+  #     - mongodb
+  #     - redis
+  #     - rabbitmq
+  #   environment:
+  #     - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+  #     - REDIS_URI=redis://redis:6379
+  #     - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
 
-  kyc:
-    build:
-      context: .
-      dockerfile: ./services/kyc-service/Dockerfile
-    ports:
-      - "3007:3007"
-    networks:
-      - trading-network
-    depends_on:
-      - mongodb
-      - redis
-      - rabbitmq
-    environment:
-      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
-      - REDIS_URI=redis://redis:6379
-      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+  # kyc:
+  #   build:
+  #     context: .
+  #     dockerfile: ./services/kyc-service/Dockerfile
+  #   ports:
+  #     - "3007:3007"
+  #   networks:
+  #     - trading-network
+  #   depends_on:
+  #     - mongodb
+  #     - redis
+  #     - rabbitmq
+  #   environment:
+  #     - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+  #     - REDIS_URI=redis://redis:6379
+  #     - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
 
   # ai:
   #   build:
@@ -157,6 +157,22 @@ services:
   #   environment:
   #     - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
   #     - REDIS_URI=redis://redis:6379
+
+  chat:
+    build:
+      context: .
+      dockerfile: ./services/chat-service/Dockerfile
+    ports:
+      - "3011:3011"
+    networks:
+      - trading-network
+    depends_on:
+      - mongodb
+      - rabbitmq
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+
 
   mongodb:
     image: mongo:latest
