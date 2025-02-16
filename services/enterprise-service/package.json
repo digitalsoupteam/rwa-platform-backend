@@ -1,0 +1,20 @@
+{
+  "name": "@rwa-platform/enterprise-service",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "bun run --watch src/server.ts",
+    "build": "bun build ./src/server.ts --outdir ./dist --target bun",
+    "start": "bun run dist/server.js"
+  },
+  "dependencies": {
+    "elysia": "^1.2.12",
+    "@elysiajs/cors": "^1.2.0",
+    "@elysiajs/swagger": "^1.2.0",
+    "mongoose": "^8.10.0",
+    "pdf-parse": "^1.1.1"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.0.0"
+  }
+}
