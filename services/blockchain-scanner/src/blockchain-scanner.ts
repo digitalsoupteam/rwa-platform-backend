@@ -1,39 +1,20 @@
 // src/services/blockchain-scanner.service.ts
 import { ethers, Contract, EventLog, Log } from 'ethers';
 import { Channel, connect } from 'amqplib';
-import Queue from 'bull';
 import { logger, metrics } from '@rwa-platform/shared/src';
 import { BlockCursor } from './models/block-cursor.model';
 import { BlockchainEvent } from './models/blockchain-event.model';
-
-interface ContractConfig {
-  address: string;
-  abi: any[]; // В реальном проекте здесь лучше использовать более строгую типизацию для ABI
-  events: string[];
-  startBlock?: number;
-}
+import { ContractConfig, EventConfig, getUniqueQueueNames } from './config/contracts';
 
 interface ContractInstance {
   contract: Contract;
   config: ContractConfig;
 }
 
-interface BlockchainEventData {
-  networkId: string;
-  contractAddress: string;
-  eventName: string;
-  blockNumber: number;
-  transactionHash: string;
-  timestamp: Date;
-  returnValues: any;
-  raw: any;
-}
-
 export class BlockchainScanner {
   private provider: ethers.JsonRpcProvider;
   private contracts: Map<string, ContractInstance>;
   private rabbitmqChannel: Channel | null;
-  private eventQueue: Queue.Queue | null;
   private isScanning: boolean;
   private readonly batchSize: number;
   private readonly retryDelay: number;
@@ -43,7 +24,6 @@ export class BlockchainScanner {
     private readonly networkId: string,
     private readonly rpcUrl: string,
     private readonly rabbitmqUrl: string,
-    private readonly redisUrl: string,
     private readonly contractConfigs: Record<string, ContractConfig>,
     options?: {
       batchSize?: number;
@@ -54,7 +34,6 @@ export class BlockchainScanner {
     this.provider = new ethers.JsonRpcProvider(rpcUrl);
     this.contracts = new Map();
     this.rabbitmqChannel = null;
-    this.eventQueue = null;
     this.isScanning = false;
     this.batchSize = options?.batchSize || 100;
     this.retryDelay = options?.retryDelay || 5000;
@@ -88,17 +67,12 @@ export class BlockchainScanner {
     try {
       const connection = await connect(this.rabbitmqUrl);
       this.rabbitmqChannel = await connection.createChannel();
-      await this.rabbitmqChannel.assertQueue('blockchain_events');
-
-      this.eventQueue = new Queue('blockchain_events', this.redisUrl, {
-        defaultJobOptions: {
-          attempts: this.maxRetries,
-          backoff: {
-            type: 'exponential',
-            delay: this.retryDelay,
-          },
-        },
-      });
+      
+      // Initialize all required queues based on contract configurations
+      const queueNames = getUniqueQueueNames();
+      for (const queueName of queueNames) {
+        await this.rabbitmqChannel.assertQueue(queueName, { durable: true });
+      }
     } catch (error: any) {
       logger.error('Failed to initialize message queues:', error);
       throw error;
@@ -147,65 +121,101 @@ export class BlockchainScanner {
   private async scanBlockRange(fromBlock: number, toBlock: number): Promise<void> {
     logger.info(`Scanning blocks from ${fromBlock} to ${toBlock}`);
 
-    for (const [name, { contract, config }] of this.contracts) {
-      for (const eventName of config.events) {
-        try {
-          const filter = contract.filters[eventName]();
-          const events = await contract.queryFilter(filter, fromBlock, toBlock);
+    for (const [contractName, { contract, config }] of this.contracts) {
+      const eventNames = Object.keys(config.events);
+      
+      for (const eventName of eventNames) {
+        let retries = 0;
+        while (retries <= this.maxRetries) {
+          try {
+            const filter = contract.filters[eventName]();
+            const events = await contract.queryFilter(filter, fromBlock, toBlock);
+            const block = await this.provider.getBlock(toBlock);
 
-          for (const event of events) {
-            await this.processEvent(contract.target as string, eventName, event);
+            for (const event of events) {
+              await this.processEvent(contractName, eventName, event, block);
+            }
+
+            metrics.increment('blockchain.events.scanned', {
+              contract: contractName,
+              event: eventName,
+            });
+            break; // Success, exit retry loop
+          } catch (error: any) {
+            retries++;
+            logger.error(`Error scanning ${eventName} events for ${contractName} (attempt ${retries}/${this.maxRetries}):`, error);
+            metrics.increment('blockchain.scanner.event_errors');
+            
+            if (retries > this.maxRetries) {
+              throw error; // Max retries exceeded
+            }
+            
+            // Wait before retrying
+            await new Promise(resolve => setTimeout(resolve, this.retryDelay));
           }
-
-          metrics.increment('blockchain.events.scanned', {
-            contract: name,
-            event: eventName,
-          });
-        } catch (error: any) {
-          logger.error(`Error scanning ${eventName} events for ${name}:`, error);
-          metrics.increment('blockchain.scanner.event_errors');
         }
       }
     }
   }
 
   private async processEvent(
-    contractAddress: string,
+    contractName: string,
     eventName: string,
-    event: EventLog | Log
+    event: EventLog | Log,
+    block: any
   ): Promise<void> {
-    const eventData: BlockchainEventData = {
-      networkId: this.networkId,
-      contractAddress,
-      eventName,
-      blockNumber: event.blockNumber,
-      transactionHash: event.transactionHash,
-      timestamp: new Date(),
-      returnValues: 'args' in event ? event.args : {},
-      raw: event
-    };
+    const contractConfig = this.contractConfigs[contractName];
+    const eventConfig = contractConfig.events[eventName];
+
+    if (!eventConfig) {
+      logger.info(`No configuration found for event ${eventName} in contract ${contractName}`);
+      return;
+    }
 
     try {
-      // Сохраняем в MongoDB
+      // Parse event data using custom parser if provided
+      const parsedData = eventConfig.parseData 
+        ? eventConfig.parseData(event)
+        : 'args' in event 
+          ? event.args 
+          : {};
+
+      const eventData = {
+        networkId: this.networkId,
+        contractAddress: contractConfig.address,
+        eventName,
+        blockNumber: event.blockNumber,
+        blockTimestamp: block.timestamp,
+        transactionHash: event.transactionHash,
+        logIndex: event.index || 0,
+        topics: event.topics || [],
+        parsedData
+      };
+
+      // Store in MongoDB for analytics
       await BlockchainEvent.create(eventData);
 
-      // Отправляем в RabbitMQ
+      // Send to specific RabbitMQ queue based on event configuration
       if (this.rabbitmqChannel) {
         await this.rabbitmqChannel.sendToQueue(
-          'blockchain_events',
-          Buffer.from(JSON.stringify(eventData))
+          eventConfig.queueName,
+          Buffer.from(JSON.stringify({
+            ...eventData,
+            timestamp: new Date().toISOString()
+          }))
         );
       }
 
-      // Добавляем в очередь Bull
-      if (this.eventQueue) {
-        await this.eventQueue.add('processEvent', eventData);
-      }
-
-      metrics.increment('blockchain.events.processed');
+      metrics.increment('blockchain.events.processed', {
+        contract: contractName,
+        event: eventName
+      });
     } catch (error: any) {
-      logger.error('Failed to process blockchain event:', error);
-      metrics.increment('blockchain.events.processing_errors');
+      logger.error(`Failed to process ${eventName} event from ${contractName}:`, error);
+      metrics.increment('blockchain.events.processing_errors', {
+        contract: contractName,
+        event: eventName
+      });
       throw error;
     }
   }
@@ -248,10 +258,6 @@ export class BlockchainScanner {
 
   public async cleanup(): Promise<void> {
     this.stop();
-    
-    if (this.eventQueue) {
-      await this.eventQueue.close();
-    }
     
     if (this.rabbitmqChannel) {
       await this.rabbitmqChannel.close();

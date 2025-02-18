@@ -10,7 +10,6 @@ const scanner = new BlockchainScanner(
   process.env.NETWORK_ID || '1',
   process.env.RPC_URL || 'http://localhost:8545',
   process.env.RABBITMQ_URL || 'amqp://localhost',
-  process.env.REDIS_URL || 'redis://localhost',
   contracts,
   {
     batchSize: 10,
