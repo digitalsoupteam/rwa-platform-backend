@@ -10,7 +10,10 @@
     "elysia": "^1.2.12",
     "@elysiajs/cors": "^1.2.0",
     "@elysiajs/swagger": "^1.2.0",
-    "mongoose": "^8.10.0"
+    "mongoose": "^8.10.0",
+    "openai": "^4.0.0",
+    "@rwa-platform/shared": "workspace:*",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "bun-types": "latest",
