@@ -1,21 +1,21 @@
 {
   "name": "@rwa-platform/signer-service",
   "version": "1.0.0",
+  "type": "module",
   "description": "EVM wallet signer service",
-  "main": "build/server.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node build/server.js",
-    "dev": "tsx watch src/server.ts"
+    "dev": "bun run --watch src/server.ts",
+    "build": "tsc && bun build ./src/server.ts --outdir ./dist --target bun",
+    "start": "bun run dist/server.js",
+    "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@elysiajs/cors": "^1.2.0",
     "@rwa-platform/shared": "workspace:*",
-    "elysia": "^0.8.8",
-    "@elysiajs/cors": "^0.8.0",
+    "elysia": "^1.2.12",
     "ethers": "^6.11.0"
   },
   "devDependencies": {
-    "tsx": "^4.7.0",
-    "typescript": "^5.3.3"
+    "bun-types": "latest"
   }
 }
