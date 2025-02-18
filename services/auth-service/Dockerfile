@@ -17,5 +17,5 @@ RUN bun install
 RUN cd packages/shared && bun run build
 RUN cd services/auth-service && bun run build
 
-EXPOSE 3001
+EXPOSE ${PORT}
 CMD ["bun", "services/auth-service/dist/server.js"]

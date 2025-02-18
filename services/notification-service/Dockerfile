@@ -17,5 +17,5 @@ RUN bun install
 RUN cd packages/shared && bun run build
 RUN cd services/notification-service && bun run build
 
-EXPOSE 3002
+EXPOSE ${PORT}
 CMD ["bun", "services/notification-service/dist/server.js"]

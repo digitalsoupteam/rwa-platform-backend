@@ -17,5 +17,5 @@ RUN bun install
 RUN cd packages/shared && bun run build
 RUN cd services/worker-service && bun run build
 
-EXPOSE 3006
+EXPOSE ${PORT}
 CMD ["bun", "services/worker-service/dist/server.js"]

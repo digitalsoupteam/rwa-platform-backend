@@ -17,5 +17,5 @@ RUN bun install
 RUN cd packages/shared && bun run build
 RUN cd services/ai-service && bun run build
 
-EXPOSE 3008
+EXPOSE ${PORT}
 CMD ["bun", "services/ai-service/dist/server.js"]

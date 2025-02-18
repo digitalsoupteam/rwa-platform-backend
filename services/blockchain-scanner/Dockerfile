@@ -17,5 +17,5 @@ RUN bun install
 RUN cd packages/shared && bun run build
 RUN cd services/blockchain-scanner && bun run build
 
-EXPOSE 3005
+EXPOSE ${PORT}
 CMD ["bun", "services/blockchain-scanner/dist/server.js"]
