@@ -1,14 +1,28 @@
-import { logger, metrics } from '@rwa-platform/shared/src';
+import { BaseAPIClient } from '@rwa-platform/shared/src/utils/base-api-client';
 import { connect } from 'amqplib';
 import Queue from 'bull';
 
-export class KYCAPI {
-  private baseURL: string;
+interface KYCStatus {
+  userId: string;
+  status: string;
+  provider: string;
+  verificationId?: string;
+  verificationData?: any;
+  lastVerified?: string;
+  expiresAt?: string;
+}
+
+interface KYCInitiationResponse {
+  status: string;
+  verificationId: string;
+}
+
+export class KYCAPI extends BaseAPIClient {
   private channel: any;
   private notificationQueue!: Queue.Queue;
 
   constructor() {
-    this.baseURL = process.env.KYC_SERVICE_URL || 'http://kyc:3007';
+    super(process.env.KYC_SERVICE_URL || 'http://kyc:3007', 'kyc');
     this.initializeQueues();
   }
 
@@ -22,55 +36,37 @@ export class KYCAPI {
     this.notificationQueue = new Queue('kyc_notifications', process.env.REDIS_URL || 'redis://localhost:6379');
   }
 
-  async getStatus(userId: string): Promise<any> {
-    try {
-      const response = await fetch(`${this.baseURL}/kyc/status/${userId}`);
-      const data = await response.json();
-
-      metrics.increment('gateway.kyc.status.success');
-      return data;
-    } catch (error: any) {
-      logger.error(`Failed to get KYC status: ${error.message}`);
-      metrics.increment('gateway.kyc.status.error');
-      throw error;
-    }
+  async getStatus(userId: string): Promise<KYCStatus> {
+    return this.fetchJson(`/kyc/status/${userId}`);
   }
 
-  async initiateKYC(userId: string, provider: string, data: any): Promise<any> {
-    try {
-      // Публикуем запрос в RabbitMQ
-      await this.channel.sendToQueue(
-        'kyc_requests',
-        Buffer.from(
-          JSON.stringify({
-            userId,
-            provider,
-            data,
-            timestamp: new Date().toISOString(),
-          })
-        )
-      );
+  async initiateKYC(userId: string, provider: string, data: any): Promise<KYCInitiationResponse> {
+    // Publish request to RabbitMQ
+    await this.channel.sendToQueue(
+      'kyc_requests',
+      Buffer.from(
+        JSON.stringify({
+          userId,
+          provider,
+          data,
+          timestamp: new Date().toISOString(),
+        })
+      )
+    );
 
-      // Создаем отложенное напоминание через Bull
-      await this.notificationQueue.add(
-        'kycReminder',
-        { userId },
-        {
-          delay: 24 * 60 * 60 * 1000, // 24 часа
-        }
-      );
+    // Create delayed reminder via Bull
+    await this.notificationQueue.add(
+      'kycReminder',
+      { userId },
+      {
+        delay: 24 * 60 * 60 * 1000, // 24 hours
+      }
+    );
 
-      metrics.increment('gateway.kyc.initiation.success');
-
-      // Возвращаем начальный статус
-      return {
-        status: 'PENDING',
-        verificationId: 'pending', // Реальный ID придет через webhook
-      };
-    } catch (error: any) {
-      logger.error(`Failed to initiate KYC: ${error.message}`);
-      metrics.increment('gateway.kyc.initiation.error');
-      throw error;
-    }
+    // Return initial status
+    return {
+      status: 'PENDING',
+      verificationId: 'pending', // Real ID will come via webhook
+    };
   }
 }
