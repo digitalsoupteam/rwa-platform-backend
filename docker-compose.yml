@@ -158,6 +158,20 @@ services:
   #     - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
   #     - REDIS_URI=redis://redis:6379
 
+  signer:
+    build:
+      context: .
+      dockerfile: ./services/signer-service/Dockerfile
+    ports:
+      - "3012:3012"
+    networks:
+      - trading-network
+    depends_on:
+      - rabbitmq
+    environment:
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+      - SIGNER_PRIVATE_KEY=${SIGNER_PRIVATE_KEY}
+
   chat:
     build:
       context: .
