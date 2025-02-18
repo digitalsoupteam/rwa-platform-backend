@@ -5,7 +5,7 @@ import Queue from 'bull';
 export class KYCAPI {
   private baseURL: string;
   private channel: any;
-  private notificationQueue: Queue.Queue;
+  private notificationQueue!: Queue.Queue;
 
   constructor() {
     this.baseURL = process.env.KYC_SERVICE_URL || 'http://kyc:3007';
@@ -19,7 +19,7 @@ export class KYCAPI {
     await this.channel.assertQueue('kyc_updates');
 
     // Bull queue for notifications
-    this.notificationQueue = new Queue('kyc_notifications', process.env.REDIS_URL);
+    this.notificationQueue = new Queue('kyc_notifications', process.env.REDIS_URL || 'redis://localhost:6379');
   }
 
   async getStatus(userId: string): Promise<any> {

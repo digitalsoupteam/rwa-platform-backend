@@ -1,4 +1,5 @@
 import { logger, metrics } from '@rwa-platform/shared/src';
+import { withFilter } from 'graphql-subscriptions';
 import { pubsub, EVENTS } from '../pubsub';
 
 export const kycResolver = {
@@ -32,23 +33,13 @@ export const kycResolver = {
 
   Subscription: {
     kycStatusUpdated: {
-      subscribe: (_: any, __: any, { auth }: any) => {
-        // Проверяем аутентификацию для подписки
-        return {
-          [Symbol.asyncIterator]: () => {
-            return pubsub.asyncIterator([EVENTS.KYC_STATUS_UPDATED]);
-          },
-
-          // Фильтрация обновлений по адресу пользователя
-          async resolve(payload: any, _: any, context: any) {
-            const { address } = await auth();
-            if (payload.kycStatusUpdated.userId === address) {
-              return payload.kycStatusUpdated;
-            }
-            return null;
-          },
-        };
-      },
+      subscribe: withFilter(
+        () => (pubsub as any).asyncIterator(EVENTS.KYC_STATUS_UPDATED),
+        async (payload: any, _: any, context: any) => {
+          const { address } = await context.auth();
+          return payload.kycStatusUpdated.userId === address;
+        }
+      ),
     },
   },
 };
