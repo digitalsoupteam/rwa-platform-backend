@@ -10,12 +10,29 @@ services:
     networks:
       - trading-network
     depends_on:
-      - mongodb
-      - redis
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
+      - NODE_ENV=production
+      - PORT=3000
       - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
       - REDIS_URI=redis://redis:6379
       - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   auth:
     build:
@@ -26,137 +43,232 @@ services:
     networks:
       - trading-network
     depends_on:
-      - mongodb
-      - redis
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
+      - NODE_ENV=production
+      - PORT=3001
       - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
       - REDIS_URI=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
-  # notification:
-  #   build:
-  #     context: .
-  #     dockerfile: ./services/notification-service/Dockerfile
-  #   ports:
-  #     - "3002:3002"
-  #   networks:
-  #     - trading-network
-  #   depends_on:
-  #     - mongodb
-  #     - redis
-  #     - rabbitmq
-  #   environment:
-  #     - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
-  #     - REDIS_URI=redis://redis:6379
-  #     - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+  notification:
+    build:
+      context: .
+      dockerfile: ./services/notification-service/Dockerfile
+    ports:
+      - "3002:3002"
+    networks:
+      - trading-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - PORT=3002
+      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+      - REDIS_URI=redis://redis:6379
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
 
-  # trading:
-  #   build:
-  #     context: .
-  #     dockerfile: ./services/trading-service/Dockerfile
-  #   ports:
-  #     - "3003:3003"
-  #   networks:
-  #     - trading-network
-  #   depends_on:
-  #     - mongodb
-  #     - redis
-  #   environment:
-  #     - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
-  #     - REDIS_URI=redis://redis:6379
+  blockchain:
+    build:
+      context: .
+      dockerfile: ./services/blockchain-scanner/Dockerfile
+    ports:
+      - "3005:3005"
+    networks:
+      - trading-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - PORT=3005
+      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+      - REDIS_URI=redis://redis:6379
+      - BLOCKCHAIN_RPC_URL=${BLOCKCHAIN_RPC_URL}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
-  # market:
-  #   build:
-  #     context: .
-  #     dockerfile: ./services/market-data-service/Dockerfile
-  #   ports:
-  #     - "3004:3004"
-  #   networks:
-  #     - trading-network
-  #   depends_on:
-  #     - mongodb
-  #     - redis
-  #   environment:
-  #     - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
-  #     - REDIS_URI=redis://redis:6379
+  worker:
+    build:
+      context: .
+      dockerfile: ./services/worker-service/Dockerfile
+    ports:
+      - "3006:3006"
+    networks:
+      - trading-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - PORT=3006
+      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+      - REDIS_URI=redis://redis:6379
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3006/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
 
-  # blockchain:
-  #   build:
-  #     context: .
-  #     dockerfile: ./services/blockchain-scanner/Dockerfile
-  #   ports:
-  #     - "3005:3005"
-  #   networks:
-  #     - trading-network
-  #   depends_on:
-  #     - mongodb
-  #     - redis
-  #   environment:
-  #     - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
-  #     - REDIS_URI=redis://redis:6379
+  kyc:
+    build:
+      context: .
+      dockerfile: ./services/kyc-service/Dockerfile
+    ports:
+      - "3007:3007"
+    networks:
+      - trading-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - PORT=3007
+      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+      - REDIS_URI=redis://redis:6379
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+      - SHUFTIPRO_CLIENT_ID=${SHUFTIPRO_CLIENT_ID}
+      - SHUFTIPRO_SECRET_KEY=${SHUFTIPRO_SECRET_KEY}
+      - SUMSUB_APP_TOKEN=${SUMSUB_APP_TOKEN}
+      - SUMSUB_SECRET_KEY=${SUMSUB_SECRET_KEY}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3007/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
-  # worker:
-  #   build:
-  #     context: .
-  #     dockerfile: ./services/worker-service/Dockerfile
-  #   ports:
-  #     - "3006:3006"
-  #   networks:
-  #     - trading-network
-  #   depends_on:
-  #     - mongodb
-  #     - redis
-  #     - rabbitmq
-  #   environment:
-  #     - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
-  #     - REDIS_URI=redis://redis:6379
-  #     - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+  ai:
+    build:
+      context: .
+      dockerfile: ./services/ai-service/Dockerfile
+    ports:
+      - "3008:3008"
+    networks:
+      - trading-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - PORT=3008
+      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+      - REDIS_URI=redis://redis:6379
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3008/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
 
-  # kyc:
-  #   build:
-  #     context: .
-  #     dockerfile: ./services/kyc-service/Dockerfile
-  #   ports:
-  #     - "3007:3007"
-  #   networks:
-  #     - trading-network
-  #   depends_on:
-  #     - mongodb
-  #     - redis
-  #     - rabbitmq
-  #   environment:
-  #     - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
-  #     - REDIS_URI=redis://redis:6379
-  #     - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
-
-  # ai:
-  #   build:
-  #     context: .
-  #     dockerfile: ./services/ai-service/Dockerfile
-  #   ports:
-  #     - "3008:3008"
-  #   networks:
-  #     - trading-network
-  #   depends_on:
-  #     - mongodb
-  #     - redis
-  #   environment:
-  #     - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
-  #     - REDIS_URI=redis://redis:6379
-
-  # risk:
-  #   build:
-  #     context: .
-  #     dockerfile: ./services/risk-management/Dockerfile
-  #   ports:
-  #     - "3009:3009"
-  #   networks:
-  #     - trading-network
-  #   depends_on:
-  #     - mongodb
-  #     - redis
-  #   environment:
-  #     - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
-  #     - REDIS_URI=redis://redis:6379
+  enterprise:
+    build:
+      context: .
+      dockerfile: ./services/enterprise-service/Dockerfile
+    ports:
+      - "3009:3009"
+    networks:
+      - trading-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - PORT=3009
+      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
+      - REDIS_URI=redis://redis:6379
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3009/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   signer:
     build:
@@ -167,10 +279,24 @@ services:
     networks:
       - trading-network
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     environment:
+      - NODE_ENV=production
+      - PORT=3012
       - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
       - SIGNER_PRIVATE_KEY=${SIGNER_PRIVATE_KEY}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3012/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
 
   chat:
     build:
@@ -181,12 +307,26 @@ services:
     networks:
       - trading-network
     depends_on:
-      - mongodb
-      - rabbitmq
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
+      - NODE_ENV=production
+      - PORT=3011
       - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
       - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
-
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3011/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   mongodb:
     image: mongo:latest
@@ -195,7 +335,19 @@ services:
     networks:
       - trading-network
     volumes:
-      - ./docker/mongodb:/data/db
+      - mongodb_data:/data/db
+    restart: unless-stopped
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
 
   redis:
     image: redis:alpine
@@ -204,7 +356,18 @@ services:
     networks:
       - trading-network
     volumes:
-      - ./docker/redis:/data
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -217,7 +380,18 @@ services:
       - RABBITMQ_DEFAULT_USER=user
       - RABBITMQ_DEFAULT_PASS=password
     volumes:
-      - ./docker/rabbitmq:/var/lib/rabbitmq
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: unless-stopped
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 30s
+      timeout: 30s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   prometheus:
     image: prom/prometheus
@@ -225,9 +399,15 @@ services:
       - "9090:9090"
     volumes:
       - ./docker/prometheus:/etc/prometheus
-      - ./docker/prometheus-data:/prometheus
+      - prometheus_data:/prometheus
     networks:
       - trading-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   grafana:
     image: grafana/grafana
@@ -240,8 +420,21 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
-      - ./docker/grafana:/var/lib/grafana
+      - grafana_data:/var/lib/grafana
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
 networks:
   trading-network:
     driver: bridge
+
+volumes:
+  mongodb_data:
+  redis_data:
+  rabbitmq_data:
+  prometheus_data:
+  grafana_data:

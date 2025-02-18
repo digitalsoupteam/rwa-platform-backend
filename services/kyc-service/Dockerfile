@@ -17,5 +17,5 @@ RUN bun install
 RUN cd packages/shared && bun run build
 RUN cd services/kyc-service && bun run build
 
-EXPOSE 3007
+EXPOSE ${PORT}
 CMD ["bun", "services/kyc-service/dist/server.js"]

@@ -17,5 +17,5 @@ RUN bun install
 RUN cd packages/shared && bun run build
 RUN cd services/chat-service && bun run build
 
-EXPOSE 3011
+EXPOSE ${PORT}
 CMD ["bun", "services/chat-service/dist/server.js"]
