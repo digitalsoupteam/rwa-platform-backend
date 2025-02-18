@@ -9,7 +9,9 @@ import path from 'path';
 import { authResolver } from './resolvers/auth.resolver';
 import { healthResolver } from './resolvers/health.resolver';
 import { kycResolver } from './resolvers/kyc.resolver';
+import { enterpriseResolvers } from './resolvers/enterprise.resolver';
 import { KYCAPI } from './datasources/kyc.api';
+import { EnterpriseAPI } from './datasources/enterprise.datasource';
 import { pubsub, EVENTS } from './pubsub';
 import { logger } from '@rwa-platform/shared/src';
 
@@ -29,22 +31,28 @@ const resolvers = {
     ...authResolver.Query,
     ...healthResolver.Query,
     ...kycResolver.Query,
+    ...enterpriseResolvers.Query,
   },
   Mutation: {
     ...authResolver.Mutation,
     ...kycResolver.Mutation,
+    ...enterpriseResolvers.Mutation,
   },
   Subscription: {
     ...kycResolver.Subscription,
+    ...enterpriseResolvers.Subscription,
   },
+  Enterprise: enterpriseResolvers.Enterprise,
+  Pool: enterpriseResolvers.Pool,
 };
 
-// Настройка RabbitMQ для KYC обновлений
-async function setupKYCUpdates() {
+// Настройка RabbitMQ для обновлений
+async function setupSubscriptions() {
   try {
     const connection = await connect(process.env.RABBITMQ_URL || 'amqp://localhost');
     const channel = await connection.createChannel();
 
+    // KYC updates
     await channel.assertQueue('kyc_updates');
     channel.consume('kyc_updates', (msg: any) => {
       if (msg) {
@@ -56,7 +64,29 @@ async function setupKYCUpdates() {
       }
     });
 
-    logger.info('KYC updates subscription initialized');
+    // Enterprise updates
+    await channel.assertExchange('enterprise_events', 'topic', { durable: false });
+    await channel.assertQueue('enterprise_updates');
+    await channel.bindQueue('enterprise_updates', 'enterprise_events', 'enterprise.#');
+    
+    channel.consume('enterprise_updates', (msg: any) => {
+      if (msg) {
+        const update = JSON.parse(msg.content.toString());
+        const routingKey = msg.fields.routingKey;
+        
+        if (routingKey.startsWith('enterprise.signatures.')) {
+          const enterpriseId = routingKey.split('.')[2];
+          channel.publish('', `enterprise.signatures.${enterpriseId}`, msg.content);
+        } else if (routingKey.startsWith('enterprise.updates.')) {
+          const enterpriseId = routingKey.split('.')[2];
+          channel.publish('', `enterprise.updates.${enterpriseId}`, msg.content);
+        }
+        
+        channel.ack(msg);
+      }
+    });
+
+    logger.info('Subscriptions initialized');
   } catch (error: any) {
     logger.error('Failed to setup KYC updates:', error);
   }
@@ -77,6 +107,7 @@ const app = new Elysia()
           dataSources: {
             authAPI,
             kycAPI,
+            enterpriseAPI: new EnterpriseAPI(),
           },
           pubsub,
           auth: createAuthHandler(request),
@@ -102,7 +133,7 @@ const app = new Elysia()
     port: 3000,
   });
 
-setupKYCUpdates().catch(console.error);
+setupSubscriptions().catch(console.error);
 
 console.log(`🚀 gateway-service is running at ${app.server?.hostname}:${app.server?.port}`);
 
