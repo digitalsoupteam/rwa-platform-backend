@@ -270,7 +270,7 @@ services:
           cpus: '0.5'
           memory: 512M
 
-  signer:
+  signer1:
     build:
       context: .
       dockerfile: ./services/signer-service/Dockerfile
@@ -285,7 +285,63 @@ services:
       - NODE_ENV=production
       - PORT=3012
       - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
-      - SIGNER_PRIVATE_KEY=${SIGNER_PRIVATE_KEY}
+      - SIGNER_PRIVATE_KEY=${SIGNER_PRIVATE_KEY_1}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3012/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
+
+  signer2:
+    build:
+      context: .
+      dockerfile: ./services/signer-service/Dockerfile
+    ports:
+      - "3013:3012"
+    networks:
+      - trading-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - PORT=3012
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+      - SIGNER_PRIVATE_KEY=${SIGNER_PRIVATE_KEY_2}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3012/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
+
+  signer3:
+    build:
+      context: .
+      dockerfile: ./services/signer-service/Dockerfile
+    ports:
+      - "3014:3012"
+    networks:
+      - trading-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - PORT=3012
+      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
+      - SIGNER_PRIVATE_KEY=${SIGNER_PRIVATE_KEY_3}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3012/health"]
