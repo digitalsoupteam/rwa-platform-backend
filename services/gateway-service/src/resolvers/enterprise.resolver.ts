@@ -1,6 +1,7 @@
 import { RabbitMQClient } from '@rwa-platform/shared/src/utils/rabbitmq';
 import { logger, metrics } from '@rwa-platform/shared/src';
 import { EnterpriseAPI } from '../datasources/enterprise.datasource';
+import { Enterprise, Pool } from '../types/enterprise.types';
 
 interface Context {
   dataSources: {
@@ -118,7 +119,7 @@ export const enterpriseResolvers = {
   },
 
   Enterprise: {
-    pools: async (parent: any, _: any, { dataSources }: Context) => {
+    pools: async (parent: Enterprise, _: any, { dataSources }: Context) => {
       if (!parent.pools?.length) return [];
       const pools = await Promise.all(
         parent.pools.map((poolId: string) => dataSources.enterpriseAPI.getPool(poolId))
@@ -129,7 +130,7 @@ export const enterpriseResolvers = {
   },
 
   Pool: {
-    rwaEnterprise: async (parent: any, _: any, { dataSources }: Context) => {
+    rwaEnterprise: async (parent: Pool, _: any, { dataSources }: Context) => {
       const enterprise = await dataSources.enterpriseAPI.getEnterprise(parent.rwaEnterprise);
       metrics.increment('gateway.pool.field.enterprise');
       return enterprise;
