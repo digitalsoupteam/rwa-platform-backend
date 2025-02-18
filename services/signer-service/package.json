@@ -1,0 +1,21 @@
+{
+  "name": "@rwa-platform/signer-service",
+  "version": "1.0.0",
+  "description": "EVM wallet signer service",
+  "main": "build/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node build/server.js",
+    "dev": "tsx watch src/server.ts"
+  },
+  "dependencies": {
+    "@rwa-platform/shared": "workspace:*",
+    "elysia": "^0.8.8",
+    "@elysiajs/cors": "^0.8.0",
+    "ethers": "^6.11.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}
