@@ -1,22 +1,23 @@
 {
   "name": "@rwa-platform/ai-service",
   "version": "1.0.0",
+  "type": "module",
   "scripts": {
     "dev": "bun run --watch src/server.ts",
-    "build": "bun build ./src/server.ts --outdir ./dist --target bun",
-    "start": "bun run dist/server.js"
+    "build": "tsc && bun build ./src/server.ts --outdir ./dist --target bun",
+    "start": "bun run dist/server.js",
+    "clean": "rm -rf dist"
   },
   "dependencies": {
-    "elysia": "^1.2.12",
     "@elysiajs/cors": "^1.2.0",
     "@elysiajs/swagger": "^1.2.0",
+    "@rwa-platform/shared": "workspace:*",
+    "elysia": "^1.2.12",
     "mongoose": "^8.10.0",
     "openai": "^4.0.0",
-    "@rwa-platform/shared": "workspace:*",
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "bun-types": "latest",
-    "typescript": "^5.0.0"
+    "bun-types": "latest"
   }
 }

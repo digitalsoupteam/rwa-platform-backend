@@ -3,11 +3,15 @@
     "target": "esnext",
     "module": "esnext",
     "moduleResolution": "bundler",
-    "types": ["bun-types"],
-    "esModuleInterop": true,
+    "declaration": true,
+    "outDir": "./dist",
     "strict": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "baseUrl": ".",
-    "outDir": "dist"
-  }
+    "types": ["bun-types"],
+    "rootDir": "src",
+    "baseUrl": "."
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
