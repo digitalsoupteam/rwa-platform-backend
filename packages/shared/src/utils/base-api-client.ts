@@ -31,10 +31,16 @@ export class BaseAPIClient {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => null);
+        throw new Error(
+          errorData?.error || `HTTP error! status: ${response.status}`
+        );
       }
 
       const result = await response.json();
+      if (!result) {
+        throw new Error('Empty response received');
+      }
       metrics.increment(`gateway.${this.serviceName}.request.success`);
       return result;
     } catch (error: any) {

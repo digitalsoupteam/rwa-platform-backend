@@ -1,22 +1,5 @@
-type Query {
-  health: Health!
-  serverInfo: ServerInfo!
-}
-
-type Health {
-  status: String!
-  timestamp: String!
-  service: String!
-}
-
-type ServerInfo {
-  uptime: Float!
-  memory: MemoryInfo!
-  version: String!
-}
-
-type MemoryInfo {
-  heapUsed: Float!
-  heapTotal: Float!
-  rss: Float!
-}
+#import "./health.graphql"
+#import "./auth.graphql"
+#import "./chat.graphql"
+#import "./enterprise.graphql"
+#import "./kyc.graphql"

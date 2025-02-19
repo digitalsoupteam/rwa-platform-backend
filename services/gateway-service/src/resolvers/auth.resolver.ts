@@ -7,24 +7,20 @@ interface Context {
   };
   auth: () => Promise<{ address: string }>;
 }
-export interface TypedDataResponse {
-  nonce: string;
-  typedData: {
-    domain: {
-      name: string;
-      version: string;
-      chainId: number;
-    };
-    primaryType: string;
-    types: {
-      EIP712Domain: Array<{ name: string; type: string }>;
-      Message: Array<{ name: string; type: string }>;
-    };
-    message: {
-      wallet: string;
-      nonce: string;
-      message: string;
-    };
+export interface SignatureRequest {
+  domain: {
+    name: string;
+    version: string;
+    chainId: number;
+  };
+  types: {
+    Auth: Array<{ name: string; type: string }>;
+  };
+  primaryType: string;
+  message: {
+    wallet: string;
+    nonce: string;
+    message: string;
   };
 }
 
@@ -44,18 +40,21 @@ export const authResolver = {
   },
 
   Mutation: {
-    getNonce: async (
+    getAuthMessage: async (
       _: any,
       { address }: { address: string },
       context: Context
-    ): Promise<TypedDataResponse> => {
+    ): Promise<SignatureRequest> => {
       try {
-        const result = await context.dataSources.authAPI.getNonce(address);
-        metrics.increment('gateway.mutation.getNonce.success');
+        const result = await context.dataSources.authAPI.getAuthMessage(address);
+        if (!result) {
+          throw new Error('Failed to get auth message');
+        }
+        metrics.increment('gateway.mutation.getAuthMessage.success');
         return result;
       } catch (error: any) {
-        logger.error(`GetNonce mutation failed: ${error.message}`);
-        metrics.increment('gateway.mutation.getNonce.failure');
+        logger.error(`GetAuthMessage mutation failed: ${error.message}`);
+        metrics.increment('gateway.mutation.getAuthMessage.failure');
         throw error;
       }
     },
@@ -71,11 +70,11 @@ export const authResolver = {
           throw new Error('No token received');
         }
         metrics.increment('gateway.mutation.authenticate.success');
-        return { token, address };
+        return { token };
       } catch (error: any) {
         logger.error(`Authentication mutation failed: ${error.message}`);
         metrics.increment('gateway.mutation.authenticate.failure');
-        throw error;
+        throw new Error(error.message || 'Authentication failed');
       }
     },
   },
