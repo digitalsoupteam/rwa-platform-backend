@@ -27,11 +27,11 @@ const app = new Elysia()
     cpu: process.cpuUsage(),
   }))
 
-  .post('/auth/nonce', async ({ body }) => {
+  .post('/message', async ({ body }) => {
     try {
       const { address } = body as any;
-      const result = await authController.getNonce(address);
-      return result; // Возвращаем структурированный ответ
+      const result = await authController.getAuthMessage(address);
+      return result;
     } catch (error: any) {
       return {
         success: false,
@@ -40,16 +40,20 @@ const app = new Elysia()
     }
   })
 
-  .post('/auth/verify', async ({ body }) => {
+  .post('/verify', async ({ body }) => {
     try {
       const { address, signature } = body as any;
-      const token = await authController.verifySignature(address, signature);
-      return { token };
+      if (!address || !signature) {
+        throw new Error('Address and signature are required');
+      }
+      const result = await authController.verifySignature(address, signature);
+      if (!result || !result.token) {
+        throw new Error('Failed to generate token');
+      }
+      return result;
     } catch (error: any) {
-      return {
-        success: false,
-        error: error.message,
-      };
+      logger.error(`Verification failed: ${error.message}`);
+      throw error;
     }
   })
 

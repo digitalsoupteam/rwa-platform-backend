@@ -1,11 +1,10 @@
 type Mutation {
-  getNonce(address: String!): AuthMessage!
+  getAuthMessage(address: String!): SignatureRequest!
   authenticate(address: String!, signature: String!): AuthResponse!
 }
 
 type AuthResponse {
   token: String!
-  address: String!
 }
 
 type Query {
@@ -17,27 +16,21 @@ type User {
   lastLogin: String
 }
 
-type AuthMessage {
-  nonce: String!
-  typedData: EIP712TypedData!
-}
-
-type EIP712TypedData {
-  domain: EIP712Domain!
+type SignatureRequest {
+  domain: Domain!
+  types: Types!
   primaryType: String!
-  types: EIP712Types!
-  message: EIP712MessageData!
+  message: AuthMessage!
 }
 
-type EIP712Domain {
+type Domain {
   name: String!
   version: String!
   chainId: Int!
 }
 
-type EIP712Types {
-  EIP712Domain: [TypeProperty!]!
-  Message: [TypeProperty!]!
+type Types {
+  Auth: [TypeProperty!]!
 }
 
 type TypeProperty {
@@ -45,7 +38,7 @@ type TypeProperty {
   type: String!
 }
 
-type EIP712MessageData {
+type AuthMessage {
   wallet: String!
   nonce: String!
   message: String!

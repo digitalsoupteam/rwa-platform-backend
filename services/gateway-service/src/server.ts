@@ -20,8 +20,8 @@ import mongoose from 'mongoose';
 import { AuthAPI } from './datasources/auth.api';
 import { authMiddleware, createAuthHandler } from './middleware/auth.middleware';
 
-// Загрузка схемы
-const typeDefs = loadSchemaSync(path.join(__dirname, './schemas/**/*.graphql'), {
+// Load schema
+const typeDefs = loadSchemaSync(path.join(__dirname, './schemas/schema.graphql'), {
   loaders: [new GraphQLFileLoader()],
 });
 

@@ -1,56 +1,52 @@
-import { ethers } from 'ethers';
+import { TypedDataField, verifyTypedData } from 'ethers';
 import { randomBytes } from 'crypto';
 import { User } from '../models/user.model';
 import { logger, metrics, CircuitBreaker, jwtService } from '@rwa-platform/shared/src';
 
 const circuitBreaker = new CircuitBreaker();
 
-const EIP712_DOMAIN = {
-  name: 'Trading Platform',
+const DOMAIN = {
+  name: 'RWA Platform',
   version: '1',
   chainId: 1,
-} as const;
+};
 
-const EIP712_TYPES = {
-  EIP712Domain: [
-    { name: 'name', type: 'string' },
-    { name: 'version', type: 'string' },
-    { name: 'chainId', type: 'uint256' },
-  ],
-  Message: [
+const TYPES: Record<string, TypedDataField[]> = {
+  Auth: [
     { name: 'wallet', type: 'address' },
     { name: 'nonce', type: 'string' },
-    { name: 'message', type: 'string' },
-  ],
-} as const;
+    { name: 'message', type: 'string' }
+  ]
+};
 
 export const authController = {
-  async getNonce(address: string) {
+  async getAuthMessage(address: string) {
     try {
       const nonce = randomBytes(32).toString('hex');
-      await User.findOneAndUpdate({ address: address.toLowerCase() }, { nonce }, { upsert: true });
+      await User.findOneAndUpdate(
+        { address: address.toLowerCase() },
+        { nonce },
+        { upsert: true }
+      );
 
       return {
-        nonce,
-        typedData: {
-          domain: EIP712_DOMAIN,
-          primaryType: 'Message',
-          types: EIP712_TYPES,
-          message: {
-            wallet: address,
-            nonce: nonce,
-            message: `Welcome to RWA Platform!\n\nWe prioritize the security of your assets and personal data. To ensure secure access to your account, we kindly request you to verify ownership of your wallet by signing this message.\n\n`,
-          },
-        },
+        domain: DOMAIN,
+        types: TYPES,
+        primaryType: 'Auth',
+        message: {
+          wallet: address,
+          nonce,
+          message: `Welcome to RWA Platform!\n\nWe prioritize the security of your assets and personal data. To ensure secure access to your account, we kindly request you to verify ownership of your wallet by signing this message.\n\n`
+        }
       };
     } catch (error: any) {
-      logger.error(`Failed to generate nonce: ${error.message}`);
-      metrics.increment('auth.nonce.error');
+      logger.error(`Failed to generate auth message: ${error.message}`);
+      metrics.increment('auth.message.error');
       throw error;
     }
   },
 
-  async verifySignature(address: string, signature: string): Promise<string> {
+  async verifySignature(address: string, signature: string): Promise<{ token: string }> {
     return await circuitBreaker.execute(async () => {
       try {
         const user = await User.findOne({ address: address.toLowerCase() });
@@ -58,40 +54,43 @@ export const authController = {
           throw new Error('User not found');
         }
 
-        const message = {
-          domain: EIP712_DOMAIN,
-          types: {
-            Message: [
-              // Измените Authentication на Message
-              { name: 'wallet', type: 'address' },
-              { name: 'nonce', type: 'string' },
-              { name: 'message', type: 'string' },
-            ],
-          },
-          value: {
+        const typedData = {
+          domain: DOMAIN,
+          types: TYPES,
+          message: {
             wallet: address,
             nonce: user.nonce,
-            message: `Welcome to Trading Platform! Please sign this message to authenticate.\n\nNonce: ${user.nonce}`,
-          },
+            message: `Welcome to RWA Platform!\n\nWe prioritize the security of your assets and personal data. To ensure secure access to your account, we kindly request you to verify ownership of your wallet by signing this message.\n\n`
+          }
         };
 
-        const recoveredAddress = ethers.verifyTypedData(
-          message.domain,
-          message.types,
-          message.value,
-          signature
-        );
+        try {
+          const recoveredAddress = verifyTypedData(
+            typedData.domain,
+            typedData.types,
+            typedData.message,
+            signature
+          );
 
-        if (recoveredAddress.toLowerCase() !== address.toLowerCase()) {
-          throw new Error('Invalid signature');
+          if (recoveredAddress.toLowerCase() !== address.toLowerCase()) {
+            throw new Error('Invalid signature');
+          }
+
+          // Update nonce and last login after successful verification
+          user.nonce = randomBytes(32).toString('hex');
+          user.lastLogin = new Date();
+          await user.save();
+
+          const token = jwtService.generate(address);
+          if (!token) {
+            throw new Error('Failed to generate token');
+          }
+
+          return { token };
+        } catch (error: any) {
+          logger.error(`Signature verification failed: ${error.message}`);
+          throw new Error('Invalid signature or failed to verify');
         }
-
-        user.nonce = randomBytes(32).toString('hex');
-        user.lastLogin = new Date();
-        await user.save();
-
-        const token = jwtService.generate(address);
-        return token; // Убедимся что токен возвращается
       } catch (error: any) {
         logger.error(`Authentication failed: ${error.message}`);
         metrics.increment('auth.login.failure');
