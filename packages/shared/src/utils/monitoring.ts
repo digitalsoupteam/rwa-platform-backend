@@ -1,11 +1,10 @@
 import { MetricData } from '../interfaces';
-import { METRICS_PREFIX } from '../constants';
 
 class Metrics {
   private prefix: string;
   private metrics: Map<string, MetricData>;
 
-  constructor(prefix: string = METRICS_PREFIX) {
+  constructor(prefix: string = 'rwa_platform') {
     this.prefix = prefix;
     this.metrics = new Map();
   }

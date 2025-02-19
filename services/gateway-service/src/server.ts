@@ -13,7 +13,7 @@ import { enterpriseResolvers } from './resolvers/enterprise.resolver';
 import { KYCAPI } from './datasources/kyc.api';
 import { EnterpriseAPI } from './datasources/enterprise.datasource';
 import { pubsub, EVENTS } from './pubsub';
-import { logger } from '@rwa-platform/shared/src';
+import { metrics, logger } from '@rwa-platform/shared/src';
 
 import { swagger } from '@elysiajs/swagger';
 import mongoose from 'mongoose';
@@ -122,11 +122,25 @@ const app = new Elysia()
     timestamp: new Date().toISOString(),
   }))
 
-  .get('/metrics', () => ({
-    uptime: process.uptime(),
-    memory: process.memoryUsage(),
-    cpu: process.cpuUsage(),
-  }))
+  .get('/metrics', () => {
+    // Системные метрики
+    const processMetrics = [
+      `process_uptime_seconds ${process.uptime()}`,
+      `process_heap_bytes ${process.memoryUsage().heapUsed}`,
+      `process_rss_bytes ${process.memoryUsage().rss}`,
+      `process_cpu_user_seconds ${process.cpuUsage().user}`,
+      `process_cpu_system_seconds ${process.cpuUsage().system}`,
+    ].join('\n');
+
+    // Бизнес метрики
+    const businessMetrics = metrics.prometheusFormat();
+
+    return new Response(processMetrics + '\n' + businessMetrics, {
+      headers: {
+        'Content-Type': 'text/plain',
+      },
+    });
+  })
 
   .listen({
     hostname: '0.0.0.0',

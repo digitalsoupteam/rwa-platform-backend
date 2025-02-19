@@ -1,7 +1,24 @@
 global:
   scrape_interval: 15s
+  evaluation_interval: 15s
+
 
 scrape_configs:
-  - job_name: 'services'
+  - job_name: 'loki'
     static_configs:
-      - targets: ['gateway-service:3000', 'auth-service:3001', 'trading-service:3002']
+      - targets: ['loki:3100']
+
+  - job_name: 'services'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: [
+          'gateway:3000',
+          'auth:3001',
+          'kyc:3007',
+          'ai:3008',
+          'enterprise:3009',
+          'chat:3011',
+          'signer1:3012',
+          'signer2:3013',
+          'signer3:3014'
+        ]
