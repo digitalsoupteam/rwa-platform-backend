@@ -6,8 +6,8 @@ services:
     ports:
       - "3100:3100"
     volumes:
-      - ./docker/loki:/etc/loki
-      - loki-data:/loki
+      - ./config/loki:/etc/loki
+      - ./data/loki:/loki
     command: -config.file=/etc/loki/loki-config.yml
     networks:
       - rwa-platform-network
@@ -15,7 +15,7 @@ services:
   promtail:
     image: grafana/promtail:2.9.0
     volumes:
-      - ./docker/promtail:/etc/promtail
+      - ./config/promtail:/etc/promtail
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock
     command: -config.file=/etc/promtail/promtail-config.yml
@@ -160,40 +160,6 @@ services:
         limits:
           cpus: '0.5'
           memory: 512M
-
-  worker:
-    build:
-      context: .
-      dockerfile: ./services/worker-service/Dockerfile
-    ports:
-      - "3006:3006"
-    networks:
-      - rwa-platform-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      - SERVICE_NAME=worker-service
-      - NODE_ENV=production
-      - PORT=3006
-      - MONGODB_URI=mongodb://mongodb:27017/rwa-platform
-      - REDIS_URI=redis://redis:6379
-      - RABBITMQ_URL=amqp://user:password@rabbitmq:5672
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3006/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    deploy:
-      resources:
-        limits:
-          cpus: '0.3'
-          memory: 256M
 
   kyc:
     build:
@@ -427,7 +393,7 @@ services:
     networks:
       - rwa-platform-network
     volumes:
-      - mongodb_data:/data/db
+      - ./data/mongodb:/data/db
     restart: unless-stopped
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
@@ -448,7 +414,7 @@ services:
     networks:
       - rwa-platform-network
     volumes:
-      - redis_data:/data
+      - ./data/redis:/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -472,7 +438,7 @@ services:
       - RABBITMQ_DEFAULT_USER=user
       - RABBITMQ_DEFAULT_PASS=password
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      - ./data/rabbitmq:/var/lib/rabbitmq
     restart: unless-stopped
     healthcheck:
       test: rabbitmq-diagnostics -q ping
@@ -490,8 +456,8 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./docker/prometheus:/etc/prometheus
-      - prometheus_data:/prometheus
+      - ./config/prometheus:/etc/prometheus
+      - ./data/prometheus:/prometheus
     networks:
       - rwa-platform-network
     restart: unless-stopped
@@ -512,7 +478,9 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
-      - grafana_data:/var/lib/grafana
+      - ./data/grafana:/var/lib/grafana
+      - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./config/grafana/provisioning/alerting:/etc/grafana/provisioning/alerting
     restart: unless-stopped
     deploy:
       resources:
@@ -524,10 +492,4 @@ networks:
   rwa-platform-network:
     driver: bridge
 
-volumes:
-  loki-data:
-  mongodb_data:
-  redis_data:
-  rabbitmq_data:
-  prometheus_data:
-  grafana_data:
+# No need for named volumes as we're using host directory mounts
