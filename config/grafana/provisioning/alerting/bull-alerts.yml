@@ -1,0 +1,168 @@
+groups:
+  - name: Bull Queue Alerts
+    folder: Bull
+    interval: 1m
+    rules:
+      - name: High Queue Size
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: bull_queue_size > 1000
+              legendFormat: '{{queue}}'
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: []
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              expression: A
+              type: math
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          description: Queue {{ $labels.queue }} has more than 1000 jobs
+        labels:
+          severity: warning
+
+      - name: High Error Rate
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: rate(bull_job_failures[5m]) > 0.1
+              legendFormat: '{{queue}}'
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: []
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              expression: A
+              type: math
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          description: Queue {{ $labels.queue }} has high error rate (>10% in 5m)
+        labels:
+          severity: critical
+
+      - name: Slow Job Processing
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: bull_processing_time > 30000
+              legendFormat: '{{queue}}'
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: []
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              expression: A
+              type: math
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          description: Queue {{ $labels.queue }} has jobs taking >30s to process
+        labels:
+          severity: warning
+
+      - name: Queue Stalled
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: (bull_active_jobs > 0) and (rate(bull_job_completions[5m]) == 0)
+              legendFormat: '{{queue}}'
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params: []
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              expression: A
+              type: math
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        annotations:
+          description: Queue {{ $labels.queue }} has active jobs but no completions in 5m
+        labels:
+          severity: critical
