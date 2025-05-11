@@ -1,0 +1,8 @@
+scheduler:
+  cron: "0 0 */6 * * *"  # Every 6 hours
+  retention: 360         # Keep for 15 days
+  timeout: 60           # Timeout in minutes
+target:
+  host: "mongodb"
+  port: 27017
+  database: "rwa-auth,rwa-chat"  # Both databases that need backup
