@@ -1,0 +1,118 @@
+scalar JSON
+
+# Document type
+type Document {
+  id: ID!
+  folderId: String!
+  name: String!
+  link: String!
+  ownerId: String!
+  ownerType: String!
+  creator: String!
+  parentId: String!
+  grandParentId: String!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+# Folder type
+type Folder {
+  id: ID!
+  name: String!
+  parentId: String!
+  ownerId: String!
+  ownerType: String!
+  creator: String!
+  grandParentId: String!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+enum ParentTypes {
+    business,
+    pool
+}
+# Create document input
+input CreateDocumentInput {
+  folderId: String!
+  name: String!
+  link: String!
+}
+
+# Update document input
+input UpdateDocumentInput {
+  id: ID!
+  updateData: UpdateDocumentDataInput!
+}
+
+input UpdateDocumentDataInput {
+  name: String
+  link: String
+}
+
+# Create folder input
+input CreateFolderInput {
+  name: String!
+  parentId: String!
+  type: ParentTypes!
+}
+
+# Update folder input
+input UpdateFolderInput {
+  id: ID!
+  updateData: UpdateFolderDataInput!
+}
+
+input UpdateFolderDataInput {
+  name: String!
+}
+
+# Get documents filter input
+input GetDocumentsFilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+# Get folders filter input
+input GetFoldersFilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+extend type Query {
+  # Get single document by id
+  getDocument(id: ID!): Document!
+
+  # Get documents list with filters
+  getDocuments(filter: GetDocumentsFilterInput): [Document!]!
+
+  # Get single folder by id
+  getFolder(id: ID!): Folder!
+
+  # Get folders list with filters
+  getFolders(filter: GetFoldersFilterInput): [Folder!]!
+}
+
+extend type Mutation {
+  # Create new document
+  createDocument(input: CreateDocumentInput!): Document!
+
+  # Update existing document
+  updateDocument(input: UpdateDocumentInput!): Document!
+
+  # Delete document
+  deleteDocument(id: ID!): ID!
+
+  # Create new folder
+  createFolder(input: CreateFolderInput!): Folder!
+
+  # Update existing folder
+  updateFolder(input: UpdateFolderInput!): Folder!
+
+  # Delete folder
+  deleteFolder(id: ID!): ID!
+}

@@ -1,0 +1,25 @@
+scalar JSON
+
+enum SortDirection {
+  asc
+  desc
+}
+
+input SortFieldInput {
+  field: String!
+  direction: SortDirection!
+}
+
+input PaginationInput {
+  limit: Int
+  offset: Int
+  sort: SortFieldInput
+}
+
+type Query {
+  _: Boolean
+}
+
+type Mutation {
+  _: Boolean
+}

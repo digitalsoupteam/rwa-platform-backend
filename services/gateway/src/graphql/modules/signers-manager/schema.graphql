@@ -1,0 +1,30 @@
+scalar JSON
+
+# Signature type
+type Signature {
+  signer: String!
+  signature: String!
+}
+
+# Signature task type
+type SignatureTask {
+  id: ID!
+  ownerId: String!
+  ownerType: String!
+  hash: String!
+  requiredSignatures: Int!
+  expired: Float!
+  completed: Boolean!
+  signatures: [Signature!]
+}
+
+
+# Get signature task input type
+input GetSignatureTaskInput {
+  taskId: String!
+}
+
+extend type Query {
+  # Get signature task
+  getSignatureTask(input: GetSignatureTaskInput!): SignatureTask!
+}

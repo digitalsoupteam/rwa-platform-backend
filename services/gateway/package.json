@@ -1,0 +1,41 @@
+{
+  "name": "@services/gateway",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "build": "bun build src/index.ts --outdir dist",
+    "start": "bun run dist/index.js",
+    "codegen": "graphql-codegen",
+    "codegen:watch": "graphql-codegen --watch",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "elysia": "latest",
+    "@elysiajs/eden": "latest",
+    "graphql": "^16.8.1",
+    "graphql-yoga": "^5.1.1",
+    "@elysiajs/graphql-yoga": "latest",
+    "ioredis": "5.6.1",
+    "@graphql-tools/schema": "^10.0.2",
+    "@graphql-tools/load-files": "^7.0.0",
+    "@graphql-tools/merge": "^9.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "@shared/monitoring": "workspace:*",
+    "@shared/errors": "workspace:*"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "@graphql-codegen/cli": "^5.0.2",
+    "@graphql-codegen/typescript": "^4.0.4",
+    "@graphql-codegen/typescript-resolvers": "^4.0.4",
+    "@types/jsonwebtoken": "^9.0.6",
+    "@types/node": "^20.11.24",
+    "@typescript-eslint/eslint-plugin": "^7.1.0",
+    "@typescript-eslint/parser": "^7.1.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.3.3"
+  }
+}

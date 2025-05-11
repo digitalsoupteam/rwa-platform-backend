@@ -1,0 +1,53 @@
+import type { 
+  AiAssistantClient, 
+  AuthClient, 
+  TestnetFaucetClient, 
+  RwaClient, 
+  FilesClient, 
+  SignersManagerClient,
+  DocumentsClient,
+  GalleryClient,
+  QuestionsClient,
+  FaqClient,
+  BlogClient,
+  CompanyClient,
+  PortfolioClient
+} from '../../clients/eden.clients';
+import { CacheService } from '../../services/cache.service';
+import { OwnershipService } from '../../services/ownership.service';
+import { ParentService } from '../../services/parent.service';
+
+
+export interface User {
+  id: string;
+  wallet: string;
+}
+
+export interface ServiceClients {
+  aiAssistantClient: AiAssistantClient;
+  authClient: AuthClient;
+  testnetFaucetClient: TestnetFaucetClient;
+  rwaClient: RwaClient;
+  filesClient: FilesClient;
+  signersManagerClient: SignersManagerClient;
+  documentsClient: DocumentsClient;
+  galleryClient: GalleryClient;
+  questionsClient: QuestionsClient;
+  faqClient: FaqClient;
+  blogClient: BlogClient;
+  portfolioClient: PortfolioClient;
+  companyClient: CompanyClient;
+}
+
+export interface Services {
+  cache: CacheService;
+  ownership: OwnershipService;
+  parent: ParentService;
+}
+
+export interface GraphQLContext {
+  clients: ServiceClients;
+  services: Services;
+  user: User | null;
+  token: string | null;
+}

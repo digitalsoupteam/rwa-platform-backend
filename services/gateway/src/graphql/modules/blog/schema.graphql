@@ -1,0 +1,120 @@
+scalar JSON
+
+# Blog type
+type Blog {
+  id: ID!
+  name: String!
+  ownerId: String!
+  ownerType: String!
+  creator: String!
+  parentId: String!
+  grandParentId: String!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+# Post type
+type Post {
+  id: ID!
+  blogId: String!
+  title: String!
+  content: String!
+  ownerId: String!
+  ownerType: String!
+  creator: String!
+  parentId: String!
+  grandParentId: String!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+
+# Create blog input
+input CreateBlogInput {
+  name: String!
+  parentId: String!
+  type: BlogParentTypes!
+}
+
+# Create post input
+input CreatePostInput {
+  blogId: String!
+  title: String!
+  content: String!
+}
+
+# Update post input
+input UpdatePostInput {
+  id: ID!
+  updateData: UpdatePostDataInput!
+}
+
+input UpdatePostDataInput {
+  title: String
+  content: String
+}
+
+# Get blogs filter input
+input GetBlogsFilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+# Get posts filter input
+input GetPostsFilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+# Update blog input
+input UpdateBlogInput {
+  id: ID!
+  updateData: UpdateBlogDataInput!
+}
+
+input UpdateBlogDataInput {
+  name: String!
+}
+
+enum BlogParentTypes {
+  business
+  pool
+}
+
+extend type Query {
+  # Get single blog by id
+  getBlog(id: ID!): Blog!
+
+  # Get blogs list with filters
+  getBlogs(filter: GetBlogsFilterInput): [Blog!]!
+
+  # Get single post by id
+  getPost(id: ID!): Post!
+
+  # Get posts list with filters
+  getPosts(filter: GetPostsFilterInput): [Post!]!
+}
+
+extend type Mutation {
+  # Create new blog
+  createBlog(input: CreateBlogInput!): Blog!
+
+  # Update blog
+  updateBlog(input: UpdateBlogInput!): Blog!
+
+  # Delete blog
+  deleteBlog(id: ID!): ID!
+
+  # Create new post
+  createPost(input: CreatePostInput!): Post!
+
+  # Update post
+  updatePost(input: UpdatePostInput!): Post!
+
+  # Delete post
+  deletePost(id: ID!): ID!
+}

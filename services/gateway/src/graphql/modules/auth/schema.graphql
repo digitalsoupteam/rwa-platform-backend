@@ -1,0 +1,38 @@
+scalar JSON
+
+
+type User {
+  userId: String!
+  wallet: String!
+  nonce: String!
+  createdAt: Int!
+  updatedAt: Int!
+}
+
+
+type AuthTokens {
+  userId: String!
+  wallet: String!
+  accessToken: String!
+  refreshToken: String!
+}
+
+
+input AuthenticateInput {
+  wallet: String!
+  signature: String!
+  timestamp: Int!
+}
+
+
+input RefreshTokenInput {
+  refreshToken: String!
+}
+
+extend type Mutation {
+  
+  authenticate(input: AuthenticateInput!): AuthTokens!
+  
+  
+  refreshToken(input: RefreshTokenInput!): AuthTokens!
+}

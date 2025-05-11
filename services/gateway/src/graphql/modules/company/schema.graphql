@@ -1,0 +1,131 @@
+scalar JSON
+
+# Company type
+type Company {
+  id: ID!
+  name: String!
+  description: String!
+  ownerId: String!
+  createdAt: Int!
+  updatedAt: Int!
+}
+
+# Types
+type Member {
+  id: ID!
+  userId: String!
+  name: String!
+  createdAt: Int!
+  updatedAt: Int!
+}
+
+type UserWithPermissions {
+  id: ID!
+  userId: String!
+  name: String!
+  permissions: [UserPermission!]!
+}
+
+type UserPermission {
+  id: ID!
+  permission: String!
+  entity: String
+}
+
+type Permission {
+  id: ID!
+  permission: String!
+  entity: String
+  createdAt: Int!
+  updatedAt: Int!
+}
+
+type CompanyWithDetails {
+  id: ID!
+  name: String!
+  description: String!
+  ownerId: String!
+  users: [UserWithPermissions!]!
+  createdAt: Int!
+  updatedAt: Int!
+}
+
+# Input types
+input CreateCompanyInput {
+  name: String!
+  description: String!
+}
+
+input UpdateCompanyInput {
+  id: ID!
+  updateData: UpdateCompanyDataInput!
+}
+
+input UpdateCompanyDataInput {
+  name: String
+  description: String
+}
+
+input AddMemberInput {
+  companyId: ID!
+  userId: String!
+  name: String!
+}
+
+input GrantPermissionInput {
+  companyId: ID!
+  memberId: ID!
+  userId: String!
+  permission: String!
+  entity: String!
+}
+
+input GetCompaniesInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+# Input for removing member
+input RemoveMemberInput {
+  id: ID!
+  companyId: ID!
+}
+
+# Input for revoking permission
+input RevokePermissionInput {
+  id: ID!
+  companyId: ID!
+}
+
+extend type Query {
+  # Get company by ID
+  getCompany(id: ID!): CompanyWithDetails!
+
+  # Get companies list
+  getCompanies(input: GetCompaniesInput): [Company!]!
+}
+
+extend type Mutation {
+  # Create new company
+  createCompany(input: CreateCompanyInput!): Company!
+
+  # Update company
+  updateCompany(input: UpdateCompanyInput!): Company!
+
+  # Delete company
+  deleteCompany(id: ID!): ID!
+
+  # Add member to company
+  addMember(input: AddMemberInput!): Member!
+
+  # Remove member from company
+  removeMember(input: RemoveMemberInput!): ID!
+
+  # Grant permission to member
+  grantPermission(input: GrantPermissionInput!): Permission!
+
+  # Revoke permission from member
+  revokePermission(input: RevokePermissionInput!): ID!
+}

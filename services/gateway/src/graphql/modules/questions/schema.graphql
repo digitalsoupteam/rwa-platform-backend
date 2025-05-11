@@ -1,0 +1,151 @@
+scalar JSON
+
+# Answer type
+type Answer {
+  text: String!
+  userId: String!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+# Topic type
+type Topic {
+  id: ID!
+  name: String!
+  ownerId: String!
+  ownerType: String!
+  creator: String!
+  parentId: String!
+  grandParentId: String!
+}
+
+# Question type
+type Question {
+  id: ID!
+  topicId: String!
+  text: String!
+  answer: Answer
+  answered: Boolean!
+  likesCount: Int!
+  ownerId: String!
+  ownerType: String!
+  creator: String!
+  parentId: String!
+  grandParentId: String!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+
+# Create topic input
+input CreateTopicInput {
+  name: String!
+  parentId: String!
+  type: ParentTypes!
+}
+
+# Update topic input
+input UpdateTopicInput {
+  id: ID!
+  updateData: UpdateTopicDataInput!
+}
+
+input UpdateTopicDataInput {
+  name: String!
+}
+
+# Create question input
+input CreateQuestionInput {
+  topicId: String!
+  text: String!
+}
+
+# Update question text input
+input UpdateQuestionTextInput {
+  id: ID!
+  updateData: UpdateQuestionTextDataInput!
+}
+
+input UpdateQuestionTextDataInput {
+  text: String!
+}
+
+# Create question answer input
+input CreateQuestionAnswerInput {
+  id: ID!
+  text: String!
+}
+
+# Update question answer input
+input UpdateQuestionAnswerInput {
+  id: ID!
+  updateData: UpdateQuestionAnswerDataInput!
+}
+
+input UpdateQuestionAnswerDataInput {
+  text: String!
+}
+
+# Get topics filter input
+input GetTopicsFilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+# Get questions filter input
+input GetQuestionsFilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+enum ParentTypes {
+  business
+  pool
+}
+
+extend type Query {
+  # Get single topic by id
+  getTopic(id: ID!): Topic!
+
+  # Get topics list with filters
+  getTopics(filter: GetTopicsFilterInput): [Topic!]!
+
+  # Get single question by id
+  getQuestion(id: ID!): Question!
+
+  # Get questions list with filters
+  getQuestions(filter: GetQuestionsFilterInput): [Question!]!
+}
+
+extend type Mutation {
+  # Create new topic
+  createTopic(input: CreateTopicInput!): Topic!
+
+  # Update topic
+  updateTopic(input: UpdateTopicInput!): Topic!
+
+  # Delete topic
+  deleteTopic(id: ID!): ID!
+
+  # Create new question
+  createQuestion(input: CreateQuestionInput!): Question!
+
+  # Update question text
+  updateQuestionText(input: UpdateQuestionTextInput!): Question!
+
+  # Create question answer
+  createQuestionAnswer(input: CreateQuestionAnswerInput!): Question!
+
+  # Update question answer
+  updateQuestionAnswer(input: UpdateQuestionAnswerInput!): Question!
+
+  # Delete question
+  deleteQuestion(id: ID!): ID!
+
+  # Toggle question like
+  toggleQuestionLike(questionId: ID!): Boolean!
+}

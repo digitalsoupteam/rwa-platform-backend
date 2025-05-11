@@ -1,0 +1,123 @@
+scalar JSON
+
+# FAQ Topic type
+type FaqTopic {
+  id: ID!
+  name: String!
+  ownerId: String!
+  ownerType: String!
+  creator: String!
+  parentId: String!
+  grandParentId: String!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+# FAQ Answer type
+type FaqAnswer {
+  id: ID!
+  topicId: String!
+  question: String!
+  answer: String!
+  order: Int!
+  ownerId: String!
+  ownerType: String!
+  creator: String!
+  parentId: String!
+  grandParentId: String!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+
+# Create topic input
+input CreateFaqTopicInput {
+  name: String!
+  parentId: String!
+  type: FaqParentTypes!
+}
+
+# Update topic input
+input UpdateFaqTopicInput {
+  id: ID!
+  updateData: UpdateFaqTopicDataInput!
+}
+
+input UpdateFaqTopicDataInput {
+  name: String!
+}
+
+# Create answer input
+input CreateFaqAnswerInput {
+  topicId: String!
+  question: String!
+  answer: String!
+  order: Int
+}
+
+# Update answer input
+input UpdateFaqAnswerInput {
+  id: ID!
+  updateData: UpdateFaqAnswerDataInput!
+}
+
+input UpdateFaqAnswerDataInput {
+  question: String
+  answer: String
+  order: Int
+}
+
+# Get topics filter input
+input GetFaqTopicsFilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+# Get answers filter input
+input GetFaqAnswersFilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+enum FaqParentTypes {
+  business
+  pool
+}
+
+extend type Query {
+  # Get single topic by id
+  getFaqTopic(id: ID!): FaqTopic!
+
+  # Get topics list with filters
+  getFaqTopics(filter: GetFaqTopicsFilterInput): [FaqTopic!]!
+
+  # Get single answer by id
+  getFaqAnswer(id: ID!): FaqAnswer!
+
+  # Get answers list with filters
+  getFaqAnswers(filter: GetFaqAnswersFilterInput): [FaqAnswer!]!
+}
+
+extend type Mutation {
+  # Create new topic
+  createFaqTopic(input: CreateFaqTopicInput!): FaqTopic!
+
+  # Update topic
+  updateFaqTopic(input: UpdateFaqTopicInput!): FaqTopic!
+
+  # Delete topic
+  deleteFaqTopic(id: ID!): ID!
+
+  # Create new answer
+  createFaqAnswer(input: CreateFaqAnswerInput!): FaqAnswer!
+
+  # Update answer
+  updateFaqAnswer(input: UpdateFaqAnswerInput!): FaqAnswer!
+
+  # Delete answer
+  deleteFaqAnswer(id: ID!): ID!
+}

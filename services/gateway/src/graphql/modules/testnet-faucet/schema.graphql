@@ -1,0 +1,45 @@
+scalar JSON
+
+# Faucet token type enum
+enum FaucetTokenType {
+  gas
+  hold
+}
+
+# Faucet request type
+type FaucetRequest {
+  id: ID!
+  userId: String!
+  wallet: String!
+  tokenType: FaucetTokenType!
+  amount: Float!
+  transactionHash: String!
+  createdAt: Float!
+}
+
+# Unlock time response type
+type UnlockTimeResponse {
+  gasUnlockTime: Float!
+  holdUnlockTime: Float!
+}
+
+# Request token input
+input RequestTokenInput {
+  amount: Float!
+}
+
+extend type Query {
+  # Get request history for user
+  getHistory(pagination: PaginationInput): [FaucetRequest!]!
+
+  # Get token unlock time for user
+  getUnlockTime: UnlockTimeResponse!
+}
+
+extend type Mutation {
+  # Request gas token
+  requestGas(input: RequestTokenInput!): FaucetRequest!
+
+  # Request hold token
+  requestHold(input: RequestTokenInput!): FaucetRequest!
+}

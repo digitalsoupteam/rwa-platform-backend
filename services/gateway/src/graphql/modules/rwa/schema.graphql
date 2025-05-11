@@ -1,0 +1,194 @@
+scalar JSON
+
+enum PoolType {
+  stable
+  speculation
+}
+
+enum BusinessOwnerType {
+  company
+  user
+}
+
+type StableSpecificFields {
+  fixedMintPrice: String
+}
+
+type SpeculativeSpecificFields {
+  rwaMultiplierIndex: Int
+  rwaMultiplier: Float
+  realHoldReserve: String
+  virtualHoldReserve: String
+  virtualRwaReserve: String
+  k: String
+  availableBonusAmount: String
+  expectedBonusAmount: String
+}
+
+type Business {
+  id: ID!
+  chainId: String!
+  name: String!
+  ownerId: String!
+  ownerType: String!
+  tokenAddress: String
+  description: String!
+  tags: [String!]!
+  riskScore: Float!
+  image: String
+  generationCount: Int!
+  approvalSignaturesTaskId: String
+  approvalSignaturesTaskExpired: Float
+  paused: Boolean!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+type Pool {
+  id: ID!
+  ownerId: String!
+  ownerType: String!
+  name: String!
+  type: PoolType!
+  businessId: String!
+  rwaAddress: String!
+  poolAddress: String
+  tokenId: String
+  holdToken: String
+  entryFeePercent: String
+  exitFeePercent: String
+  expectedHoldAmount: String
+  expectedRwaAmount: String
+  rewardPercent: String
+  entryPeriodExpired: Float
+  completionPeriodExpired: Float
+  expectedReturnAmount: String
+  accumulatedHoldAmount: String
+  accumulatedRwaAmount: String
+  isTargetReached: Boolean
+  isFullyReturned: Boolean
+  returnedAmount: String
+  paused: Boolean
+  allocatedHoldAmount: String
+  availableReturnBalance: String
+  awaitingRwaAmount: String
+  description: String
+  chainId: String!
+  tags: [String!]
+  riskScore: Float
+  approvalSignaturesTaskId: String
+  approvalSignaturesTaskExpired: Float
+  entryPeriodDuration: Int
+  completionPeriodDuration: Int
+  stableSpecificFields: StableSpecificFields
+  speculativeSpecificFields: SpeculativeSpecificFields
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+input CreateBusinessInput {
+  name: String!
+  ownerId: String!
+  ownerType: BusinessOwnerType!
+  chainId: String!
+  description: String
+  tags: [String!]
+}
+
+input EditBusinessInput {
+  id: ID!
+  updateData: EditBusinessDataInput!
+}
+
+input EditBusinessDataInput {
+  name: String
+  description: String
+  tags: [String!]
+  image: String
+}
+
+input CreatePoolInput {
+  name: String!
+  type: PoolType!
+  chainId: String!
+  businessId: String!
+  rwaAddress: String!
+  expectedHoldAmount: String
+  rewardPercent: String
+  description: String
+  entryPeriodDuration: Int
+  completionPeriodDuration: Int
+  speculativeSpecificFields: CreatePoolSpeculativeFieldsInput
+}
+
+input CreatePoolSpeculativeFieldsInput {
+  rwaMultiplierIndex: Int
+}
+
+input EditPoolInput {
+  id: ID!
+  updateData: EditPoolDataInput!
+}
+
+input EditPoolDataInput {
+  name: String
+  expectedHoldAmount: String
+  rewardPercent: String
+  description: String
+  tags: [String!]
+  riskScore: Float
+  entryPeriodDuration: Int
+  completionPeriodDuration: Int
+  speculativeSpecificFields: EditPoolSpeculativeFieldsInput
+}
+
+input EditPoolSpeculativeFieldsInput {
+  rwaMultiplierIndex: Int
+}
+
+input RequestBusinessApprovalSignaturesInput {
+  id: ID!
+  createRWAFee: String!
+}
+
+input RequestPoolApprovalSignaturesInput {
+  id: ID!
+  createPoolFeeRatio: String!
+}
+
+type ApprovalSignaturesResponse {
+  taskId: String!
+}
+
+input FilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+extend type Query {
+  # Business queries
+  getBusiness(id: ID!): Business!
+  getBusinesses(input: FilterInput!): [Business!]!
+
+  # Pool queries
+  getPool(id: ID!): Pool!
+  getPools(input: FilterInput!): [Pool!]!
+}
+
+extend type Mutation {
+  # Business mutations
+  createBusiness(input: CreateBusinessInput!): Business!
+  editBusiness(input: EditBusinessInput!): Business!
+  updateRiskScore(id: ID!): Business!
+  requestApprovalSignatures(input: RequestBusinessApprovalSignaturesInput!): ApprovalSignaturesResponse!
+  rejectApprovalSignatures(id: ID!): Boolean!
+
+  # Pool mutations
+  createPool(input: CreatePoolInput!): Pool!
+  editPool(input: EditPoolInput!): Pool!
+  updatePoolRiskScore(id: ID!): Pool!
+  requestPoolApprovalSignatures(input: RequestPoolApprovalSignaturesInput!): ApprovalSignaturesResponse!
+  rejectPoolApprovalSignatures(id: ID!): Boolean!
+}

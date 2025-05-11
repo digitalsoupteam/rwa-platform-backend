@@ -1,0 +1,124 @@
+scalar JSON
+
+# Gallery type
+type Gallery {
+  id: ID!
+  name: String!
+  parentId: String!
+  ownerId: String!
+  ownerType: String!
+  creator: String!
+  grandParentId: String!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+# Image type
+type Image {
+  id: ID!
+  galleryId: String!
+  name: String!
+  description: String!
+  link: String!
+  ownerId: String!
+  ownerType: String!
+  creator: String!
+  parentId: String!
+  grandParentId: String!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+
+# Create gallery input
+input CreateGalleryInput {
+  name: String!
+  parentId: String!
+  type: GalleryParentTypes!
+}
+
+# Update gallery input
+input UpdateGalleryInput {
+  id: ID!
+  updateData: UpdateGalleryDataInput!
+}
+
+input UpdateGalleryDataInput {
+  name: String!
+}
+
+# Create image input
+input CreateImageInput {
+  galleryId: String!
+  name: String!
+  description: String!
+  link: String!
+}
+
+# Update image input
+input UpdateImageInput {
+  id: ID!
+  updateData: UpdateImageDataInput!
+}
+
+input UpdateImageDataInput {
+  name: String
+  description: String
+  link: String
+}
+
+# Get galleries filter input
+input GetGalleriesFilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+# Get images filter input
+input GetImagesFilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+enum GalleryParentTypes {
+  business
+  pool
+  user
+}
+
+extend type Query {
+  # Get single gallery by id
+  getGallery(id: ID!): Gallery!
+
+  # Get galleries list with filters
+  getGalleries(filter: GetGalleriesFilterInput): [Gallery!]!
+
+  # Get single image by id
+  getImage(id: ID!): Image!
+
+  # Get images list with filters
+  getImages(filter: GetImagesFilterInput): [Image!]!
+}
+
+extend type Mutation {
+  # Create new gallery
+  createGallery(input: CreateGalleryInput!): Gallery!
+
+  # Update existing gallery
+  updateGallery(input: UpdateGalleryInput!): Gallery!
+
+  # Delete gallery
+  deleteGallery(id: ID!): ID!
+
+  # Create new image
+  createImage(input: CreateImageInput!): Image!
+
+  # Update existing image
+  updateImage(input: UpdateImageInput!): Image!
+
+  # Delete image
+  deleteImage(id: ID!): ID!
+}

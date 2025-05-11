@@ -1,0 +1,97 @@
+scalar JSON
+
+# Assistant context types
+enum AssistantContext {
+  # Assistant types
+  investor_base
+  product_owner_base
+  # Context data
+  popular_pools
+  user_portfolio
+  user_balance
+  market_data
+}
+
+# Message type
+type Message {
+  id: ID!
+  assistantId: ID!
+  text: String!
+}
+
+# Assistant type
+type Assistant {
+  id: ID!
+  userId: String!
+  name: String!
+  contextPreferences: [AssistantContext!]!
+}
+
+# IdResponse type
+type IdResponse {
+  id: ID!
+}
+
+# Input for creating assistant
+input CreateAssistantInput {
+  name: String!
+  contextPreferences: [AssistantContext!]!
+}
+
+# Input for updating assistant
+input UpdateAssistantInput {
+  id: ID!
+  name: String
+  contextPreferences: [AssistantContext!]
+}
+
+# Input for creating message
+input CreateMessageInput {
+  assistantId: ID!
+  text: String!
+}
+
+# Input for updating message
+input UpdateMessageInput {
+  id: ID!
+  text: String!
+}
+
+extend type Query {
+  # Get assistant by ID
+  getAssistant(id: ID!): Assistant!
+  
+  # Get user's assistants
+  getUserAssistants(
+    pagination: PaginationInput
+  ): [Assistant!]!
+
+  # Get message by ID
+  getMessage(id: ID!): Message!
+
+  # Get message history for assistant
+  getMessageHistory(
+    assistantId: ID!
+    pagination: PaginationInput
+  ): [Message!]!
+}
+
+extend type Mutation {
+  # Create assistant
+  createAssistant(input: CreateAssistantInput!): Assistant!
+  
+  # Update assistant
+  updateAssistant(input: UpdateAssistantInput!): Assistant!
+  
+  # Delete assistant
+  deleteAssistant(id: ID!): IdResponse!
+  
+  # Create message
+  createMessage(input: CreateMessageInput!): [Message!]!
+
+  # Update message
+  updateMessage(input: UpdateMessageInput!): Message!
+
+  # Delete message
+  deleteMessage(id: ID!): IdResponse!
+}
