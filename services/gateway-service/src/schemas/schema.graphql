@@ -1,5 +1,0 @@
-#import "./health.graphql"
-#import "./auth.graphql"
-#import "./chat.graphql"
-#import "./enterprise.graphql"
-#import "./kyc.graphql"
