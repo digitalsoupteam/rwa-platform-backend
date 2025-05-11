@@ -1,0 +1,14 @@
+{
+  "name": "@shared/rabbitmq",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@shared/errors": "workspace:*",
+    "@shared/monitoring": "workspace:*",
+    "amqplib": "latest"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}
