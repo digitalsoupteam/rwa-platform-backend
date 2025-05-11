@@ -1,24 +1,26 @@
 {
-  "name": "@rwa-platform/blockchain-scanner",
+  "name": "@services/blockchain-scanner",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "bun run --watch src/server.ts",
-    "build": "tsc && bun build ./src/server.ts --outdir ./dist --target bun",
-    "start": "bun run dist/server.js",
-    "clean": "rm -rf dist"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "build": "tsc"
   },
   "dependencies": {
-    "@elysiajs/cors": "^1.2.0",
-    "@elysiajs/swagger": "^1.2.0",
-    "@rwa-platform/shared": "workspace:*",
-    "amqplib": "^0.10.5",
-    "bull": "^4.16.5",
-    "elysia": "^1.2.12",
-    "ethers": "^6.13.5",
-    "mongoose": "^8.10.0"
+    "@elysiajs/eden": "latest",
+    "@shared/elysia-plugins": "workspace:*",
+    "@shared/monitoring": "workspace:*",
+    "@shared/errors": "workspace:*",
+    "@shared/rabbitmq": "workspace:*",
+    "amqplib": "latest",
+    "elysia": "latest",
+    "ethers": "latest",
+    "mongoose": "latest"
   },
   "devDependencies": {
+    "@types/amqplib": "latest",
     "bun-types": "latest"
   }
 }
