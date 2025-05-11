@@ -1,0 +1,15 @@
+{
+  "name": "@services/files",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {},
+  "dependencies": {
+    "elysia": "latest",
+    "mongoose": "latest",
+    "@shared/monitoring": "workspace:*",
+    "@shared/errors": "workspace:*"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}
