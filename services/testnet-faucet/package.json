@@ -1,0 +1,23 @@
+{
+  "name": "@services/testnet-faucet",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir dist",
+    "lint": "eslint src --ext .ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "elysia": "latest",
+    "@elysiajs/eden": "latest",
+    "mongoose": "latest",
+    "ethers": "latest",
+    "@shared/monitoring": "workspace:*",
+    "@shared/errors": "workspace:*"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}
