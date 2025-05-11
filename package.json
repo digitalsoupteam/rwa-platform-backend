@@ -1,36 +1,16 @@
 {
   "name": "rwa-platform",
-  "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "packages/*",
+    "shared/*",
     "services/*"
   ],
   "scripts": {
-    "dev": "docker compose up",
-    "build": "bun run build:shared && bun run build:services",
-    "build:shared": "cd packages/shared && bun run build",
-    "build:services": "bun run build:gateway && bun run build:auth && bun run build:notification && bun run build:trading && bun run build:market && bun run build:blockchain && bun run build:worker && bun run build:kyc && bun run build:ai && bun run build:risk",
-    "build:gateway": "cd services/gateway-service && bun run build",
-    "build:auth": "cd services/auth-service && bun run build", 
-    "build:notification": "cd services/notification-service && bun run build",
-    "build:trading": "cd services/trading-service && bun run build",
-    "build:market": "cd services/market-data-service && bun run build",
-    "build:blockchain": "cd services/blockchain-scanner && bun run build",
-    "build:worker": "cd services/worker-service && bun run build",
-    "build:kyc": "cd services/kyc-service && bun run build",
-    "build:ai": "cd services/ai-service && bun run build",
-    "build:risk": "cd services/risk-management && bun run build",
-    "clean": "rm -rf **/dist **/node_modules",
-    "docker:build": "docker compose build",
-    "docker:up": "docker compose up",
-    "docker:down": "docker compose down",
-
-    "format": "prettier --write \"{packages,services}/**/*.{js,jsx,ts,tsx,json,css,scss,md}\""
+    "infra:up": "docker compose -f infrastructure/docker/docker-compose.yml up -d mongodb rabbitmq redis",
+    "services:up": "docker compose -f infrastructure/docker/docker-compose.yml up -d gateway auth blockchain-scanner rwa testnet-faucet signer-1 signer-2 signer-3 signers-manager documents gallery blog faq questions files company ai-assistant portfolio",
+    "nginx:up": "docker compose -f infrastructure/docker/docker-compose.yml up -d nginx"
   },
   "devDependencies": {
-    "prettier": "^3.4.2",
-    "typescript": "^5.0.0",
-    "bun-types": "latest"
+    "@types/bun": "latest"
   }
 }
