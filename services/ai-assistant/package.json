@@ -1,0 +1,17 @@
+{
+  "name": "@services/ai-assistant",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {},
+  "dependencies": {
+    "@shared/monitoring": "workspace:*",
+    "@shared/errors": "workspace:*",
+    "@shared/openrouter": "workspace:*",
+    "elysia": "latest",
+    "mongoose": "latest",
+    "@elysiajs/eden": "latest"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}
