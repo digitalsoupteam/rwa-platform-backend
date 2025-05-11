@@ -1,0 +1,15 @@
+{
+  "name": "@shared/blockchain-daemon",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@shared/errors": "workspace:*",
+    "@shared/monitoring": "workspace:*",
+    "@shared/rabbitmq": "workspace:*",
+    "amqplib": "latest"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}
