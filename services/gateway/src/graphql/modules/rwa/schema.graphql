@@ -1,28 +1,8 @@
 scalar JSON
 
-enum PoolType {
-  stable
-  speculation
-}
-
 enum BusinessOwnerType {
   company
   user
-}
-
-type StableSpecificFields {
-  fixedMintPrice: String
-}
-
-type SpeculativeSpecificFields {
-  rwaMultiplierIndex: Int
-  rwaMultiplier: Float
-  realHoldReserve: String
-  virtualHoldReserve: String
-  virtualRwaReserve: String
-  k: String
-  availableBonusAmount: String
-  expectedBonusAmount: String
 }
 
 type Business {
@@ -31,12 +11,12 @@ type Business {
   name: String!
   ownerId: String!
   ownerType: String!
+  ownerWallet: String!
   tokenAddress: String
   description: String!
   tags: [String!]!
   riskScore: Float!
   image: String
-  generationCount: Int!
   approvalSignaturesTaskId: String
   approvalSignaturesTaskExpired: Float
   paused: Boolean!
@@ -48,42 +28,83 @@ type Pool {
   id: ID!
   ownerId: String!
   ownerType: String!
+  ownerWallet: String
   name: String!
-  type: PoolType!
   businessId: String!
+  description: String!
+  chainId: String!
+  tags: [String!]!
+  riskScore: Float!
+
+  # Contract Addresses
   rwaAddress: String!
   poolAddress: String
-  tokenId: String
   holdToken: String
+  tokenId: String
+
+  # Pool Configuration
   entryFeePercent: String
   exitFeePercent: String
-  expectedHoldAmount: String
-  expectedRwaAmount: String
-  rewardPercent: String
-  entryPeriodExpired: Float
-  completionPeriodExpired: Float
-  expectedReturnAmount: String
-  accumulatedHoldAmount: String
-  accumulatedRwaAmount: String
-  isTargetReached: Boolean
-  isFullyReturned: Boolean
-  returnedAmount: String
-  paused: Boolean
-  allocatedHoldAmount: String
-  availableReturnBalance: String
-  awaitingRwaAmount: String
-  description: String
-  chainId: String!
-  tags: [String!]
-  riskScore: Float
+  expectedHoldAmount: String!
+  expectedRwaAmount: String!
+  expectedBonusAmount: String!
+  rewardPercent: String!
+  priceImpactPercent: String!
+  liquidityCoefficient: String!
+
+  # Pool Flags
+  awaitCompletionExpired: Boolean!
+  floatingOutTranchesTimestamps: Boolean!
+  fixedSell: Boolean!
+  allowEntryBurn: Boolean!
+  paused: Boolean!
+
+  # Time Periods
+  entryPeriodStart: Float!
+  entryPeriodExpired: Float!
+  completionPeriodExpired: Float!
+  floatingTimestampOffset: Float!
+  fullReturnTimestamp: Float
+
+  # Pool State
+  k: String!
+  realHoldReserve: String!
+  virtualHoldReserve: String!
+  virtualRwaReserve: String!
+  isTargetReached: Boolean!
+  isFullyReturned: Boolean!
+
+  # Amounts
+  totalClaimedAmount: String!
+  totalReturnedAmount: String!
+  awaitingBonusAmount: String!
+  awaitingRwaAmount: String!
+  outgoingTranchesBalance: String!
+
+  # Tranches
+  outgoingTranches: [OutgoingTranche!]!
+  incomingTranches: [IncomingTranche!]!
+  lastCompletedIncomingTranche: Int!
+
+  # Approval
   approvalSignaturesTaskId: String
   approvalSignaturesTaskExpired: Float
-  entryPeriodDuration: Int
-  completionPeriodDuration: Int
-  stableSpecificFields: StableSpecificFields
-  speculativeSpecificFields: SpeculativeSpecificFields
+
+  # Timestamps
   createdAt: Float!
   updatedAt: Float!
+}
+
+type OutgoingTranche {
+  amount: String!
+  timestamp: Float!
+  executedAmount: String!
+}
+
+type IncomingTranche {
+  amount: String!
+  expiredAt: Float!
+  returnedAmount: String!
 }
 
 input CreateBusinessInput {
@@ -108,21 +129,12 @@ input EditBusinessDataInput {
 }
 
 input CreatePoolInput {
+  ownerId: String!
+  ownerType: String!
   name: String!
-  type: PoolType!
-  chainId: String!
   businessId: String!
+  chainId: String!
   rwaAddress: String!
-  expectedHoldAmount: String
-  rewardPercent: String
-  description: String
-  entryPeriodDuration: Int
-  completionPeriodDuration: Int
-  speculativeSpecificFields: CreatePoolSpeculativeFieldsInput
-}
-
-input CreatePoolSpeculativeFieldsInput {
-  rwaMultiplierIndex: Int
 }
 
 input EditPoolInput {
@@ -132,27 +144,43 @@ input EditPoolInput {
 
 input EditPoolDataInput {
   name: String
-  expectedHoldAmount: String
-  rewardPercent: String
   description: String
   tags: [String!]
-  riskScore: Float
-  entryPeriodDuration: Int
-  completionPeriodDuration: Int
-  speculativeSpecificFields: EditPoolSpeculativeFieldsInput
+  expectedHoldAmount: String
+  expectedRwaAmount: String
+  rewardPercent: String
+  priceImpactPercent: String
+  outgoingTranches: [OutgoingTrancheInput!]
+  incomingTranches: [IncomingTrancheInput!]
+  awaitCompletionExpired: Boolean
+  floatingOutTranchesTimestamps: Boolean
+  fixedSell: Boolean
+  allowEntryBurn: Boolean
 }
 
-input EditPoolSpeculativeFieldsInput {
-  rwaMultiplierIndex: Int
+input OutgoingTrancheInput {
+  amount: String!
+  timestamp: Float!
+  executedAmount: String!
+}
+
+input IncomingTrancheInput {
+  amount: String!
+  expiredAt: Float!
+  returnedAmount: String!
 }
 
 input RequestBusinessApprovalSignaturesInput {
   id: ID!
+  ownerWallet: String!
+  deployerWallet: String!
   createRWAFee: String!
 }
 
 input RequestPoolApprovalSignaturesInput {
   id: ID!
+  ownerWallet: String!
+  deployerWallet: String!
   createPoolFeeRatio: String!
 }
 
@@ -181,9 +209,9 @@ extend type Mutation {
   # Business mutations
   createBusiness(input: CreateBusinessInput!): Business!
   editBusiness(input: EditBusinessInput!): Business!
-  updateRiskScore(id: ID!): Business!
-  requestApprovalSignatures(input: RequestBusinessApprovalSignaturesInput!): ApprovalSignaturesResponse!
-  rejectApprovalSignatures(id: ID!): Boolean!
+  updateBusinessRiskScore(id: ID!): Business!
+  requestBusinessApprovalSignatures(input: RequestBusinessApprovalSignaturesInput!): ApprovalSignaturesResponse!
+  rejectBusinessApprovalSignatures(id: ID!): Boolean!
 
   # Pool mutations
   createPool(input: CreatePoolInput!): Pool!

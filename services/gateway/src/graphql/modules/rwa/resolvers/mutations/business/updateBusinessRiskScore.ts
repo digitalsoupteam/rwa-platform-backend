@@ -2,7 +2,7 @@ import { AuthenticationError } from '@shared/errors/app-errors';
 import { MutationResolvers } from '../../../../../generated/types';
 import { logger } from '@shared/monitoring/src/logger';
 
-export const updateRiskScore: MutationResolvers['updateRiskScore'] = async (
+export const updateBusinessRiskScore: MutationResolvers['updateBusinessRiskScore'] = async (
   _parent,
   { id },
   { services, clients, user }
@@ -49,12 +49,12 @@ export const updateRiskScore: MutationResolvers['updateRiskScore'] = async (
     name: data.name,
     ownerId: data.ownerId,
     ownerType: data.ownerType,
+    ownerWallet: data.ownerWallet,
     tokenAddress: data.tokenAddress,
     description: data.description,
     tags: data.tags,
     riskScore: data.riskScore,
     image: data.image,
-    generationCount: data.generationCount,
     approvalSignaturesTaskId: data.approvalSignaturesTaskId,
     approvalSignaturesTaskExpired: data.approvalSignaturesTaskExpired,
     paused: data.paused,

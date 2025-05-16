@@ -2,7 +2,7 @@ import { AuthenticationError } from '@shared/errors/app-errors';
 import { MutationResolvers } from '../../../../../generated/types';
 import { logger } from '@shared/monitoring/src/logger';
 
-export const requestApprovalSignatures: MutationResolvers['requestApprovalSignatures'] = async (
+export const requestBusinessApprovalSignatures: MutationResolvers['requestBusinessApprovalSignatures'] = async (
   _parent,
   { input },
   { services, clients, user }
@@ -32,16 +32,10 @@ export const requestApprovalSignatures: MutationResolvers['requestApprovalSignat
     permission: 'deploy'
   });
 
-  const ownerWallet = await services.ownership.getOwnerWallet({
-    user,
-    ownerId: business.ownerId,
-    ownerType: business.ownerType,
-  })
-
   const response = await clients.rwaClient.requestBusinessApprovalSignatures.post({
     id: input.id,
-    ownerWallet,
-    deployerWallet: user.wallet,
+    ownerWallet: input.ownerWallet,
+    deployerWallet: input.deployerWallet,
     createRWAFee: input.createRWAFee,
   });
 

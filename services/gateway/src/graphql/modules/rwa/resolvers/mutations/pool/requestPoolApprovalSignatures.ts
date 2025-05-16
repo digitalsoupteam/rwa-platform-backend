@@ -39,9 +39,9 @@ export const requestPoolApprovalSignatures: MutationResolvers['requestPoolApprov
 
   const response = await clients.rwaClient.requestPoolApprovalSignatures.post({
     id: input.id,
-    ownerWallet,
-    deployerWallet: user.wallet,
-    createPoolFeeRatio: input.createPoolFeeRatio,
+    ownerWallet: input.ownerWallet,
+    deployerWallet: input.deployerWallet,
+    createPoolFeeRatio: input.createPoolFeeRatio
   });
 
   if (response.error) {

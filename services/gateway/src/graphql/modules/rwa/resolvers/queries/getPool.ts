@@ -23,40 +23,69 @@ export const getPool: QueryResolvers['getPool'] = async (
     id: pool.id,
     ownerId: pool.ownerId,
     ownerType: pool.ownerType,
+    ownerWallet: pool.ownerWallet,
     name: pool.name,
-    type: pool.type,
     businessId: pool.businessId,
-    rwaAddress: pool.rwaAddress,
-    poolAddress: pool.poolAddress,
-    tokenId: pool.tokenId,
-    holdToken: pool.holdToken,
-    entryFeePercent: pool.entryFeePercent,
-    exitFeePercent: pool.exitFeePercent,
-    expectedHoldAmount: pool.expectedHoldAmount,
-    expectedRwaAmount: pool.expectedRwaAmount,
-    rewardPercent: pool.rewardPercent,
-    entryPeriodExpired: pool.entryPeriodExpired,
-    completionPeriodExpired: pool.completionPeriodExpired,
-    expectedReturnAmount: pool.expectedReturnAmount,
-    accumulatedHoldAmount: pool.accumulatedHoldAmount,
-    accumulatedRwaAmount: pool.accumulatedRwaAmount,
-    isTargetReached: pool.isTargetReached,
-    isFullyReturned: pool.isFullyReturned,
-    returnedAmount: pool.returnedAmount,
-    paused: pool.paused,
-    allocatedHoldAmount: pool.allocatedHoldAmount,
-    availableReturnBalance: pool.availableReturnBalance,
-    awaitingRwaAmount: pool.awaitingRwaAmount,
     description: pool.description,
     chainId: pool.chainId,
     tags: pool.tags,
     riskScore: pool.riskScore,
+
+    // Contract Addresses
+    rwaAddress: pool.rwaAddress,
+    poolAddress: pool.poolAddress,
+    holdToken: pool.holdToken,
+    tokenId: pool.tokenId,
+
+    // Pool Configuration
+    entryFeePercent: pool.entryFeePercent,
+    exitFeePercent: pool.exitFeePercent,
+    expectedHoldAmount: pool.expectedHoldAmount,
+    expectedRwaAmount: pool.expectedRwaAmount,
+    expectedBonusAmount: pool.expectedBonusAmount,
+    rewardPercent: pool.rewardPercent,
+    priceImpactPercent: pool.priceImpactPercent,
+    liquidityCoefficient: pool.liquidityCoefficient,
+
+    // Pool Flags
+    awaitCompletionExpired: pool.awaitCompletionExpired,
+    floatingOutTranchesTimestamps: pool.floatingOutTranchesTimestamps,
+    fixedSell: pool.fixedSell,
+    allowEntryBurn: pool.allowEntryBurn,
+    paused: pool.paused,
+
+    // Time Periods
+    entryPeriodStart: pool.entryPeriodStart,
+    entryPeriodExpired: pool.entryPeriodExpired,
+    completionPeriodExpired: pool.completionPeriodExpired,
+    floatingTimestampOffset: pool.floatingTimestampOffset,
+    fullReturnTimestamp: pool.fullReturnTimestamp,
+
+    // Pool State
+    k: pool.k,
+    realHoldReserve: pool.realHoldReserve,
+    virtualHoldReserve: pool.virtualHoldReserve,
+    virtualRwaReserve: pool.virtualRwaReserve,
+    isTargetReached: pool.isTargetReached,
+    isFullyReturned: pool.isFullyReturned,
+
+    // Amounts
+    totalClaimedAmount: pool.totalClaimedAmount,
+    totalReturnedAmount: pool.totalReturnedAmount,
+    awaitingBonusAmount: pool.awaitingBonusAmount,
+    awaitingRwaAmount: pool.awaitingRwaAmount,
+    outgoingTranchesBalance: pool.outgoingTranchesBalance,
+
+    // Tranches
+    outgoingTranches: pool.outgoingTranches,
+    incomingTranches: pool.incomingTranches,
+    lastCompletedIncomingTranche: pool.lastCompletedIncomingTranche,
+
+    // Approval
     approvalSignaturesTaskId: pool.approvalSignaturesTaskId,
     approvalSignaturesTaskExpired: pool.approvalSignaturesTaskExpired,
-    entryPeriodDuration: pool.entryPeriodDuration,
-    completionPeriodDuration: pool.completionPeriodDuration,
-    stableSpecificFields: pool.stableSpecificFields,
-    speculativeSpecificFields: pool.speculativeSpecificFields,
+
+    // Timestamps
     createdAt: pool.createdAt,
     updatedAt: pool.updatedAt,
   };

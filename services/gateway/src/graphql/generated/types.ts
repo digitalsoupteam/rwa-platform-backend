@@ -91,12 +91,12 @@ export type Business = {
   chainId: Scalars['String']['output'];
   createdAt: Scalars['Float']['output'];
   description: Scalars['String']['output'];
-  generationCount: Scalars['Int']['output'];
   id: Scalars['ID']['output'];
   image?: Maybe<Scalars['String']['output']>;
   name: Scalars['String']['output'];
   ownerId: Scalars['String']['output'];
   ownerType: Scalars['String']['output'];
+  ownerWallet: Scalars['String']['output'];
   paused: Scalars['Boolean']['output'];
   riskScore: Scalars['Float']['output'];
   tags: Array<Scalars['String']['output']>;
@@ -200,19 +200,10 @@ export type CreateMessageInput = {
 export type CreatePoolInput = {
   businessId: Scalars['String']['input'];
   chainId: Scalars['String']['input'];
-  completionPeriodDuration?: InputMaybe<Scalars['Int']['input']>;
-  description?: InputMaybe<Scalars['String']['input']>;
-  entryPeriodDuration?: InputMaybe<Scalars['Int']['input']>;
-  expectedHoldAmount?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
-  rewardPercent?: InputMaybe<Scalars['String']['input']>;
+  ownerId: Scalars['String']['input'];
+  ownerType: Scalars['String']['input'];
   rwaAddress: Scalars['String']['input'];
-  speculativeSpecificFields?: InputMaybe<CreatePoolSpeculativeFieldsInput>;
-  type: PoolType;
-};
-
-export type CreatePoolSpeculativeFieldsInput = {
-  rwaMultiplierIndex?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type CreatePostInput = {
@@ -265,24 +256,24 @@ export type EditBusinessInput = {
 };
 
 export type EditPoolDataInput = {
-  completionPeriodDuration?: InputMaybe<Scalars['Int']['input']>;
+  allowEntryBurn?: InputMaybe<Scalars['Boolean']['input']>;
+  awaitCompletionExpired?: InputMaybe<Scalars['Boolean']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
-  entryPeriodDuration?: InputMaybe<Scalars['Int']['input']>;
   expectedHoldAmount?: InputMaybe<Scalars['String']['input']>;
+  expectedRwaAmount?: InputMaybe<Scalars['String']['input']>;
+  fixedSell?: InputMaybe<Scalars['Boolean']['input']>;
+  floatingOutTranchesTimestamps?: InputMaybe<Scalars['Boolean']['input']>;
+  incomingTranches?: InputMaybe<Array<IncomingTrancheInput>>;
   name?: InputMaybe<Scalars['String']['input']>;
+  outgoingTranches?: InputMaybe<Array<OutgoingTrancheInput>>;
+  priceImpactPercent?: InputMaybe<Scalars['String']['input']>;
   rewardPercent?: InputMaybe<Scalars['String']['input']>;
-  riskScore?: InputMaybe<Scalars['Float']['input']>;
-  speculativeSpecificFields?: InputMaybe<EditPoolSpeculativeFieldsInput>;
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
 export type EditPoolInput = {
   id: Scalars['ID']['input'];
   updateData: EditPoolDataInput;
-};
-
-export type EditPoolSpeculativeFieldsInput = {
-  rwaMultiplierIndex?: InputMaybe<Scalars['Int']['input']>;
 };
 
 export type FaqAnswer = {
@@ -497,6 +488,19 @@ export type Image = {
   updatedAt: Scalars['Float']['output'];
 };
 
+export type IncomingTranche = {
+  __typename?: 'IncomingTranche';
+  amount: Scalars['String']['output'];
+  expiredAt: Scalars['Float']['output'];
+  returnedAmount: Scalars['String']['output'];
+};
+
+export type IncomingTrancheInput = {
+  amount: Scalars['String']['input'];
+  expiredAt: Scalars['Float']['input'];
+  returnedAmount: Scalars['String']['input'];
+};
+
 export type Member = {
   __typename?: 'Member';
   createdAt: Scalars['Int']['output'];
@@ -551,10 +555,10 @@ export type Mutation = {
   editPool: Pool;
   grantPermission: Permission;
   refreshToken: AuthTokens;
-  rejectApprovalSignatures: Scalars['Boolean']['output'];
+  rejectBusinessApprovalSignatures: Scalars['Boolean']['output'];
   rejectPoolApprovalSignatures: Scalars['Boolean']['output'];
   removeMember: Scalars['ID']['output'];
-  requestApprovalSignatures: ApprovalSignaturesResponse;
+  requestBusinessApprovalSignatures: ApprovalSignaturesResponse;
   requestGas: FaucetRequest;
   requestHold: FaucetRequest;
   requestPoolApprovalSignatures: ApprovalSignaturesResponse;
@@ -562,6 +566,7 @@ export type Mutation = {
   toggleQuestionLike: Scalars['Boolean']['output'];
   updateAssistant: Assistant;
   updateBlog: Blog;
+  updateBusinessRiskScore: Business;
   updateCompany: Company;
   updateDocument: Document;
   updateFaqAnswer: FaqAnswer;
@@ -574,7 +579,6 @@ export type Mutation = {
   updatePost: Post;
   updateQuestionAnswer: Question;
   updateQuestionText: Question;
-  updateRiskScore: Business;
   updateTopic: Topic;
 };
 
@@ -754,7 +758,7 @@ export type MutationRefreshTokenArgs = {
 };
 
 
-export type MutationRejectApprovalSignaturesArgs = {
+export type MutationRejectBusinessApprovalSignaturesArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -769,7 +773,7 @@ export type MutationRemoveMemberArgs = {
 };
 
 
-export type MutationRequestApprovalSignaturesArgs = {
+export type MutationRequestBusinessApprovalSignaturesArgs = {
   input: RequestBusinessApprovalSignaturesInput;
 };
 
@@ -806,6 +810,11 @@ export type MutationUpdateAssistantArgs = {
 
 export type MutationUpdateBlogArgs = {
   input: UpdateBlogInput;
+};
+
+
+export type MutationUpdateBusinessRiskScoreArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -869,13 +878,21 @@ export type MutationUpdateQuestionTextArgs = {
 };
 
 
-export type MutationUpdateRiskScoreArgs = {
-  id: Scalars['ID']['input'];
-};
-
-
 export type MutationUpdateTopicArgs = {
   input: UpdateTopicInput;
+};
+
+export type OutgoingTranche = {
+  __typename?: 'OutgoingTranche';
+  amount: Scalars['String']['output'];
+  executedAmount: Scalars['String']['output'];
+  timestamp: Scalars['Float']['output'];
+};
+
+export type OutgoingTrancheInput = {
+  amount: Scalars['String']['input'];
+  executedAmount: Scalars['String']['input'];
+  timestamp: Scalars['Float']['input'];
 };
 
 export type PaginationInput = {
@@ -899,50 +916,57 @@ export type Permission = {
 
 export type Pool = {
   __typename?: 'Pool';
-  accumulatedHoldAmount?: Maybe<Scalars['String']['output']>;
-  accumulatedRwaAmount?: Maybe<Scalars['String']['output']>;
-  allocatedHoldAmount?: Maybe<Scalars['String']['output']>;
+  allowEntryBurn: Scalars['Boolean']['output'];
   approvalSignaturesTaskExpired?: Maybe<Scalars['Float']['output']>;
   approvalSignaturesTaskId?: Maybe<Scalars['String']['output']>;
-  availableReturnBalance?: Maybe<Scalars['String']['output']>;
-  awaitingRwaAmount?: Maybe<Scalars['String']['output']>;
+  awaitCompletionExpired: Scalars['Boolean']['output'];
+  awaitingBonusAmount: Scalars['String']['output'];
+  awaitingRwaAmount: Scalars['String']['output'];
   businessId: Scalars['String']['output'];
   chainId: Scalars['String']['output'];
-  completionPeriodDuration?: Maybe<Scalars['Int']['output']>;
-  completionPeriodExpired?: Maybe<Scalars['Float']['output']>;
+  completionPeriodExpired: Scalars['Float']['output'];
   createdAt: Scalars['Float']['output'];
-  description?: Maybe<Scalars['String']['output']>;
+  description: Scalars['String']['output'];
   entryFeePercent?: Maybe<Scalars['String']['output']>;
-  entryPeriodDuration?: Maybe<Scalars['Int']['output']>;
-  entryPeriodExpired?: Maybe<Scalars['Float']['output']>;
+  entryPeriodExpired: Scalars['Float']['output'];
+  entryPeriodStart: Scalars['Float']['output'];
   exitFeePercent?: Maybe<Scalars['String']['output']>;
-  expectedHoldAmount?: Maybe<Scalars['String']['output']>;
-  expectedReturnAmount?: Maybe<Scalars['String']['output']>;
-  expectedRwaAmount?: Maybe<Scalars['String']['output']>;
+  expectedBonusAmount: Scalars['String']['output'];
+  expectedHoldAmount: Scalars['String']['output'];
+  expectedRwaAmount: Scalars['String']['output'];
+  fixedSell: Scalars['Boolean']['output'];
+  floatingOutTranchesTimestamps: Scalars['Boolean']['output'];
+  floatingTimestampOffset: Scalars['Float']['output'];
+  fullReturnTimestamp?: Maybe<Scalars['Float']['output']>;
   holdToken?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
-  isFullyReturned?: Maybe<Scalars['Boolean']['output']>;
-  isTargetReached?: Maybe<Scalars['Boolean']['output']>;
+  incomingTranches: Array<IncomingTranche>;
+  isFullyReturned: Scalars['Boolean']['output'];
+  isTargetReached: Scalars['Boolean']['output'];
+  k: Scalars['String']['output'];
+  lastCompletedIncomingTranche: Scalars['Int']['output'];
+  liquidityCoefficient: Scalars['String']['output'];
   name: Scalars['String']['output'];
+  outgoingTranches: Array<OutgoingTranche>;
+  outgoingTranchesBalance: Scalars['String']['output'];
   ownerId: Scalars['String']['output'];
   ownerType: Scalars['String']['output'];
-  paused?: Maybe<Scalars['Boolean']['output']>;
+  ownerWallet?: Maybe<Scalars['String']['output']>;
+  paused: Scalars['Boolean']['output'];
   poolAddress?: Maybe<Scalars['String']['output']>;
-  returnedAmount?: Maybe<Scalars['String']['output']>;
-  rewardPercent?: Maybe<Scalars['String']['output']>;
-  riskScore?: Maybe<Scalars['Float']['output']>;
+  priceImpactPercent: Scalars['String']['output'];
+  realHoldReserve: Scalars['String']['output'];
+  rewardPercent: Scalars['String']['output'];
+  riskScore: Scalars['Float']['output'];
   rwaAddress: Scalars['String']['output'];
-  speculativeSpecificFields?: Maybe<SpeculativeSpecificFields>;
-  stableSpecificFields?: Maybe<StableSpecificFields>;
-  tags?: Maybe<Array<Scalars['String']['output']>>;
+  tags: Array<Scalars['String']['output']>;
   tokenId?: Maybe<Scalars['String']['output']>;
-  type: PoolType;
+  totalClaimedAmount: Scalars['String']['output'];
+  totalReturnedAmount: Scalars['String']['output'];
   updatedAt: Scalars['Float']['output'];
+  virtualHoldReserve: Scalars['String']['output'];
+  virtualRwaReserve: Scalars['String']['output'];
 };
-
-export type PoolType =
-  | 'speculation'
-  | 'stable';
 
 export type Post = {
   __typename?: 'Post';
@@ -1198,12 +1222,16 @@ export type RemoveMemberInput = {
 
 export type RequestBusinessApprovalSignaturesInput = {
   createRWAFee: Scalars['String']['input'];
+  deployerWallet: Scalars['String']['input'];
   id: Scalars['ID']['input'];
+  ownerWallet: Scalars['String']['input'];
 };
 
 export type RequestPoolApprovalSignaturesInput = {
   createPoolFeeRatio: Scalars['String']['input'];
+  deployerWallet: Scalars['String']['input'];
   id: Scalars['ID']['input'];
+  ownerWallet: Scalars['String']['input'];
 };
 
 export type RequestTokenInput = {
@@ -1240,23 +1268,6 @@ export type SortDirection =
 export type SortFieldInput = {
   direction: SortDirection;
   field: Scalars['String']['input'];
-};
-
-export type SpeculativeSpecificFields = {
-  __typename?: 'SpeculativeSpecificFields';
-  availableBonusAmount?: Maybe<Scalars['String']['output']>;
-  expectedBonusAmount?: Maybe<Scalars['String']['output']>;
-  k?: Maybe<Scalars['String']['output']>;
-  realHoldReserve?: Maybe<Scalars['String']['output']>;
-  rwaMultiplier?: Maybe<Scalars['Float']['output']>;
-  rwaMultiplierIndex?: Maybe<Scalars['Int']['output']>;
-  virtualHoldReserve?: Maybe<Scalars['String']['output']>;
-  virtualRwaReserve?: Maybe<Scalars['String']['output']>;
-};
-
-export type StableSpecificFields = {
-  __typename?: 'StableSpecificFields';
-  fixedMintPrice?: Maybe<Scalars['String']['output']>;
 };
 
 export type TokenBalance = {
@@ -1551,7 +1562,6 @@ export type ResolversTypes = ResolversObject<{
   CreateImageInput: CreateImageInput;
   CreateMessageInput: CreateMessageInput;
   CreatePoolInput: CreatePoolInput;
-  CreatePoolSpeculativeFieldsInput: CreatePoolSpeculativeFieldsInput;
   CreatePostInput: CreatePostInput;
   CreateQuestionAnswerInput: CreateQuestionAnswerInput;
   CreateQuestionInput: CreateQuestionInput;
@@ -1561,7 +1571,6 @@ export type ResolversTypes = ResolversObject<{
   EditBusinessInput: EditBusinessInput;
   EditPoolDataInput: EditPoolDataInput;
   EditPoolInput: EditPoolInput;
-  EditPoolSpeculativeFieldsInput: EditPoolSpeculativeFieldsInput;
   FaqAnswer: ResolverTypeWrapper<FaqAnswer>;
   FaqParentTypes: FaqParentTypes;
   FaqTopic: ResolverTypeWrapper<FaqTopic>;
@@ -1590,16 +1599,19 @@ export type ResolversTypes = ResolversObject<{
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   IdResponse: ResolverTypeWrapper<IdResponse>;
   Image: ResolverTypeWrapper<Image>;
+  IncomingTranche: ResolverTypeWrapper<IncomingTranche>;
+  IncomingTrancheInput: IncomingTrancheInput;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   JSON: ResolverTypeWrapper<Scalars['JSON']['output']>;
   Member: ResolverTypeWrapper<Member>;
   Message: ResolverTypeWrapper<Message>;
   Mutation: ResolverTypeWrapper<{}>;
+  OutgoingTranche: ResolverTypeWrapper<OutgoingTranche>;
+  OutgoingTrancheInput: OutgoingTrancheInput;
   PaginationInput: PaginationInput;
   ParentTypes: ParentTypes;
   Permission: ResolverTypeWrapper<Permission>;
   Pool: ResolverTypeWrapper<Pool>;
-  PoolType: PoolType;
   Post: ResolverTypeWrapper<Post>;
   Query: ResolverTypeWrapper<{}>;
   Question: ResolverTypeWrapper<Question>;
@@ -1613,8 +1625,6 @@ export type ResolversTypes = ResolversObject<{
   SignatureTask: ResolverTypeWrapper<SignatureTask>;
   SortDirection: SortDirection;
   SortFieldInput: SortFieldInput;
-  SpeculativeSpecificFields: ResolverTypeWrapper<SpeculativeSpecificFields>;
-  StableSpecificFields: ResolverTypeWrapper<StableSpecificFields>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   TokenBalance: ResolverTypeWrapper<TokenBalance>;
   Topic: ResolverTypeWrapper<Topic>;
@@ -1676,7 +1686,6 @@ export type ResolversParentTypes = ResolversObject<{
   CreateImageInput: CreateImageInput;
   CreateMessageInput: CreateMessageInput;
   CreatePoolInput: CreatePoolInput;
-  CreatePoolSpeculativeFieldsInput: CreatePoolSpeculativeFieldsInput;
   CreatePostInput: CreatePostInput;
   CreateQuestionAnswerInput: CreateQuestionAnswerInput;
   CreateQuestionInput: CreateQuestionInput;
@@ -1686,7 +1695,6 @@ export type ResolversParentTypes = ResolversObject<{
   EditBusinessInput: EditBusinessInput;
   EditPoolDataInput: EditPoolDataInput;
   EditPoolInput: EditPoolInput;
-  EditPoolSpeculativeFieldsInput: EditPoolSpeculativeFieldsInput;
   FaqAnswer: FaqAnswer;
   FaqTopic: FaqTopic;
   FaucetRequest: FaucetRequest;
@@ -1712,11 +1720,15 @@ export type ResolversParentTypes = ResolversObject<{
   ID: Scalars['ID']['output'];
   IdResponse: IdResponse;
   Image: Image;
+  IncomingTranche: IncomingTranche;
+  IncomingTrancheInput: IncomingTrancheInput;
   Int: Scalars['Int']['output'];
   JSON: Scalars['JSON']['output'];
   Member: Member;
   Message: Message;
   Mutation: {};
+  OutgoingTranche: OutgoingTranche;
+  OutgoingTrancheInput: OutgoingTrancheInput;
   PaginationInput: PaginationInput;
   Permission: Permission;
   Pool: Pool;
@@ -1732,8 +1744,6 @@ export type ResolversParentTypes = ResolversObject<{
   Signature: Signature;
   SignatureTask: SignatureTask;
   SortFieldInput: SortFieldInput;
-  SpeculativeSpecificFields: SpeculativeSpecificFields;
-  StableSpecificFields: StableSpecificFields;
   String: Scalars['String']['output'];
   TokenBalance: TokenBalance;
   Topic: Topic;
@@ -1818,12 +1828,12 @@ export type BusinessResolvers<ContextType = GraphQLContext, ParentType extends R
   chainId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  generationCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   ownerId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   ownerType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  ownerWallet?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   paused?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   riskScore?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   tags?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
@@ -1955,6 +1965,13 @@ export type ImageResolvers<ContextType = GraphQLContext, ParentType extends Reso
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type IncomingTrancheResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['IncomingTranche'] = ResolversParentTypes['IncomingTranche']> = ResolversObject<{
+  amount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  expiredAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  returnedAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export interface JsonScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['JSON'], any> {
   name: 'JSON';
 }
@@ -2012,10 +2029,10 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   editPool?: Resolver<ResolversTypes['Pool'], ParentType, ContextType, RequireFields<MutationEditPoolArgs, 'input'>>;
   grantPermission?: Resolver<ResolversTypes['Permission'], ParentType, ContextType, RequireFields<MutationGrantPermissionArgs, 'input'>>;
   refreshToken?: Resolver<ResolversTypes['AuthTokens'], ParentType, ContextType, RequireFields<MutationRefreshTokenArgs, 'input'>>;
-  rejectApprovalSignatures?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationRejectApprovalSignaturesArgs, 'id'>>;
+  rejectBusinessApprovalSignatures?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationRejectBusinessApprovalSignaturesArgs, 'id'>>;
   rejectPoolApprovalSignatures?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationRejectPoolApprovalSignaturesArgs, 'id'>>;
   removeMember?: Resolver<ResolversTypes['ID'], ParentType, ContextType, RequireFields<MutationRemoveMemberArgs, 'input'>>;
-  requestApprovalSignatures?: Resolver<ResolversTypes['ApprovalSignaturesResponse'], ParentType, ContextType, RequireFields<MutationRequestApprovalSignaturesArgs, 'input'>>;
+  requestBusinessApprovalSignatures?: Resolver<ResolversTypes['ApprovalSignaturesResponse'], ParentType, ContextType, RequireFields<MutationRequestBusinessApprovalSignaturesArgs, 'input'>>;
   requestGas?: Resolver<ResolversTypes['FaucetRequest'], ParentType, ContextType, RequireFields<MutationRequestGasArgs, 'input'>>;
   requestHold?: Resolver<ResolversTypes['FaucetRequest'], ParentType, ContextType, RequireFields<MutationRequestHoldArgs, 'input'>>;
   requestPoolApprovalSignatures?: Resolver<ResolversTypes['ApprovalSignaturesResponse'], ParentType, ContextType, RequireFields<MutationRequestPoolApprovalSignaturesArgs, 'input'>>;
@@ -2023,6 +2040,7 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   toggleQuestionLike?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationToggleQuestionLikeArgs, 'questionId'>>;
   updateAssistant?: Resolver<ResolversTypes['Assistant'], ParentType, ContextType, RequireFields<MutationUpdateAssistantArgs, 'input'>>;
   updateBlog?: Resolver<ResolversTypes['Blog'], ParentType, ContextType, RequireFields<MutationUpdateBlogArgs, 'input'>>;
+  updateBusinessRiskScore?: Resolver<ResolversTypes['Business'], ParentType, ContextType, RequireFields<MutationUpdateBusinessRiskScoreArgs, 'id'>>;
   updateCompany?: Resolver<ResolversTypes['Company'], ParentType, ContextType, RequireFields<MutationUpdateCompanyArgs, 'input'>>;
   updateDocument?: Resolver<ResolversTypes['Document'], ParentType, ContextType, RequireFields<MutationUpdateDocumentArgs, 'input'>>;
   updateFaqAnswer?: Resolver<ResolversTypes['FaqAnswer'], ParentType, ContextType, RequireFields<MutationUpdateFaqAnswerArgs, 'input'>>;
@@ -2035,8 +2053,14 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   updatePost?: Resolver<ResolversTypes['Post'], ParentType, ContextType, RequireFields<MutationUpdatePostArgs, 'input'>>;
   updateQuestionAnswer?: Resolver<ResolversTypes['Question'], ParentType, ContextType, RequireFields<MutationUpdateQuestionAnswerArgs, 'input'>>;
   updateQuestionText?: Resolver<ResolversTypes['Question'], ParentType, ContextType, RequireFields<MutationUpdateQuestionTextArgs, 'input'>>;
-  updateRiskScore?: Resolver<ResolversTypes['Business'], ParentType, ContextType, RequireFields<MutationUpdateRiskScoreArgs, 'id'>>;
   updateTopic?: Resolver<ResolversTypes['Topic'], ParentType, ContextType, RequireFields<MutationUpdateTopicArgs, 'input'>>;
+}>;
+
+export type OutgoingTrancheResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['OutgoingTranche'] = ResolversParentTypes['OutgoingTranche']> = ResolversObject<{
+  amount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  executedAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  timestamp?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type PermissionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Permission'] = ResolversParentTypes['Permission']> = ResolversObject<{
@@ -2049,45 +2073,56 @@ export type PermissionResolvers<ContextType = GraphQLContext, ParentType extends
 }>;
 
 export type PoolResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Pool'] = ResolversParentTypes['Pool']> = ResolversObject<{
-  accumulatedHoldAmount?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  accumulatedRwaAmount?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  allocatedHoldAmount?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  allowEntryBurn?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   approvalSignaturesTaskExpired?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   approvalSignaturesTaskId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  availableReturnBalance?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  awaitingRwaAmount?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  awaitCompletionExpired?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  awaitingBonusAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  awaitingRwaAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   businessId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   chainId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  completionPeriodDuration?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  completionPeriodExpired?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  completionPeriodExpired?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   entryFeePercent?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  entryPeriodDuration?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  entryPeriodExpired?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  entryPeriodExpired?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  entryPeriodStart?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   exitFeePercent?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  expectedHoldAmount?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  expectedReturnAmount?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  expectedRwaAmount?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  expectedBonusAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  expectedHoldAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  expectedRwaAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  fixedSell?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  floatingOutTranchesTimestamps?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  floatingTimestampOffset?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  fullReturnTimestamp?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   holdToken?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  isFullyReturned?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
-  isTargetReached?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
+  incomingTranches?: Resolver<Array<ResolversTypes['IncomingTranche']>, ParentType, ContextType>;
+  isFullyReturned?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  isTargetReached?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  k?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  lastCompletedIncomingTranche?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  liquidityCoefficient?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  outgoingTranches?: Resolver<Array<ResolversTypes['OutgoingTranche']>, ParentType, ContextType>;
+  outgoingTranchesBalance?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   ownerId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   ownerType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  paused?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
+  ownerWallet?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  paused?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   poolAddress?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  returnedAmount?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  rewardPercent?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  riskScore?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  priceImpactPercent?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  realHoldReserve?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  rewardPercent?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  riskScore?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   rwaAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  speculativeSpecificFields?: Resolver<Maybe<ResolversTypes['SpeculativeSpecificFields']>, ParentType, ContextType>;
-  stableSpecificFields?: Resolver<Maybe<ResolversTypes['StableSpecificFields']>, ParentType, ContextType>;
-  tags?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
+  tags?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
   tokenId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  type?: Resolver<ResolversTypes['PoolType'], ParentType, ContextType>;
+  totalClaimedAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  totalReturnedAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  virtualHoldReserve?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  virtualRwaReserve?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -2180,23 +2215,6 @@ export type SignatureTaskResolvers<ContextType = GraphQLContext, ParentType exte
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
-export type SpeculativeSpecificFieldsResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['SpeculativeSpecificFields'] = ResolversParentTypes['SpeculativeSpecificFields']> = ResolversObject<{
-  availableBonusAmount?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  expectedBonusAmount?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  k?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  realHoldReserve?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  rwaMultiplier?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
-  rwaMultiplierIndex?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
-  virtualHoldReserve?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  virtualRwaReserve?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
-export type StableSpecificFieldsResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['StableSpecificFields'] = ResolversParentTypes['StableSpecificFields']> = ResolversObject<{
-  fixedMintPrice?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-}>;
-
 export type TokenBalanceResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['TokenBalance'] = ResolversParentTypes['TokenBalance']> = ResolversObject<{
   balance?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   chainId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -2282,10 +2300,12 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   Gallery?: GalleryResolvers<ContextType>;
   IdResponse?: IdResponseResolvers<ContextType>;
   Image?: ImageResolvers<ContextType>;
+  IncomingTranche?: IncomingTrancheResolvers<ContextType>;
   JSON?: GraphQLScalarType;
   Member?: MemberResolvers<ContextType>;
   Message?: MessageResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
+  OutgoingTranche?: OutgoingTrancheResolvers<ContextType>;
   Permission?: PermissionResolvers<ContextType>;
   Pool?: PoolResolvers<ContextType>;
   Post?: PostResolvers<ContextType>;
@@ -2293,8 +2313,6 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   Question?: QuestionResolvers<ContextType>;
   Signature?: SignatureResolvers<ContextType>;
   SignatureTask?: SignatureTaskResolvers<ContextType>;
-  SpeculativeSpecificFields?: SpeculativeSpecificFieldsResolvers<ContextType>;
-  StableSpecificFields?: StableSpecificFieldsResolvers<ContextType>;
   TokenBalance?: TokenBalanceResolvers<ContextType>;
   Topic?: TopicResolvers<ContextType>;
   Transaction?: TransactionResolvers<ContextType>;

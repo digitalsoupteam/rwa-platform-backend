@@ -34,18 +34,11 @@ export const createPool: MutationResolvers['createPool'] = async (
 
   const response = await clients.rwaClient.createPool.post({
     name: input.name,
-    type: input.type,
-    chainId: input.chainId,
-    businessId: input.businessId,
-    rwaAddress: input.rwaAddress,
-    expectedHoldAmount: input.expectedHoldAmount,
-    rewardPercent: input.rewardPercent,
-    description: input.description,
-    entryPeriodDuration: input.entryPeriodDuration,
-    completionPeriodDuration: input.completionPeriodDuration,
-    speculativeSpecificFields: input.speculativeSpecificFields,
     ownerId: business.ownerId,
     ownerType: business.ownerType,
+    businessId: input.businessId,
+    chainId: input.chainId,
+    rwaAddress: input.rwaAddress,
   });
 
   if (response.error) {
@@ -59,40 +52,69 @@ export const createPool: MutationResolvers['createPool'] = async (
     id: data.id,
     ownerId: data.ownerId,
     ownerType: data.ownerType,
+    ownerWallet: data.ownerWallet,
     name: data.name,
-    type: data.type,
     businessId: data.businessId,
-    rwaAddress: data.rwaAddress,
-    poolAddress: data.poolAddress,
-    tokenId: data.tokenId,
-    holdToken: data.holdToken,
-    entryFeePercent: data.entryFeePercent,
-    exitFeePercent: data.exitFeePercent,
-    expectedHoldAmount: data.expectedHoldAmount,
-    expectedRwaAmount: data.expectedRwaAmount,
-    rewardPercent: data.rewardPercent,
-    entryPeriodExpired: data.entryPeriodExpired,
-    completionPeriodExpired: data.completionPeriodExpired,
-    expectedReturnAmount: data.expectedReturnAmount,
-    accumulatedHoldAmount: data.accumulatedHoldAmount,
-    accumulatedRwaAmount: data.accumulatedRwaAmount,
-    isTargetReached: data.isTargetReached,
-    isFullyReturned: data.isFullyReturned,
-    returnedAmount: data.returnedAmount,
-    paused: data.paused,
-    allocatedHoldAmount: data.allocatedHoldAmount,
-    availableReturnBalance: data.availableReturnBalance,
-    awaitingRwaAmount: data.awaitingRwaAmount,
     description: data.description,
     chainId: data.chainId,
     tags: data.tags,
     riskScore: data.riskScore,
+
+    // Contract Addresses
+    rwaAddress: data.rwaAddress,
+    poolAddress: data.poolAddress,
+    holdToken: data.holdToken,
+    tokenId: data.tokenId,
+
+    // Pool Configuration
+    entryFeePercent: data.entryFeePercent,
+    exitFeePercent: data.exitFeePercent,
+    expectedHoldAmount: data.expectedHoldAmount,
+    expectedRwaAmount: data.expectedRwaAmount,
+    expectedBonusAmount: data.expectedBonusAmount,
+    rewardPercent: data.rewardPercent,
+    priceImpactPercent: data.priceImpactPercent,
+    liquidityCoefficient: data.liquidityCoefficient,
+
+    // Pool Flags
+    awaitCompletionExpired: data.awaitCompletionExpired,
+    floatingOutTranchesTimestamps: data.floatingOutTranchesTimestamps,
+    fixedSell: data.fixedSell,
+    allowEntryBurn: data.allowEntryBurn,
+    paused: data.paused,
+
+    // Time Periods
+    entryPeriodStart: data.entryPeriodStart,
+    entryPeriodExpired: data.entryPeriodExpired,
+    completionPeriodExpired: data.completionPeriodExpired,
+    floatingTimestampOffset: data.floatingTimestampOffset,
+    fullReturnTimestamp: data.fullReturnTimestamp,
+
+    // Pool State
+    k: data.k,
+    realHoldReserve: data.realHoldReserve,
+    virtualHoldReserve: data.virtualHoldReserve,
+    virtualRwaReserve: data.virtualRwaReserve,
+    isTargetReached: data.isTargetReached,
+    isFullyReturned: data.isFullyReturned,
+
+    // Amounts
+    totalClaimedAmount: data.totalClaimedAmount,
+    totalReturnedAmount: data.totalReturnedAmount,
+    awaitingBonusAmount: data.awaitingBonusAmount,
+    awaitingRwaAmount: data.awaitingRwaAmount,
+    outgoingTranchesBalance: data.outgoingTranchesBalance,
+
+    // Tranches
+    outgoingTranches: data.outgoingTranches,
+    incomingTranches: data.incomingTranches,
+    lastCompletedIncomingTranche: data.lastCompletedIncomingTranche,
+
+    // Approval
     approvalSignaturesTaskId: data.approvalSignaturesTaskId,
     approvalSignaturesTaskExpired: data.approvalSignaturesTaskExpired,
-    entryPeriodDuration: data.entryPeriodDuration,
-    completionPeriodDuration: data.completionPeriodDuration,
-    stableSpecificFields: data.stableSpecificFields,
-    speculativeSpecificFields: data.speculativeSpecificFields,
+
+    // Timestamps
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
   };
