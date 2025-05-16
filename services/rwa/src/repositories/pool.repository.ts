@@ -10,19 +10,10 @@ export class PoolRepository {
     "ownerId" |
     "ownerType" |
     "name" |
-    "type" |
     "chainId" |
     "businessId" |
     "rwaAddress"
-  > & Partial<Pick<IPoolEntity,
-    "expectedHoldAmount" |
-    "rewardPercent" |
-    "description" |
-    "entryPeriodDuration" |
-    "completionPeriodDuration" |
-    "stableSpecificFields" |
-    "speculativeSpecificFields"
-  >>) {
+  >) {
     logger.debug(`Creating pool: ${JSON.stringify(data)}`);
     const doc = await this.model.create(data);
     return doc.toObject();
@@ -37,28 +28,39 @@ export class PoolRepository {
     "exitFeePercent" |
     "expectedHoldAmount" |
     "expectedRwaAmount" |
+    "expectedBonusAmount" |
     "rewardPercent" |
+    "entryPeriodStart" |
     "entryPeriodExpired" |
     "completionPeriodExpired" |
-    "expectedReturnAmount" |
-    "accumulatedHoldAmount" |
-    "accumulatedRwaAmount" |
+    "awaitCompletionExpired" |
+    "floatingOutTranchesTimestamps" |
+    "fixedSell" |
+    "allowEntryBurn" |
+    "priceImpactPercent" |
+    "liquidityCoefficient" |
+    "k" |
+    "realHoldReserve" |
+    "virtualHoldReserve" |
+    "virtualRwaReserve" |
+    "floatingTimestampOffset" |
     "isTargetReached" |
     "isFullyReturned" |
-    "returnedAmount" |
-    "paused" |
-    "allocatedHoldAmount" |
-    "availableReturnBalance" |
+    "fullReturnTimestamp" |
+    "totalClaimedAmount" |
+    "totalReturnedAmount" |
+    "awaitingBonusAmount" |
     "awaitingRwaAmount" |
+    "outgoingTranchesBalance" |
+    "outgoingTranches" |
+    "incomingTranches" |
+    "lastCompletedIncomingTranche" |
+    "paused" |
     "description" |
     "tags" |
     "riskScore" |
     "approvalSignaturesTaskId" |
-    "approvalSignaturesTaskExpired" |
-    "entryPeriodDuration" |
-    "completionPeriodDuration" |
-    "stableSpecificFields" |
-    "speculativeSpecificFields"
+    "approvalSignaturesTaskExpired"
   >>) {
     logger.debug(`Updating pool fields: ${id}`);
     const doc = await this.model.findByIdAndUpdate(id, data, { new: true }).lean();

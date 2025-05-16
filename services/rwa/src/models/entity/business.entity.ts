@@ -11,6 +11,10 @@ const businessSchemaDefinition = {
     required: true,
     trim: true,
   },
+  ownerWallet: {
+    type: String,
+    trim: true,
+  },
   chainId: {
     type: String,
     required: true,
@@ -44,11 +48,6 @@ const businessSchemaDefinition = {
     type: String,
     required: false,
     trim: true,
-  },
-  generationCount: {
-    type: Number,
-    default: 0,
-    min: 0,
   },
   approvalSignaturesTaskId: {
     type: String,

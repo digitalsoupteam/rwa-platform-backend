@@ -94,17 +94,31 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
     factoryAddress: string,
     deployerWallet: string,
     createPoolFeeRatio: string,
-    poolType: string,
     entityId: string,
-    entityOwnerId: string,
-    entityOwnerType: string,
-    ownerWallet: string,
-    rwaAddress: string,
+    rwa: string,
     expectedHoldAmount: string,
+    expectedRwaAmount: string,
+    priceImpactPercent: string,
     rewardPercent: string,
-    entryPeriodDuration: number,
-    completionPeriodDuration: number,
-    payload: string,
+    entryPeriodStart: string,
+    entryPeriodExpired: string,
+    completionPeriodExpired: string,
+    entryFeePercent: string,
+    exitFeePercent: string,
+    fixedSell: boolean,
+    allowEntryBurn: boolean,
+    awaitCompletionExpired: boolean,
+    floatingOutTranchesTimestamps: boolean,
+    outgoingTranches: Array<{
+      amount: string;
+      timestamp: number;
+      executedAmount: string;
+    }>,
+    incomingTranches: Array<{
+      amount: string;
+      expiredAt: number;
+      returnedAmount: string;
+    }>,
     expired: number
   ): string {
     const innerHash = ethers.solidityPackedKeccak256(
@@ -115,16 +129,24 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
         "string",
         "uint256",
         "string",
-        "string",
-        "string",
-        "string",
-        "address",
         "address",
         "uint256",
         "uint256",
         "uint256",
         "uint256",
-        "bytes"
+        "uint256",
+        "uint256",
+        "uint256",
+        "uint256",
+        "uint256",
+        "bool",
+        "bool",
+        "bool",
+        "bool",
+        "uint256[]",
+        "uint256[]",
+        "uint256[]",
+        "uint256[]"
       ],
       [
         BigInt(chainId),
@@ -132,17 +154,25 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
         ethers.getAddress(deployerWallet),
         "deployPool",
         BigInt(createPoolFeeRatio),
-        poolType,
         entityId,
-        entityOwnerId,
-        entityOwnerType,
-        ethers.getAddress(ownerWallet),
-        ethers.getAddress(rwaAddress),
+        ethers.getAddress(rwa),
         BigInt(expectedHoldAmount),
+        BigInt(expectedRwaAmount),
+        BigInt(priceImpactPercent),
         BigInt(rewardPercent),
-        BigInt(entryPeriodDuration),
-        BigInt(completionPeriodDuration),
-        payload
+        BigInt(entryPeriodStart),
+        BigInt(entryPeriodExpired),
+        BigInt(completionPeriodExpired),
+        BigInt(entryFeePercent),
+        BigInt(exitFeePercent),
+        fixedSell,
+        allowEntryBurn,
+        awaitCompletionExpired,
+        floatingOutTranchesTimestamps,
+        outgoingTranches.map(t => BigInt(t.amount)),
+        outgoingTranches.map(t => BigInt(t.timestamp)),
+        incomingTranches.map(t => BigInt(t.amount)),
+        incomingTranches.map(t => BigInt(t.expiredAt))
       ]
     );
 
@@ -152,16 +182,7 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
     );
   }
 
-  private generateStablePoolPayload(): string {
-    return "0x";
-  }
 
-  private generateSpeculativePoolPayload(rwaMultiplierIndex: number): string {
-    return ethers.solidityPacked(
-      ["uint256"],
-      [BigInt(rwaMultiplierIndex)]
-    );
-  }
 
   async requestApprovalSignatures(
     params: { 
@@ -189,12 +210,24 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       throw new Error("rewardPercent must be greater than 0");
     }
 
-    if (!pool.entryPeriodDuration || pool.entryPeriodDuration <= 0) {
-      throw new Error("entryPeriodDuration must be greater than 0");
+    if (!pool.entryPeriodStart || pool.entryPeriodStart <= 0) {
+      throw new Error("entryPeriodStart must be greater than 0");
     }
 
-    if (!pool.completionPeriodDuration || pool.completionPeriodDuration <= 0) {
-      throw new Error("completionPeriodDuration must be greater than 0");
+    if (!pool.entryPeriodExpired || pool.entryPeriodExpired <= pool.entryPeriodStart) {
+      throw new Error("entryPeriodExpired must be greater than entryPeriodStart");
+    }
+
+    if (!pool.completionPeriodExpired || pool.completionPeriodExpired <= pool.entryPeriodExpired) {
+      throw new Error("completionPeriodExpired must be greater than entryPeriodExpired");
+    }
+
+    if (!pool.entryFeePercent) {
+      throw new Error("entryFeePercent is required");
+    }
+
+    if (!pool.exitFeePercent) {
+      throw new Error("exitFeePercent is required");
     }
 
     const now = Math.floor(Date.now() / 1000);
@@ -205,34 +238,29 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       throw new Error(`Network configuration not found for chain ID ${pool.chainId}`);
     }
 
-    let payload: string;
-    if (pool.type === 'stable') {
-      payload = this.generateStablePoolPayload();
-    } else if (pool.type === 'speculation') {
-      if (typeof pool.speculativeSpecificFields?.rwaMultiplierIndex !== 'number') {
-        throw new Error('rwaMultiplierIndex is required for speculation pools');
-      }
-      payload = this.generateSpeculativePoolPayload(pool.speculativeSpecificFields?.rwaMultiplierIndex!);
-    } else {
-      throw new Error(`Unsupported pool type: ${pool.type}`);
-    }
 
     const messageHash = this.generatePoolMessageHash(
       pool.chainId,
       network.factoryAddress,
       params.deployerWallet,
       params.createPoolFeeRatio,
-      pool.type,
       params.id,
-      pool.ownerId,
-      pool.ownerType,
-      params.ownerWallet,
       pool.rwaAddress,
       pool.expectedHoldAmount,
+      pool.expectedRwaAmount,
+      pool.priceImpactPercent,
       pool.rewardPercent,
-      pool.entryPeriodDuration,
-      pool.completionPeriodDuration,
-      payload,
+      pool.entryPeriodStart.toString(),
+      pool.entryPeriodExpired.toString(),
+      pool.completionPeriodExpired.toString(),
+      pool.entryFeePercent,
+      pool.exitFeePercent,
+      pool.fixedSell,
+      pool.allowEntryBurn,
+      pool.awaitCompletionExpired,
+      pool.floatingOutTranchesTimestamps,
+      pool.outgoingTranches,
+      pool.incomingTranches,
       expired
     );
 
@@ -285,7 +313,6 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       id: pool._id.toString(),
       chainId: pool.chainId,
       name: pool.name,
-      type: pool.type,
       ownerId: pool.ownerId,
       ownerType: pool.ownerType,
       businessId: pool.businessId,
@@ -297,17 +324,37 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       exitFeePercent: pool.exitFeePercent ?? undefined,
       expectedHoldAmount: pool.expectedHoldAmount ?? undefined,
       expectedRwaAmount: pool.expectedRwaAmount ?? undefined,
+      expectedBonusAmount: pool.expectedBonusAmount ?? undefined,
       rewardPercent: pool.rewardPercent ?? undefined,
-      expectedReturnAmount: pool.expectedReturnAmount ?? undefined,
+      entryPeriodStart: pool.entryPeriodStart ?? undefined,
       entryPeriodExpired: pool.entryPeriodExpired ?? undefined,
       completionPeriodExpired: pool.completionPeriodExpired ?? undefined,
+      awaitCompletionExpired: pool.awaitCompletionExpired ?? false,
+      floatingOutTranchesTimestamps: pool.floatingOutTranchesTimestamps ?? false,
+      fixedSell: pool.fixedSell ?? false,
+      allowEntryBurn: pool.allowEntryBurn ?? false,
+      priceImpactPercent: pool.priceImpactPercent ?? undefined,
+      liquidityCoefficient: pool.liquidityCoefficient ?? undefined,
+      k: pool.k ?? undefined,
+      realHoldReserve: pool.realHoldReserve ?? "0",
+      virtualHoldReserve: pool.virtualHoldReserve ?? undefined,
+      virtualRwaReserve: pool.virtualRwaReserve ?? undefined,
+      floatingTimestampOffset: pool.floatingTimestampOffset ?? 0,
+      isTargetReached: pool.isTargetReached ?? false,
+      isFullyReturned: pool.isFullyReturned ?? false,
+      fullReturnTimestamp: pool.fullReturnTimestamp ?? undefined,
+      totalClaimedAmount: pool.totalClaimedAmount ?? "0",
+      totalReturnedAmount: pool.totalReturnedAmount ?? "0",
+      awaitingBonusAmount: pool.awaitingBonusAmount ?? "0",
+      awaitingRwaAmount: pool.awaitingRwaAmount ?? "0",
+      outgoingTranchesBalance: pool.outgoingTranchesBalance ?? "0",
+      outgoingTranches: pool.outgoingTranches ?? [],
+      incomingTranches: pool.incomingTranches ?? [],
+      lastCompletedIncomingTranche: pool.lastCompletedIncomingTranche ?? 0,
+      paused: pool.paused ?? false,
       description: pool.description,
-      tags: pool.tags,
-      riskScore: pool.riskScore,
-      entryPeriodDuration: pool.entryPeriodDuration,
-      completionPeriodDuration: pool.completionPeriodDuration,
-      stableSpecificFields: pool.stableSpecificFields,
-      speculativeSpecificFields: pool.speculativeSpecificFields,
+      tags: pool.tags ?? [],
+      riskScore: pool.riskScore ?? 0,
       approvalSignaturesTaskId: pool.approvalSignaturesTaskId ?? undefined,
       approvalSignaturesTaskExpired: pool.approvalSignaturesTaskExpired ?? undefined,
       createdAt: pool.createdAt,
@@ -324,32 +371,35 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
     ownerId: string;
     ownerType: string;
     name: string;
-    type: 'stable' | 'speculation';
     chainId: string;
     businessId: string;
     rwaAddress: string;
     expectedHoldAmount?: string;
+    expectedRwaAmount?: string;
+    expectedBonusAmount?: string;
     rewardPercent?: string;
     description?: string;
-    entryPeriodDuration?: number;
-    completionPeriodDuration?: number;
-    stableSpecificFields?: {};
-    speculativeSpecificFields?: {
-      rwaMultiplierIndex?: number;
-    };
+    priceImpactPercent?: string;
+    liquidityCoefficient?: string;
+    awaitCompletionExpired?: boolean;
+    floatingOutTranchesTimestamps?: boolean;
+    fixedSell?: boolean;
+    allowEntryBurn?: boolean;
+    outgoingTranches?: Array<{
+      amount: string;
+      timestamp: number;
+      executedAmount: string;
+    }>;
+    incomingTranches?: Array<{
+      amount: string;
+      expiredAt: number;
+      returnedAmount: string;
+    }>;
   }) {
     logger.debug("Creating new pool", { data });
 
     if (!this.isChainIdSupported(data.chainId)) {
       throw new NotAllowedError(`Chain ID ${data.chainId} is not supported`);
-    }
-
-    if (data.speculativeSpecificFields != undefined && data.type != 'speculation') {
-      throw new NotAllowedError("Speculative specific fields can only be set for speculation pools");
-    }
-
-    if (data.stableSpecificFields != undefined && data.type != 'stable') {
-      throw new NotAllowedError("Stable specific fields can only be set for stable pools");
     }
 
     const pool = await this.poolRepository.createPool(data);
@@ -361,16 +411,26 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
     updateData: {
       name?: string;
       expectedHoldAmount?: string;
+      expectedRwaAmount?: string;
       rewardPercent?: string;
       description?: string;
       tags?: string[];
       riskScore?: number;
-      entryPeriodDuration?: number;
-      completionPeriodDuration?: number;
-      stableSpecificFields?: {};
-      speculativeSpecificFields?: {
-        rwaMultiplierIndex?: number;
-      };
+      priceImpactPercent?: string;
+      awaitCompletionExpired?: boolean;
+      floatingOutTranchesTimestamps?: boolean;
+      fixedSell?: boolean;
+      allowEntryBurn?: boolean;
+      outgoingTranches?: Array<{
+        amount: string;
+        timestamp: number;
+        executedAmount: string;
+      }>;
+      incomingTranches?: Array<{
+        amount: string;
+        expiredAt: number;
+        returnedAmount: string;
+      }>;
     }
   }) {
     logger.debug("Updating pool", params);
@@ -378,28 +438,26 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
     const pool = await this.poolRepository.findById(params.id);
 
     if (pool.approvalSignaturesTaskId) {
-      if (params.updateData.expectedHoldAmount != undefined) {
-        throw new NotAllowedError("Cannot edit expected hold amount while approval signatures task is pending");
-      }
-      
-      if (params.updateData.rewardPercent != undefined) {
-        throw new NotAllowedError("Cannot edit reward percent while approval signatures task is pending");
-      }
+      const immutableFields = [
+        'expectedHoldAmount',
+        'expectedRwaAmount',
+        'expectedBonusAmount',
+        'rewardPercent',
+        'entryPeriodStart',
+        'entryPeriodExpired',
+        'completionPeriodExpired',
+        'awaitCompletionExpired',
+        'floatingOutTranchesTimestamps',
+        'fixedSell',
+        'allowEntryBurn',
+        'priceImpactPercent',
+        'liquidityCoefficient'
+      ];
 
-      if (params.updateData.entryPeriodDuration != undefined) {
-        throw new NotAllowedError("Cannot edit entry period duration while approval signatures task is pending");
-      }
-
-      if (params.updateData.completionPeriodDuration != undefined) {
-        throw new NotAllowedError("Cannot edit completion period duration while approval signatures task is pending");
-      }
-
-      if (params.updateData.stableSpecificFields != undefined) {
-        throw new NotAllowedError("Cannot edit stable pool specific fields while approval signatures task is pending");
-      }
-
-      if (params.updateData.speculativeSpecificFields != undefined) {
-        throw new NotAllowedError("Cannot edit speculative pool specific fields while approval signatures task is pending");
+      for (const field of immutableFields) {
+        if (params.updateData[field as keyof typeof params.updateData] !== undefined) {
+          throw new NotAllowedError(`Cannot edit ${field} while approval signatures task is pending`);
+        }
       }
     }
 
@@ -412,19 +470,29 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
     event: {
       emittedFrom: string,
       holdToken: string,
-      entityId: string,
       rwa: string,
       tokenId: string,
-      entryFeePercent: string,
-      exitFeePercent: string,
+      entityId: string,
+      entityOwnerId: string,
+      entityOwnerType: string,
+      owner: string,
       expectedHoldAmount: string,
       expectedRwaAmount: string,
+      expectedBonusAmount: string,
       rewardPercent: string,
-      expectedReturnAmount: string,
+      fixedSell: boolean,
+      allowEntryBurn: boolean,
+      entryPeriodStart: string,
       entryPeriodExpired: string,
       completionPeriodExpired: string,
-      poolType: string,
-      initializationData: string,
+      k: string,
+      entryFeePercent: string,
+      exitFeePercent: string,
+      outgoingTranches: string[],
+      outgoingTranchTimestamps: number[],
+      incomingTranches: string[],
+      incomingTrancheExpired: number[],
+      initializationData: string
     }
   ) {
     logger.debug(`Syncing pool after deployment`, event);
@@ -439,48 +507,48 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       holdToken: event.holdToken,
       rwaAddress: event.rwa,
       tokenId: event.tokenId,
-      entryFeePercent: event.entryFeePercent,
-      exitFeePercent: event.exitFeePercent,
+      ownerWallet: event.owner,
       expectedHoldAmount: event.expectedHoldAmount,
       expectedRwaAmount: event.expectedRwaAmount,
+      expectedBonusAmount: event.expectedBonusAmount,
       rewardPercent: event.rewardPercent,
-      expectedReturnAmount: event.expectedReturnAmount,
+      fixedSell: event.fixedSell,
+      allowEntryBurn: event.allowEntryBurn,
+      entryPeriodStart: event.entryPeriodStart,
       entryPeriodExpired: event.entryPeriodExpired,
       completionPeriodExpired: event.completionPeriodExpired,
+      k: event.k,
+      entryFeePercent: event.entryFeePercent,
+      exitFeePercent: event.exitFeePercent,
+      outgoingTranches: event.outgoingTranches.map((amount, i) => ({
+        amount,
+        timestamp: event.outgoingTranchTimestamps[i],
+        executedAmount: "0"
+      })),
+      incomingTranches: event.incomingTranches.map((amount, i) => ({
+        amount,
+        expiredAt: event.incomingTrancheExpired[i],
+        returnedAmount: "0"
+      }))
     };
 
+    // Decode initialization data
+    const [
+      virtualHoldReserve,
+      virtualRwaReserve,
+      realHoldReserve,
+      priceImpactPercent,
+      liquidityCoefficient
+    ] = ethers.AbiCoder.defaultAbiCoder().decode(
+      ['uint256', 'uint256', 'uint256', 'uint256', 'uint256'],
+      event.initializationData
+    );
     
-    if (pool.type === 'stable') {
-      const [fixedMintPrice] = ethers.AbiCoder.defaultAbiCoder().decode(
-        ['uint256'],
-        event.initializationData
-      );
-      updateData.stableSpecificFields = {
-        fixedMintPrice: fixedMintPrice.toString()
-      };
-    } else if (pool.type === 'speculation') {
-      const [
-        virtualHoldReserve,
-        virtualRwaReserve,
-        realHoldReserve,
-        k,
-        availableBonusAmount,
-        expectedBonusAmount
-      ] = ethers.AbiCoder.defaultAbiCoder().decode(
-        ['uint256', 'uint256', 'uint256', 'uint256', 'uint256', 'uint256'],
-        event.initializationData
-      );
-      
-      updateData.speculativeSpecificFields = {
-        ...pool.speculativeSpecificFields,
-        virtualHoldReserve: virtualHoldReserve.toString(),
-        virtualRwaReserve: virtualRwaReserve.toString(),
-        realHoldReserve: realHoldReserve.toString(),
-        k: k.toString(),
-        availableBonusAmount: availableBonusAmount.toString(),
-        expectedBonusAmount: expectedBonusAmount.toString()
-      };
-    }
+    updateData.virtualHoldReserve = virtualHoldReserve.toString();
+    updateData.virtualRwaReserve = virtualRwaReserve.toString();
+    updateData.realHoldReserve = realHoldReserve.toString();
+    updateData.priceImpactPercent = priceImpactPercent.toString();
+    updateData.liquidityCoefficient = liquidityCoefficient.toString();
 
     const updated = await this.poolRepository.updatePool(event.entityId, updateData);
     return this.mapPool(updated);

@@ -25,12 +25,12 @@ export class BusinessRepository {
 
   async updateBusiness(id: string, data: Partial<Pick<IBusinessEntity,
     "name" |
+    "ownerWallet" |
     "tokenAddress" |
     "description" |
     "tags" |
     "riskScore" |
     "image" |
-    "generationCount" |
     "approvalSignaturesTaskId" |
     "approvalSignaturesTaskExpired" |
     "paused"
