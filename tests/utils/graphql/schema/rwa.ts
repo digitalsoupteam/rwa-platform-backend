@@ -9,12 +9,12 @@ export const GET_BUSINESS = gql`
       name
       ownerId
       ownerType
+      ownerWallet
       tokenAddress
       description
       tags
       riskScore
       image
-      generationCount
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
       paused
@@ -32,12 +32,12 @@ export const GET_BUSINESSES = gql`
       name
       ownerId
       ownerType
+      ownerWallet
       tokenAddress
       description
       tags
       riskScore
       image
-      generationCount
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
       paused
@@ -56,12 +56,12 @@ export const CREATE_BUSINESS = gql`
       name
       ownerId
       ownerType
+      ownerWallet
       tokenAddress
       description
       tags
       riskScore
       image
-      generationCount
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
       paused
@@ -79,12 +79,12 @@ export const EDIT_BUSINESS = gql`
       name
       ownerId
       ownerType
+      ownerWallet
       tokenAddress
       description
       tags
       riskScore
       image
-      generationCount
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
       paused
@@ -125,51 +125,77 @@ export const GET_POOL = gql`
       id
       ownerId
       ownerType
+      ownerWallet
       name
-      type
       businessId
-      rwaAddress
-      poolAddress
-      tokenId
-      holdToken
-      entryFeePercent
-      exitFeePercent
-      expectedHoldAmount
-      expectedRwaAmount
-      rewardPercent
-      entryPeriodExpired
-      completionPeriodExpired
-      expectedReturnAmount
-      accumulatedHoldAmount
-      accumulatedRwaAmount
-      isTargetReached
-      isFullyReturned
-      returnedAmount
-      paused
-      allocatedHoldAmount
-      availableReturnBalance
-      awaitingRwaAmount
       description
       chainId
       tags
       riskScore
+
+      # Contract Addresses
+      rwaAddress
+      poolAddress
+      holdToken
+      tokenId
+
+      # Pool Configuration
+      entryFeePercent
+      exitFeePercent
+      expectedHoldAmount
+      expectedRwaAmount
+      expectedBonusAmount
+      rewardPercent
+      priceImpactPercent
+      liquidityCoefficient
+
+      # Pool Flags
+      awaitCompletionExpired
+      floatingOutTranchesTimestamps
+      fixedSell
+      allowEntryBurn
+      paused
+
+      # Time Periods
+      entryPeriodStart
+      entryPeriodExpired
+      completionPeriodExpired
+      floatingTimestampOffset
+      fullReturnTimestamp
+
+      # Pool State
+      k
+      realHoldReserve
+      virtualHoldReserve
+      virtualRwaReserve
+      isTargetReached
+      isFullyReturned
+
+      # Amounts
+      totalClaimedAmount
+      totalReturnedAmount
+      awaitingBonusAmount
+      awaitingRwaAmount
+      outgoingTranchesBalance
+
+      # Tranches
+      outgoingTranches {
+        amount
+        timestamp
+        executedAmount
+      }
+      incomingTranches {
+        amount
+        expiredAt
+        returnedAmount
+      }
+      lastCompletedIncomingTranche
+
+      # Approval
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
-      entryPeriodDuration
-      completionPeriodDuration
-      stableSpecificFields {
-        fixedMintPrice
-      }
-      speculativeSpecificFields {
-        rwaMultiplierIndex
-        rwaMultiplier
-        realHoldReserve
-        virtualHoldReserve
-        virtualRwaReserve
-        k
-        availableBonusAmount
-        expectedBonusAmount
-      }
+
+      # Timestamps
       createdAt
       updatedAt
     }
@@ -182,51 +208,77 @@ export const GET_POOLS = gql`
       id
       ownerId
       ownerType
+      ownerWallet
       name
-      type
       businessId
-      rwaAddress
-      poolAddress
-      tokenId
-      holdToken
-      entryFeePercent
-      exitFeePercent
-      expectedHoldAmount
-      expectedRwaAmount
-      rewardPercent
-      entryPeriodExpired
-      completionPeriodExpired
-      expectedReturnAmount
-      accumulatedHoldAmount
-      accumulatedRwaAmount
-      isTargetReached
-      isFullyReturned
-      returnedAmount
-      paused
-      allocatedHoldAmount
-      availableReturnBalance
-      awaitingRwaAmount
       description
       chainId
       tags
       riskScore
+
+      # Contract Addresses
+      rwaAddress
+      poolAddress
+      holdToken
+      tokenId
+
+      # Pool Configuration
+      entryFeePercent
+      exitFeePercent
+      expectedHoldAmount
+      expectedRwaAmount
+      expectedBonusAmount
+      rewardPercent
+      priceImpactPercent
+      liquidityCoefficient
+
+      # Pool Flags
+      awaitCompletionExpired
+      floatingOutTranchesTimestamps
+      fixedSell
+      allowEntryBurn
+      paused
+
+      # Time Periods
+      entryPeriodStart
+      entryPeriodExpired
+      completionPeriodExpired
+      floatingTimestampOffset
+      fullReturnTimestamp
+
+      # Pool State
+      k
+      realHoldReserve
+      virtualHoldReserve
+      virtualRwaReserve
+      isTargetReached
+      isFullyReturned
+
+      # Amounts
+      totalClaimedAmount
+      totalReturnedAmount
+      awaitingBonusAmount
+      awaitingRwaAmount
+      outgoingTranchesBalance
+
+      # Tranches
+      outgoingTranches {
+        amount
+        timestamp
+        executedAmount
+      }
+      incomingTranches {
+        amount
+        expiredAt
+        returnedAmount
+      }
+      lastCompletedIncomingTranche
+
+      # Approval
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
-      entryPeriodDuration
-      completionPeriodDuration
-      stableSpecificFields {
-        fixedMintPrice
-      }
-      speculativeSpecificFields {
-        rwaMultiplierIndex
-        rwaMultiplier
-        realHoldReserve
-        virtualHoldReserve
-        virtualRwaReserve
-        k
-        availableBonusAmount
-        expectedBonusAmount
-      }
+
+      # Timestamps
       createdAt
       updatedAt
     }
@@ -240,19 +292,12 @@ export const CREATE_POOL = gql`
       id
       ownerId
       ownerType
+      ownerWallet
       name
-      type
       businessId
-      rwaAddress
       description
       chainId
-      expectedHoldAmount
-      rewardPercent
-      entryPeriodDuration
-      completionPeriodDuration
-      speculativeSpecificFields {
-        rwaMultiplierIndex
-      }
+      rwaAddress
       createdAt
       updatedAt
     }
@@ -264,16 +309,26 @@ export const EDIT_POOL = gql`
     editPool(input: $input) {
       id
       name
-      expectedHoldAmount
-      rewardPercent
       description
       tags
-      riskScore
-      entryPeriodDuration
-      completionPeriodDuration
-      speculativeSpecificFields {
-        rwaMultiplierIndex
+      expectedHoldAmount
+      expectedRwaAmount
+      rewardPercent
+      priceImpactPercent
+      outgoingTranches {
+        amount
+        timestamp
+        executedAmount
       }
+      incomingTranches {
+        amount
+        expiredAt
+        returnedAmount
+      }
+      awaitCompletionExpired
+      floatingOutTranchesTimestamps
+      fixedSell
+      allowEntryBurn
       updatedAt
     }
   }

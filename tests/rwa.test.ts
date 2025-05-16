@@ -60,46 +60,46 @@ describe("RWA Flow", () => {
     companyId = companyResult.data.createCompany.id;
   });
 
-//   describe("Authentication Tests", () => {
-//     test("should require authentication for creating business", async () => {
-//       const result = await makeGraphQLRequest(
-//         CREATE_BUSINESS,
-//         {
-//           input: {
-//             name: "Test Business",
-//             ownerId: companyId,
-//             ownerType: "company",
-//             chainId,
-//             description: "Test Description",
-//             tags: ["test"]
-//           },
-//         }
-//       );
+  describe("Authentication Tests", () => {
+    test("should require authentication for creating business", async () => {
+      const result = await makeGraphQLRequest(
+        CREATE_BUSINESS,
+        {
+          input: {
+            name: "Test Business",
+            ownerId: companyId,
+            ownerType: "company",
+            chainId,
+            description: "Test Description",
+            tags: ["test"]
+          },
+        }
+      );
 
-//       expect(result.errors).toBeDefined();
-//       expect(result.errors[0].message).toBe("Authentication required");
-//     });
+      expect(result.errors).toBeDefined();
+      expect(result.errors[0].message).toBe("Authentication required");
+    });
 
-//     test("should require authentication for creating pool", async () => {
-//       const result = await makeGraphQLRequest(
-//         CREATE_POOL,
-//         {
-//           input: {
-//             name: "Test Pool",
-//             type: "stable",
-//             chainId,
-//             businessId: "some-business-id",
-//             rwaAddress: "0x1234567890123456789012345678901234567890",
-//             expectedHoldAmount: "1000000000000000000",
-//             rewardPercent: "10",
-//           },
-//         }
-//       );
+    test("should require authentication for creating pool", async () => {
+      const result = await makeGraphQLRequest(
+        CREATE_POOL,
+        {
+          input: {
+            name: "Test Pool",
+            type: "stable",
+            chainId,
+            businessId: "some-business-id",
+            rwaAddress: "0x1234567890123456789012345678901234567890",
+            expectedHoldAmount: "1000000000000000000",
+            rewardPercent: "10",
+          },
+        }
+      );
 
-//       expect(result.errors).toBeDefined();
-//       expect(result.errors[0].message).toBe("Authentication required");
-//     });
-//   });
+      expect(result.errors).toBeDefined();
+      expect(result.errors[0].message).toBe("Authentication required");
+    });
+  });
 
   describe("Business Operations", () => {
     test("should create a business under company", async () => {
@@ -123,6 +123,7 @@ describe("RWA Flow", () => {
       expect(result.data.createBusiness.name).toBe("Test Business");
       expect(result.data.createBusiness.ownerId).toBe(companyId);
       expect(result.data.createBusiness.ownerType).toBe("company");
+      expect(result.data.createBusiness.ownerWallet).toBeDefined();
       expect(result.data.createBusiness.chainId).toBe(chainId);
       expect(result.data.createBusiness.description).toBe("Test Description");
       expect(result.data.createBusiness.tags).toEqual(["test"]);
@@ -145,6 +146,7 @@ describe("RWA Flow", () => {
       expect(result.data.getBusiness.name).toBe("Test Business");
       expect(result.data.getBusiness.ownerId).toBe(companyId);
       expect(result.data.getBusiness.ownerType).toBe("company");
+      expect(result.data.getBusiness.ownerWallet).toBeDefined();
     });
 
     test("should get businesses with filter", async () => {
@@ -167,6 +169,7 @@ describe("RWA Flow", () => {
       expect(result.data.getBusinesses.length).toBeGreaterThan(0);
       expect(result.data.getBusinesses[0].ownerId).toBe(companyId);
       expect(result.data.getBusinesses[0].ownerType).toBe("company");
+      expect(result.data.getBusinesses[0].ownerWallet).toBeDefined();
     });
 
     test("should edit business", async () => {
@@ -215,7 +218,9 @@ describe("RWA Flow", () => {
         {
           input: {
             id: businessId,
-            createRWAFee: "1000000000000000",
+            ownerWallet: wallet.address,
+            deployerWallet: wallet.address,
+            createRWAFee: "1000000000000000"
           },
         },
         accessToken
@@ -246,7 +251,7 @@ describe("RWA Flow", () => {
       expect(taskResult.data.getSignatureTask.completed).toBe(true);
       expect(taskResult.data.getSignatureTask.signatures).toBeArray();
       expect(taskResult.data.getSignatureTask.signatures.length).toBeGreaterThan(0);
-return
+
       // Request HOLD tokens and gas
       await requestHold(accessToken, 500);
       await requestGas(accessToken, 0.0025);
@@ -311,7 +316,7 @@ return
       expect(updatedBusiness.data.getBusiness.tokenAddress).not.toBe("");
     });
   });
-return
+
   describe("Pool Operations", () => {
     test("should create a pool under business", async () => {
       const result = await makeGraphQLRequest(
@@ -319,15 +324,11 @@ return
         {
           input: {
             name: "Test Pool",
-            type: "stable",
-            chainId,
+            ownerId: companyId,
+            ownerType: "company",
             businessId,
-            rwaAddress: "0x1234567890123456789012345678901234567890",
-            expectedHoldAmount: "1000000000000000000",
-            rewardPercent: "10",
-            description: "Test Pool Description",
-            entryPeriodDuration: 86400,
-            completionPeriodDuration: 604800,
+            chainId,
+            rwaAddress: "0x1234567890123456789012345678901234567890"
           },
         },
         accessToken
@@ -336,12 +337,11 @@ return
       expect(result.errors).toBeUndefined();
       expect(result.data.createPool).toBeDefined();
       expect(result.data.createPool.name).toBe("Test Pool");
-      expect(result.data.createPool.type).toBe("stable");
+      expect(result.data.createPool.ownerId).toBe(companyId);
+      expect(result.data.createPool.ownerType).toBe("company");
       expect(result.data.createPool.businessId).toBe(businessId);
       expect(result.data.createPool.chainId).toBe(chainId);
       expect(result.data.createPool.rwaAddress).toBe("0x1234567890123456789012345678901234567890");
-      expect(result.data.createPool.expectedHoldAmount).toBe("1000000000000000000");
-      expect(result.data.createPool.rewardPercent).toBe("10");
 
       poolId = result.data.createPool.id;
     });
@@ -391,11 +391,25 @@ return
             updateData: {
               name: "Updated Pool Name",
               description: "Updated Pool Description",
-              expectedHoldAmount: "2000000000000000000",
-              rewardPercent: "20",
               tags: ["updated"],
-              entryPeriodDuration: 172800,
-              completionPeriodDuration: 1209600,
+              expectedHoldAmount: "2000000000000000000",
+              expectedRwaAmount: "2200000000000000000",
+              rewardPercent: "20",
+              priceImpactPercent: "1",
+              outgoingTranches: [{
+                amount: "1000000000000000000",
+                timestamp: Math.floor(Date.now() / 1000) + 86400,
+                executedAmount: "0"
+              }],
+              incomingTranches: [{
+                amount: "1100000000000000000",
+                expiredAt: Math.floor(Date.now() / 1000) + 172800,
+                returnedAmount: "0"
+              }],
+              awaitCompletionExpired: true,
+              floatingOutTranchesTimestamps: true,
+              fixedSell: false,
+              allowEntryBurn: true
             }
           },
         },
@@ -407,8 +421,19 @@ return
       expect(result.data.editPool.id).toBe(poolId);
       expect(result.data.editPool.name).toBe("Updated Pool Name");
       expect(result.data.editPool.description).toBe("Updated Pool Description");
+      expect(result.data.editPool.tags).toEqual(["updated"]);
       expect(result.data.editPool.expectedHoldAmount).toBe("2000000000000000000");
+      expect(result.data.editPool.expectedRwaAmount).toBe("2200000000000000000");
       expect(result.data.editPool.rewardPercent).toBe("20");
+      expect(result.data.editPool.priceImpactPercent).toBe("1");
+      expect(result.data.editPool.outgoingTranches).toBeArray();
+      expect(result.data.editPool.outgoingTranches.length).toBe(1);
+      expect(result.data.editPool.incomingTranches).toBeArray();
+      expect(result.data.editPool.incomingTranches.length).toBe(1);
+      expect(result.data.editPool.awaitCompletionExpired).toBe(true);
+      expect(result.data.editPool.floatingOutTranchesTimestamps).toBe(true);
+      expect(result.data.editPool.fixedSell).toBe(false);
+      expect(result.data.editPool.allowEntryBurn).toBe(true);
     });
 
     test("should update pool risk score", async () => {
@@ -433,7 +458,9 @@ return
         {
           input: {
             id: poolId,
-            createRWAFee: "1000000000000000",
+            ownerWallet: wallet.address,
+            deployerWallet: wallet.address,
+            createPoolFeeRatio: "1000000000000000"
           },
         },
         accessToken
@@ -490,11 +517,11 @@ return
       const deployTx = await factory.deployPool(
         poolId,
         pool.rwaAddress,
-        BigInt(pool.targetAmount),
-        BigInt(pool.profitPercent),
-        BigInt(pool.investmentDuration),
-        BigInt(pool.realiseDuration),
-        pool.speculationsEnabled,
+        BigInt(pool.expectedHoldAmount),
+        BigInt(pool.rewardPercent),
+        BigInt(pool.entryPeriodStart),
+        BigInt(pool.completionPeriodExpired),
+        false,
         signers,
         signatureValues,
         approvalSignaturesExpired,
@@ -569,12 +596,11 @@ return
         {
           input: {
             name: "Unauthorized Pool",
-            type: "stable",
-            chainId,
+            ownerId: companyId,
+            ownerType: "company",
             businessId,
-            rwaAddress: "0x1234567890123456789012345678901234567890",
-            expectedHoldAmount: "1000000000000000000",
-            rewardPercent: "10",
+            chainId,
+            rwaAddress: "0x1234567890123456789012345678901234567890"
           },
         },
         accessToken2
