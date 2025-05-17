@@ -96,7 +96,7 @@ export const EDIT_BUSINESS = gql`
 
 export const UPDATE_BUSINESS_RISK_SCORE = gql`
   mutation UpdateBusinessRiskScore($id: ID!) {
-    updateRiskScore(id: $id) {
+    updateBusinessRiskScore(id: $id) {
       id
       riskScore
       updatedAt
@@ -106,7 +106,7 @@ export const UPDATE_BUSINESS_RISK_SCORE = gql`
 
 export const REQUEST_BUSINESS_APPROVAL_SIGNATURES = gql`
   mutation RequestBusinessApprovalSignatures($input: RequestBusinessApprovalSignaturesInput!) {
-    requestApprovalSignatures(input: $input) {
+    requestBusinessApprovalSignatures(input: $input) {
       taskId
     }
   }
@@ -114,7 +114,7 @@ export const REQUEST_BUSINESS_APPROVAL_SIGNATURES = gql`
 
 export const REJECT_BUSINESS_APPROVAL_SIGNATURES = gql`
   mutation RejectBusinessApprovalSignatures($id: ID!) {
-    rejectApprovalSignatures(id: $id)
+    rejectBusinessApprovalSignatures(id: $id)
   }
 `;
 
@@ -297,24 +297,55 @@ export const CREATE_POOL = gql`
       businessId
       description
       chainId
-      rwaAddress
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-export const EDIT_POOL = gql`
-  mutation EditPool($input: EditPoolInput!) {
-    editPool(input: $input) {
-      id
-      name
-      description
       tags
+      riskScore
+
+      # Contract Addresses
+      rwaAddress
+      poolAddress
+      holdToken
+      tokenId
+
+      # Pool Configuration
+      entryFeePercent
+      exitFeePercent
       expectedHoldAmount
       expectedRwaAmount
+      expectedBonusAmount
       rewardPercent
       priceImpactPercent
+      liquidityCoefficient
+
+      # Pool Flags
+      awaitCompletionExpired
+      floatingOutTranchesTimestamps
+      fixedSell
+      allowEntryBurn
+      paused
+
+      # Time Periods
+      entryPeriodStart
+      entryPeriodExpired
+      completionPeriodExpired
+      floatingTimestampOffset
+      fullReturnTimestamp
+
+      # Pool State
+      k
+      realHoldReserve
+      virtualHoldReserve
+      virtualRwaReserve
+      isTargetReached
+      isFullyReturned
+
+      # Amounts
+      totalClaimedAmount
+      totalReturnedAmount
+      awaitingBonusAmount
+      awaitingRwaAmount
+      outgoingTranchesBalance
+
+      # Tranches
       outgoingTranches {
         amount
         timestamp
@@ -325,10 +356,97 @@ export const EDIT_POOL = gql`
         expiredAt
         returnedAmount
       }
+      lastCompletedIncomingTranche
+
+      # Approval
+      approvalSignaturesTaskId
+      approvalSignaturesTaskExpired
+
+      # Timestamps
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const EDIT_POOL = gql`
+  mutation EditPool($input: EditPoolInput!) {
+    editPool(input: $input) {
+      id
+      ownerId
+      ownerType
+      ownerWallet
+      name
+      businessId
+      description
+      chainId
+      tags
+      riskScore
+
+      # Contract Addresses
+      rwaAddress
+      poolAddress
+      holdToken
+      tokenId
+
+      # Pool Configuration
+      entryFeePercent
+      exitFeePercent
+      expectedHoldAmount
+      expectedRwaAmount
+      expectedBonusAmount
+      rewardPercent
+      priceImpactPercent
+      liquidityCoefficient
+
+      # Pool Flags
       awaitCompletionExpired
       floatingOutTranchesTimestamps
       fixedSell
       allowEntryBurn
+      paused
+
+      # Time Periods
+      entryPeriodStart
+      entryPeriodExpired
+      completionPeriodExpired
+      floatingTimestampOffset
+      fullReturnTimestamp
+
+      # Pool State
+      k
+      realHoldReserve
+      virtualHoldReserve
+      virtualRwaReserve
+      isTargetReached
+      isFullyReturned
+
+      # Amounts
+      totalClaimedAmount
+      totalReturnedAmount
+      awaitingBonusAmount
+      awaitingRwaAmount
+      outgoingTranchesBalance
+
+      # Tranches
+      outgoingTranches {
+        amount
+        timestamp
+        executedAmount
+      }
+      incomingTranches {
+        amount
+        expiredAt
+        returnedAmount
+      }
+      lastCompletedIncomingTranche
+
+      # Approval
+      approvalSignaturesTaskId
+      approvalSignaturesTaskExpired
+
+      # Timestamps
+      createdAt
       updatedAt
     }
   }
