@@ -43,22 +43,5 @@ export const updateBusinessRiskScore: MutationResolvers['updateBusinessRiskScore
 
   const { data } = response;
 
-  return {
-    id: data.id,
-    chainId: data.chainId,
-    name: data.name,
-    ownerId: data.ownerId,
-    ownerType: data.ownerType,
-    ownerWallet: data.ownerWallet,
-    tokenAddress: data.tokenAddress,
-    description: data.description,
-    tags: data.tags,
-    riskScore: data.riskScore,
-    image: data.image,
-    approvalSignaturesTaskId: data.approvalSignaturesTaskId,
-    approvalSignaturesTaskExpired: data.approvalSignaturesTaskExpired,
-    paused: data.paused,
-    createdAt: data.createdAt,
-    updatedAt: data.updatedAt,
-  };
+  return data;
 };

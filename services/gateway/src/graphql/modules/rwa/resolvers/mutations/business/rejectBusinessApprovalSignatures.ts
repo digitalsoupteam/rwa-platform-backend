@@ -2,7 +2,7 @@ import { AuthenticationError } from '@shared/errors/app-errors';
 import { MutationResolvers } from '../../../../../generated/types';
 import { logger } from '@shared/monitoring/src/logger';
 
-export const rejectApprovalSignatures: MutationResolvers['rejectApprovalSignatures'] = async (
+export const rejectBusinessApprovalSignatures: MutationResolvers['rejectBusinessApprovalSignatures'] = async (
   _parent,
   { id },
   { services, clients, user }

@@ -33,7 +33,27 @@ export const editPool: MutationResolvers['editPool'] = async (
 
   const response = await clients.rwaClient.editPool.post({
     id: input.id,
-    updateData: input.updateData
+    updateData: {
+      chainId: input.updateData.chainId,
+      name: input.updateData.name,
+      entryFeePercent: input.updateData.entryFeePercent,
+      exitFeePercent: input.updateData.exitFeePercent,
+      expectedHoldAmount: input.updateData.expectedHoldAmount,
+      expectedRwaAmount: input.updateData.expectedRwaAmount,
+      rewardPercent: input.updateData.rewardPercent,
+      entryPeriodStart: input.updateData.entryPeriodStart,
+      entryPeriodExpired: input.updateData.entryPeriodExpired,
+      completionPeriodExpired: input.updateData.completionPeriodExpired,
+      awaitCompletionExpired: input.updateData.awaitCompletionExpired,
+      floatingOutTranchesTimestamps: input.updateData.floatingOutTranchesTimestamps,
+      fixedSell: input.updateData.fixedSell,
+      allowEntryBurn: input.updateData.allowEntryBurn,
+      priceImpactPercent: input.updateData.priceImpactPercent,
+      outgoingTranches: input.updateData.outgoingTranches,
+      incomingTranches: input.updateData.incomingTranches,
+      description: input.updateData.description,
+      tags: input.updateData.tags
+    }
   });
 
   if (response.error) {
@@ -43,74 +63,5 @@ export const editPool: MutationResolvers['editPool'] = async (
 
   const { data } = response;
 
-  return {
-    id: data.id,
-    ownerId: data.ownerId,
-    ownerType: data.ownerType,
-    ownerWallet: data.ownerWallet,
-    name: data.name,
-    businessId: data.businessId,
-    description: data.description,
-    chainId: data.chainId,
-    tags: data.tags,
-    riskScore: data.riskScore,
-
-    // Contract Addresses
-    rwaAddress: data.rwaAddress,
-    poolAddress: data.poolAddress,
-    holdToken: data.holdToken,
-    tokenId: data.tokenId,
-
-    // Pool Configuration
-    entryFeePercent: data.entryFeePercent,
-    exitFeePercent: data.exitFeePercent,
-    expectedHoldAmount: data.expectedHoldAmount,
-    expectedRwaAmount: data.expectedRwaAmount,
-    expectedBonusAmount: data.expectedBonusAmount,
-    rewardPercent: data.rewardPercent,
-    priceImpactPercent: data.priceImpactPercent,
-    liquidityCoefficient: data.liquidityCoefficient,
-
-    // Pool Flags
-    awaitCompletionExpired: data.awaitCompletionExpired,
-    floatingOutTranchesTimestamps: data.floatingOutTranchesTimestamps,
-    fixedSell: data.fixedSell,
-    allowEntryBurn: data.allowEntryBurn,
-    paused: data.paused,
-
-    // Time Periods
-    entryPeriodStart: data.entryPeriodStart,
-    entryPeriodExpired: data.entryPeriodExpired,
-    completionPeriodExpired: data.completionPeriodExpired,
-    floatingTimestampOffset: data.floatingTimestampOffset,
-    fullReturnTimestamp: data.fullReturnTimestamp,
-
-    // Pool State
-    k: data.k,
-    realHoldReserve: data.realHoldReserve,
-    virtualHoldReserve: data.virtualHoldReserve,
-    virtualRwaReserve: data.virtualRwaReserve,
-    isTargetReached: data.isTargetReached,
-    isFullyReturned: data.isFullyReturned,
-
-    // Amounts
-    totalClaimedAmount: data.totalClaimedAmount,
-    totalReturnedAmount: data.totalReturnedAmount,
-    awaitingBonusAmount: data.awaitingBonusAmount,
-    awaitingRwaAmount: data.awaitingRwaAmount,
-    outgoingTranchesBalance: data.outgoingTranchesBalance,
-
-    // Tranches
-    outgoingTranches: data.outgoingTranches,
-    incomingTranches: data.incomingTranches,
-    lastCompletedIncomingTranche: data.lastCompletedIncomingTranche,
-
-    // Approval
-    approvalSignaturesTaskId: data.approvalSignaturesTaskId,
-    approvalSignaturesTaskExpired: data.approvalSignaturesTaskExpired,
-
-    // Timestamps
-    createdAt: data.createdAt,
-    updatedAt: data.updatedAt,
-  };
+  return data;
 };

@@ -23,24 +23,5 @@ export const getBusinesses: QueryResolvers['getBusinesses'] = async (
     throw new Error('Failed to get businesses');
   }
 
-  const { data } = response;
-
-  return data.map(business => ({
-    id: business.id,
-    chainId: business.chainId,
-    name: business.name,
-    ownerId: business.ownerId,
-    ownerType: business.ownerType,
-    ownerWallet: business.ownerWallet,
-    tokenAddress: business.tokenAddress,
-    description: business.description,
-    tags: business.tags,
-    riskScore: business.riskScore,
-    image: business.image,
-    approvalSignaturesTaskId: business.approvalSignaturesTaskId,
-    approvalSignaturesTaskExpired: business.approvalSignaturesTaskExpired,
-    paused: business.paused,
-    createdAt: business.createdAt,
-    updatedAt: business.updatedAt,
-  }));
+  return response.data;
 };

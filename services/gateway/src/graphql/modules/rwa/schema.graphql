@@ -11,10 +11,10 @@ type Business {
   name: String!
   ownerId: String!
   ownerType: String!
-  ownerWallet: String!
+  ownerWallet: String
   tokenAddress: String
-  description: String!
-  tags: [String!]!
+  description: String
+  tags: [String!]
   riskScore: Float!
   image: String
   approvalSignaturesTaskId: String
@@ -31,9 +31,9 @@ type Pool {
   ownerWallet: String
   name: String!
   businessId: String!
-  description: String!
+  description: String
   chainId: String!
-  tags: [String!]!
+  tags: [String!]
   riskScore: Float!
 
   # Contract Addresses
@@ -45,12 +45,12 @@ type Pool {
   # Pool Configuration
   entryFeePercent: String
   exitFeePercent: String
-  expectedHoldAmount: String!
-  expectedRwaAmount: String!
-  expectedBonusAmount: String!
-  rewardPercent: String!
-  priceImpactPercent: String!
-  liquidityCoefficient: String!
+  expectedHoldAmount: String
+  expectedRwaAmount: String
+  expectedBonusAmount: String
+  rewardPercent: String
+  priceImpactPercent: String
+  liquidityCoefficient: String
 
   # Pool Flags
   awaitCompletionExpired: Boolean!
@@ -60,26 +60,26 @@ type Pool {
   paused: Boolean!
 
   # Time Periods
-  entryPeriodStart: Float!
-  entryPeriodExpired: Float!
-  completionPeriodExpired: Float!
+  entryPeriodStart: Float
+  entryPeriodExpired: Float
+  completionPeriodExpired: Float
   floatingTimestampOffset: Float!
   fullReturnTimestamp: Float
 
   # Pool State
-  k: String!
-  realHoldReserve: String!
-  virtualHoldReserve: String!
-  virtualRwaReserve: String!
+  k: String
+  realHoldReserve: String
+  virtualHoldReserve: String
+  virtualRwaReserve: String
   isTargetReached: Boolean!
   isFullyReturned: Boolean!
 
   # Amounts
-  totalClaimedAmount: String!
-  totalReturnedAmount: String!
-  awaitingBonusAmount: String!
-  awaitingRwaAmount: String!
-  outgoingTranchesBalance: String!
+  totalClaimedAmount: String
+  totalReturnedAmount: String
+  awaitingBonusAmount: String
+  awaitingRwaAmount: String
+  outgoingTranchesBalance: String
 
   # Tranches
   outgoingTranches: [OutgoingTranche!]!
@@ -126,6 +126,7 @@ input EditBusinessDataInput {
   description: String
   tags: [String!]
   image: String
+  chainId: String
 }
 
 input CreatePoolInput {
@@ -135,6 +136,23 @@ input CreatePoolInput {
   businessId: String!
   chainId: String!
   rwaAddress: String!
+  entryFeePercent: String
+  exitFeePercent: String
+  expectedHoldAmount: String
+  expectedRwaAmount: String
+  rewardPercent: String
+  entryPeriodStart: Float
+  entryPeriodExpired: Float
+  completionPeriodExpired: Float
+  awaitCompletionExpired: Boolean
+  floatingOutTranchesTimestamps: Boolean
+  fixedSell: Boolean
+  allowEntryBurn: Boolean
+  priceImpactPercent: String
+  outgoingTranches: [OutgoingTrancheInput!]
+  incomingTranches: [IncomingTrancheInput!]
+  description: String
+  tags: [String!]
 }
 
 input EditPoolInput {
@@ -143,19 +161,25 @@ input EditPoolInput {
 }
 
 input EditPoolDataInput {
+  chainId: String
   name: String
-  description: String
-  tags: [String!]
+  entryFeePercent: String
+  exitFeePercent: String
   expectedHoldAmount: String
   expectedRwaAmount: String
   rewardPercent: String
-  priceImpactPercent: String
-  outgoingTranches: [OutgoingTrancheInput!]
-  incomingTranches: [IncomingTrancheInput!]
+  entryPeriodStart: Float
+  entryPeriodExpired: Float
+  completionPeriodExpired: Float
   awaitCompletionExpired: Boolean
   floatingOutTranchesTimestamps: Boolean
   fixedSell: Boolean
   allowEntryBurn: Boolean
+  priceImpactPercent: String
+  outgoingTranches: [OutgoingTrancheInput!]
+  incomingTranches: [IncomingTrancheInput!]
+  description: String
+  tags: [String!]
 }
 
 input OutgoingTrancheInput {

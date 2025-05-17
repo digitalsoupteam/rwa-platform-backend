@@ -46,7 +46,5 @@ export const requestBusinessApprovalSignatures: MutationResolvers['requestBusine
 
   const { data } = response;
 
-  return {
-    taskId: data.taskId,
-  };
+  return data;
 };

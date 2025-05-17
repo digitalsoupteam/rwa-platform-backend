@@ -39,6 +39,23 @@ export const createPool: MutationResolvers['createPool'] = async (
     businessId: input.businessId,
     chainId: input.chainId,
     rwaAddress: input.rwaAddress,
+    description: input.description,
+    tags: input.tags,
+    entryFeePercent: input.entryFeePercent,
+    exitFeePercent: input.exitFeePercent,
+    expectedHoldAmount: input.expectedHoldAmount,
+    expectedRwaAmount: input.expectedRwaAmount,
+    rewardPercent: input.rewardPercent,
+    entryPeriodStart: input.entryPeriodStart,
+    entryPeriodExpired: input.entryPeriodExpired,
+    completionPeriodExpired: input.completionPeriodExpired,
+    awaitCompletionExpired: input.awaitCompletionExpired,
+    floatingOutTranchesTimestamps: input.floatingOutTranchesTimestamps,
+    fixedSell: input.fixedSell,
+    allowEntryBurn: input.allowEntryBurn,
+    priceImpactPercent: input.priceImpactPercent,
+    outgoingTranches: input.outgoingTranches,
+    incomingTranches: input.incomingTranches,
   });
 
   if (response.error) {
@@ -48,74 +65,5 @@ export const createPool: MutationResolvers['createPool'] = async (
 
   const { data } = response;
 
-  return {
-    id: data.id,
-    ownerId: data.ownerId,
-    ownerType: data.ownerType,
-    ownerWallet: data.ownerWallet,
-    name: data.name,
-    businessId: data.businessId,
-    description: data.description,
-    chainId: data.chainId,
-    tags: data.tags,
-    riskScore: data.riskScore,
-
-    // Contract Addresses
-    rwaAddress: data.rwaAddress,
-    poolAddress: data.poolAddress,
-    holdToken: data.holdToken,
-    tokenId: data.tokenId,
-
-    // Pool Configuration
-    entryFeePercent: data.entryFeePercent,
-    exitFeePercent: data.exitFeePercent,
-    expectedHoldAmount: data.expectedHoldAmount,
-    expectedRwaAmount: data.expectedRwaAmount,
-    expectedBonusAmount: data.expectedBonusAmount,
-    rewardPercent: data.rewardPercent,
-    priceImpactPercent: data.priceImpactPercent,
-    liquidityCoefficient: data.liquidityCoefficient,
-
-    // Pool Flags
-    awaitCompletionExpired: data.awaitCompletionExpired,
-    floatingOutTranchesTimestamps: data.floatingOutTranchesTimestamps,
-    fixedSell: data.fixedSell,
-    allowEntryBurn: data.allowEntryBurn,
-    paused: data.paused,
-
-    // Time Periods
-    entryPeriodStart: data.entryPeriodStart,
-    entryPeriodExpired: data.entryPeriodExpired,
-    completionPeriodExpired: data.completionPeriodExpired,
-    floatingTimestampOffset: data.floatingTimestampOffset,
-    fullReturnTimestamp: data.fullReturnTimestamp,
-
-    // Pool State
-    k: data.k,
-    realHoldReserve: data.realHoldReserve,
-    virtualHoldReserve: data.virtualHoldReserve,
-    virtualRwaReserve: data.virtualRwaReserve,
-    isTargetReached: data.isTargetReached,
-    isFullyReturned: data.isFullyReturned,
-
-    // Amounts
-    totalClaimedAmount: data.totalClaimedAmount,
-    totalReturnedAmount: data.totalReturnedAmount,
-    awaitingBonusAmount: data.awaitingBonusAmount,
-    awaitingRwaAmount: data.awaitingRwaAmount,
-    outgoingTranchesBalance: data.outgoingTranchesBalance,
-
-    // Tranches
-    outgoingTranches: data.outgoingTranches,
-    incomingTranches: data.incomingTranches,
-    lastCompletedIncomingTranche: data.lastCompletedIncomingTranche,
-
-    // Approval
-    approvalSignaturesTaskId: data.approvalSignaturesTaskId,
-    approvalSignaturesTaskExpired: data.approvalSignaturesTaskExpired,
-
-    // Timestamps
-    createdAt: data.createdAt,
-    updatedAt: data.updatedAt,
-  };
+  return data;
 };

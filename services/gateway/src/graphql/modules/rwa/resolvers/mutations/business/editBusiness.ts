@@ -34,7 +34,13 @@ export const editBusiness: MutationResolvers['editBusiness'] = async (
 
   const response = await clients.rwaClient.editBusiness.post({
     id: input.id,
-    updateData: input.updateData
+    updateData: {
+      chainId: input.updateData.chainId,
+      name: input.updateData.name,
+      description: input.updateData.description,
+      tags: input.updateData.tags,
+      image: input.updateData.image
+    }
   });
 
   if (response.error) {
@@ -44,22 +50,5 @@ export const editBusiness: MutationResolvers['editBusiness'] = async (
 
   const { data } = response;
 
-  return {
-    id: data.id,
-    chainId: data.chainId,
-    name: data.name,
-    ownerId: data.ownerId,
-    ownerType: data.ownerType,
-    ownerWallet: data.ownerWallet,
-    tokenAddress: data.tokenAddress,
-    description: data.description,
-    tags: data.tags,
-    riskScore: data.riskScore,
-    image: data.image,
-    approvalSignaturesTaskId: data.approvalSignaturesTaskId,
-    approvalSignaturesTaskExpired: data.approvalSignaturesTaskExpired,
-    paused: data.paused,
-    createdAt: data.createdAt,
-    updatedAt: data.updatedAt,
-  };
+  return data;
 };

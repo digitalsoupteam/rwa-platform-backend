@@ -17,24 +17,5 @@ export const getBusiness: QueryResolvers['getBusiness'] = async (
     throw new Error('Failed to get business');
   }
 
-  const business = response.data;
-
-  return {
-    id: business.id,
-    chainId: business.chainId,
-    name: business.name,
-    ownerId: business.ownerId,
-    ownerType: business.ownerType,
-    ownerWallet: business.ownerWallet,
-    tokenAddress: business.tokenAddress,
-    description: business.description,
-    tags: business.tags,
-    riskScore: business.riskScore,
-    image: business.image,
-    approvalSignaturesTaskId: business.approvalSignaturesTaskId,
-    approvalSignaturesTaskExpired: business.approvalSignaturesTaskExpired,
-    paused: business.paused,
-    createdAt: business.createdAt,
-    updatedAt: business.updatedAt,
-  };
+  return response.data;
 };
