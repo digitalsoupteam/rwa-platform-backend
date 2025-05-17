@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@elysiajs/eden": "latest",
-    "@shared/elysia-plugins": "workspace:*",
     "@shared/monitoring": "workspace:*",
     "@shared/errors": "workspace:*",
     "@shared/rabbitmq": "workspace:*",

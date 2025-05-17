@@ -5,7 +5,6 @@ WORKDIR /app
 
 COPY package.json .
 
-COPY shared/elysia-plugins/package.json ./shared/elysia-plugins/
 COPY shared/monitoring/package.json ./shared/monitoring/
 COPY shared/errors/package.json ./shared/errors/
 
