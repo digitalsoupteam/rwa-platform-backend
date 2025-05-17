@@ -27,7 +27,6 @@ const businessSchemaDefinition = {
   },
   tokenAddress: {
     type: String,
-    required: false,
     trim: true
   },
   description: {
@@ -46,20 +45,16 @@ const businessSchemaDefinition = {
   },
   image: {
     type: String,
-    required: false,
     trim: true,
   },
   approvalSignaturesTaskId: {
     type: String,
-    required: false,
   },
   approvalSignaturesTaskExpired: {
       type: Number,
-      required: false
   },
   paused: {
     type: Boolean,
-    required: true,
     default: false
   },
   createdAt: {

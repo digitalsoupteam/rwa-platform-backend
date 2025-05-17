@@ -2,8 +2,8 @@ import { Elysia } from "elysia";
 import { logger } from "@shared/monitoring/src/logger";
 import { ServicesPlugin } from "../../plugins/services.plugin";
 import {
-  updateBusinessRequest,
-  updateBusinessResponse,
+  editBusinessRequest,
+  editBusinessResponse,
 } from "../../models/validation/business.validation";
 
 export const editBusinessController = new Elysia()
@@ -18,7 +18,7 @@ export const editBusinessController = new Elysia()
       return await businessService.editBusiness(body);
     },
     {
-      body: updateBusinessRequest,
-      response: updateBusinessResponse,
+      body: editBusinessRequest,
+      response: editBusinessResponse,
     }
   );

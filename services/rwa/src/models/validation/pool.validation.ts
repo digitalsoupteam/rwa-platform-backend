@@ -23,12 +23,12 @@ export const poolSchema = t.Object({
   // Pool Configuration
   entryFeePercent: t.Optional(t.String()),
   exitFeePercent: t.Optional(t.String()),
-  expectedHoldAmount: t.String(),
-  expectedRwaAmount: t.String(),
-  expectedBonusAmount: t.String(),
-  rewardPercent: t.String(),
-  priceImpactPercent: t.String(),
-  liquidityCoefficient: t.String(),
+  expectedHoldAmount: t.Optional(t.String()),
+  expectedRwaAmount: t.Optional(t.String()),
+  expectedBonusAmount: t.Optional(t.String()),
+  rewardPercent: t.Optional(t.String()),
+  priceImpactPercent: t.Optional(t.String()),
+  liquidityCoefficient: t.Optional(t.String()),
 
   // Pool Flags
   awaitCompletionExpired: t.Boolean(),
@@ -38,26 +38,26 @@ export const poolSchema = t.Object({
   paused: t.Boolean(),
 
   // Time Periods
-  entryPeriodStart: t.Number(),
-  entryPeriodExpired: t.Number(),
-  completionPeriodExpired: t.Number(),
+  entryPeriodStart: t.Optional(t.Number()),
+  entryPeriodExpired: t.Optional(t.Number()),
+  completionPeriodExpired: t.Optional(t.Number()),
   floatingTimestampOffset: t.Number(),
   fullReturnTimestamp: t.Optional(t.Number()),
 
   // Pool State
-  k: t.String(),
-  realHoldReserve: t.String(),
-  virtualHoldReserve: t.String(),
-  virtualRwaReserve: t.String(),
+  k: t.Optional(t.String()),
+  realHoldReserve: t.Optional(t.String()),
+  virtualHoldReserve: t.Optional(t.String()),
+  virtualRwaReserve: t.Optional(t.String()),
   isTargetReached: t.Boolean(),
   isFullyReturned: t.Boolean(),
 
   // Amounts
-  totalClaimedAmount: t.String(),
-  totalReturnedAmount: t.String(),
-  awaitingBonusAmount: t.String(),
-  awaitingRwaAmount: t.String(),
-  outgoingTranchesBalance: t.String(),
+  totalClaimedAmount: t.Optional(t.String()),
+  totalReturnedAmount: t.Optional(t.String()),
+  awaitingBonusAmount: t.Optional(t.String()),
+  awaitingRwaAmount: t.Optional(t.String()),
+  outgoingTranchesBalance: t.Optional(t.String()),
 
   // Tranches
   outgoingTranches: t.Array(t.Object({
@@ -81,32 +81,59 @@ export const poolSchema = t.Object({
   updatedAt: t.Number()
 });
 
-export const createPoolRequest = t.Required(t.Pick(poolSchema, [
-  'ownerId',
-  'ownerType',
-  'name',
-  'businessId',
-  'chainId',
-  'rwaAddress',
-]))
+export const createPoolRequest = t.Composite([
+  t.Pick(poolSchema, [
+    'ownerId',
+    'ownerType',
+    'name',
+    'businessId',
+    'chainId',
+    'rwaAddress'
+  ]),
+  t.Partial(t.Pick(poolSchema, [
+    'entryFeePercent',
+    'exitFeePercent',
+    'expectedHoldAmount',
+    'expectedRwaAmount',
+    'rewardPercent',
+    'entryPeriodStart',
+    'entryPeriodExpired',
+    'completionPeriodExpired',
+    'awaitCompletionExpired',
+    'floatingOutTranchesTimestamps',
+    'fixedSell',
+    'allowEntryBurn',
+    'priceImpactPercent',
+    'outgoingTranches',
+    'incomingTranches',
+    'description',
+    'tags'
+  ]))
+]);
 export const createPoolResponse = poolSchema;
 
 export const editPoolRequest = t.Object({
   id: t.String(),
   updateData: t.Partial(t.Pick(poolSchema, [
+    'chainId',
     'name',
-    'description',
-    'tags',
+    'entryFeePercent',
+    'exitFeePercent',
     'expectedHoldAmount',
     'expectedRwaAmount',
     'rewardPercent',
-    'priceImpactPercent',
-    'outgoingTranches',
-    'incomingTranches',
+    'entryPeriodStart',
+    'entryPeriodExpired',
+    'completionPeriodExpired',
     'awaitCompletionExpired',
     'floatingOutTranchesTimestamps',
     'fixedSell',
     'allowEntryBurn',
+    'priceImpactPercent',
+    'outgoingTranches',
+    'incomingTranches',
+    'description',
+    'tags'
   ]))
 });
 export const editPoolResponse = poolSchema;

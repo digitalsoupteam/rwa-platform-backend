@@ -12,14 +12,34 @@ export class PoolRepository {
     "name" |
     "chainId" |
     "businessId" |
-    "rwaAddress"
-  >) {
+    "rwaAddress" 
+  > & Partial<Pick<IPoolEntity,
+    "entryFeePercent" |
+    "exitFeePercent" |
+    "expectedHoldAmount" |
+    "expectedRwaAmount" |
+    "rewardPercent" |
+    "entryPeriodStart" |
+    "entryPeriodExpired" |
+    "completionPeriodExpired" |
+    "awaitCompletionExpired" |
+    "floatingOutTranchesTimestamps" |
+    "fixedSell" |
+    "allowEntryBurn" |
+    "priceImpactPercent" |
+    "outgoingTranches" |
+    "incomingTranches" |
+    "description" |
+    "tags" 
+  >>) {
     logger.debug(`Creating pool: ${JSON.stringify(data)}`);
     const doc = await this.model.create(data);
     return doc.toObject();
   }
 
   async updatePool(id: string, data: Partial<Pick<IPoolEntity,
+    "chainId" |
+    "ownerWallet" |
     "name" |
     "poolAddress" |
     "tokenId" |
@@ -71,7 +91,6 @@ export class PoolRepository {
 
     return doc;
   }
-
 
   async findById(id: string) {
     logger.debug(`Finding pool by ID: ${id}`);

@@ -77,6 +77,7 @@ export class BusinessService {
     chainId: string;
     description?: string;
     tags?: string[];
+    image?: string;
   }) {
     logger.debug("Creating new business", { data });
 
@@ -84,14 +85,7 @@ export class BusinessService {
       throw new NotAllowedError(`Chain ID ${data.chainId} is not supported`);
     }
 
-    const business = await this.businessRepository.createBusiness({
-      name: data.name,
-      ownerId: data.ownerId,
-      ownerType: data.ownerType,
-      chainId: data.chainId,
-      description: data.description,
-      tags: data.tags
-    });
+    const business = await this.businessRepository.createBusiness(data);
 
     return this.mapBusiness(business);
   }
@@ -100,10 +94,11 @@ export class BusinessService {
     params: {
       id: string,
       updateData: {
+        chainId?: string;
+        name?: string;
         description?: string;
         tags?: string[];
         image?: string;
-        name?: string;
       }
     }
   ) {
@@ -267,15 +262,17 @@ REASONING: Moderate risk due to competitive market, but strong business model an
   }
 
   async syncAfterDeployment(
-    event: {
+    eventData: {
       entityId: string,
       emittedFrom: string;
+      initialOwner: string;
     }
   ) {
-    logger.debug("Updating business contract data", event);
+    logger.debug("Updating business contract data", eventData);
 
-    const updated = await this.businessRepository.updateBusiness(event.entityId, {
-      tokenAddress: event.emittedFrom
+    const updated = await this.businessRepository.updateBusiness(eventData.entityId, {
+      tokenAddress: eventData.emittedFrom,
+      ownerWallet: eventData.initialOwner
     });
 
     return this.mapBusiness(updated);

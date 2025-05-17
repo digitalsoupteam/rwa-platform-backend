@@ -10,10 +10,10 @@ export const businessSchema = t.Object({
   name: t.String(),
   ownerId: t.String(),
   ownerType: t.String(),
-  ownerWallet: t.String(),
+  ownerWallet: t.Optional(t.String()),
   tokenAddress: t.Optional(t.String()),
-  description: t.String(),
-  tags: t.Array(t.String()),
+  description: t.Optional(t.String()),
+  tags: t.Optional(t.Array(t.String())),
   riskScore: t.Number(),
   image: t.Optional(t.String()),
   approvalSignaturesTaskId: t.Optional(t.String()),
@@ -28,18 +28,24 @@ export const businessSchema = t.Object({
  */
 export const createBusinessRequest = t.Composite([
   t.Pick(businessSchema, ["name", "ownerId", "ownerType", "chainId"]),
-  t.Partial(t.Pick(businessSchema, ["description", "tags"])),
+  t.Partial(t.Pick(businessSchema, ["description", "tags", "image"])),
 ]);
 export const createBusinessResponse = businessSchema;
 
 /*
- * Update Business
+ * Edit Business
  */
-export const updateBusinessRequest = t.Object({
+export const editBusinessRequest = t.Object({
   id: t.String(),
-  updateData: t.Partial(t.Pick(businessSchema, ["name", "description", "tags", "image"])),
+  updateData: t.Partial(t.Pick(businessSchema, [
+    "chainId",
+    "name", 
+    "description", 
+    "tags", 
+    "image"
+  ])),
 });
-export const updateBusinessResponse = businessSchema;
+export const editBusinessResponse = businessSchema;
 
 /*
  * Update Risk Score

@@ -205,6 +205,14 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
     if (!pool.expectedHoldAmount || BigInt(pool.expectedHoldAmount) <= BigInt(0)) {
       throw new Error("expectedHoldAmount must be greater than 0");
     }
+    
+    if (!pool.expectedRwaAmount || BigInt(pool.expectedRwaAmount) <= BigInt(0)) {
+      throw new Error("expectedRwaAmount must be greater than 0");
+    }    
+
+    if (!pool.priceImpactPercent || BigInt(pool.priceImpactPercent) <= BigInt(0)) {
+      throw new Error("priceImpactPercent must be greater than 0");
+    }
 
     if (!pool.rewardPercent || BigInt(pool.rewardPercent) <= BigInt(0)) {
       throw new Error("rewardPercent must be greater than 0");
@@ -237,7 +245,6 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
     if (!network) {
       throw new Error(`Network configuration not found for chain ID ${pool.chainId}`);
     }
-
 
     const messageHash = this.generatePoolMessageHash(
       pool.chainId,
@@ -374,17 +381,19 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
     chainId: string;
     businessId: string;
     rwaAddress: string;
+    entryFeePercent?: string;
+    exitFeePercent?: string;
     expectedHoldAmount?: string;
     expectedRwaAmount?: string;
-    expectedBonusAmount?: string;
     rewardPercent?: string;
-    description?: string;
-    priceImpactPercent?: string;
-    liquidityCoefficient?: string;
+    entryPeriodStart?: number;
+    entryPeriodExpired?: number;
+    completionPeriodExpired?: number;
     awaitCompletionExpired?: boolean;
     floatingOutTranchesTimestamps?: boolean;
     fixedSell?: boolean;
     allowEntryBurn?: boolean;
+    priceImpactPercent?: string;
     outgoingTranches?: Array<{
       amount: string;
       timestamp: number;
@@ -395,6 +404,8 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       expiredAt: number;
       returnedAmount: string;
     }>;
+    description?: string;
+    tags?: string[];
   }) {
     logger.debug("Creating new pool", { data });
 
@@ -409,18 +420,21 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
   async editPool(params: {
     id: string,
     updateData: {
+      chainId?: string;
       name?: string;
+      entryFeePercent?: string;
+      exitFeePercent?: string;
       expectedHoldAmount?: string;
       expectedRwaAmount?: string;
       rewardPercent?: string;
-      description?: string;
-      tags?: string[];
-      riskScore?: number;
-      priceImpactPercent?: string;
+      entryPeriodStart?: number;
+      entryPeriodExpired?: number;
+      completionPeriodExpired?: number;
       awaitCompletionExpired?: boolean;
       floatingOutTranchesTimestamps?: boolean;
       fixedSell?: boolean;
       allowEntryBurn?: boolean;
+      priceImpactPercent?: string;
       outgoingTranches?: Array<{
         amount: string;
         timestamp: number;
@@ -431,6 +445,8 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
         expiredAt: number;
         returnedAmount: string;
       }>;
+      description?: string;
+      tags?: string[];
     }
   }) {
     logger.debug("Updating pool", params);
@@ -439,9 +455,11 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
     if (pool.approvalSignaturesTaskId) {
       const immutableFields = [
+        'chainId',
+        'entryFeePercent',
+        'exitFeePercent',
         'expectedHoldAmount',
         'expectedRwaAmount',
-        'expectedBonusAmount',
         'rewardPercent',
         'entryPeriodStart',
         'entryPeriodExpired',
@@ -451,7 +469,8 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
         'fixedSell',
         'allowEntryBurn',
         'priceImpactPercent',
-        'liquidityCoefficient'
+        'outgoingTranches',
+        'incomingTranches',
       ];
 
       for (const field of immutableFields) {
@@ -469,8 +488,10 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
   async syncPoolAfterDeployment(
     event: {
       emittedFrom: string,
+      awaitCompletionExpired: boolean,
+      floatingOutTranchesTimestamps: boolean,
       holdToken: string,
-      rwa: string,
+      rwaToken: string,
       tokenId: string,
       entityId: string,
       entityOwnerId: string,
@@ -492,7 +513,6 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       outgoingTranchTimestamps: number[],
       incomingTranches: string[],
       incomingTrancheExpired: number[],
-      initializationData: string
     }
   ) {
     logger.debug(`Syncing pool after deployment`, event);
@@ -505,8 +525,10 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
     const updateData: any = {
       poolAddress: event.emittedFrom,
       holdToken: event.holdToken,
-      rwaAddress: event.rwa,
+      rwaAddress: event.rwaToken,
       tokenId: event.tokenId,
+      floatingOutTranchesTimestamps: event.floatingOutTranchesTimestamps,
+      awaitCompletionExpired: event.awaitCompletionExpired,
       ownerWallet: event.owner,
       expectedHoldAmount: event.expectedHoldAmount,
       expectedRwaAmount: event.expectedRwaAmount,
@@ -531,25 +553,7 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
         returnedAmount: "0"
       }))
     };
-
-    // Decode initialization data
-    const [
-      virtualHoldReserve,
-      virtualRwaReserve,
-      realHoldReserve,
-      priceImpactPercent,
-      liquidityCoefficient
-    ] = ethers.AbiCoder.defaultAbiCoder().decode(
-      ['uint256', 'uint256', 'uint256', 'uint256', 'uint256'],
-      event.initializationData
-    );
     
-    updateData.virtualHoldReserve = virtualHoldReserve.toString();
-    updateData.virtualRwaReserve = virtualRwaReserve.toString();
-    updateData.realHoldReserve = realHoldReserve.toString();
-    updateData.priceImpactPercent = priceImpactPercent.toString();
-    updateData.liquidityCoefficient = liquidityCoefficient.toString();
-
     const updated = await this.poolRepository.updatePool(event.entityId, updateData);
     return this.mapPool(updated);
   }

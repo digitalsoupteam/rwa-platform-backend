@@ -4,7 +4,7 @@ import { FilterQuery, SortOrder } from "mongoose";
 import { BusinessEntity, IBusinessEntity } from "../models/entity/business.entity";
 
 export class BusinessRepository {
-  constructor(private readonly model = BusinessEntity) {}
+  constructor(private readonly model = BusinessEntity) { }
 
   async createBusiness(data: Pick<IBusinessEntity,
     "ownerId" |
@@ -14,9 +14,7 @@ export class BusinessRepository {
   > & Partial<Pick<IBusinessEntity,
     "description" |
     "tags" |
-    "riskScore" |
-    "image" |
-    "tokenAddress"
+    "image"
   >>) {
     logger.debug(`Creating business: ${JSON.stringify(data)}`);
     const doc = await this.model.create(data);
@@ -24,13 +22,13 @@ export class BusinessRepository {
   }
 
   async updateBusiness(id: string, data: Partial<Pick<IBusinessEntity,
-    "name" |
+    "chainId" |
     "ownerWallet" |
+    "name" |
     "tokenAddress" |
     "description" |
     "tags" |
     "riskScore" |
-    "image" |
     "approvalSignaturesTaskId" |
     "approvalSignaturesTaskExpired" |
     "paused"

@@ -13,6 +13,10 @@ const poolSchemaDefinition = {
     },
     ownerWallet: {
         type: String,
+        trim: true
+    },
+    chainId: {
+        type: String,
         required: true,
         trim: true
     },
@@ -28,22 +32,15 @@ const poolSchemaDefinition = {
     },
     description: {
         type: String,
-        required: true,
-        trim: true
-    },
-    chainId: {
-        type: String,
-        required: true,
+        default: '',
         trim: true
     },
     tags: {
         type: [String],
-        required: true,
         default: []
     },
     riskScore: {
         type: Number,
-        required: true,
         min: 0,
         max: 100,
         default: 0
@@ -79,54 +76,44 @@ const poolSchemaDefinition = {
     },
     expectedHoldAmount: {
         type: String,
-        required: true,
         trim: true
     },
     expectedRwaAmount: {
         type: String,
-        required: true,
         trim: true
     },
     expectedBonusAmount: {
         type: String,
-        required: true,
         trim: true
     },
     rewardPercent: {
         type: String,
-        required: true,
         trim: true
     },
     priceImpactPercent: {
         type: String,
-        required: true,
         trim: true
     },
     liquidityCoefficient: {
         type: String,
-        required: true,
         trim: true
     },
 
     // Pool Flags
     awaitCompletionExpired: {
         type: Boolean,
-        required: true,
-        default: false
+        default: true
     },
     floatingOutTranchesTimestamps: {
         type: Boolean,
-        required: true,
         default: false
     },
     fixedSell: {
         type: Boolean,
-        required: true,
-        default: false
+        default: true
     },
     allowEntryBurn: {
         type: Boolean,
-        required: true,
         default: false
     },
     paused: {
@@ -138,19 +125,15 @@ const poolSchemaDefinition = {
     // Time Periods
     entryPeriodStart: {
         type: Number,
-        required: true
     },
     entryPeriodExpired: {
         type: Number,
-        required: true
     },
     completionPeriodExpired: {
         type: Number,
-        required: true
     },
     floatingTimestampOffset: {
         type: Number,
-        required: true,
         default: 0
     },
     fullReturnTimestamp: {
@@ -160,66 +143,49 @@ const poolSchemaDefinition = {
     // Pool State
     k: {
         type: String,
-        required: true,
         trim: true
     },
     realHoldReserve: {
         type: String,
-        required: true,
         trim: true,
-        default: "0"
     },
     virtualHoldReserve: {
         type: String,
-        required: true,
         trim: true
     },
     virtualRwaReserve: {
         type: String,
-        required: true,
         trim: true
     },
     isTargetReached: {
         type: Boolean,
-        required: true,
         default: false
     },
     isFullyReturned: {
         type: Boolean,
-        required: true,
         default: false
     },
 
     // Amounts
     totalClaimedAmount: {
         type: String,
-        required: true,
         trim: true,
-        default: "0"
     },
     totalReturnedAmount: {
         type: String,
-        required: true,
         trim: true,
-        default: "0"
     },
     awaitingBonusAmount: {
         type: String,
-        required: true,
         trim: true,
-        default: "0"
     },
     awaitingRwaAmount: {
         type: String,
-        required: true,
         trim: true,
-        default: "0"
     },
     outgoingTranchesBalance: {
         type: String,
-        required: true,
         trim: true,
-        default: "0"
     },
 
     // Tranches
@@ -241,7 +207,6 @@ const poolSchemaDefinition = {
                 default: "0"
             }
         }],
-        required: true,
         default: []
     },
     incomingTranches: {
@@ -262,12 +227,10 @@ const poolSchemaDefinition = {
                 default: "0"
             }
         }],
-        required: true,
         default: []
     },
     lastCompletedIncomingTranche: {
         type: Number,
-        required: true,
         default: 0
     },
 
