@@ -37,9 +37,9 @@ export class BusinessService {
     entityOwnerId: string,
     entityOwnerType: string,
     owner: string,
-    expired: number
   ): string {
-    const innerHash = ethers.solidityPackedKeccak256(
+    // Generate initial hash of parameters
+    const paramsHash = ethers.solidityPackedKeccak256(
       [
         "uint256",
         "address",
@@ -64,10 +64,9 @@ export class BusinessService {
       ]
     );
 
-    return ethers.solidityPackedKeccak256(
-      ["bytes32", "uint256"],
-      [innerHash, BigInt(expired)]
-    );
+    // Return just the params hash - it will be combined with expired timestamp
+    // and signed in the signer service
+    return paramsHash;
   }
 
   async createBusiness(data: {
@@ -214,7 +213,6 @@ REASONING: Moderate risk due to competitive market, but strong business model an
       business.ownerId,
       business.ownerType,
       params.ownerWallet,
-      expired
     );
 
     const taskResponse =
@@ -265,14 +263,14 @@ REASONING: Moderate risk due to competitive market, but strong business model an
     eventData: {
       entityId: string,
       emittedFrom: string;
-      initialOwner: string;
+      owner: string;
     }
   ) {
     logger.debug("Updating business contract data", eventData);
 
     const updated = await this.businessRepository.updateBusiness(eventData.entityId, {
       tokenAddress: eventData.emittedFrom,
-      ownerWallet: eventData.initialOwner
+      ownerWallet: eventData.owner
     });
 
     return this.mapBusiness(updated);

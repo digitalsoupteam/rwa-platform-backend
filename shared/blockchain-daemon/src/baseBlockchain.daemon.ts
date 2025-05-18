@@ -112,7 +112,7 @@ export abstract class BaseBlockchainDaemon {
 
       // Process event
       await handler(event);
-
+      
       // Acknowledge message
       await this.rabbitClient.ack(message);
 
@@ -122,7 +122,7 @@ export abstract class BaseBlockchainDaemon {
     } catch (error) {
       logger.error("Error processing blockchain event:", error);
       // Reject message and requeue
-      await this.rabbitClient.nack(message, true);
+      await this.rabbitClient.nack(message, false);
     }
   }
 

@@ -131,7 +131,7 @@ export class BlockchainScannerDaemon {
       logger.info(`Retrieved ${allEvents.length} events`);
 
       // Group events by blocks for ordered processing
-      const eventsByBlock: Record<number, ethers.Log[]> = {};
+      const eventsByBlock: Record<number, ethers.EventLog[]> = {};
       const blockNumbers: number[] = [];
 
       for (const event of allEvents) {
@@ -139,7 +139,7 @@ export class BlockchainScannerDaemon {
           eventsByBlock[event.blockNumber] = [];
           blockNumbers.push(event.blockNumber);
         }
-        eventsByBlock[event.blockNumber].push(event);
+        eventsByBlock[event.blockNumber].push(event as ethers.EventLog);
       }
 
       // Sort blocks for sequential processing
@@ -183,12 +183,9 @@ export class BlockchainScannerDaemon {
   /**
    * Get event name from log
    */
-  private getEventName(event: ethers.Log): string {
+  private getEventName(event: ethers.EventLog): string {
     try {
-      const fragment = this.eventEmitterContract.interface.getEvent(
-        event.topics[0]
-      );
-      return fragment ? fragment.name : "Unknown";
+      return event.fragment.name;
     } catch (error) {
       return "Unknown";
     }
@@ -197,29 +194,16 @@ export class BlockchainScannerDaemon {
   /**
    * Parse event data
    */
-  private parseEventData(event: ethers.Log): Record<string, any> {
+  private parseEventData(event: ethers.EventLog): Record<string, any> {
     try {
-      const parsedLog = this.eventEmitterContract.interface.parseLog({
-        topics: event.topics as string[],
-        data: event.data,
-      });
-
-      if (!parsedLog || !parsedLog.args) {
+      const args = event.args;
+      if (!args) {
         return {};
       }
 
-      const fragment = this.eventEmitterContract.interface.getEvent(
-        parsedLog.name || event.topics[0]
-      );
-
       const result: Record<string, any> = {};
-
-      if (fragment && fragment.inputs) {
-        fragment.inputs.forEach((input, index) => {
-          result[input.name] = parsedLog.args[index];
-        });
-      } else {
-        return this.convertBigIntToString({ ...parsedLog.args });
+      for (let i = 0; i < args.length; i++) {
+        result[event.fragment.inputs[i].name] = args[i];
       }
 
       return this.convertBigIntToString(result);
