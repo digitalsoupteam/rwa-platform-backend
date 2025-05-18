@@ -74,6 +74,9 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       throw new Error("Failed to get AI response for risk assessment");
     }
 
+    console.log('aiResponseaw1')
+    console.log(aiResponse)
+    
     const match = aiResponse.match(/RISK_SCORE:\s*(\d+)/);
     if (!match) {
       throw new Error("Failed to parse risk score from AI response");
@@ -118,8 +121,7 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       amount: string;
       expiredAt: number;
       returnedAmount: string;
-    }>,
-    expired: number
+    }>
   ): string {
     const innerHash = ethers.solidityPackedKeccak256(
       [
@@ -176,10 +178,7 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       ]
     );
 
-    return ethers.solidityPackedKeccak256(
-      ["bytes32", "uint256"],
-      [innerHash, BigInt(expired)]
-    );
+    return innerHash;
   }
 
 
@@ -267,8 +266,7 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       pool.awaitCompletionExpired,
       pool.floatingOutTranchesTimestamps,
       pool.outgoingTranches,
-      pool.incomingTranches,
-      expired
+      pool.incomingTranches
     );
 
     const taskResponse =
