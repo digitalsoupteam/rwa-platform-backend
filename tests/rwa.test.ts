@@ -408,7 +408,7 @@ describe("RWA Flow", () => {
       const expectedRwaAmount = "100000"; // 100,000 RWA units
 
       // Entry period: 30 days
-      const entryPeriodStart = now + 86400; // 1 day from now
+      const entryPeriodStart = now - 100; 
       const entryPeriodExpired = entryPeriodStart + (30 * 86400); // 30 days duration
 
       // Completion period: 60 days
@@ -667,6 +667,121 @@ describe("RWA Flow", () => {
       expect(updatedPool.data.getPool.poolAddress).toBeDefined();
       expect(updatedPool.data.getPool.poolAddress).not.toBeNull();
       expect(updatedPool.data.getPool.poolAddress).not.toBe("");
+    });
+  });
+
+  describe("Pool Trading Tests", () => {
+    test("should mint and burn RWA tokens", async () => {
+      // Request HOLD tokens and gas for second wallet
+      await requestHold(accessToken2, 500);
+      await requestGas(accessToken2, 0.0035);
+
+      // Wait for transactions to be mined
+      await new Promise(resolve => setTimeout(resolve, 10000));
+
+      // Get pool data
+      const poolData = await makeGraphQLRequest(
+        GET_POOL,
+        {
+          id: poolId,
+        },
+        accessToken
+      );
+
+      expect(poolData.errors).toBeUndefined();
+      const pool = poolData.data.getPool;
+      const poolContract = new ethers.Contract(
+        pool.poolAddress,
+        [
+          "function estimateMint(uint256 rwaAmount, bool allowPartial) public view returns (uint256 holdAmountWithFee, uint256 fee, uint256 actualRwaAmount)",
+          "function mint(uint256 rwaAmount, uint256 maxHoldAmount, uint256 validUntil, bool allowPartial) external",
+          "function estimateBurn(uint256 rwaAmount) public view returns (uint256 holdAmountWithoutFee, uint256 holdFee, uint256 bonusAmountWithoutFee, uint256 bonusFee)",
+          "function burn(uint256 rwaAmount, uint256 minHoldAmount, uint256 minBonusAmount, uint256 validUntil) external",
+          "function holdToken() public view returns (address)",
+        ],
+        wallet2
+      );
+
+      // Get HOLD token address from pool
+      const holdTokenAddress = await poolContract.holdToken();
+      const holdToken = new ethers.Contract(
+        holdTokenAddress,
+        ["function approve(address spender, uint256 amount) public returns (bool)"],
+        wallet2
+      );
+
+      // Approve HOLD tokens for pool
+      const approveTx = await holdToken.approve(
+        pool.poolAddress,
+        ethers.MaxUint256
+      );
+      await approveTx.wait();
+
+      // Estimate mint
+      const rwaAmount = "1000";
+      const [holdAmountWithFee] = await poolContract.estimateMint(rwaAmount, true);
+
+      // Mint RWA tokens
+      const validUntil = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
+      const mintTx = await poolContract.mint(
+        rwaAmount,
+        holdAmountWithFee,
+        validUntil,
+        true,
+        {
+          gasLimit: 1000000,
+          gasPrice: 1000000000,
+        }
+      );
+      await mintTx.wait();
+
+      // Wait for backend to process events
+      await new Promise(resolve => setTimeout(resolve, 10000));
+
+      // Check pool state after mint
+      const poolAfterMint = await makeGraphQLRequest(
+        GET_POOL,
+        {
+          id: poolId,
+        },
+        accessToken
+      );
+
+      expect(poolAfterMint.errors).toBeUndefined();
+      expect(poolAfterMint.data.getPool.awaitingRwaAmount).toBe(rwaAmount);
+      expect(BigInt(poolAfterMint.data.getPool.realHoldReserve)).toBeGreaterThan(0n);
+
+      // Estimate burn
+      const [holdAmountWithoutFee] = await poolContract.estimateBurn(rwaAmount);
+
+      // Burn RWA tokens
+      const burnTx = await poolContract.burn(
+        rwaAmount,
+        holdAmountWithoutFee,
+        0,
+        validUntil,
+        {
+          gasLimit: 1000000,
+          gasPrice: 1000000000,
+        }
+      );
+      await burnTx.wait();
+
+      // Wait for backend to process events
+      await new Promise(resolve => setTimeout(resolve, 10000));
+
+      // Check pool state after burn
+      const poolAfterBurn = await makeGraphQLRequest(
+        GET_POOL,
+        {
+          id: poolId,
+        },
+        accessToken
+      );
+
+      expect(poolAfterBurn.errors).toBeUndefined();
+      expect(poolAfterBurn.data.getPool.awaitingRwaAmount).toBe("0");
+      expect(BigInt(poolAfterBurn.data.getPool.realHoldReserve)).toBeLessThan(BigInt(poolAfterMint.data.getPool.realHoldReserve));
     });
   });
 

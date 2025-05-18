@@ -118,4 +118,47 @@ export class PoolRepository {
       .limit(limit)
       .lean();
   }
+
+  async updatePoolByAddress(poolAddress: string, data: Partial<Pick<IPoolEntity,
+    "realHoldReserve" |
+    "virtualHoldReserve" |
+    "virtualRwaReserve" |
+    "awaitingRwaAmount" |
+    "awaitingBonusAmount" |
+    "isFullyReturned" |
+    "fullReturnTimestamp" |
+    "totalReturnedAmount" |
+    "lastCompletedIncomingTranche" |
+    "totalClaimedAmount" |
+    "outgoingTranchesBalance" |
+    "outgoingTranches" |
+    "incomingTranches" |
+    "paused" |
+    "isTargetReached" |
+    "floatingTimestampOffset"
+  >>) {
+    logger.debug(`Updating pool by address: ${poolAddress}`);
+    const doc = await this.model.findOneAndUpdate(
+      { poolAddress },
+      data,
+      { new: true }
+    ).lean();
+
+    if (!doc) {
+      throw new NotFoundError("Pool", `with address ${poolAddress}`);
+    }
+
+    return doc;
+  }
+
+  async findByAddress(poolAddress: string) {
+    logger.debug(`Finding pool by address: ${poolAddress}`);
+    const doc = await this.model.findOne({ poolAddress }).lean();
+
+    if (!doc) {
+      throw new NotFoundError("Pool", `with address ${poolAddress}`);
+    }
+
+    return doc;
+  }
 }

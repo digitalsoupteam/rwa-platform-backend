@@ -1,0 +1,29 @@
+{
+  "businessId": "682a2757177ad2f6f4f4b404",
+  "companyId": "682a27575553773efb4711e6",
+  "tokenAddress": "0xeF1d4Ed229bB0b90d8392C0Dd2BF89D5dcc78F58",
+  "ownerWallet": "0x34C130b38120841a7Bb2f1aA4B9BE649B59ad180",
+  "ownerPrivateKey": "0xce6a4b8737da053c93f956c798640e1f990a4e3a0f5d7b38de835667784eb16b",
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODJhMjc1Njc3ZDY4NjQ4NTAwOTlmNTkiLCJ3YWxsZXQiOiIweDM0QzEzMGIzODEyMDg0MWE3QmIyZjFhQTRCOUJFNjQ5QjU5YWQxODAiLCJ0eXBlIjoiYWNjZXNzIiwianRpIjoiNjkzNGU5ZWFjYjIwM2U4MDhmNzVlMzQ5OTYxZGJkZTgiLCJpYXQiOjE3NDc1OTMwNDYsImV4cCI6MTc0NzU5Mzk0Nn0.ozR1Wuq0meRT23h1v6L6dCaldRwX04b05xK6PAjKQ4Q",
+  "chainId": "97",
+  "businessData": {
+    "id": "682a2757177ad2f6f4f4b404",
+    "chainId": "97",
+    "name": "Test Business",
+    "ownerId": "682a27575553773efb4711e6",
+    "ownerType": "company",
+    "ownerWallet": "0x34C130b38120841a7Bb2f1aA4B9BE649B59ad180",
+    "tokenAddress": "0xeF1d4Ed229bB0b90d8392C0Dd2BF89D5dcc78F58",
+    "description": "Test Description",
+    "tags": [
+      "test"
+    ],
+    "riskScore": 100,
+    "image": null,
+    "approvalSignaturesTaskId": "682a275768ab9a99135c5107",
+    "approvalSignaturesTaskExpired": null,
+    "paused": false,
+    "createdAt": 1747589645,
+    "updatedAt": 1747593104
+  }
+}

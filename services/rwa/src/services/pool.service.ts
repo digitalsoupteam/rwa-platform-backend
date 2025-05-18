@@ -556,6 +556,145 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
     return this.mapPool(updated);
   }
 
+  async syncPoolAwaitingBonusAmount(event: { emittedFrom: string, awaitingBonusAmount: string }) {
+    logger.debug("Syncing pool awaiting bonus amount", event);
+    const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
+      awaitingBonusAmount: event.awaitingBonusAmount
+    });
+    return this.mapPool(updated);
+  }
+
+  async syncPoolAwaitingRwaAmount(event: { emittedFrom: string, awaitingRwaAmount: string }) {
+    logger.debug("Syncing pool awaiting rwa amount", event);
+    const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
+      awaitingRwaAmount: event.awaitingRwaAmount
+    });
+    return this.mapPool(updated);
+  }
+
+  async syncPoolFundsFullyReturned(event: { emittedFrom: string, timestamp: number }) {
+    logger.debug("Syncing pool funds fully returned", event);
+    const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
+      isFullyReturned: true,
+      fullReturnTimestamp: event.timestamp
+    });
+    return this.mapPool(updated);
+  }
+
+  async syncPoolIncomingReturnSummary(event: {
+    emittedFrom: string,
+    totalReturnedAmount: string,
+    lastCompletedIncomingTranche: number
+  }) {
+    logger.debug("Syncing pool incoming return summary", event);
+    const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
+      totalReturnedAmount: event.totalReturnedAmount,
+      lastCompletedIncomingTranche: event.lastCompletedIncomingTranche
+    });
+    return this.mapPool(updated);
+  }
+
+  async syncPoolIncomingTrancheUpdate(event: {
+    emittedFrom: string,
+    trancheIndex: number,
+    amountAppliedToTranche: string,
+    isNowComplete: boolean,
+    wasOnTime: boolean
+  }) {
+    logger.debug("Syncing pool incoming tranche update", event);
+    
+    const pool = await this.poolRepository.findByAddress(event.emittedFrom);
+    if (!pool) {
+      throw new NotFoundError(`Pool with address ${event.emittedFrom} not found`);
+    }
+
+    const incomingTranches = [...pool.incomingTranches];
+    if (event.trancheIndex >= incomingTranches.length) {
+      throw new Error(`Invalid tranche index ${event.trancheIndex}`);
+    }
+
+    incomingTranches[event.trancheIndex].returnedAmount = event.amountAppliedToTranche;
+
+    const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
+      incomingTranches
+    });
+    return this.mapPool(updated);
+  }
+
+  async syncPoolOutgoingClaimSummary(event: {
+    emittedFrom: string,
+    totalClaimedAmount: string,
+    outgoingTranchesBalance: string
+  }) {
+    logger.debug("Syncing pool outgoing claim summary", event);
+    const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
+      totalClaimedAmount: event.totalClaimedAmount,
+      outgoingTranchesBalance: event.outgoingTranchesBalance
+    });
+    return this.mapPool(updated);
+  }
+
+  async syncPoolOutgoingTrancheClaimed(event: {
+    emittedFrom: string,
+    trancheIndex: number,
+    amountClaimed: string
+  }) {
+    logger.debug("Syncing pool outgoing tranche claimed", event);
+    
+    const pool = await this.poolRepository.findByAddress(event.emittedFrom);
+    if (!pool) {
+      throw new NotFoundError(`Pool with address ${event.emittedFrom} not found`);
+    }
+
+    const outgoingTranches = [...pool.outgoingTranches];
+    if (event.trancheIndex >= outgoingTranches.length) {
+      throw new Error(`Invalid tranche index ${event.trancheIndex}`);
+    }
+
+    outgoingTranches[event.trancheIndex].executedAmount = event.amountClaimed;
+
+    const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
+      outgoingTranches
+    });
+    return this.mapPool(updated);
+  }
+
+  async syncPoolPausedState(event: { emittedFrom: string, isPaused: boolean }) {
+    logger.debug("Syncing pool paused state", event);
+    const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
+      paused: event.isPaused
+    });
+    return this.mapPool(updated);
+  }
+
+  async syncPoolReserves(event: {
+    emittedFrom: string,
+    realHoldReserve: string,
+    virtualHoldReserve: string,
+    virtualRwaReserve: string
+  }) {
+    logger.debug("Syncing pool reserves", event);
+    const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
+      realHoldReserve: event.realHoldReserve,
+      virtualHoldReserve: event.virtualHoldReserve,
+      virtualRwaReserve: event.virtualRwaReserve
+    });
+    return this.mapPool(updated);
+  }
+
+  async syncPoolTargetReached(event: {
+    emittedFrom: string,
+    outgoingTranchesBalance: string,
+    floatingTimestampOffset: number
+  }) {
+    logger.debug("Syncing pool target reached", event);
+    const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
+      isTargetReached: true,
+      outgoingTranchesBalance: event.outgoingTranchesBalance,
+      floatingTimestampOffset: event.floatingTimestampOffset
+    });
+    return this.mapPool(updated);
+  }
 
   async getPools(
     params: {
