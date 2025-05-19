@@ -5,7 +5,6 @@ import { t } from "elysia";
  */
 export const fileSchema = t.Object({
   id: t.String(),
-  userId: t.String(),
   name: t.String({ minLength: 1 }),
   path: t.String(),
   size: t.Number(),
@@ -16,8 +15,7 @@ export const fileSchema = t.Object({
  * File upload schema
  */
 export const createFileRequest = t.Object({
-  file: t.File(),
-  userId: t.String(),
+  file: t.File()
 });
 
 export const createFileResponse = fileSchema;

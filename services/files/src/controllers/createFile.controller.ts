@@ -9,21 +9,16 @@ export const createFileController = new Elysia()
   .post(
     "/createFile",
     async ({ body, fileService }) => {
-      const { file, userId } = body;
 
-      // Check file size
-      if (file.size > CONFIG.STORAGE.MAX_FILE_SIZE) {
+      if (body.file.size > CONFIG.STORAGE.MAX_FILE_SIZE) {
         throw new Error(`File size exceeds maximum allowed size of ${CONFIG.STORAGE.MAX_FILE_SIZE} bytes`);
       }
 
       logger.info(
-        `POST /files - Creating file: ${file.name}, size: ${file.size} bytes`
+        `POST /createFile - Creating file`, body
       );
 
-      const result = await fileService.createFile({
-        file,
-        userId
-      });
+      const result = await fileService.createFile(body);
 
       return result;
     },

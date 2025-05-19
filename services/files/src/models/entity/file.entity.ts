@@ -1,11 +1,6 @@
 import mongoose, { Schema, InferRawDocType } from "mongoose";
 
 const fileSchemaDefinition = {
-  userId: {
-    type: String,
-    required: true,
-    trim: true
-  },
   name: {
     type: String,
     required: true,

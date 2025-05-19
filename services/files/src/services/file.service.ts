@@ -14,7 +14,6 @@ export class FileService {
    */
   async createFile(data: {
     file: File;
-    userId: string;
   }) {
     const buffer = await data.file.arrayBuffer();
     const storagePath = this.storageClient.generatePath(data.file.name);
@@ -30,7 +29,6 @@ export class FileService {
 
     console.log('file.metadata1')
     const file = await this.fileRepository.create({
-      userId: data.userId,
       name: data.file.name,
       path: storagePath,
       size: data.file.size,
@@ -39,7 +37,6 @@ export class FileService {
 
     return {
       id: file._id.toString(),
-      userId: file.userId,
       name: file.name,
       path: file.path,
       size: file.size,

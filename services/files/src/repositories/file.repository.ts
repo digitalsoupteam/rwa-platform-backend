@@ -5,7 +5,7 @@ import { FileEntity, IFileEntity } from "../models/entity/file.entity";
 export class FileRepository {
   constructor(private readonly model = FileEntity) {}
 
-  async create(data: Pick<IFileEntity, "userId" | "name" | "path" | "size" | "mimeType" >) {
+  async create(data: Pick<IFileEntity, "name" | "path" | "size" | "mimeType" >) {
     logger.debug(`Creating file: ${data.name}`);
     const doc = await this.model.create(data);
     return doc.toObject();
