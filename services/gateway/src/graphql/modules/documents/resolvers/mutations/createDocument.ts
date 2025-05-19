@@ -1,4 +1,4 @@
-import { AuthenticationError, ForbiddenError } from '@shared/errors/app-errors';
+import { AuthenticationError } from '@shared/errors/app-errors';
 import { MutationResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/logger';
 
@@ -32,10 +32,21 @@ export const createDocument: MutationResolvers['createDocument'] = async (
     permission: 'content'
   });
 
+  // Upload file to files service
+  const fileResponse = await clients.filesClient.createFile.post({
+    file: input.file,
+  });
+
+  if (fileResponse.error) {
+    logger.error('Failed to upload file:', fileResponse.error);
+    throw new Error('Failed to upload file');
+  }
+
+  // Create document with file path
   const response = await clients.documentsClient.createDocument.post({
     folderId: input.folderId,
     name: input.name,
-    link: input.link,
+    link: fileResponse.data.path,
     ownerId: folder.ownerId,
     ownerType: folder.ownerType,
     creator: user.id,

@@ -305,14 +305,18 @@ describe("Documents Flow", () => {
   });
 
   describe("Documents", () => {
-    test("should create a document", async () => {
+    test("should create a document with file", async () => {
+      // Create test file
+      const fileContent = "Test file content";
+      const file = new File([fileContent], "test.txt", { type: "text/plain" });
+
       const result = await makeGraphQLRequest(
         CREATE_DOCUMENT,
         {
           input: {
             folderId,
             name: "Test Document",
-            link: "https://example.com/test.pdf",
+            file,
           },
         },
         accessToken
@@ -322,7 +326,7 @@ describe("Documents Flow", () => {
       expect(result.data.createDocument).toBeDefined();
       expect(result.data.createDocument.name).toBe("Test Document");
       expect(result.data.createDocument.folderId).toBe(folderId);
-      expect(result.data.createDocument.link).toBe("https://example.com/test.pdf");
+      expect(result.data.createDocument.link).toBeDefined(); // Path should be set by files service
       expect(result.data.createDocument.ownerId).toBe(userId);
       expect(result.data.createDocument.ownerType).toBe("user");
       expect(result.data.createDocument.creator).toBe(userId);

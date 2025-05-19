@@ -1,4 +1,5 @@
 scalar JSON
+scalar Upload
 
 # Document type
 type Document {
@@ -36,7 +37,7 @@ enum ParentTypes {
 input CreateDocumentInput {
   folderId: String!
   name: String!
-  link: String!
+  file: Upload!
 }
 
 # Update document input

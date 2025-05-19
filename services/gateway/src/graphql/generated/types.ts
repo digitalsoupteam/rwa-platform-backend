@@ -16,6 +16,7 @@ export type Scalars = {
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
   JSON: { input: { [key: string]: any }; output: { [key: string]: any }; }
+  Upload: { input: any; output: any; }
 };
 
 export type AddMemberInput = {
@@ -155,8 +156,8 @@ export type CreateCompanyInput = {
 };
 
 export type CreateDocumentInput = {
+  file: Scalars['Upload']['input'];
   folderId: Scalars['String']['input'];
-  link: Scalars['String']['input'];
   name: Scalars['String']['input'];
 };
 
@@ -1680,6 +1681,7 @@ export type ResolversTypes = ResolversObject<{
   UpdateQuestionTextInput: UpdateQuestionTextInput;
   UpdateTopicDataInput: UpdateTopicDataInput;
   UpdateTopicInput: UpdateTopicInput;
+  Upload: ResolverTypeWrapper<Scalars['Upload']['output']>;
   User: ResolverTypeWrapper<User>;
   UserPermission: ResolverTypeWrapper<UserPermission>;
   UserWithPermissions: ResolverTypeWrapper<UserWithPermissions>;
@@ -1799,6 +1801,7 @@ export type ResolversParentTypes = ResolversObject<{
   UpdateQuestionTextInput: UpdateQuestionTextInput;
   UpdateTopicDataInput: UpdateTopicDataInput;
   UpdateTopicInput: UpdateTopicInput;
+  Upload: Scalars['Upload']['output'];
   User: User;
   UserPermission: UserPermission;
   UserWithPermissions: UserWithPermissions;
@@ -2283,6 +2286,10 @@ export type UnlockTimeResponseResolvers<ContextType = GraphQLContext, ParentType
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export interface UploadScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['Upload'], any> {
+  name: 'Upload';
+}
+
 export type UserResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = ResolversObject<{
   createdAt?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   nonce?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -2341,6 +2348,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   Topic?: TopicResolvers<ContextType>;
   Transaction?: TransactionResolvers<ContextType>;
   UnlockTimeResponse?: UnlockTimeResponseResolvers<ContextType>;
+  Upload?: GraphQLScalarType;
   User?: UserResolvers<ContextType>;
   UserPermission?: UserPermissionResolvers<ContextType>;
   UserWithPermissions?: UserWithPermissionsResolvers<ContextType>;
