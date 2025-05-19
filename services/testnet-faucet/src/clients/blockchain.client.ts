@@ -18,6 +18,7 @@ export class BlockchainClient {
   private provider: ethers.JsonRpcProvider;
   private wallet: ethers.Wallet;
   private initialized: boolean = false;
+  private currentNonce: number = 0;
 
   constructor(
     providerUrl: string,
@@ -39,6 +40,10 @@ export class BlockchainClient {
       const balanceEth = ethers.formatEther(balance);
       
       logger.info(`Faucet wallet ${this.wallet.address} balance: ${balanceEth} ETH`);
+      
+      // Инициализируем начальный nonce
+      this.currentNonce = await this.provider.getTransactionCount(this.wallet.address);
+      logger.info(`Initial nonce: ${this.currentNonce}`);
       
       this.initialized = true;
     } catch (error) {
@@ -71,9 +76,13 @@ export class BlockchainClient {
         throw new BlockchainError('Insufficient funds in faucet wallet');
       }
       
+      // Получаем и увеличиваем nonce атомарно
+      const nonce = this.currentNonce++;
+      
       const tx = await this.wallet.sendTransaction({
         to: recipientAddress,
-        value: amountInWei
+        value: amountInWei,
+        nonce: nonce
       });
       
       logger.info(`Sent ${amount} native tokens to ${recipientAddress}, txHash: ${tx.hash}`);
@@ -129,8 +138,12 @@ export class BlockchainClient {
         throw new BlockchainError('Insufficient token balance in faucet wallet');
       }
       
+      // Получаем и увеличиваем nonce атомарно
+      const nonce = this.currentNonce++;
+      
       const tx = await tokenContract.transfer(recipientAddress, tokenAmount, {
         gasLimit: 300000,
+        nonce: nonce
       });
       
       logger.info(`Sent ${amount} tokens to ${recipientAddress}, txHash: ${tx.hash}`);

@@ -36,7 +36,7 @@ export class FaucetService {
 
     const results = await this.faucetRequestRepository.findAll(
       { userId },
-      { limit, offset, sort: { createdAt: -1 } }
+      { limit, offset, sort: { createdAt: 'asc' } }
     );
 
     return results.map((result) => ({
@@ -59,11 +59,11 @@ export class FaucetService {
     const [lastGasRequest, lastHoldRequest] = await Promise.all([
       this.faucetRequestRepository.findAll(
         { userId: data.userId, tokenType: "gas" },
-        { limit: 1, sort: { createdAt: -1 } }
+        { limit: 1, sort: { createdAt: 'asc' } }
       ),
       this.faucetRequestRepository.findAll(
         { userId: data.userId, tokenType: "hold" },
-        { limit: 1, sort: { createdAt: -1 } }
+        { limit: 1, sort: { createdAt: 'asc' } }
       ),
     ]);
 
