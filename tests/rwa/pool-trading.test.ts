@@ -28,11 +28,11 @@ describe("RWA Pool Trading", () => {
   let poolData: PoolData;
   let userAccessToken: string;
 
-  // Путь к файлу с данными пула
+  
   const poolDataPath = join(__dirname, "pool-data.json");
 
   beforeAll(async () => {
-    // Загружаем данные пула
+    
     const rawData = await readFile(poolDataPath, 'utf-8');
     poolData = JSON.parse(rawData);
 
@@ -40,10 +40,10 @@ describe("RWA Pool Trading", () => {
     poolWallet = new Wallet(poolData.ownerPrivateKey).connect(provider);
     userWallet = ethers.Wallet.createRandom().connect(provider) as any;
 
-    // Получаем access token для тестового пользователя
+    
     ({ accessToken: userAccessToken } = await authenticate(userWallet));
 
-    // Запрашиваем токены для тестового пользователя
+    
     await requestHold(userAccessToken, 500);
     await requestGas(userAccessToken, 0.0015);
     await new Promise(resolve => setTimeout(resolve, 10000));

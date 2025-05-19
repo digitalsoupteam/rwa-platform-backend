@@ -12,6 +12,7 @@ import { GET_SIGNATURE_TASK } from "../utils/graphql/schema/signers-manager";
 import { requestHold, requestGas } from "../utils/requestTokens";
 import { readFile, writeFile } from "fs/promises";
 import { join } from "path";
+import { authenticate } from "../utils/authenticate";
 
 interface BusinessData {
   businessId: string;
@@ -30,18 +31,22 @@ describe("RWA Pool Operations", () => {
   let businessData: BusinessData;
   let poolId: string;
   let poolApprovalSignaturesTaskId: string;
+  let accessToken: string;
+  let userId: string;
 
-  // Пути к файлам с данными
+  
   const businessDataPath = join(__dirname, "business-data.json");
   const poolDataPath = join(__dirname, "pool-data.json");
 
   beforeAll(async () => {
-    // Загружаем данные бизнеса
+    
     const rawData = await readFile(businessDataPath, 'utf-8');
     businessData = JSON.parse(rawData);
 
     provider = new ethers.JsonRpcProvider(TESTNET_RPC);
     wallet = new Wallet(businessData.ownerPrivateKey).connect(provider);
+
+    ({ accessToken, userId } = await authenticate(wallet));
   });
 
   test("should create and deploy pool using existing business", async () => {
@@ -58,7 +63,7 @@ describe("RWA Pool Operations", () => {
           rwaAddress: businessData.tokenAddress
         },
       },
-      businessData.accessToken
+      accessToken
     );
 
     expect(createResult.errors).toBeUndefined();
@@ -120,7 +125,7 @@ describe("RWA Pool Operations", () => {
           }
         },
       },
-      businessData.accessToken
+      accessToken
     );
 
     expect(editResult.errors).toBeUndefined();
@@ -137,7 +142,7 @@ describe("RWA Pool Operations", () => {
           createPoolFeeRatio: "100"
         },
       },
-      businessData.accessToken
+      accessToken
     );
 
     expect(sigResult.errors).toBeUndefined();
@@ -152,7 +157,7 @@ describe("RWA Pool Operations", () => {
       {
         id: poolId,
       },
-      businessData.accessToken
+      accessToken
     );
 
     expect(poolData.errors).toBeUndefined();
@@ -164,15 +169,15 @@ describe("RWA Pool Operations", () => {
           taskId: poolApprovalSignaturesTaskId,
         },
       },
-      businessData.accessToken
+      accessToken
     );
 
     expect(taskResult.errors).toBeUndefined();
     expect(taskResult.data.getSignatureTask.completed).toBe(true);
 
     // Request tokens
-    await requestHold(businessData.accessToken, 500);
-    await requestGas(businessData.accessToken, 0.0035);
+    await requestHold(accessToken, 500);
+    await requestGas(accessToken, 0.0035);
     await new Promise(resolve => setTimeout(resolve, 10000));
 
     // Deploy pool contract
@@ -230,7 +235,7 @@ describe("RWA Pool Operations", () => {
       {
         id: poolId,
       },
-      businessData.accessToken
+      accessToken
     );
 
     expect(updatedPool.errors).toBeUndefined();
@@ -247,7 +252,7 @@ describe("RWA Pool Operations", () => {
       rwaAddress: businessData.tokenAddress,
       ownerWallet: wallet.address,
       ownerPrivateKey: businessData.ownerPrivateKey,
-      accessToken: businessData.accessToken,
+      accessToken: accessToken,
       chainId: businessData.chainId,
       poolData: updatedPool.data.getPool
     };

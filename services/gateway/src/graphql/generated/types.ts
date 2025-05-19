@@ -450,6 +450,14 @@ export type GetImagesFilterInput = {
   sort?: InputMaybe<Scalars['JSON']['input']>;
 };
 
+export type GetOhlcPriceDataInput = {
+  endTime: Scalars['Float']['input'];
+  interval: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  poolAddress: Scalars['String']['input'];
+  startTime: Scalars['Float']['input'];
+};
+
 export type GetPostsFilterInput = {
   filter?: InputMaybe<Scalars['JSON']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -462,6 +470,15 @@ export type GetQuestionsFilterInput = {
   limit?: InputMaybe<Scalars['Int']['input']>;
   offset?: InputMaybe<Scalars['Int']['input']>;
   sort?: InputMaybe<Scalars['JSON']['input']>;
+};
+
+export type GetRawPriceDataInput = {
+  endTime: Scalars['Float']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  poolAddress: Scalars['String']['input'];
+  sort?: InputMaybe<Scalars['JSON']['input']>;
+  startTime: Scalars['Float']['input'];
 };
 
 export type GetSignatureTaskInput = {
@@ -907,6 +924,15 @@ export type MutationUpdateTopicArgs = {
   input: UpdateTopicInput;
 };
 
+export type OhlcData = {
+  __typename?: 'OhlcData';
+  close: Scalars['String']['output'];
+  high: Scalars['String']['output'];
+  low: Scalars['String']['output'];
+  open: Scalars['String']['output'];
+  timestamp: Scalars['Float']['output'];
+};
+
 export type OutgoingTranche = {
   __typename?: 'OutgoingTranche';
   amount: Scalars['String']['output'];
@@ -1008,6 +1034,20 @@ export type Post = {
   updatedAt: Scalars['Float']['output'];
 };
 
+export type PriceData = {
+  __typename?: 'PriceData';
+  blockNumber: Scalars['Float']['output'];
+  createdAt: Scalars['Float']['output'];
+  id: Scalars['String']['output'];
+  poolAddress: Scalars['String']['output'];
+  price: Scalars['String']['output'];
+  realHoldReserve: Scalars['String']['output'];
+  timestamp: Scalars['Float']['output'];
+  updatedAt: Scalars['Float']['output'];
+  virtualHoldReserve: Scalars['String']['output'];
+  virtualRwaReserve: Scalars['String']['output'];
+};
+
 export type Query = {
   __typename?: 'Query';
   _?: Maybe<Scalars['Boolean']['output']>;
@@ -1034,12 +1074,14 @@ export type Query = {
   getImages: Array<Image>;
   getMessage: Message;
   getMessageHistory: Array<Message>;
+  getOhlcPriceData: Array<OhlcData>;
   getPool: Pool;
   getPools: Array<Pool>;
   getPost: Post;
   getPosts: Array<Post>;
   getQuestion: Question;
   getQuestions: Array<Question>;
+  getRawPriceData: Array<PriceData>;
   getSignatureTask: SignatureTask;
   getTopic: Topic;
   getTopics: Array<Topic>;
@@ -1165,6 +1207,11 @@ export type QueryGetMessageHistoryArgs = {
 };
 
 
+export type QueryGetOhlcPriceDataArgs = {
+  input: GetOhlcPriceDataInput;
+};
+
+
 export type QueryGetPoolArgs = {
   id: Scalars['ID']['input'];
 };
@@ -1192,6 +1239,11 @@ export type QueryGetQuestionArgs = {
 
 export type QueryGetQuestionsArgs = {
   filter?: InputMaybe<GetQuestionsFilterInput>;
+};
+
+
+export type QueryGetRawPriceDataArgs = {
+  input: GetRawPriceDataInput;
 };
 
 
@@ -1615,8 +1667,10 @@ export type ResolversTypes = ResolversObject<{
   GetFoldersFilterInput: GetFoldersFilterInput;
   GetGalleriesFilterInput: GetGalleriesFilterInput;
   GetImagesFilterInput: GetImagesFilterInput;
+  GetOhlcPriceDataInput: GetOhlcPriceDataInput;
   GetPostsFilterInput: GetPostsFilterInput;
   GetQuestionsFilterInput: GetQuestionsFilterInput;
+  GetRawPriceDataInput: GetRawPriceDataInput;
   GetSignatureTaskInput: GetSignatureTaskInput;
   GetTopicsFilterInput: GetTopicsFilterInput;
   GetTransactionsInput: GetTransactionsInput;
@@ -1631,6 +1685,7 @@ export type ResolversTypes = ResolversObject<{
   Member: ResolverTypeWrapper<Member>;
   Message: ResolverTypeWrapper<Message>;
   Mutation: ResolverTypeWrapper<{}>;
+  OhlcData: ResolverTypeWrapper<OhlcData>;
   OutgoingTranche: ResolverTypeWrapper<OutgoingTranche>;
   OutgoingTrancheInput: OutgoingTrancheInput;
   PaginationInput: PaginationInput;
@@ -1638,6 +1693,7 @@ export type ResolversTypes = ResolversObject<{
   Permission: ResolverTypeWrapper<Permission>;
   Pool: ResolverTypeWrapper<Pool>;
   Post: ResolverTypeWrapper<Post>;
+  PriceData: ResolverTypeWrapper<PriceData>;
   Query: ResolverTypeWrapper<{}>;
   Question: ResolverTypeWrapper<Question>;
   RefreshTokenInput: RefreshTokenInput;
@@ -1737,8 +1793,10 @@ export type ResolversParentTypes = ResolversObject<{
   GetFoldersFilterInput: GetFoldersFilterInput;
   GetGalleriesFilterInput: GetGalleriesFilterInput;
   GetImagesFilterInput: GetImagesFilterInput;
+  GetOhlcPriceDataInput: GetOhlcPriceDataInput;
   GetPostsFilterInput: GetPostsFilterInput;
   GetQuestionsFilterInput: GetQuestionsFilterInput;
+  GetRawPriceDataInput: GetRawPriceDataInput;
   GetSignatureTaskInput: GetSignatureTaskInput;
   GetTopicsFilterInput: GetTopicsFilterInput;
   GetTransactionsInput: GetTransactionsInput;
@@ -1753,12 +1811,14 @@ export type ResolversParentTypes = ResolversObject<{
   Member: Member;
   Message: Message;
   Mutation: {};
+  OhlcData: OhlcData;
   OutgoingTranche: OutgoingTranche;
   OutgoingTrancheInput: OutgoingTrancheInput;
   PaginationInput: PaginationInput;
   Permission: Permission;
   Pool: Pool;
   Post: Post;
+  PriceData: PriceData;
   Query: {};
   Question: Question;
   RefreshTokenInput: RefreshTokenInput;
@@ -2083,6 +2143,15 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   updateTopic?: Resolver<ResolversTypes['Topic'], ParentType, ContextType, RequireFields<MutationUpdateTopicArgs, 'input'>>;
 }>;
 
+export type OhlcDataResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['OhlcData'] = ResolversParentTypes['OhlcData']> = ResolversObject<{
+  close?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  high?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  low?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  open?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  timestamp?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type OutgoingTrancheResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['OutgoingTranche'] = ResolversParentTypes['OutgoingTranche']> = ResolversObject<{
   amount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   executedAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -2168,6 +2237,20 @@ export type PostResolvers<ContextType = GraphQLContext, ParentType extends Resol
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type PriceDataResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['PriceData'] = ResolversParentTypes['PriceData']> = ResolversObject<{
+  blockNumber?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  poolAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  price?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  realHoldReserve?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  timestamp?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  virtualHoldReserve?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  virtualRwaReserve?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type QueryResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = ResolversObject<{
   _?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   getAssistant?: Resolver<ResolversTypes['Assistant'], ParentType, ContextType, RequireFields<QueryGetAssistantArgs, 'id'>>;
@@ -2193,12 +2276,14 @@ export type QueryResolvers<ContextType = GraphQLContext, ParentType extends Reso
   getImages?: Resolver<Array<ResolversTypes['Image']>, ParentType, ContextType, Partial<QueryGetImagesArgs>>;
   getMessage?: Resolver<ResolversTypes['Message'], ParentType, ContextType, RequireFields<QueryGetMessageArgs, 'id'>>;
   getMessageHistory?: Resolver<Array<ResolversTypes['Message']>, ParentType, ContextType, RequireFields<QueryGetMessageHistoryArgs, 'assistantId'>>;
+  getOhlcPriceData?: Resolver<Array<ResolversTypes['OhlcData']>, ParentType, ContextType, RequireFields<QueryGetOhlcPriceDataArgs, 'input'>>;
   getPool?: Resolver<ResolversTypes['Pool'], ParentType, ContextType, RequireFields<QueryGetPoolArgs, 'id'>>;
   getPools?: Resolver<Array<ResolversTypes['Pool']>, ParentType, ContextType, RequireFields<QueryGetPoolsArgs, 'input'>>;
   getPost?: Resolver<ResolversTypes['Post'], ParentType, ContextType, RequireFields<QueryGetPostArgs, 'id'>>;
   getPosts?: Resolver<Array<ResolversTypes['Post']>, ParentType, ContextType, Partial<QueryGetPostsArgs>>;
   getQuestion?: Resolver<ResolversTypes['Question'], ParentType, ContextType, RequireFields<QueryGetQuestionArgs, 'id'>>;
   getQuestions?: Resolver<Array<ResolversTypes['Question']>, ParentType, ContextType, Partial<QueryGetQuestionsArgs>>;
+  getRawPriceData?: Resolver<Array<ResolversTypes['PriceData']>, ParentType, ContextType, RequireFields<QueryGetRawPriceDataArgs, 'input'>>;
   getSignatureTask?: Resolver<ResolversTypes['SignatureTask'], ParentType, ContextType, RequireFields<QueryGetSignatureTaskArgs, 'input'>>;
   getTopic?: Resolver<ResolversTypes['Topic'], ParentType, ContextType, RequireFields<QueryGetTopicArgs, 'id'>>;
   getTopics?: Resolver<Array<ResolversTypes['Topic']>, ParentType, ContextType, Partial<QueryGetTopicsArgs>>;
@@ -2336,10 +2421,12 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   Member?: MemberResolvers<ContextType>;
   Message?: MessageResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
+  OhlcData?: OhlcDataResolvers<ContextType>;
   OutgoingTranche?: OutgoingTrancheResolvers<ContextType>;
   Permission?: PermissionResolvers<ContextType>;
   Pool?: PoolResolvers<ContextType>;
   Post?: PostResolvers<ContextType>;
+  PriceData?: PriceDataResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   Question?: QuestionResolvers<ContextType>;
   Signature?: SignatureResolvers<ContextType>;

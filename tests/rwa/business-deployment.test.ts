@@ -24,7 +24,7 @@ describe("RWA Business Deployment", () => {
   let businessId: string;
   let businessApprovalSignaturesTaskId: string;
 
-  // Путь к файлу с данными бизнеса
+  
   const businessDataPath = join(__dirname, "business-data.json");
 
   beforeAll(async () => {

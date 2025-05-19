@@ -11,7 +11,8 @@ import type {
   FaqClient,
   BlogClient,
   CompanyClient,
-  PortfolioClient
+  PortfolioClient,
+  ChartsClient
 } from '../../clients/eden.clients';
 import { CacheService } from '../../services/cache.service';
 import { OwnershipService } from '../../services/ownership.service';
@@ -37,6 +38,7 @@ export interface ServiceClients {
   blogClient: BlogClient;
   portfolioClient: PortfolioClient;
   companyClient: CompanyClient;
+  chartsClient: ChartsClient;
 }
 
 export interface Services {

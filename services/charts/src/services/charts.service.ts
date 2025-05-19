@@ -4,47 +4,13 @@ import { IPriceDataEntity, PriceDataEntity } from "../models/entity/priceData.en
 import { FilterQuery, SortOrder, Types } from "mongoose";
 import { ValidationError, NotFoundError } from "@shared/errors/app-errors";
 
-// Define precision constants for BigInt calculations
-const CALCULATION_PRECISION_DIGITS = 36; // Number of digits for intermediate calculation precision
-const CALCULATION_PRECISION_FACTOR = 10n ** BigInt(CALCULATION_PRECISION_DIGITS);
-const STORED_PRICE_DECIMALS = 18; // Number of decimal places to store in the price string
+// Precision constants CALCULATION_PRECISION_DIGITS and CALCULATION_PRECISION_FACTOR are removed.
+// Price will be calculated using integer division of BigInts.
+// The string representation of this integer result will be stored.
 
-/**
- * Formats a BigInt (representing a scaled number) into a decimal string.
- * @param scaledValue The BigInt value, scaled by `inputPrecisionFactor`.
- * @param inputPrecisionDigits The number of virtual decimal places in `scaledValue`.
- * @param outputDecimalPlaces The desired number of decimal places in the output string.
- * @returns A string representation of the number with `outputDecimalPlaces`.
- */
-function formatBigIntToDecimalString(
-  scaledValue: bigint,
-  inputPrecisionDigits: number,
-  outputDecimalPlaces: number
-): string {
-  const valueStr = scaledValue.toString();
-  const isNegative = valueStr.startsWith('-');
-  const absValueStr = isNegative ? valueStr.substring(1) : valueStr;
-
-  let integerPartStr = "0";
-  let fractionalPartStr = "";
-
-  if (absValueStr.length > inputPrecisionDigits) {
-    integerPartStr = absValueStr.slice(0, absValueStr.length - inputPrecisionDigits);
-    fractionalPartStr = absValueStr.slice(absValueStr.length - inputPrecisionDigits);
-  } else {
-    fractionalPartStr = absValueStr.padStart(inputPrecisionDigits, '0');
-  }
-
-  // Trim or pad the fractional part to the desired output decimal places
-  if (fractionalPartStr.length > outputDecimalPlaces) {
-    fractionalPartStr = fractionalPartStr.slice(0, outputDecimalPlaces);
-  } else {
-    fractionalPartStr = fractionalPartStr.padEnd(outputDecimalPlaces, '0');
-  }
-
-  return `${isNegative ? '-' : ''}${integerPartStr}.${fractionalPartStr}`;
-}
-
+// The function formatBigIntToDecimalString is removed.
+// Consumers of the price string (which is now a simple integer string)
+// will use it directly or perform further client-side formatting if needed.
 
 export type OhlcInterval = '1m' | '5m' | '15m' | '30m' | '1h' | '2h' | '4h' | '6h' | '12h' | '1d' | '1w';
 
@@ -81,16 +47,17 @@ export class ChartsService {
       throw new ValidationError("virtualRwaReserve cannot be zero for price calculation.");
     }
 
-    // Calculate price using BigInt for precision
+    // Calculate price using BigInt integer division
+    // price = (virtualHoldReserve + realHoldReserve) / virtualRwaReserve
     const virtualHoldReserveBigInt = BigInt(data.virtualHoldReserve);
-    const scaledNumerator = virtualHoldReserveBigInt * CALCULATION_PRECISION_FACTOR;
-    const scaledPrice = scaledNumerator / virtualRwaReserveBigInt; // This is a BigInt
+    const realHoldReserveBigInt = BigInt(data.realHoldReserve);
 
-    const priceString = formatBigIntToDecimalString(
-      scaledPrice,
-      CALCULATION_PRECISION_DIGITS,
-      STORED_PRICE_DECIMALS
-    );
+    const numerator = virtualHoldReserveBigInt + realHoldReserveBigInt;
+    // Perform integer division. Any fractional part will be truncated.
+    const calculatedPriceBigInt = numerator / virtualRwaReserveBigInt;
+
+    // Store the BigInt result as a string
+    const priceString = calculatedPriceBigInt.toString();
 
     const newPriceEntry: Omit<IPriceDataEntity, '_id' | 'createdAt' | 'updatedAt'> = {
       poolAddress: data.poolAddress,
@@ -99,7 +66,7 @@ export class ChartsService {
       realHoldReserve: data.realHoldReserve,
       virtualHoldReserve: data.virtualHoldReserve,
       virtualRwaReserve: data.virtualRwaReserve,
-      price: priceString,
+      price: priceString, // String representation of the integer BigInt price
     };
 
     const createdDoc = await this.priceDataRepository.create(newPriceEntry);

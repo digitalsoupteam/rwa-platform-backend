@@ -1,4 +1,3 @@
-
 export const CONFIG = {
   PORT: Number(process.env.PORT) || 3000,
   SERVICE_NAME: process.env.SERVICE_NAME || 'gateway',
@@ -27,25 +26,28 @@ export const CONFIG = {
       URL: process.env.FILES_SERVICE_URL || "http://files:3000"
     },
     GALLERY: {
-      URL: process.env.GALLERY_SERVICE_URL || "http://files:3000"
+      URL: process.env.GALLERY_SERVICE_URL || "http://gallery:3000"
     },
     FAQ: {
-      URL: process.env.FAQ_SERVICE_URL || "http://files:3000"
+      URL: process.env.FAQ_SERVICE_URL || "http://faq:3000"
     },
     BLOG: {
-      URL: process.env.BLOG_SERVICE_URL || "http://files:3000"
+      URL: process.env.BLOG_SERVICE_URL || "http://blog:3000"
     },
     QUESTIONS: {
-      URL: process.env.QUESTIONS_SERVICE_URL || "http://files:3000"
+      URL: process.env.QUESTIONS_SERVICE_URL || "http://questions:3000"
     },
     PORTFOLIO: {
-      URL: process.env.PORTFOLIO_SERVICE_URL || "http://files:3000"
+      URL: process.env.PORTFOLIO_SERVICE_URL || "http://portfolio:3000"
     },
     COMPANY: {
-      URL: process.env.COMPANY_SERVICE_URL || "http://files:3000"
+      URL: process.env.COMPANY_SERVICE_URL || "http://company:3000"
     },
     DOCUMENTS: {
-      URL: process.env.DOCUMENTS_SERVICE_URL || "http://files:3000"
+      URL: process.env.DOCUMENTS_SERVICE_URL || "http://documents:3000"
+    },
+    CHARTS: {
+      URL: process.env.CHARTS_SERVICE_URL || "http://charts:3040"
     }
   },
   

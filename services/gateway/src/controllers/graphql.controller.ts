@@ -20,7 +20,8 @@ import {
   faqClient,
   blogClient,
   companyClient,
-  portfolioClient
+  portfolioClient,
+  chartsClient
 } from '../clients/eden.clients';
 import type { GraphQLContext, User } from '../graphql/context/types';
 import { cacheService, ownershipService, parentService } from '../services/services.init';
@@ -64,7 +65,8 @@ export const GraphQLController = new Elysia()
           faqClient,
           blogClient,
           portfolioClient,
-          companyClient
+          companyClient,
+          chartsClient
         },
         services: {
           cache: cacheService,

@@ -1,0 +1,42 @@
+type PriceData {
+  id: String!
+  poolAddress: String!
+  timestamp: Float!
+  blockNumber: Float!
+  realHoldReserve: String!
+  virtualHoldReserve: String!
+  virtualRwaReserve: String!
+  price: String!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+type OhlcData {
+  timestamp: Float!
+  open: String!
+  high: String!
+  low: String!
+  close: String!
+}
+
+input GetRawPriceDataInput {
+  poolAddress: String!
+  startTime: Float!
+  endTime: Float!
+  limit: Int
+  offset: Int
+  sort: JSON
+}
+
+input GetOhlcPriceDataInput {
+  poolAddress: String!
+  interval: String!
+  startTime: Float!
+  endTime: Float!
+  limit: Int
+}
+
+type Query {
+  getRawPriceData(input: GetRawPriceDataInput!): [PriceData!]!
+  getOhlcPriceData(input: GetOhlcPriceDataInput!): [OhlcData!]!
+}

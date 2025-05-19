@@ -79,6 +79,7 @@ services:
       - FAQ_SERVICE_URL=${GATEWAY_FAQ_SERVICE_URL}
       - COMPANY_SERVICE_URL=${GATEWAY_COMPANY_SERVICE_URL}
       - SIGNERS_MANAGER_SERVICE_URL=${GATEWAY_SIGNERS_MANAGER_SERVICE_URL}
+      - CHARTS_SERVICE_URL=${GATEWAY_CHARTS_SERVICE_URL}
       - REDIS_URL=${GATEWAY_REDIS_URL}
     volumes:
       - service_logs:/var/log
@@ -391,6 +392,25 @@ services:
       - PORT=${PORTFOLIO_PORT}
       - MONGODB_URI=${PORTFOLIO_MONGODB_URI}
       - RABBITMQ_URL=${PORTFOLIO_RABBITMQ_URL}
+    volumes:
+      - service_logs:/var/log
+    networks:
+      - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  charts:
+    build:
+      context: ../..
+      dockerfile: services/charts/Dockerfile
+    environment:
+      - SERVICE_NAME=${CHARTS_SERVICE_NAME}
+      - PORT=${CHARTS_PORT}
+      - MONGODB_URI=${CHARTS_MONGODB_URI}
+      - RABBITMQ_URL=${CHARTS_RABBITMQ_URL}
     volumes:
       - service_logs:/var/log
     networks:

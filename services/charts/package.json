@@ -2,18 +2,15 @@
   "name": "@services/charts",
   "version": "1.0.0",
   "type": "module",
-  "scripts": {
-    "dev": "bun run --watch src/index.ts",
-    "start": "bun run src/index.ts",
-    "build": "bun build src/index.ts --outdir dist",
-    "lint": "eslint src --ext .ts",
-    "test": "bun test"
-  },
+  "scripts": {},
   "dependencies": {
     "elysia": "latest",
     "mongoose": "latest",
     "@shared/monitoring": "workspace:*",
-    "@shared/errors": "workspace:*"
+    "@shared/errors": "workspace:*",    
+    "amqplib": "latest",
+    "@shared/rabbitmq": "workspace:*",
+    "@shared/blockchain-daemon": "workspace:*"
   },
   "devDependencies": {
     "bun-types": "latest"

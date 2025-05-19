@@ -41,7 +41,7 @@ export class BlockchainClient {
       
       logger.info(`Faucet wallet ${this.wallet.address} balance: ${balanceEth} ETH`);
       
-      // Инициализируем начальный nonce
+      
       this.currentNonce = await this.provider.getTransactionCount(this.wallet.address);
       logger.info(`Initial nonce: ${this.currentNonce}`);
       
@@ -76,7 +76,7 @@ export class BlockchainClient {
         throw new BlockchainError('Insufficient funds in faucet wallet');
       }
       
-      // Получаем и увеличиваем nonce атомарно
+      
       const nonce = this.currentNonce++;
       
       const tx = await this.wallet.sendTransaction({
@@ -138,7 +138,7 @@ export class BlockchainClient {
         throw new BlockchainError('Insufficient token balance in faucet wallet');
       }
       
-      // Получаем и увеличиваем nonce атомарно
+      
       const nonce = this.currentNonce++;
       
       const tx = await tokenContract.transfer(recipientAddress, tokenAmount, {

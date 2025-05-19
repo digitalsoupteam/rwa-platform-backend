@@ -26,15 +26,15 @@ describe("RWA Pool Trading", () => {
   let poolWallet: Wallet;
   let poolData: PoolData;
 
-  // Путь к файлу с данными пула
+  
   const poolDataPath = join(__dirname, "pool-data.json");
 
-  // Количество пользователей и циклов
+  
   const NUM_USERS = 5;
   const NUM_CYCLES = 10;
 
   beforeAll(async () => {
-    // Загружаем данные пула
+    
     const rawData = await readFile(poolDataPath, 'utf-8');
     poolData = JSON.parse(rawData);
 
@@ -42,19 +42,19 @@ describe("RWA Pool Trading", () => {
     poolWallet = new Wallet(poolData.ownerPrivateKey).connect(provider);
   });
 
-  // Функция для выполнения операций одним пользователем
+  
   async function runUserOperations(userId: number) {
     const userWallet = ethers.Wallet.createRandom().connect(provider) as any;
     const { accessToken: userAccessToken } = await authenticate(userWallet);
 
-    // Запрашиваем токены для пользователя
+    
     await requestHold(userAccessToken, 500);
     await requestGas(userAccessToken, 0.007);
     await new Promise(resolve => setTimeout(resolve, 10000));
 
     console.log(`User ${userId}: Initialized and received tokens`);
 
-    // Создаем контракты для пользователя
+    
     const poolContract = new ethers.Contract(
       poolData.poolAddress,
       [
@@ -86,7 +86,7 @@ describe("RWA Pool Trading", () => {
 
     console.log(`User ${userId}: Approved HOLD token spending`);
 
-    // Выполняем циклы mint/burn
+    
     for (let cycle = 0; cycle < NUM_CYCLES; cycle++) {
       try {
         console.log(`User ${userId}: Starting cycle ${cycle + 1}`);
@@ -96,7 +96,7 @@ describe("RWA Pool Trading", () => {
         const [holdAmountWithFee] = await poolContract.estimateMint(rwaAmount, true);
         const validUntil = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
         
-        // Добавляем 10% слиппейдж для maxHoldAmount
+        
         const maxHoldAmount = BigInt(holdAmountWithFee) * BigInt(110) / BigInt(100);
         
         const mintTx = await poolContract.mint(
@@ -115,7 +115,7 @@ describe("RWA Pool Trading", () => {
         // Burn operation
         const [holdAmountWithoutFee, , bonusAmountWithoutFee] = await poolContract.estimateBurn(rwaAmount);
         
-        // Уменьшаем minHoldAmount и minBonusAmount на 10%
+        
         const minHoldAmount = BigInt(holdAmountWithoutFee) * BigInt(90) / BigInt(100);
         const minBonusAmount = BigInt(bonusAmountWithoutFee) * BigInt(90) / BigInt(100);
         
@@ -142,7 +142,7 @@ describe("RWA Pool Trading", () => {
   }
 
   test("should perform parallel mint and burn operations with multiple users", async () => {
-    // Получаем и выводим начальное состояние пула
+    
     const initialPoolState = await makeGraphQLRequest(
       GET_POOL,
       {
@@ -158,17 +158,17 @@ describe("RWA Pool Trading", () => {
       virtualRwaReserve: initialPoolState.data.getPool.virtualRwaReserve
     });
 
-    // Создаем массив промисов для каждого пользователя
+    
     const userPromises = Array.from({ length: NUM_USERS }, (_, i) =>
       runUserOperations(i + 1)
     );
 
-    // Запускаем всех пользователей параллельно
+    
     await Promise.all(userPromises);
     
     console.log("\nAll users completed their operations");
 
-    // Получаем и выводим конечное состояние пула
+    
     const finalPoolState = await makeGraphQLRequest(
       GET_POOL,
       {
