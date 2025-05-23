@@ -7,6 +7,7 @@ COPY package.json .
 
 COPY shared/errors/package.json ./shared/errors/
 COPY shared/monitoring/package.json ./shared/monitoring/
+COPY shared/redis-events/package.json ./shared/redis-events/
 
 COPY services/gateway/package.json ./services/gateway/
 

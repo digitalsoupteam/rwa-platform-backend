@@ -1,0 +1,4 @@
+
+extend type Subscription {
+  countdown(from: Int!): Int!
+}

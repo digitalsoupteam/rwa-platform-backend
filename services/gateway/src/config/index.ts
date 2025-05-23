@@ -58,5 +58,10 @@ export const CONFIG = {
 
   REDIS: {
     URL: process.env.REDIS_URL || "redis://redis:6379"
+  },
+
+  RABBITMQ: {
+    URL: process.env.RABBITMQ_URL || "amqp://localhost:5672", 
+    CHARTS_EXCHANGE: process.env.RABBITMQ_CHARTS_EXCHANGE || "charts.events" 
   }
 };

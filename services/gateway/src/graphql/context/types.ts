@@ -14,10 +14,10 @@ import type {
   PortfolioClient,
   ChartsClient
 } from '../../clients/eden.clients';
+import type { createPubSub } from 'graphql-yoga';
 import { CacheService } from '../../services/cache.service';
 import { OwnershipService } from '../../services/ownership.service';
 import { ParentService } from '../../services/parent.service';
-
 
 export interface User {
   id: string;
@@ -47,9 +47,13 @@ export interface Services {
   parent: ParentService;
 }
 
+
+export type PubSubInstance = ReturnType<typeof createPubSub>;
+
 export interface GraphQLContext {
   clients: ServiceClients;
   services: Services;
   user: User | null;
   token: string | null;
+  pubSub: PubSubInstance;
 }

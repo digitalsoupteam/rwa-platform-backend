@@ -458,6 +458,13 @@ export type GetOhlcPriceDataInput = {
   startTime: Scalars['Float']['input'];
 };
 
+export type GetPoolTransactionsInput = {
+  filter?: InputMaybe<Scalars['JSON']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<Scalars['JSON']['input']>;
+};
+
 export type GetPostsFilterInput = {
   filter?: InputMaybe<Scalars['JSON']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -499,6 +506,14 @@ export type GetTransactionsInput = {
   pagination?: InputMaybe<PaginationInput>;
   to?: InputMaybe<Array<Scalars['String']['input']>>;
   tokenAddresses?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+export type GetVolumeDataInput = {
+  endTime: Scalars['Float']['input'];
+  interval: Scalars['String']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  poolAddress: Scalars['String']['input'];
+  startTime: Scalars['Float']['input'];
 };
 
 export type GrantPermissionInput = {
@@ -1019,6 +1034,22 @@ export type Pool = {
   virtualRwaReserve?: Maybe<Scalars['String']['output']>;
 };
 
+export type PoolTransaction = {
+  __typename?: 'PoolTransaction';
+  bonusAmount: Scalars['String']['output'];
+  bonusFee: Scalars['String']['output'];
+  createdAt: Scalars['Float']['output'];
+  holdAmount: Scalars['String']['output'];
+  holdFee: Scalars['String']['output'];
+  id: Scalars['String']['output'];
+  poolAddress: Scalars['String']['output'];
+  rwaAmount: Scalars['String']['output'];
+  timestamp: Scalars['Float']['output'];
+  transactionType: Scalars['String']['output'];
+  updatedAt: Scalars['Float']['output'];
+  userAddress: Scalars['String']['output'];
+};
+
 export type Post = {
   __typename?: 'Post';
   blogId: Scalars['String']['output'];
@@ -1044,6 +1075,16 @@ export type PriceData = {
   realHoldReserve: Scalars['String']['output'];
   timestamp: Scalars['Float']['output'];
   updatedAt: Scalars['Float']['output'];
+  virtualHoldReserve: Scalars['String']['output'];
+  virtualRwaReserve: Scalars['String']['output'];
+};
+
+export type PriceUpdateEvent = {
+  __typename?: 'PriceUpdateEvent';
+  poolAddress: Scalars['String']['output'];
+  price: Scalars['String']['output'];
+  realHoldReserve: Scalars['String']['output'];
+  timestamp: Scalars['Float']['output'];
   virtualHoldReserve: Scalars['String']['output'];
   virtualRwaReserve: Scalars['String']['output'];
 };
@@ -1076,6 +1117,7 @@ export type Query = {
   getMessageHistory: Array<Message>;
   getOhlcPriceData: Array<OhlcData>;
   getPool: Pool;
+  getPoolTransactions: Array<PoolTransaction>;
   getPools: Array<Pool>;
   getPost: Post;
   getPosts: Array<Post>;
@@ -1088,6 +1130,7 @@ export type Query = {
   getTransactions: Array<Transaction>;
   getUnlockTime: UnlockTimeResponse;
   getUserAssistants: Array<Assistant>;
+  getVolumeData: Array<VolumeData>;
 };
 
 
@@ -1217,6 +1260,11 @@ export type QueryGetPoolArgs = {
 };
 
 
+export type QueryGetPoolTransactionsArgs = {
+  input: GetPoolTransactionsInput;
+};
+
+
 export type QueryGetPoolsArgs = {
   input: FilterInput;
 };
@@ -1269,6 +1317,11 @@ export type QueryGetTransactionsArgs = {
 
 export type QueryGetUserAssistantsArgs = {
   pagination?: InputMaybe<PaginationInput>;
+};
+
+
+export type QueryGetVolumeDataArgs = {
+  input: GetVolumeDataInput;
 };
 
 export type Question = {
@@ -1347,6 +1400,29 @@ export type SortFieldInput = {
   field: Scalars['String']['input'];
 };
 
+export type Subscription = {
+  __typename?: 'Subscription';
+  _?: Maybe<Scalars['Boolean']['output']>;
+  countdown: Scalars['Int']['output'];
+  priceUpdates: PriceUpdateEvent;
+  transactionUpdates: TransactionEvent;
+};
+
+
+export type SubscriptionCountdownArgs = {
+  from: Scalars['Int']['input'];
+};
+
+
+export type SubscriptionPriceUpdatesArgs = {
+  poolAddress: Scalars['String']['input'];
+};
+
+
+export type SubscriptionTransactionUpdatesArgs = {
+  poolAddress: Scalars['String']['input'];
+};
+
 export type TokenBalance = {
   __typename?: 'TokenBalance';
   balance: Scalars['Int']['output'];
@@ -1383,6 +1459,19 @@ export type Transaction = {
   tokenId: Scalars['String']['output'];
   transactionHash: Scalars['String']['output'];
   updatedAt: Scalars['Int']['output'];
+};
+
+export type TransactionEvent = {
+  __typename?: 'TransactionEvent';
+  bonusAmount?: Maybe<Scalars['String']['output']>;
+  bonusFee?: Maybe<Scalars['String']['output']>;
+  holdAmount: Scalars['String']['output'];
+  holdFee: Scalars['String']['output'];
+  poolAddress: Scalars['String']['output'];
+  rwaAmount: Scalars['String']['output'];
+  timestamp: Scalars['Float']['output'];
+  transactionType: Scalars['String']['output'];
+  userAddress: Scalars['String']['output'];
 };
 
 export type UnlockTimeResponse = {
@@ -1541,6 +1630,13 @@ export type UserWithPermissions = {
   userId: Scalars['String']['output'];
 };
 
+export type VolumeData = {
+  __typename?: 'VolumeData';
+  burnVolume: Scalars['String']['output'];
+  mintVolume: Scalars['String']['output'];
+  timestamp: Scalars['Float']['output'];
+};
+
 export type WithIndex<TObject> = TObject & Record<string, any>;
 export type ResolversObject<TObject> = WithIndex<TObject>;
 
@@ -1668,12 +1764,14 @@ export type ResolversTypes = ResolversObject<{
   GetGalleriesFilterInput: GetGalleriesFilterInput;
   GetImagesFilterInput: GetImagesFilterInput;
   GetOhlcPriceDataInput: GetOhlcPriceDataInput;
+  GetPoolTransactionsInput: GetPoolTransactionsInput;
   GetPostsFilterInput: GetPostsFilterInput;
   GetQuestionsFilterInput: GetQuestionsFilterInput;
   GetRawPriceDataInput: GetRawPriceDataInput;
   GetSignatureTaskInput: GetSignatureTaskInput;
   GetTopicsFilterInput: GetTopicsFilterInput;
   GetTransactionsInput: GetTransactionsInput;
+  GetVolumeDataInput: GetVolumeDataInput;
   GrantPermissionInput: GrantPermissionInput;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   IdResponse: ResolverTypeWrapper<IdResponse>;
@@ -1692,8 +1790,10 @@ export type ResolversTypes = ResolversObject<{
   ParentTypes: ParentTypes;
   Permission: ResolverTypeWrapper<Permission>;
   Pool: ResolverTypeWrapper<Pool>;
+  PoolTransaction: ResolverTypeWrapper<PoolTransaction>;
   Post: ResolverTypeWrapper<Post>;
   PriceData: ResolverTypeWrapper<PriceData>;
+  PriceUpdateEvent: ResolverTypeWrapper<PriceUpdateEvent>;
   Query: ResolverTypeWrapper<{}>;
   Question: ResolverTypeWrapper<Question>;
   RefreshTokenInput: RefreshTokenInput;
@@ -1707,9 +1807,11 @@ export type ResolversTypes = ResolversObject<{
   SortDirection: SortDirection;
   SortFieldInput: SortFieldInput;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
+  Subscription: ResolverTypeWrapper<{}>;
   TokenBalance: ResolverTypeWrapper<TokenBalance>;
   Topic: ResolverTypeWrapper<Topic>;
   Transaction: ResolverTypeWrapper<Transaction>;
+  TransactionEvent: ResolverTypeWrapper<TransactionEvent>;
   UnlockTimeResponse: ResolverTypeWrapper<UnlockTimeResponse>;
   UpdateAssistantInput: UpdateAssistantInput;
   UpdateBlogDataInput: UpdateBlogDataInput;
@@ -1741,6 +1843,7 @@ export type ResolversTypes = ResolversObject<{
   User: ResolverTypeWrapper<User>;
   UserPermission: ResolverTypeWrapper<UserPermission>;
   UserWithPermissions: ResolverTypeWrapper<UserWithPermissions>;
+  VolumeData: ResolverTypeWrapper<VolumeData>;
 }>;
 
 /** Mapping between all available schema types and the resolvers parents */
@@ -1794,12 +1897,14 @@ export type ResolversParentTypes = ResolversObject<{
   GetGalleriesFilterInput: GetGalleriesFilterInput;
   GetImagesFilterInput: GetImagesFilterInput;
   GetOhlcPriceDataInput: GetOhlcPriceDataInput;
+  GetPoolTransactionsInput: GetPoolTransactionsInput;
   GetPostsFilterInput: GetPostsFilterInput;
   GetQuestionsFilterInput: GetQuestionsFilterInput;
   GetRawPriceDataInput: GetRawPriceDataInput;
   GetSignatureTaskInput: GetSignatureTaskInput;
   GetTopicsFilterInput: GetTopicsFilterInput;
   GetTransactionsInput: GetTransactionsInput;
+  GetVolumeDataInput: GetVolumeDataInput;
   GrantPermissionInput: GrantPermissionInput;
   ID: Scalars['ID']['output'];
   IdResponse: IdResponse;
@@ -1817,8 +1922,10 @@ export type ResolversParentTypes = ResolversObject<{
   PaginationInput: PaginationInput;
   Permission: Permission;
   Pool: Pool;
+  PoolTransaction: PoolTransaction;
   Post: Post;
   PriceData: PriceData;
+  PriceUpdateEvent: PriceUpdateEvent;
   Query: {};
   Question: Question;
   RefreshTokenInput: RefreshTokenInput;
@@ -1831,9 +1938,11 @@ export type ResolversParentTypes = ResolversObject<{
   SignatureTask: SignatureTask;
   SortFieldInput: SortFieldInput;
   String: Scalars['String']['output'];
+  Subscription: {};
   TokenBalance: TokenBalance;
   Topic: Topic;
   Transaction: Transaction;
+  TransactionEvent: TransactionEvent;
   UnlockTimeResponse: UnlockTimeResponse;
   UpdateAssistantInput: UpdateAssistantInput;
   UpdateBlogDataInput: UpdateBlogDataInput;
@@ -1865,6 +1974,7 @@ export type ResolversParentTypes = ResolversObject<{
   User: User;
   UserPermission: UserPermission;
   UserWithPermissions: UserWithPermissions;
+  VolumeData: VolumeData;
 }>;
 
 export type AnswerResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Answer'] = ResolversParentTypes['Answer']> = ResolversObject<{
@@ -2222,6 +2332,22 @@ export type PoolResolvers<ContextType = GraphQLContext, ParentType extends Resol
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type PoolTransactionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['PoolTransaction'] = ResolversParentTypes['PoolTransaction']> = ResolversObject<{
+  bonusAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  bonusFee?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  holdAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  holdFee?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  poolAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  rwaAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  timestamp?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  transactionType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  userAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type PostResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Post'] = ResolversParentTypes['Post']> = ResolversObject<{
   blogId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   content?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -2246,6 +2372,16 @@ export type PriceDataResolvers<ContextType = GraphQLContext, ParentType extends 
   realHoldReserve?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   timestamp?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  virtualHoldReserve?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  virtualRwaReserve?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type PriceUpdateEventResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['PriceUpdateEvent'] = ResolversParentTypes['PriceUpdateEvent']> = ResolversObject<{
+  poolAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  price?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  realHoldReserve?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  timestamp?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   virtualHoldReserve?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   virtualRwaReserve?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -2278,6 +2414,7 @@ export type QueryResolvers<ContextType = GraphQLContext, ParentType extends Reso
   getMessageHistory?: Resolver<Array<ResolversTypes['Message']>, ParentType, ContextType, RequireFields<QueryGetMessageHistoryArgs, 'assistantId'>>;
   getOhlcPriceData?: Resolver<Array<ResolversTypes['OhlcData']>, ParentType, ContextType, RequireFields<QueryGetOhlcPriceDataArgs, 'input'>>;
   getPool?: Resolver<ResolversTypes['Pool'], ParentType, ContextType, RequireFields<QueryGetPoolArgs, 'id'>>;
+  getPoolTransactions?: Resolver<Array<ResolversTypes['PoolTransaction']>, ParentType, ContextType, RequireFields<QueryGetPoolTransactionsArgs, 'input'>>;
   getPools?: Resolver<Array<ResolversTypes['Pool']>, ParentType, ContextType, RequireFields<QueryGetPoolsArgs, 'input'>>;
   getPost?: Resolver<ResolversTypes['Post'], ParentType, ContextType, RequireFields<QueryGetPostArgs, 'id'>>;
   getPosts?: Resolver<Array<ResolversTypes['Post']>, ParentType, ContextType, Partial<QueryGetPostsArgs>>;
@@ -2290,6 +2427,7 @@ export type QueryResolvers<ContextType = GraphQLContext, ParentType extends Reso
   getTransactions?: Resolver<Array<ResolversTypes['Transaction']>, ParentType, ContextType, RequireFields<QueryGetTransactionsArgs, 'input'>>;
   getUnlockTime?: Resolver<ResolversTypes['UnlockTimeResponse'], ParentType, ContextType>;
   getUserAssistants?: Resolver<Array<ResolversTypes['Assistant']>, ParentType, ContextType, Partial<QueryGetUserAssistantsArgs>>;
+  getVolumeData?: Resolver<Array<ResolversTypes['VolumeData']>, ParentType, ContextType, RequireFields<QueryGetVolumeDataArgs, 'input'>>;
 }>;
 
 export type QuestionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Question'] = ResolversParentTypes['Question']> = ResolversObject<{
@@ -2325,6 +2463,13 @@ export type SignatureTaskResolvers<ContextType = GraphQLContext, ParentType exte
   requiredSignatures?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   signatures?: Resolver<Maybe<Array<ResolversTypes['Signature']>>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type SubscriptionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Subscription'] = ResolversParentTypes['Subscription']> = ResolversObject<{
+  _?: SubscriptionResolver<Maybe<ResolversTypes['Boolean']>, "_", ParentType, ContextType>;
+  countdown?: SubscriptionResolver<ResolversTypes['Int'], "countdown", ParentType, ContextType, RequireFields<SubscriptionCountdownArgs, 'from'>>;
+  priceUpdates?: SubscriptionResolver<ResolversTypes['PriceUpdateEvent'], "priceUpdates", ParentType, ContextType, RequireFields<SubscriptionPriceUpdatesArgs, 'poolAddress'>>;
+  transactionUpdates?: SubscriptionResolver<ResolversTypes['TransactionEvent'], "transactionUpdates", ParentType, ContextType, RequireFields<SubscriptionTransactionUpdatesArgs, 'poolAddress'>>;
 }>;
 
 export type TokenBalanceResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['TokenBalance'] = ResolversParentTypes['TokenBalance']> = ResolversObject<{
@@ -2365,6 +2510,19 @@ export type TransactionResolvers<ContextType = GraphQLContext, ParentType extend
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type TransactionEventResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['TransactionEvent'] = ResolversParentTypes['TransactionEvent']> = ResolversObject<{
+  bonusAmount?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  bonusFee?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  holdAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  holdFee?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  poolAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  rwaAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  timestamp?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  transactionType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  userAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type UnlockTimeResponseResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['UnlockTimeResponse'] = ResolversParentTypes['UnlockTimeResponse']> = ResolversObject<{
   gasUnlockTime?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   holdUnlockTime?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
@@ -2399,6 +2557,13 @@ export type UserWithPermissionsResolvers<ContextType = GraphQLContext, ParentTyp
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type VolumeDataResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['VolumeData'] = ResolversParentTypes['VolumeData']> = ResolversObject<{
+  burnVolume?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  mintVolume?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  timestamp?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   Answer?: AnswerResolvers<ContextType>;
   ApprovalSignaturesResponse?: ApprovalSignaturesResponseResolvers<ContextType>;
@@ -2425,19 +2590,24 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   OutgoingTranche?: OutgoingTrancheResolvers<ContextType>;
   Permission?: PermissionResolvers<ContextType>;
   Pool?: PoolResolvers<ContextType>;
+  PoolTransaction?: PoolTransactionResolvers<ContextType>;
   Post?: PostResolvers<ContextType>;
   PriceData?: PriceDataResolvers<ContextType>;
+  PriceUpdateEvent?: PriceUpdateEventResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   Question?: QuestionResolvers<ContextType>;
   Signature?: SignatureResolvers<ContextType>;
   SignatureTask?: SignatureTaskResolvers<ContextType>;
+  Subscription?: SubscriptionResolvers<ContextType>;
   TokenBalance?: TokenBalanceResolvers<ContextType>;
   Topic?: TopicResolvers<ContextType>;
   Transaction?: TransactionResolvers<ContextType>;
+  TransactionEvent?: TransactionEventResolvers<ContextType>;
   UnlockTimeResponse?: UnlockTimeResponseResolvers<ContextType>;
   Upload?: GraphQLScalarType;
   User?: UserResolvers<ContextType>;
   UserPermission?: UserPermissionResolvers<ContextType>;
   UserWithPermissions?: UserWithPermissionsResolvers<ContextType>;
+  VolumeData?: VolumeDataResolvers<ContextType>;
 }>;
 

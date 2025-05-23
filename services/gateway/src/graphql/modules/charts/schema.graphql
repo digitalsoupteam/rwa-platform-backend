@@ -19,6 +19,27 @@ type OhlcData {
   close: String!
 }
 
+type VolumeData {
+  timestamp: Float!
+  mintVolume: String!
+  burnVolume: String!
+}
+
+type PoolTransaction {
+  id: String!
+  poolAddress: String!
+  transactionType: String!
+  userAddress: String!
+  timestamp: Float!
+  rwaAmount: String!
+  holdAmount: String!
+  bonusAmount: String!
+  holdFee: String!
+  bonusFee: String!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
 input GetRawPriceDataInput {
   poolAddress: String!
   startTime: Float!
@@ -36,7 +57,50 @@ input GetOhlcPriceDataInput {
   limit: Int
 }
 
-type Query {
+input GetPoolTransactionsInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+input GetVolumeDataInput {
+  poolAddress: String!
+  interval: String!
+  startTime: Float!
+  endTime: Float!
+  limit: Int
+}
+
+extend type Query {
   getRawPriceData(input: GetRawPriceDataInput!): [PriceData!]!
   getOhlcPriceData(input: GetOhlcPriceDataInput!): [OhlcData!]!
+  getPoolTransactions(input: GetPoolTransactionsInput!): [PoolTransaction!]!
+  getVolumeData(input: GetVolumeDataInput!): [VolumeData!]!
+}
+
+type PriceUpdateEvent {
+  poolAddress: String!
+  timestamp: Float!
+  price: String!
+  realHoldReserve: String!
+  virtualHoldReserve: String!
+  virtualRwaReserve: String!
+}
+
+type TransactionEvent {
+  poolAddress: String!
+  timestamp: Float!
+  transactionType: String! # MINT or BURN
+  userAddress: String!
+  rwaAmount: String!
+  holdAmount: String!
+  bonusAmount: String
+  holdFee: String!
+  bonusFee: String
+}
+
+extend type Subscription {
+  priceUpdates(poolAddress: String!): PriceUpdateEvent!
+  transactionUpdates(poolAddress: String!): TransactionEvent!
 }
