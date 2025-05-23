@@ -100,36 +100,34 @@ export class PriceDataRepository {
         },
       },
       {
-        $sort: { timestamp: 1 }, // Sort by time to ensure $first and $last are correct for the interval
+        $sort: { timestamp: 1 },
       },
       {
         $group: {
           _id: {
-            // Group by time intervals. 'timestamp' is in seconds.
             $subtract: [
               "$timestamp",
               { $mod: ["$timestamp", intervalSeconds] },
             ],
           },
-          // Convert price string to Decimal128 for accurate min/max/first/last aggregation
-          open: { $first: { $toDecimal: "$price" } },
-          high: { $max: { $toDecimal: "$price" } },
-          low: { $min: { $toDecimal: "$price" } },
-          close: { $last: { $toDecimal: "$price" } },
+          open: { $first: "$price" },
+          high: { $max: "$price" },
+          low: { $min: "$price" },
+          close: { $last: "$price" },
         },
       },
       {
         $project: {
-          _id: 0, // Exclude the default _id
-          timestamp: "$_id", // Rename _id (which is the interval start) to timestamp
-          open: { $toString: "$open" }, // Convert Decimal128 back to string for output
-          high: { $toString: "$high" },
-          low: { $toString: "$low" },
-          close: { $toString: "$close" },
+          _id: 0,
+          timestamp: "$_id",
+          open: "$open",
+          high: "$high",
+          low: "$low",
+          close: "$close",
         },
       },
       {
-        $sort: { timestamp: 1 }, // Sort the final bars by time
+        $sort: { timestamp: 1 },
       },
     ];
 

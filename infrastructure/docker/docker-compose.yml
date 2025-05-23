@@ -411,6 +411,7 @@ services:
       - PORT=${CHARTS_PORT}
       - MONGODB_URI=${CHARTS_MONGODB_URI}
       - RABBITMQ_URL=${CHARTS_RABBITMQ_URL}
+      - REDIS_URL=${CHARTS_REDIS_URL}
     volumes:
       - service_logs:/var/log
     networks:

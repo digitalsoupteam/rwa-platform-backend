@@ -18,7 +18,8 @@ export const DaemonsPlugin = new Elysia({ name: "Daemons" })
       // Initialize blockchain events daemon
       decorator.blockchainEventsDaemon = new BlockchainEventsDaemon(
         decorator.rabbitMQClient,
-        decorator.chartsService
+        decorator.chartsService,
+        decorator.transactionsService
       );
 
       await decorator.blockchainEventsDaemon.initialize();

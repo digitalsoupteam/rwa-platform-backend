@@ -1,6 +1,5 @@
 import { t } from "elysia";
 
-
 export const priceDataSchema = t.Object({
   id: t.String(),
   poolAddress: t.String(),
@@ -14,15 +13,13 @@ export const priceDataSchema = t.Object({
   updatedAt: t.Number()
 });
 
-
 export const ohlcDataSchema = t.Object({
   timestamp: t.Number(),
   open: t.String(),
   high: t.String(),
   low: t.String(),
-  close: t.String()
+  close: t.String(),
 });
-
 
 export const ohlcIntervalSchema = t.Union([
   t.Literal("1m"),
@@ -38,7 +35,6 @@ export const ohlcIntervalSchema = t.Union([
   t.Literal("1w")
 ]);
 
-
 export const getRawPriceDataRequest = t.Object({
   poolAddress: t.String(),
   startTime: t.Number(),
@@ -48,7 +44,6 @@ export const getRawPriceDataRequest = t.Object({
   sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")])))
 });
 export const getRawPriceDataResponse = t.Array(priceDataSchema);
-
 
 export const getOhlcPriceDataRequest = t.Object({
   poolAddress: t.String(),

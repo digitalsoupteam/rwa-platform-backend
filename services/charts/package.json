@@ -10,6 +10,7 @@
     "@shared/errors": "workspace:*",    
     "amqplib": "latest",
     "@shared/rabbitmq": "workspace:*",
+    "@shared/redis-events": "workspace:*",
     "@shared/blockchain-daemon": "workspace:*"
   },
   "devDependencies": {

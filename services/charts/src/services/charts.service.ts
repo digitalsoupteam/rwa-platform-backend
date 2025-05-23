@@ -1,21 +1,17 @@
 import { logger } from "@shared/monitoring/src/logger";
 import { PriceDataRepository } from "../repositories/priceData.repository";
-import { IPriceDataEntity, PriceDataEntity } from "../models/entity/priceData.entity";
-import { FilterQuery, SortOrder, Types } from "mongoose";
-import { ValidationError, NotFoundError } from "@shared/errors/app-errors";
-
-// Precision constants CALCULATION_PRECISION_DIGITS and CALCULATION_PRECISION_FACTOR are removed.
-// Price will be calculated using integer division of BigInts.
-// The string representation of this integer result will be stored.
-
-// The function formatBigIntToDecimalString is removed.
-// Consumers of the price string (which is now a simple integer string)
-// will use it directly or perform further client-side formatting if needed.
+import { IPriceDataEntity } from "../models/entity/priceData.entity";
+import { FilterQuery, SortOrder } from "mongoose";
+import { ValidationError } from "@shared/errors/app-errors";
+import { ChartEventsClient } from "../clients/redis.client";
 
 export type OhlcInterval = '1m' | '5m' | '15m' | '30m' | '1h' | '2h' | '4h' | '6h' | '12h' | '1d' | '1w';
 
 export class ChartsService {
-  constructor(private readonly priceDataRepository: PriceDataRepository) {}
+  constructor(
+    private readonly priceDataRepository: PriceDataRepository,
+    private readonly chartEventsClient: ChartEventsClient
+  ) {}
 
   private mapPriceDataToOutput(doc: IPriceDataEntity): Omit<IPriceDataEntity, '_id'> & { id: string } {
     return {
@@ -26,7 +22,7 @@ export class ChartsService {
       realHoldReserve: doc.realHoldReserve,
       virtualHoldReserve: doc.virtualHoldReserve,
       virtualRwaReserve: doc.virtualRwaReserve,
-      price: doc.price, // Price is already a formatted string
+      price: doc.price,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
     };
@@ -34,7 +30,7 @@ export class ChartsService {
 
   async recordPriceData(data: {
     poolAddress: string;
-    timestamp: number; // Unix timestamp (seconds)
+    timestamp: number;
     blockNumber: number;
     realHoldReserve: string;
     virtualHoldReserve: string;
@@ -47,16 +43,11 @@ export class ChartsService {
       throw new ValidationError("virtualRwaReserve cannot be zero for price calculation.");
     }
 
-    // Calculate price using BigInt integer division
-    // price = (virtualHoldReserve + realHoldReserve) / virtualRwaReserve
     const virtualHoldReserveBigInt = BigInt(data.virtualHoldReserve);
     const realHoldReserveBigInt = BigInt(data.realHoldReserve);
 
     const numerator = virtualHoldReserveBigInt + realHoldReserveBigInt;
-    // Perform integer division. Any fractional part will be truncated.
     const calculatedPriceBigInt = numerator / virtualRwaReserveBigInt;
-
-    // Store the BigInt result as a string
     const priceString = calculatedPriceBigInt.toString();
 
     const newPriceEntry: Omit<IPriceDataEntity, '_id' | 'createdAt' | 'updatedAt'> = {
@@ -66,17 +57,28 @@ export class ChartsService {
       realHoldReserve: data.realHoldReserve,
       virtualHoldReserve: data.virtualHoldReserve,
       virtualRwaReserve: data.virtualRwaReserve,
-      price: priceString, // String representation of the integer BigInt price
+      price: priceString,
     };
 
     const createdDoc = await this.priceDataRepository.create(newPriceEntry);
-    return this.mapPriceDataToOutput(createdDoc);
+    const output = this.mapPriceDataToOutput(createdDoc);
+
+    await this.chartEventsClient.publishPriceUpdate({
+      poolAddress: output.poolAddress,
+      timestamp: output.timestamp,
+      price: output.price,
+      realHoldReserve: output.realHoldReserve,
+      virtualHoldReserve: output.virtualHoldReserve,
+      virtualRwaReserve: output.virtualRwaReserve,
+    });
+
+    return output;
   }
 
   async getRawPriceData(params: {
     poolAddress: string;
-    startTime: number; // Unix timestamp (seconds)
-    endTime: number;   // Unix timestamp (seconds)
+    startTime: number;
+    endTime: number;
     limit?: number;
     offset?: number;
     sort?: { [key: string]: SortOrder };
@@ -115,11 +117,11 @@ export class ChartsService {
   async getOhlcPriceData(params: {
     poolAddress: string;
     interval: OhlcInterval;
-    startTime: number; // Unix timestamp (seconds)
-    endTime: number;   // Unix timestamp (seconds)
-    limit?: number; // Optional limit for the number of OHLC bars
+    startTime: number;
+    endTime: number;
+    limit?: number;
   }): Promise<{
-    timestamp: number; // Start of the interval (Unix timestamp seconds)
+    timestamp: number;
     open: string;
     high: string;
     low: string;
@@ -131,7 +133,6 @@ export class ChartsService {
     const intervalMs = this.getMillisecondsForInterval(interval);
     const intervalSeconds = intervalMs / 1000;
 
-    // Call the repository method for aggregation
     const results = await this.priceDataRepository.aggregateOhlcData(
       poolAddress,
       intervalSeconds,
@@ -139,7 +140,13 @@ export class ChartsService {
       endTime,
       limit
     );
-    
-    return results; // The repository now returns the data in the correct format
+
+    return results.map(bar => ({
+      timestamp: bar.timestamp,
+      open: bar.open,
+      high: bar.high,
+      low: bar.low,
+      close: bar.close,
+    }));
   }
 }
