@@ -3,6 +3,7 @@ import { TokenBalanceRepository } from "../repositories/tokenBalance.repository"
 import { TransactionRepository } from "../repositories/transaction.repository";
 import { ITokenBalanceEntity } from "../models/entity/tokenBalance.entity";
 import { ITransactionEntity } from "../models/entity/transaction.entity";
+import { SortOrder } from "mongoose";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
@@ -15,59 +16,43 @@ export class PortfolioService {
   /**
    * Gets token balances list with filters, pagination and sorting
    */
-  async getBalances(data: {
-    owners?: string[];
-    tokenAddresses?: string[];
-    chainIds?: string[];
-    pagination?: {
-      limit?: number;
-      offset?: number;
-      sort?: Record<string, 'asc' | 'desc'>;
-    }
+  async getBalances(params: {
+    filter?: Record<string, any>,
+    sort?: { [key: string]: SortOrder },
+    limit?: number,
+    offset?: number
   }) {
-    logger.debug("Getting token balances list", data);
-
-    const { pagination, ...filters } = data;
-    const { limit = 50, offset = 0, sort = { createdAt: 'asc' } } = pagination || {};
+    logger.debug("Getting token balances list", params);
     
     const balances = await this.tokenBalanceRepository.findAll(
-      filters,
-      sort,
-      limit,
-      offset
+      params.filter,
+      params.sort,
+      params.limit,
+      params.offset
     );
 
-    return balances.map(balance => this.mapBalance(balance));
+    return balances.map(this.mapBalance);
   }
 
   /**
    * Gets transactions list with filters, pagination and sorting
    */
-  async getTransactions(data: {
-    from?: string[];
-    to?: string[];
-    tokenAddresses?: string[];
-    chainIds?: string[];
-    blockNumbers?: number[];
-    pagination?: {
-      limit?: number;
-      offset?: number;
-      sort?: Record<string, 'asc' | 'desc'>;
-    }
+  async getTransactions(params: {
+    filter?: Record<string, any>,
+    sort?: { [key: string]: SortOrder },
+    limit?: number,
+    offset?: number
   }) {
-    logger.debug("Getting transactions list", data);
-
-    const { pagination, ...filters } = data;
-    const { limit = 50, offset = 0, sort = { blockNumber: 'asc' } } = pagination || {};
+    logger.debug("Getting transactions list", params);
     
     const transactions = await this.transactionRepository.findAll(
-      filters,
-      sort,
-      limit,
-      offset
+      params.filter,
+      params.sort,
+      params.limit,
+      params.offset
     );
 
-    return transactions.map(tx => this.mapTransaction(tx));
+    return transactions.map(this.mapTransaction);
   }
 
   /**
@@ -78,6 +63,7 @@ export class PortfolioService {
     to: string;
     tokenAddress: string;
     tokenId: string;
+    pool: string;
     chainId: string;
     transactionHash: string;
     blockNumber: number;
@@ -97,6 +83,7 @@ export class PortfolioService {
       to: data.to,
       tokenAddress: data.tokenAddress,
       tokenId: data.tokenId,
+      pool: data.pool,
       chainId: data.chainId,
       transactionHash: data.transactionHash,
       blockNumber: data.blockNumber,
@@ -107,6 +94,8 @@ export class PortfolioService {
       await this.tokenBalanceRepository.updateBalance(
         data.from,
         data.tokenAddress,
+        data.tokenId,
+        data.pool,
         data.chainId,
         -data.amount,
         data.blockNumber
@@ -117,6 +106,8 @@ export class PortfolioService {
       await this.tokenBalanceRepository.updateBalance(
         data.to,
         data.tokenAddress,
+        data.tokenId,
+        data.pool,
         data.chainId,
         data.amount,
         data.blockNumber
@@ -129,6 +120,7 @@ export class PortfolioService {
       id: balance._id.toString(),
       owner: balance.owner,
       tokenAddress: balance.tokenAddress,
+      pool: balance.pool,
       chainId: balance.chainId,
       balance: balance.balance,
       lastUpdateBlock: balance.lastUpdateBlock,
@@ -143,6 +135,7 @@ export class PortfolioService {
       from: tx.from,
       to: tx.to,
       tokenAddress: tx.tokenAddress,
+      pool: tx.pool,
       tokenId: tx.tokenId,
       chainId: tx.chainId,
       transactionHash: tx.transactionHash,

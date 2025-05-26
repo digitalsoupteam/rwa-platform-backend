@@ -11,6 +11,16 @@ const tokenBalanceSchemaDefinition = {
         required: true,
         trim: true
     },
+    tokenId: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    pool: {
+        type: String,
+        required: true,
+        trim: true
+    },
     chainId: {
         type: String,
         required: true,
@@ -43,10 +53,10 @@ const tokenBalanceSchema = new Schema(tokenBalanceSchemaDefinition, {
 tokenBalanceSchema.index({ owner: 1 });
 
 
-tokenBalanceSchema.index({ owner: 1, tokenAddress: 1, chainId: 1 }, { unique: true });
+tokenBalanceSchema.index({ pool: 1 });
 
+tokenBalanceSchema.index({ owner: 1, pool: 1, chainId: 1 }, { unique: true });
 
-tokenBalanceSchema.index({ tokenAddress: 1, chainId: 1 });
 
 export type ITokenBalanceEntity = InferRawDocType<typeof tokenBalanceSchemaDefinition> & { _id: Types.ObjectId };
 export const TokenBalanceEntity = mongoose.model("TokenBalance", tokenBalanceSchema);

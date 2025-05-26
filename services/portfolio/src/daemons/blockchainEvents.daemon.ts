@@ -22,7 +22,8 @@ export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
           from,
           to,
           tokenId,
-          amount
+          amount,
+          pool,
         } = event.data;
 
         
@@ -34,15 +35,17 @@ export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
           chainId: `${event.chainId}`,
           transactionHash: event.transactionHash,
           blockNumber: event.blockNumber,
-          amount: Number(amount)
+          amount: Number(amount),
+          pool,
         });
 
         logger.info(`Processed swap event for user`, {
-          emittedFrom, 
+          emittedFrom,
           from,
           to,
           tokenId,
-          amount
+          amount,
+          pool
         });
       }
     };

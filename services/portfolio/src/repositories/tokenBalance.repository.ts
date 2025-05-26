@@ -21,41 +21,11 @@ export class TokenBalanceRepository {
   }
 
   async findAll(
-    query: {
-      owners?: string[];
-      tokenAddresses?: string[];
-      chainIds?: string[];
-    },
-    sort: { [key: string]: SortOrder } = { createdAt: 'asc' },
+    filter: FilterQuery<typeof this.model> = {},
+    sort: { [key: string]: SortOrder } = { createdAt: "asc" },
     limit: number = 100,
     offset: number = 0
   ) {
-    const filter: FilterQuery<typeof this.model> = {};
-
-    if(query.owners) {
-      if (query.owners.length === 1) {
-        filter.owner = query.owners[0];
-      } else if (query.owners.length > 1) {
-        filter.owner = { $in: query.owners };
-      }
-    }
-
-    if(query.tokenAddresses) {
-      if (query.tokenAddresses.length === 1) {
-        filter.tokenAddress = query.tokenAddresses[0];
-      } else if (query.tokenAddresses.length > 1) {
-        filter.tokenAddress = { $in: query.tokenAddresses };
-      }
-    }
-
-    if(query.chainIds) {
-      if (query.chainIds.length === 1) {
-        filter.chainId = query.chainIds[0];
-      } else if (query.chainIds.length > 1) {
-        filter.chainId = { $in: query.chainIds };
-      }
-    }
-
     logger.debug(`Finding token balances with query: ${JSON.stringify(filter)}`);
 
     return await this.model
@@ -72,20 +42,24 @@ export class TokenBalanceRepository {
   async updateBalance(
     owner: string,
     tokenAddress: string,
+    tokenId: string,
+    pool: string,
     chainId: string,
     amount: number,
     lastUpdateBlock: number
   ) {
-    logger.debug(`Updating balance for ${owner} - ${tokenAddress} by ${amount}`);
+    logger.debug(`Updating balance for ${owner} - ${tokenAddress} - ${tokenId} by ${amount}`);
     
     const balance = await this.model.findOneAndUpdate(
-      { owner, tokenAddress, chainId },
+      { owner, tokenAddress, tokenId, pool, chainId },
       {
         $inc: { balance: amount },
         $set: { lastUpdateBlock },
         $setOnInsert: {
           owner,
           tokenAddress,
+          tokenId,
+          pool,
           chainId
         }
       },
