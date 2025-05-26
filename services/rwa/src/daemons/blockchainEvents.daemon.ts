@@ -28,8 +28,8 @@ export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
         await this.poolService.syncPoolAfterDeployment(event.data as any);
       },
 
-      "Pool_AwaitingBonusAmountUpdated": async (event: BlockchainEvent) => {
-        await this.poolService.syncPoolAwaitingBonusAmount(event.data as any);
+      "Pool_BonusWithdrawn": async (event: BlockchainEvent) => {
+        await this.poolService.syncPoolBonusWithdrawn(event.data as any);
       },
 
       "Pool_AwaitingRwaAmountUpdated": async (event: BlockchainEvent) => {

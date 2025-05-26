@@ -58,6 +58,7 @@ export const poolSchema = t.Object({
   awaitingBonusAmount: t.Optional(t.String()),
   awaitingRwaAmount: t.Optional(t.String()),
   outgoingTranchesBalance: t.Optional(t.String()),
+  rewardedRwaAmount: t.Optional(t.String()),
 
   // Tranches
   outgoingTranches: t.Array(t.Object({

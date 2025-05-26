@@ -352,6 +352,7 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       totalReturnedAmount: pool.totalReturnedAmount ?? "0",
       awaitingBonusAmount: pool.awaitingBonusAmount ?? "0",
       awaitingRwaAmount: pool.awaitingRwaAmount ?? "0",
+      rewardedRwaAmount: pool.rewardedRwaAmount ?? "0",
       outgoingTranchesBalance: pool.outgoingTranchesBalance ?? "0",
       outgoingTranches: pool.outgoingTranches ?? [],
       incomingTranches: pool.incomingTranches ?? [],
@@ -581,15 +582,30 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
     return this.mapPool(updated);
   }
 
+  async syncPoolBonusWithdrawn(event: {
+    emittedFrom: string,
+    currentAwaitingBonusAmount: string,
+    currentRewardedRwaAmount: string
+  }) {
+    logger.debug("Syncing pool bonus withdrawn", event);
+    const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
+      awaitingBonusAmount: event.currentAwaitingBonusAmount,
+      rewardedRwaAmount: event.currentRewardedRwaAmount
+    });
+    return this.mapPool(updated);
+  }
+
   async syncPoolIncomingReturnSummary(event: {
     emittedFrom: string,
-    totalReturnedAmount: string,
-    lastCompletedIncomingTranche: number
+    currentTotalReturnedAmount: string,
+    currentAwaitingBonusAmount: string,
+    currentLastCompletedIncomingTranche: number
   }) {
     logger.debug("Syncing pool incoming return summary", event);
     const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
-      totalReturnedAmount: event.totalReturnedAmount,
-      lastCompletedIncomingTranche: event.lastCompletedIncomingTranche
+      totalReturnedAmount: event.currentTotalReturnedAmount,
+      awaitingBonusAmount: event.currentAwaitingBonusAmount,
+      lastCompletedIncomingTranche: event.currentLastCompletedIncomingTranche
     });
     return this.mapPool(updated);
   }
@@ -623,13 +639,13 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   async syncPoolOutgoingClaimSummary(event: {
     emittedFrom: string,
-    totalClaimedAmount: string,
-    outgoingTranchesBalance: string
+    currentTotalClaimedAmount: string,
+    currentOutgoingTranchesBalance: string
   }) {
     logger.debug("Syncing pool outgoing claim summary", event);
     const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
-      totalClaimedAmount: event.totalClaimedAmount,
-      outgoingTranchesBalance: event.outgoingTranchesBalance
+      totalClaimedAmount: event.currentTotalClaimedAmount,
+      outgoingTranchesBalance: event.currentOutgoingTranchesBalance
     });
     return this.mapPool(updated);
   }

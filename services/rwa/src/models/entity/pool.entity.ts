@@ -187,6 +187,11 @@ const poolSchemaDefinition = {
         type: String,
         trim: true,
     },
+    rewardedRwaAmount: {
+        type: String,
+        trim: true,
+        default: "0"
+    },
 
     // Tranches
     outgoingTranches: {

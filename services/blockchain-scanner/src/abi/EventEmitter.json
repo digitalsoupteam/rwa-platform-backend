@@ -91,11 +91,11 @@
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "awaitingBonusAmount",
+          "name": "awaitingRwaAmount",
           "type": "uint256"
         }
       ],
-      "name": "Pool_AwaitingBonusAmountUpdated",
+      "name": "Pool_AwaitingRwaAmountUpdated",
       "type": "event"
     },
     {
@@ -110,11 +110,17 @@
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "awaitingRwaAmount",
+          "name": "currentAwaitingBonusAmount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "currentRewardedRwaAmount",
           "type": "uint256"
         }
       ],
-      "name": "Pool_AwaitingRwaAmountUpdated",
+      "name": "Pool_BonusWithdrawn",
       "type": "event"
     },
     {
@@ -311,13 +317,19 @@
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "totalReturnedAmount",
+          "name": "currentTotalReturnedAmount",
           "type": "uint256"
         },
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "lastCompletedIncomingTranche",
+          "name": "currentAwaitingBonusAmount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "currentLastCompletedIncomingTranche",
           "type": "uint256"
         }
       ],
@@ -379,13 +391,13 @@
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "totalClaimedAmount",
+          "name": "currentTotalClaimedAmount",
           "type": "uint256"
         },
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "outgoingTranchesBalance",
+          "name": "currentOutgoingTranchesBalance",
           "type": "uint256"
         }
       ],
@@ -517,6 +529,24 @@
           "internalType": "uint256",
           "name": "bonusFeePaid",
           "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "percentBefore",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "userPercent",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "targetReached",
+          "type": "bool"
         }
       ],
       "name": "Pool_RwaBurned",
@@ -554,6 +584,24 @@
           "internalType": "uint256",
           "name": "feePaid",
           "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "percentBefore",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "userPercent",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "targetReached",
+          "type": "bool"
         }
       ],
       "name": "Pool_RwaMinted",
@@ -607,6 +655,25 @@
         }
       ],
       "name": "RWA_Deployed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "emittedFrom",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "isPaused",
+          "type": "bool"
+        }
+      ],
+      "name": "RWA_PausedStateChanged",
       "type": "event"
     },
     {
@@ -689,11 +756,11 @@
       "inputs": [
         {
           "internalType": "uint256",
-          "name": "awaitingBonusAmount",
+          "name": "awaitingRwaAmount",
           "type": "uint256"
         }
       ],
-      "name": "emitPool_AwaitingBonusAmountUpdated",
+      "name": "emitPool_AwaitingRwaAmountUpdated",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -702,11 +769,16 @@
       "inputs": [
         {
           "internalType": "uint256",
-          "name": "awaitingRwaAmount",
+          "name": "bonusAmountWithdrawn",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "eligibleRwaAmount",
           "type": "uint256"
         }
       ],
-      "name": "emitPool_AwaitingRwaAmountUpdated",
+      "name": "emitPool_BonusWithdrawn",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -861,7 +933,12 @@
       "inputs": [
         {
           "internalType": "uint256",
-          "name": "totalReturnedAmount",
+          "name": "totalAmountAppliedInCall",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "totalAppliedToBonusInCall",
           "type": "uint256"
         },
         {
@@ -1016,6 +1093,21 @@
           "internalType": "uint256",
           "name": "bonusFeePaid",
           "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "percentBefore",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "userPercent",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "targetReached",
+          "type": "bool"
         }
       ],
       "name": "emitPool_RwaBurned",
@@ -1044,6 +1136,21 @@
           "internalType": "uint256",
           "name": "feePaid",
           "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "percentBefore",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "userPercent",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "targetReached",
+          "type": "bool"
         }
       ],
       "name": "emitPool_RwaMinted",
@@ -1083,6 +1190,19 @@
         }
       ],
       "name": "emitRWA_Deployed",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bool",
+          "name": "isPaused",
+          "type": "bool"
+        }
+      ],
+      "name": "emitRWA_PausedStateChanged",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"

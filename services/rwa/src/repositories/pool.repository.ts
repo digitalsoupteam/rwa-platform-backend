@@ -135,7 +135,8 @@ export class PoolRepository {
     "incomingTranches" |
     "paused" |
     "isTargetReached" |
-    "floatingTimestampOffset"
+    "floatingTimestampOffset" |
+    "rewardedRwaAmount"
   >>) {
     logger.debug(`Updating pool by address: ${poolAddress}`);
     const doc = await this.model.findOneAndUpdate(
