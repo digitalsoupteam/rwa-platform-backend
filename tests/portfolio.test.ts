@@ -5,12 +5,12 @@ import { makeGraphQLRequest } from "./utils/graphql/makeGraphQLRequest";
 import { authenticate } from "./utils/authenticate";
 import {
   CREATE_BUSINESS,
-  UPDATE_BUSINESS,
+  EDIT_BUSINESS,
   UPDATE_BUSINESS_RISK_SCORE,
   REQUEST_BUSINESS_APPROVAL_SIGNATURES,
   GET_BUSINESS,
   CREATE_POOL,
-  UPDATE_POOL,
+  EDIT_POOL,
   UPDATE_POOL_RISK_SCORE,
   REQUEST_POOL_APPROVAL_SIGNATURES,
   GET_POOL,
@@ -132,14 +132,16 @@ describe("Portfolio Flow", () => {
 
     // Update first business data
     await makeGraphQLRequest(
-      UPDATE_BUSINESS,
+      EDIT_BUSINESS,
       {
         input: {
           id: business1Id,
-          name: "First Test Business",
-          description: "Business for portfolio testing",
-          tags: ["test", "portfolio"],
-          image: "https://example.com/image1.png",
+          updateData: {
+            name: "First Test Business",
+            description: "Business for portfolio testing",
+            tags: ["test", "portfolio"],
+            image: "https://example.com/image1.png",
+          }
         },
       },
       accessToken
@@ -234,14 +236,16 @@ describe("Portfolio Flow", () => {
 
     // Update second business data
     await makeGraphQLRequest(
-      UPDATE_BUSINESS,
+      EDIT_BUSINESS,
       {
         input: {
           id: business2Id,
-          name: "Second Test Business",
-          description: "Another business for portfolio testing",
-          tags: ["test", "portfolio"],
-          image: "https://example.com/image2.png",
+          updateData: {
+            name: "Second Test Business",
+            description: "Another business for portfolio testing",
+            tags: ["test", "portfolio"],
+            image: "https://example.com/image2.png",
+          }
         },
       },
       accessToken
@@ -331,17 +335,19 @@ describe("Portfolio Flow", () => {
 
     // Update pool data
     await makeGraphQLRequest(
-      UPDATE_POOL,
+      EDIT_POOL,
       {
         input: {
           id: pool1Id,
-          description: "First business pool",
-          tags: ["pool1", "test"],
-          targetAmount: ethers.parseEther("15000").toString(),
-          profitPercent: "500",
-          investmentDuration: "36000",
-          realiseDuration: "72000",
-          speculationsEnabled: true,
+          updateData: {
+            description: "First business pool",
+            tags: ["pool1", "test"],
+            targetAmount: ethers.parseEther("15000").toString(),
+            profitPercent: "500",
+            investmentDuration: "36000",
+            realiseDuration: "72000",
+            speculationsEnabled: true,
+          }
         },
       },
       accessToken
@@ -436,17 +442,19 @@ describe("Portfolio Flow", () => {
 
     // Update pool data
     await makeGraphQLRequest(
-      UPDATE_POOL,
+      EDIT_POOL,
       {
         input: {
           id: pool2Id,
-          description: "Second business first pool",
-          tags: ["pool2", "test"],
-          targetAmount: ethers.parseEther("20000").toString(),
-          profitPercent: "1000",
-          investmentDuration: "36000",
-          realiseDuration: "72000",
-          speculationsEnabled: true,
+          updateData: {
+            description: "Second business first pool",
+            tags: ["pool2", "test"],
+            targetAmount: ethers.parseEther("20000").toString(),
+            profitPercent: "1000",
+            investmentDuration: "36000",
+            realiseDuration: "72000",
+            speculationsEnabled: true,
+          }
         },
       },
       accessToken
@@ -538,17 +546,19 @@ describe("Portfolio Flow", () => {
 
     // Update pool data
     await makeGraphQLRequest(
-      UPDATE_POOL,
+      EDIT_POOL,
       {
         input: {
           id: pool3Id,
-          description: "Second business second pool",
-          tags: ["pool3", "test"],
-          targetAmount: ethers.parseEther("30000").toString(),
-          profitPercent: "1500",
-          investmentDuration: "36000",
-          realiseDuration: "72000",
-          speculationsEnabled: true,
+          updateData: {
+            description: "Second business second pool",
+            tags: ["pool3", "test"],
+            targetAmount: ethers.parseEther("30000").toString(),
+            profitPercent: "1500",
+            investmentDuration: "36000",
+            realiseDuration: "72000",
+            speculationsEnabled: true,
+          }
         },
       },
       accessToken
@@ -678,9 +688,11 @@ describe("Portfolio Flow", () => {
       GET_BALANCES,
       {
         input: {
-          owners: [wallet.address],
-          tokenAddresses: [rwaAddress],
-          chainIds: [chainId]
+          filter: {
+            owner: wallet.address,
+            tokenAddress: rwaAddress,
+            chainId: chainId
+          }
         }
       },
       accessToken
@@ -717,9 +729,11 @@ describe("Portfolio Flow", () => {
       GET_BALANCES,
       {
         input: {
-          owners: [wallet.address],
-          tokenAddresses: [rwaAddress],
-          chainIds: [chainId]
+          filter: {
+            owner: wallet.address,
+            tokenAddress: rwaAddress,
+            chainId: chainId
+          }
         }
       },
       accessToken
@@ -746,9 +760,11 @@ describe("Portfolio Flow", () => {
       GET_BALANCES,
       {
         input: {
-          owners: [wallet.address],
-          tokenAddresses: [rwaAddress],
-          chainIds: [chainId]
+          filter: {
+            owner: wallet.address,
+            tokenAddress: rwaAddress,
+            chainId: chainId
+          }
         }
       },
       accessToken
@@ -791,9 +807,11 @@ describe("Portfolio Flow", () => {
       GET_BALANCES,
       {
         input: {
-          owners: [wallet.address],
-          tokenAddresses: [rwaAddress],
-          chainIds: [chainId]
+          filter: {
+            owner: wallet.address,
+            tokenAddress: rwaAddress,
+            chainId: chainId
+          }
         }
       },
       accessToken
@@ -820,9 +838,11 @@ describe("Portfolio Flow", () => {
       GET_BALANCES,
       {
         input: {
-          owners: [wallet.address],
-          tokenAddresses: [rwaAddress],
-          chainIds: [chainId]
+          filter: {
+            owner: wallet.address,
+            tokenAddress: rwaAddress,
+            chainId: chainId
+          }
         }
       },
       accessToken
@@ -865,9 +885,11 @@ describe("Portfolio Flow", () => {
       GET_BALANCES,
       {
         input: {
-          owners: [wallet.address],
-          tokenAddresses: [rwaAddress],
-          chainIds: [chainId]
+          filter: {
+            owner: wallet.address,
+            tokenAddress: rwaAddress,
+            chainId: chainId
+          }
         }
       },
       accessToken
@@ -897,9 +919,11 @@ describe("Portfolio Flow", () => {
       GET_BALANCES,
       {
         input: {
-          owners: [wallet.address],
-          tokenAddresses: [rwaAddress],
-          chainIds: [chainId]
+          filter: {
+            owner: wallet.address,
+            tokenAddress: rwaAddress,
+            chainId: chainId
+          }
         }
       },
       accessToken
@@ -938,9 +962,11 @@ describe("Portfolio Flow", () => {
       GET_BALANCES,
       {
         input: {
-          owners: [wallet.address],
-          tokenAddresses: [rwaAddress],
-          chainIds: [chainId]
+          filter: {
+            owner: wallet.address,
+            tokenAddress: rwaAddress,
+            chainId: chainId
+          }
         }
       },
       accessToken
@@ -972,9 +998,11 @@ describe("Portfolio Flow", () => {
       GET_BALANCES,
       {
         input: {
-          owners: [wallet.address, wallet2.address],
-          tokenAddresses: [rwaAddress],
-          chainIds: [chainId]
+          filter: {
+            owner: { $in: [wallet.address, wallet2.address] },
+            tokenAddress: rwaAddress,
+            chainId: chainId
+          }
         }
       },
       accessToken
@@ -1012,9 +1040,11 @@ describe("Portfolio Flow", () => {
       GET_BALANCES,
       {
         input: {
-          owners: [wallet.address, wallet2.address],
-          tokenAddresses: [rwaAddress],
-          chainIds: [chainId]
+          filter: {
+            owner: { $in: [wallet.address, wallet2.address] },
+            tokenAddress: rwaAddress,
+            chainId: chainId
+          }
         }
       },
       accessToken
