@@ -9,12 +9,10 @@ export const getTransactions: QueryResolvers['getTransactions'] = async (
   logger.info('Getting transactions', { input });
 
   const response = await clients.portfolioClient.getTransactions.post({
-    from: input.from,
-    to: input.to,
-    tokenAddresses: input.tokenAddresses,
-    chainIds: input.chainIds,
-    blockNumbers: input.blockNumbers,
-    pagination: input.pagination,
+    filter: input.filter,
+    sort: input.sort,
+    limit: input.limit,
+    offset: input.offset
   });
 
   if (response.error) {
@@ -30,6 +28,7 @@ export const getTransactions: QueryResolvers['getTransactions'] = async (
     to: transaction.to,
     tokenAddress: transaction.tokenAddress,
     tokenId: transaction.tokenId,
+    pool: transaction.pool,
     chainId: transaction.chainId,
     transactionHash: transaction.transactionHash,
     blockNumber: transaction.blockNumber,

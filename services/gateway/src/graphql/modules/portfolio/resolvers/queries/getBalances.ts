@@ -9,10 +9,10 @@ export const getBalances: QueryResolvers['getBalances'] = async (
   logger.info('Getting balances', { input });
 
   const response = await clients.portfolioClient.getBalances.post({
-    owners: input.owners,
-    tokenAddresses: input.tokenAddresses,
-    chainIds: input.chainIds,
-    pagination: input.pagination,
+    filter: input.filter,
+    sort: input.sort,
+    limit: input.limit,
+    offset: input.offset
   });
 
   if (response.error) {
@@ -26,6 +26,8 @@ export const getBalances: QueryResolvers['getBalances'] = async (
     id: balance.id,
     owner: balance.owner,
     tokenAddress: balance.tokenAddress,
+    tokenId: balance.tokenId,
+    pool: balance.pool,
     chainId: balance.chainId,
     balance: balance.balance,
     lastUpdateBlock: balance.lastUpdateBlock,

@@ -5,6 +5,8 @@ type TokenBalance {
   id: String!
   owner: String!
   tokenAddress: String!
+  tokenId: String!
+  pool: String!
   chainId: String!
   balance: Int!
   lastUpdateBlock: Int!
@@ -19,6 +21,7 @@ type Transaction {
   to: String!
   tokenAddress: String!
   tokenId: String!
+  pool: String!
   chainId: String!
   transactionHash: String!
   blockNumber: Int!
@@ -29,20 +32,18 @@ type Transaction {
 
 # Get balances input
 input GetBalancesInput {
-  owners: [String!]
-  tokenAddresses: [String!]
-  chainIds: [String!]
-  pagination: PaginationInput
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
 }
 
 # Get transactions input
 input GetTransactionsInput {
-  from: [String!]
-  to: [String!]
-  tokenAddresses: [String!]
-  chainIds: [String!]
-  blockNumbers: [Int!]
-  pagination: PaginationInput
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
 }
 
 extend type Query {

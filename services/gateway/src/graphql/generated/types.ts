@@ -388,10 +388,10 @@ export type GalleryParentTypes =
   | 'user';
 
 export type GetBalancesInput = {
-  chainIds?: InputMaybe<Array<Scalars['String']['input']>>;
-  owners?: InputMaybe<Array<Scalars['String']['input']>>;
-  pagination?: InputMaybe<PaginationInput>;
-  tokenAddresses?: InputMaybe<Array<Scalars['String']['input']>>;
+  filter?: InputMaybe<Scalars['JSON']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<Scalars['JSON']['input']>;
 };
 
 export type GetBlogsFilterInput = {
@@ -500,12 +500,10 @@ export type GetTopicsFilterInput = {
 };
 
 export type GetTransactionsInput = {
-  blockNumbers?: InputMaybe<Array<Scalars['Int']['input']>>;
-  chainIds?: InputMaybe<Array<Scalars['String']['input']>>;
-  from?: InputMaybe<Array<Scalars['String']['input']>>;
-  pagination?: InputMaybe<PaginationInput>;
-  to?: InputMaybe<Array<Scalars['String']['input']>>;
-  tokenAddresses?: InputMaybe<Array<Scalars['String']['input']>>;
+  filter?: InputMaybe<Scalars['JSON']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<Scalars['JSON']['input']>;
 };
 
 export type GetVolumeDataInput = {
@@ -1431,7 +1429,9 @@ export type TokenBalance = {
   id: Scalars['String']['output'];
   lastUpdateBlock: Scalars['Int']['output'];
   owner: Scalars['String']['output'];
+  pool: Scalars['String']['output'];
   tokenAddress: Scalars['String']['output'];
+  tokenId: Scalars['String']['output'];
   updatedAt: Scalars['Int']['output'];
 };
 
@@ -1454,6 +1454,7 @@ export type Transaction = {
   createdAt: Scalars['Int']['output'];
   from: Scalars['String']['output'];
   id: Scalars['String']['output'];
+  pool: Scalars['String']['output'];
   to: Scalars['String']['output'];
   tokenAddress: Scalars['String']['output'];
   tokenId: Scalars['String']['output'];
@@ -2479,7 +2480,9 @@ export type TokenBalanceResolvers<ContextType = GraphQLContext, ParentType exten
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   lastUpdateBlock?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   owner?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  pool?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tokenAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  tokenId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -2502,6 +2505,7 @@ export type TransactionResolvers<ContextType = GraphQLContext, ParentType extend
   createdAt?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   from?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  pool?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   to?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tokenAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tokenId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
