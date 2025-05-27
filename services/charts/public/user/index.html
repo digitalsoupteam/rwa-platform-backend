@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Profile</title>
+    <script src="https://unpkg.com/graphql-sse/umd/graphql-sse.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="header">
+        <h1>User Profile</h1>
+    </div>
+    <div class="container">
+        <div id="unauthorizedView" style="display: none;">
+            <div class="auth-container">
+                <h2>Connect Wallet</h2>
+                <p>Please connect your wallet to view your profile</p>
+                <button onclick="connectWallet()" class="connect-button">Connect Wallet</button>
+            </div>
+        </div>
+        
+        <div id="authorizedView" style="display: none;">
+            <div class="profile-panel">
+                <div class="sidebar">
+                    <div class="user-info">
+                        <div class="info-item">
+                            <div class="info-label">Wallet Address</div>
+                            <div class="info-value" id="walletAddress">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">User ID</div>
+                            <div class="info-value" id="userId">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Member Since</div>
+                            <div class="info-value" id="memberSince">-</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="main-content">
+                    <div class="portfolio-section">
+                        <h2>Portfolio</h2>
+                        <div class="token-balances">
+                            <table class="balances-table">
+                                <thead>
+                                    <tr>
+                                        <th>Token</th>
+                                        <th>Pool</th>
+                                        <th>Chain</th>
+                                        <th>Balance</th>
+                                        <th>Last Update</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="balancesTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="transactions-section">
+                        <h2>Recent Transactions</h2>
+                        <div class="transactions-wrapper">
+                            <table class="transactions-table">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Type</th>
+                                        <th>Token</th>
+                                        <th>Pool</th>
+                                        <th>Amount</th>
+                                        <th>Transaction Hash</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactionsTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/uiUpdater.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
