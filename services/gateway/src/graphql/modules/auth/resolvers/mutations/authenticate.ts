@@ -1,6 +1,6 @@
 import { MutationResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/logger';
-import ethers from 'ethers'
+import {ethers} from 'ethers'
 
 export const authenticate: MutationResolvers['authenticate'] = async (
   _parent,
