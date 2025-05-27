@@ -95,35 +95,41 @@ export abstract class BaseBlockchainDaemon {
   /**
    * Handle incoming message
    */
+  private processingPromise: Promise<void> = Promise.resolve();
+
   private async handleMessage(message: ConsumeMessage | null): Promise<void> {
     if (!message) return;
 
-    try {
+    this.processingPromise = this.processingPromise.then(async () => {
       const event = JSON.parse(message.content.toString()) as BlockchainEvent;
-      const routing = this.getEventRouting();
+      try {
+        const routing = this.getEventRouting();
 
-      // Get handler for this event
-      const handler = routing[event.name];
-      if (!handler) {
-        logger.warn(`No handler registered for event ${event.name}`);
+        // Get handler for this event
+        const handler = routing[event.name];
+        if (!handler) {
+          logger.warn(`No handler registered for event ${event.name}`);
+          await this.rabbitClient.ack(message);
+          return;
+        }
+
+        // Process event
+        await handler(event);
+        
+        // Acknowledge message
         await this.rabbitClient.ack(message);
-        return;
+
+        logger.debug(`Successfully processed blockchain event ${event.name}`, {
+          transactionHash: event.transactionHash
+        });
+      } catch (error) {
+        logger.error(`Error processing blockchain event ${event.name}:`, error);
+        // Reject message and requeue
+        await this.rabbitClient.nack(message, false);
       }
+    });
 
-      // Process event
-      await handler(event);
-      
-      // Acknowledge message
-      await this.rabbitClient.ack(message);
-
-      logger.debug(`Successfully processed blockchain event ${event.name}`, {
-        transactionHash: event.transactionHash
-      });
-    } catch (error) {
-      logger.error("Error processing blockchain event:", error);
-      // Reject message and requeue
-      await this.rabbitClient.nack(message, false);
-    }
+    await this.processingPromise;
   }
 
   /**
