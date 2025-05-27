@@ -708,6 +708,12 @@
           "internalType": "uint256",
           "name": "amount",
           "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "pool",
+          "type": "address"
         }
       ],
       "name": "RWA_Transfer",
@@ -1228,6 +1234,11 @@
           "internalType": "uint256",
           "name": "amount",
           "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "pool",
+          "type": "address"
         }
       ],
       "name": "emitRWA_Transfer",
