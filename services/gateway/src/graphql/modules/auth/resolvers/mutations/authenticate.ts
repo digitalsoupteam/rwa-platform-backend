@@ -1,5 +1,6 @@
 import { MutationResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/logger';
+import ethers from 'ethers'
 
 export const authenticate: MutationResolvers['authenticate'] = async (
   _parent,
@@ -9,7 +10,7 @@ export const authenticate: MutationResolvers['authenticate'] = async (
   logger.info('Authenticating user', { wallet: input.wallet });
 
   const response = await clients.authClient.authenticate.post({
-    wallet: input.wallet,
+    wallet: ethers.getAddress(input.wallet),
     signature: input.signature,
     timestamp: input.timestamp
   });
