@@ -1,5 +1,5 @@
 export const GET_BALANCES = `
-  query GetBalances($input: FilterInput!) {
+  query GetBalances($input: GetBalancesInput!) {
     getBalances(input: $input) {
       id
       owner
@@ -16,7 +16,7 @@ export const GET_BALANCES = `
 `;
 
 export const GET_TRANSACTIONS = `
-  query GetTransactions($input: FilterInput!) {
+  query GetTransactions($input: GetTransactionsInput!) {
     getTransactions(input: $input) {
       id
       from

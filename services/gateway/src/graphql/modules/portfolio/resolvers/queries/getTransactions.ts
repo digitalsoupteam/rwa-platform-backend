@@ -22,18 +22,5 @@ export const getTransactions: QueryResolvers['getTransactions'] = async (
 
   const { data } = response;
 
-  return data.map(transaction => ({
-    id: transaction.id,
-    from: transaction.from,
-    to: transaction.to,
-    tokenAddress: transaction.tokenAddress,
-    tokenId: transaction.tokenId,
-    pool: transaction.pool,
-    chainId: transaction.chainId,
-    transactionHash: transaction.transactionHash,
-    blockNumber: transaction.blockNumber,
-    amount: transaction.amount,
-    createdAt: transaction.createdAt,
-    updatedAt: transaction.updatedAt
-  }));
+  return data;
 };

@@ -120,6 +120,7 @@ export class PortfolioService {
       id: balance._id.toString(),
       owner: balance.owner,
       tokenAddress: balance.tokenAddress,
+      tokenId: balance.tokenId,
       pool: balance.pool,
       chainId: balance.chainId,
       balance: balance.balance,

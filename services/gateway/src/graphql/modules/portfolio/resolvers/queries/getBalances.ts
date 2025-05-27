@@ -22,16 +22,5 @@ export const getBalances: QueryResolvers['getBalances'] = async (
 
   const { data } = response;
 
-  return data.map(balance => ({
-    id: balance.id,
-    owner: balance.owner,
-    tokenAddress: balance.tokenAddress,
-    tokenId: balance.tokenId,
-    pool: balance.pool,
-    chainId: balance.chainId,
-    balance: balance.balance,
-    lastUpdateBlock: balance.lastUpdateBlock,
-    createdAt: balance.createdAt,
-    updatedAt: balance.updatedAt
-  }));
+  return data;
 };
