@@ -30,157 +30,54 @@ body {
 
 .container {
     padding: 20px;
-}
-
-.auth-container {
-    max-width: 400px;
-    margin: 100px auto;
-    background: var(--bg-secondary);
-    padding: 30px;
-    border-radius: 8px;
-    text-align: center;
-    border: 1px solid var(--border-color);
-}
-
-.auth-container h2 {
-    margin: 0 0 20px;
-    font-size: 24px;
-}
-
-.auth-container p {
-    color: var(--text-secondary);
-    margin-bottom: 30px;
-}
-
-.connect-button {
-    background: var(--accent-color);
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    padding: 12px 24px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.connect-button:hover {
-    background: #1e4dd8;
-}
-
-.profile-panel {
-    display: grid;
-    grid-template-columns: 300px 1fr;
-    gap: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     min-height: calc(100vh - 120px);
 }
 
-.sidebar {
+.auth-panel {
     background: var(--bg-secondary);
     border-radius: 4px;
     padding: 20px;
     border: 1px solid var(--border-color);
-}
-
-.main-content {
+    width: 100%;
+    max-width: 400px;
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
-.portfolio-section,
-.transactions-section {
-    background: var(--bg-secondary);
+.action-btn {
+    background: var(--accent-color);
+    color: white;
+    padding: 12px 20px;
     border-radius: 4px;
-    padding: 20px;
-    border: 1px solid var(--border-color);
+    cursor: pointer;
+    font-size: 16px;
+    text-align: center;
+    transition: background 0.2s;
 }
 
-h2 {
-    margin: 0 0 20px;
-    font-size: 18px;
-    font-weight: 500;
+.action-btn:hover {
+    background: #1e4dd8;
 }
 
-.user-info {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.info-item {
-    padding: 15px;
+.wallet-info {
     background: var(--bg-primary);
-    border-radius: 4px;
     border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 15px;
 }
 
 .info-label {
-    font-size: 12px;
     color: var(--text-secondary);
+    font-size: 14px;
     margin-bottom: 5px;
 }
 
 .info-value {
-    font-size: 14px;
+    color: var(--text-primary);
+    font-size: 16px;
     word-break: break-all;
-}
-
-.balances-table,
-.transactions-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-}
-
-.balances-table th,
-.balances-table td,
-.transactions-table th,
-.transactions-table td {
-    padding: 12px;
-    text-align: left;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.balances-table th,
-.transactions-table th {
-    background: var(--bg-primary);
-    color: var(--text-secondary);
-    font-weight: 500;
-}
-
-.balances-table tbody tr:hover,
-.transactions-table tbody tr:hover {
-    background: var(--bg-primary);
-}
-
-.transactions-wrapper {
-    max-height: 400px;
-    overflow-y: auto;
-}
-
-.transaction-hash {
-    color: var(--accent-color);
-    text-decoration: none;
-}
-
-.transaction-hash:hover {
-    text-decoration: underline;
-}
-
-.transaction-type {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 500;
-    text-transform: uppercase;
-}
-
-.transaction-type.incoming {
-    background: rgba(38, 166, 154, 0.1);
-    color: var(--up-color);
-}
-
-.transaction-type.outgoing {
-    background: rgba(239, 83, 80, 0.1);
-    color: var(--down-color);
 }

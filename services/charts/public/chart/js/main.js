@@ -134,6 +134,11 @@ async function updateChartData() {
             return;
         }
 
+        // Update URL with new pool address
+        const url = new URL(window.location.href);
+        url.searchParams.set('pool_id', poolAddress);
+        window.history.pushState({}, '', url);
+
         const interval = intervalInput.value;
         const { startTime, endTime } = getTimeRange(); // from utils.js
 
@@ -304,8 +309,15 @@ document.addEventListener('DOMContentLoaded', () => {
     window.updateChart = updateChartData;
 
     const urlParams = new URLSearchParams(window.location.search);
-    const poolAddressFromUrl = urlParams.get('poolAddress');
+    const poolAddressFromUrl = urlParams.get('pool_id');
     const poolAddressInput = document.getElementById('poolAddress');
+
+    // Add event listener for manual input changes
+    poolAddressInput.addEventListener('change', () => {
+        const url = new URL(window.location.href);
+        url.searchParams.set('pool_id', poolAddressInput.value);
+        window.history.pushState({}, '', url);
+    });
 
     if (poolAddressFromUrl && poolAddressInput) {
         poolAddressInput.value = poolAddressFromUrl;
