@@ -63,7 +63,7 @@ export class PortfolioService {
     to: string;
     tokenAddress: string;
     tokenId: string;
-    pool: string;
+    poolAddress: string;
     chainId: string;
     transactionHash: string;
     blockNumber: number;
@@ -83,7 +83,7 @@ export class PortfolioService {
       to: data.to,
       tokenAddress: data.tokenAddress,
       tokenId: data.tokenId,
-      pool: data.pool,
+      poolAddress: data.poolAddress,
       chainId: data.chainId,
       transactionHash: data.transactionHash,
       blockNumber: data.blockNumber,
@@ -95,7 +95,7 @@ export class PortfolioService {
         data.from,
         data.tokenAddress,
         data.tokenId,
-        data.pool,
+        data.poolAddress,
         data.chainId,
         -data.amount,
         data.blockNumber
@@ -107,7 +107,7 @@ export class PortfolioService {
         data.to,
         data.tokenAddress,
         data.tokenId,
-        data.pool,
+        data.poolAddress,
         data.chainId,
         data.amount,
         data.blockNumber
@@ -121,7 +121,7 @@ export class PortfolioService {
       owner: balance.owner,
       tokenAddress: balance.tokenAddress,
       tokenId: balance.tokenId,
-      pool: balance.pool,
+      poolAddress: balance.poolAddress,
       chainId: balance.chainId,
       balance: balance.balance,
       lastUpdateBlock: balance.lastUpdateBlock,
@@ -136,7 +136,7 @@ export class PortfolioService {
       from: tx.from,
       to: tx.to,
       tokenAddress: tx.tokenAddress,
-      pool: tx.pool,
+      poolAddress: tx.poolAddress,
       tokenId: tx.tokenId,
       chainId: tx.chainId,
       transactionHash: tx.transactionHash,

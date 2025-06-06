@@ -43,7 +43,7 @@ export class TokenBalanceRepository {
     owner: string,
     tokenAddress: string,
     tokenId: string,
-    pool: string,
+    poolAddress: string,
     chainId: string,
     amount: number,
     lastUpdateBlock: number
@@ -51,7 +51,7 @@ export class TokenBalanceRepository {
     logger.debug(`Updating balance for ${owner} - ${tokenAddress} - ${tokenId} by ${amount}`);
     
     const balance = await this.model.findOneAndUpdate(
-      { owner, tokenAddress, tokenId, pool, chainId },
+      { owner, tokenAddress, tokenId, poolAddress, chainId },
       {
         $inc: { balance: amount },
         $set: { lastUpdateBlock },
@@ -59,7 +59,7 @@ export class TokenBalanceRepository {
           owner,
           tokenAddress,
           tokenId,
-          pool,
+          poolAddress,
           chainId
         }
       },

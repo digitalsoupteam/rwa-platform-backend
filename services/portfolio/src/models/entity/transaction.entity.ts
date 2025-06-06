@@ -21,7 +21,7 @@ const transactionSchemaDefinition = {
         required: true,
         trim: true
     },
-    pool: {
+    poolAddress: {
         type: String,
         required: true,
         trim: true
@@ -66,7 +66,7 @@ transactionSchema.index({ to: 1, createdAt: -1 });
 transactionSchema.index({ transactionHash: 1 });
 
 
-transactionSchema.index({ pool: 1 });
+transactionSchema.index({ poolAddress: 1 });
 transactionSchema.index({ tokenAddress: 1, chainId: 1 });
 
 

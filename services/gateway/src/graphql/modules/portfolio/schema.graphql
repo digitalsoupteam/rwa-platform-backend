@@ -6,7 +6,7 @@ type TokenBalance {
   owner: String!
   tokenAddress: String!
   tokenId: String!
-  pool: String!
+  poolAddress: String!
   chainId: String!
   balance: Int!
   lastUpdateBlock: Int!
@@ -21,7 +21,7 @@ type Transaction {
   to: String!
   tokenAddress: String!
   tokenId: String!
-  pool: String!
+  poolAddress: String!
   chainId: String!
   transactionHash: String!
   blockNumber: Int!

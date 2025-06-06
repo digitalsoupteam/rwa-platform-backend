@@ -16,7 +16,7 @@ const tokenBalanceSchemaDefinition = {
         required: true,
         trim: true
     },
-    pool: {
+    poolAddress: {
         type: String,
         required: true,
         trim: true
@@ -53,9 +53,9 @@ const tokenBalanceSchema = new Schema(tokenBalanceSchemaDefinition, {
 tokenBalanceSchema.index({ owner: 1 });
 
 
-tokenBalanceSchema.index({ pool: 1 });
+tokenBalanceSchema.index({ poolAddress: 1 });
 
-tokenBalanceSchema.index({ owner: 1, pool: 1, chainId: 1 }, { unique: true });
+tokenBalanceSchema.index({ owner: 1, poolAddress: 1, chainId: 1 }, { unique: true });
 
 
 export type ITokenBalanceEntity = InferRawDocType<typeof tokenBalanceSchemaDefinition> & { _id: Types.ObjectId };

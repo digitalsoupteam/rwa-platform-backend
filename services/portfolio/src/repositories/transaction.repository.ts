@@ -9,7 +9,7 @@ import {
 export class TransactionRepository {
   constructor(private readonly model = TransactionEntity) {}
 
-  async create(data: Pick<ITransactionEntity, "from" | "to" | "tokenAddress" | "tokenId" | "pool" | "chainId" | "transactionHash" | "blockNumber" | "amount">) {
+  async create(data: Pick<ITransactionEntity, "from" | "to" | "tokenAddress" | "tokenId" | "poolAddress" | "chainId" | "transactionHash" | "blockNumber" | "amount">) {
     logger.debug(`Creating transaction record: ${data.transactionHash}`);
     const transaction = await this.model.create(data);
     return transaction.toObject();
