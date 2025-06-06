@@ -8,7 +8,6 @@ export const gallerySchema = t.Object({
   id: t.String(),
   name: t.String(),
   parentId: t.String(),
-  companyId: t.String(),
   ownerId: t.String(),
   ownerType: t.String(),
   creator: t.String(),
