@@ -5,13 +5,17 @@ import { ErrorHandlerPlugin } from '@shared/errors/error-handler.plugin';
 import { RepositoriesPlugin } from './plugins/repositories.plugin';
 import { ServicesPlugin } from './plugins/services.plugin';
 import { ControllersPlugin } from './plugins/controllers.plugin';
+import { ClientsPlugin } from './plugins/clients.plugin';
+import { DaemonsPlugin } from './plugins/daemons.plugin';
 
 
 const app = new Elysia()
+
   .onError(ErrorHandlerPlugin)
-  
   .use(RepositoriesPlugin)
+  .use(ClientsPlugin)
   .use(ServicesPlugin)
+  .use(DaemonsPlugin)
   .use(ControllersPlugin)
   
   .listen(CONFIG.PORT, () => {
