@@ -290,6 +290,7 @@ REASONING: Moderate risk due to competitive market, but strong business model an
       riskScore: business.riskScore,
       image: business.image ?? undefined,
       approvalSignaturesTaskId: business.approvalSignaturesTaskId ?? undefined,
+      approvalSignaturesTaskExpired: business.approvalSignaturesTaskExpired ?? undefined,
       paused: business.paused,
       createdAt: business.createdAt,
       updatedAt: business.updatedAt,

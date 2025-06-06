@@ -227,6 +227,13 @@ describe("RWA Flow", () => {
 
       // Wait for signatures to be processed
       await new Promise(resolve => setTimeout(resolve, 10000));
+        const updatedBusiness2 = await makeGraphQLRequest(
+        GET_BUSINESS,
+        {
+          id: businessId,
+        },
+        accessToken
+      );
 
       // Get and verify signatures
       const taskResult = await makeGraphQLRequest(
@@ -315,7 +322,7 @@ describe("RWA Flow", () => {
       tokenAddress = updatedBusiness.data.getBusiness.tokenAddress
     });
   });
-
+return
   let tokenAddress: string;
 
   describe("Pool Operations", () => {

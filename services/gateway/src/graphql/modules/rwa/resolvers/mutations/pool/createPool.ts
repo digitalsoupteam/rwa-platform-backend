@@ -25,6 +25,12 @@ export const createPool: MutationResolvers['createPool'] = async (
 
   const business = businessResponse.data;
 
+  if (!business.tokenAddress) {
+    logger.error('Deploy business before');
+    throw new Error('Deploy business before');
+  }
+
+
   await services.ownership.checkOwnership({
     userId: user.id,
     ownerId: business.ownerId,
@@ -37,8 +43,8 @@ export const createPool: MutationResolvers['createPool'] = async (
     ownerId: business.ownerId,
     ownerType: business.ownerType,
     businessId: input.businessId,
-    chainId: input.chainId,
-    rwaAddress: input.rwaAddress,
+    chainId: business.chainId,
+    rwaAddress: business.tokenAddress,
     description: input.description,
     tags: input.tags,
     entryFeePercent: input.entryFeePercent,

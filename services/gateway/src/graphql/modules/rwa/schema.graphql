@@ -130,12 +130,8 @@ input EditBusinessDataInput {
 }
 
 input CreatePoolInput {
-  ownerId: String!
-  ownerType: String!
   name: String!
   businessId: String!
-  chainId: String!
-  rwaAddress: String!
   entryFeePercent: String
   exitFeePercent: String
   expectedHoldAmount: String

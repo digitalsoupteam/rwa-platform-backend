@@ -202,7 +202,6 @@ export type CreatePoolInput = {
   allowEntryBurn?: InputMaybe<Scalars['Boolean']['input']>;
   awaitCompletionExpired?: InputMaybe<Scalars['Boolean']['input']>;
   businessId: Scalars['String']['input'];
-  chainId: Scalars['String']['input'];
   completionPeriodExpired?: InputMaybe<Scalars['Float']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   entryFeePercent?: InputMaybe<Scalars['String']['input']>;
@@ -216,11 +215,8 @@ export type CreatePoolInput = {
   incomingTranches?: InputMaybe<Array<IncomingTrancheInput>>;
   name: Scalars['String']['input'];
   outgoingTranches?: InputMaybe<Array<OutgoingTrancheInput>>;
-  ownerId: Scalars['String']['input'];
-  ownerType: Scalars['String']['input'];
   priceImpactPercent?: InputMaybe<Scalars['String']['input']>;
   rewardPercent?: InputMaybe<Scalars['String']['input']>;
-  rwaAddress: Scalars['String']['input'];
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
@@ -1429,7 +1425,7 @@ export type TokenBalance = {
   id: Scalars['String']['output'];
   lastUpdateBlock: Scalars['Int']['output'];
   owner: Scalars['String']['output'];
-  pool: Scalars['String']['output'];
+  poolAddress: Scalars['String']['output'];
   tokenAddress: Scalars['String']['output'];
   tokenId: Scalars['String']['output'];
   updatedAt: Scalars['Int']['output'];
@@ -1454,7 +1450,7 @@ export type Transaction = {
   createdAt: Scalars['Int']['output'];
   from: Scalars['String']['output'];
   id: Scalars['String']['output'];
-  pool: Scalars['String']['output'];
+  poolAddress: Scalars['String']['output'];
   to: Scalars['String']['output'];
   tokenAddress: Scalars['String']['output'];
   tokenId: Scalars['String']['output'];
@@ -2480,7 +2476,7 @@ export type TokenBalanceResolvers<ContextType = GraphQLContext, ParentType exten
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   lastUpdateBlock?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   owner?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  pool?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  poolAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tokenAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tokenId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
@@ -2505,7 +2501,7 @@ export type TransactionResolvers<ContextType = GraphQLContext, ParentType extend
   createdAt?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   from?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  pool?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  poolAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   to?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tokenAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tokenId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
