@@ -13,14 +13,13 @@ import { portfolioResolvers } from './portfolio/resolvers';
 import { companyResolvers } from './company/resolvers';
 import { chartsResolvers } from './charts/resolvers';
 import { demoResolvers } from './demo/resolvers';
+import { reactionsResolvers } from './reactions/resolvers';
 
 
 export const resolvers = mergeResolvers([
   authResolvers,
   aiAssistantResolvers,
   testnetFaucetResolvers,
-  // businessResolvers,
-  // poolResolvers,
   signersManagerResolvers,
   rwaResolvers,
   documentsResolvers,
@@ -31,5 +30,6 @@ export const resolvers = mergeResolvers([
   companyResolvers,
   portfolioResolvers,
   demoResolvers,
-  chartsResolvers
+  chartsResolvers,
+  reactionsResolvers,
 ]);

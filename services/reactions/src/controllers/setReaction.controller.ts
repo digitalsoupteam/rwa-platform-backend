@@ -2,23 +2,23 @@ import { Elysia } from "elysia";
 import { logger } from "@shared/monitoring/src/logger";
 import { ServicesPlugin } from "../plugins/services.plugin";
 import {
-  getReactionsRequest,
-  getReactionsResponse,
+  setReactionRequest,
+  setReactionResponse,
 } from "../models/validation/reactions.validation";
 
-export const getReactionsController = new Elysia()
+export const setReactionController = new Elysia()
   .use(ServicesPlugin)
   .post(
-    "/getReactions",
+    "/setReaction",
     async ({ body, reactionsService }) => {
       logger.info(
-        `POST /getReactions - Getting reactions with filter: ${JSON.stringify(body.filter)}`
+        `POST /setReaction - Setting reaction for parent: ${body.parentId} by user: ${body.userId}`
       );
 
-      return await reactionsService.getAll(body);
+      return reactionsService.setReaction(body);
     },
     {
-      body: getReactionsRequest,
-      response: getReactionsResponse,
+      body: setReactionRequest,
+      response: setReactionResponse,
     }
   );

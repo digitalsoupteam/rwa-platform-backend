@@ -297,6 +297,12 @@ export type EditPoolInput = {
   updateData: EditPoolDataInput;
 };
 
+export type EntityReactionsResponse = {
+  __typename?: 'EntityReactionsResponse';
+  reactions: Scalars['JSON']['output'];
+  userReactions: Array<Scalars['String']['output']>;
+};
+
 export type FaqAnswer = {
   __typename?: 'FaqAnswer';
   answer: Scalars['String']['output'];
@@ -613,7 +619,9 @@ export type Mutation = {
   requestGas: FaucetRequest;
   requestHold: FaucetRequest;
   requestPoolApprovalSignatures: ApprovalSignaturesResponse;
+  resetReaction?: Maybe<Reaction>;
   revokePermission: Scalars['ID']['output'];
+  setReaction: Reaction;
   toggleQuestionLike: Scalars['Boolean']['output'];
   updateAssistant: Assistant;
   updateBlog: Blog;
@@ -844,8 +852,18 @@ export type MutationRequestPoolApprovalSignaturesArgs = {
 };
 
 
+export type MutationResetReactionArgs = {
+  input: SetReactionInput;
+};
+
+
 export type MutationRevokePermissionArgs = {
   input: RevokePermissionInput;
+};
+
+
+export type MutationSetReactionArgs = {
+  input: SetReactionInput;
 };
 
 
@@ -1096,6 +1114,7 @@ export type Query = {
   getCompany: CompanyWithDetails;
   getDocument: Document;
   getDocuments: Array<Document>;
+  getEntityReactions: EntityReactionsResponse;
   getFaqAnswer: FaqAnswer;
   getFaqAnswers: Array<FaqAnswer>;
   getFaqTopic: FaqTopic;
@@ -1175,6 +1194,12 @@ export type QueryGetDocumentArgs = {
 
 export type QueryGetDocumentsArgs = {
   filter?: InputMaybe<GetDocumentsFilterInput>;
+};
+
+
+export type QueryGetEntityReactionsArgs = {
+  parentId: Scalars['String']['input'];
+  parentType: Scalars['String']['input'];
 };
 
 
@@ -1335,6 +1360,17 @@ export type Question = {
   updatedAt: Scalars['Float']['output'];
 };
 
+export type Reaction = {
+  __typename?: 'Reaction';
+  createdAt: Scalars['Float']['output'];
+  id: Scalars['ID']['output'];
+  parentId: Scalars['String']['output'];
+  parentType: Scalars['String']['output'];
+  reaction: Scalars['String']['output'];
+  updatedAt: Scalars['Float']['output'];
+  userId: Scalars['String']['output'];
+};
+
 export type RefreshTokenInput = {
   refreshToken: Scalars['String']['input'];
 };
@@ -1365,6 +1401,12 @@ export type RequestTokenInput = {
 export type RevokePermissionInput = {
   companyId: Scalars['ID']['input'];
   id: Scalars['ID']['input'];
+};
+
+export type SetReactionInput = {
+  parentId: Scalars['String']['input'];
+  parentType: Scalars['String']['input'];
+  reaction: Scalars['String']['input'];
 };
 
 export type Signature = {
@@ -1741,6 +1783,7 @@ export type ResolversTypes = ResolversObject<{
   EditBusinessInput: EditBusinessInput;
   EditPoolDataInput: EditPoolDataInput;
   EditPoolInput: EditPoolInput;
+  EntityReactionsResponse: ResolverTypeWrapper<EntityReactionsResponse>;
   FaqAnswer: ResolverTypeWrapper<FaqAnswer>;
   FaqParentTypes: FaqParentTypes;
   FaqTopic: ResolverTypeWrapper<FaqTopic>;
@@ -1793,12 +1836,14 @@ export type ResolversTypes = ResolversObject<{
   PriceUpdateEvent: ResolverTypeWrapper<PriceUpdateEvent>;
   Query: ResolverTypeWrapper<{}>;
   Question: ResolverTypeWrapper<Question>;
+  Reaction: ResolverTypeWrapper<Reaction>;
   RefreshTokenInput: RefreshTokenInput;
   RemoveMemberInput: RemoveMemberInput;
   RequestBusinessApprovalSignaturesInput: RequestBusinessApprovalSignaturesInput;
   RequestPoolApprovalSignaturesInput: RequestPoolApprovalSignaturesInput;
   RequestTokenInput: RequestTokenInput;
   RevokePermissionInput: RevokePermissionInput;
+  SetReactionInput: SetReactionInput;
   Signature: ResolverTypeWrapper<Signature>;
   SignatureTask: ResolverTypeWrapper<SignatureTask>;
   SortDirection: SortDirection;
@@ -1877,6 +1922,7 @@ export type ResolversParentTypes = ResolversObject<{
   EditBusinessInput: EditBusinessInput;
   EditPoolDataInput: EditPoolDataInput;
   EditPoolInput: EditPoolInput;
+  EntityReactionsResponse: EntityReactionsResponse;
   FaqAnswer: FaqAnswer;
   FaqTopic: FaqTopic;
   FaucetRequest: FaucetRequest;
@@ -1925,12 +1971,14 @@ export type ResolversParentTypes = ResolversObject<{
   PriceUpdateEvent: PriceUpdateEvent;
   Query: {};
   Question: Question;
+  Reaction: Reaction;
   RefreshTokenInput: RefreshTokenInput;
   RemoveMemberInput: RemoveMemberInput;
   RequestBusinessApprovalSignaturesInput: RequestBusinessApprovalSignaturesInput;
   RequestPoolApprovalSignaturesInput: RequestPoolApprovalSignaturesInput;
   RequestTokenInput: RequestTokenInput;
   RevokePermissionInput: RevokePermissionInput;
+  SetReactionInput: SetReactionInput;
   Signature: Signature;
   SignatureTask: SignatureTask;
   SortFieldInput: SortFieldInput;
@@ -2069,6 +2117,12 @@ export type DocumentResolvers<ContextType = GraphQLContext, ParentType extends R
   ownerType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   parentId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type EntityReactionsResponseResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['EntityReactionsResponse'] = ResolversParentTypes['EntityReactionsResponse']> = ResolversObject<{
+  reactions?: Resolver<ResolversTypes['JSON'], ParentType, ContextType>;
+  userReactions?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -2230,7 +2284,9 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   requestGas?: Resolver<ResolversTypes['FaucetRequest'], ParentType, ContextType, RequireFields<MutationRequestGasArgs, 'input'>>;
   requestHold?: Resolver<ResolversTypes['FaucetRequest'], ParentType, ContextType, RequireFields<MutationRequestHoldArgs, 'input'>>;
   requestPoolApprovalSignatures?: Resolver<ResolversTypes['ApprovalSignaturesResponse'], ParentType, ContextType, RequireFields<MutationRequestPoolApprovalSignaturesArgs, 'input'>>;
+  resetReaction?: Resolver<Maybe<ResolversTypes['Reaction']>, ParentType, ContextType, RequireFields<MutationResetReactionArgs, 'input'>>;
   revokePermission?: Resolver<ResolversTypes['ID'], ParentType, ContextType, RequireFields<MutationRevokePermissionArgs, 'input'>>;
+  setReaction?: Resolver<ResolversTypes['Reaction'], ParentType, ContextType, RequireFields<MutationSetReactionArgs, 'input'>>;
   toggleQuestionLike?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationToggleQuestionLikeArgs, 'questionId'>>;
   updateAssistant?: Resolver<ResolversTypes['Assistant'], ParentType, ContextType, RequireFields<MutationUpdateAssistantArgs, 'input'>>;
   updateBlog?: Resolver<ResolversTypes['Blog'], ParentType, ContextType, RequireFields<MutationUpdateBlogArgs, 'input'>>;
@@ -2396,6 +2452,7 @@ export type QueryResolvers<ContextType = GraphQLContext, ParentType extends Reso
   getCompany?: Resolver<ResolversTypes['CompanyWithDetails'], ParentType, ContextType, RequireFields<QueryGetCompanyArgs, 'id'>>;
   getDocument?: Resolver<ResolversTypes['Document'], ParentType, ContextType, RequireFields<QueryGetDocumentArgs, 'id'>>;
   getDocuments?: Resolver<Array<ResolversTypes['Document']>, ParentType, ContextType, Partial<QueryGetDocumentsArgs>>;
+  getEntityReactions?: Resolver<ResolversTypes['EntityReactionsResponse'], ParentType, ContextType, RequireFields<QueryGetEntityReactionsArgs, 'parentId' | 'parentType'>>;
   getFaqAnswer?: Resolver<ResolversTypes['FaqAnswer'], ParentType, ContextType, RequireFields<QueryGetFaqAnswerArgs, 'id'>>;
   getFaqAnswers?: Resolver<Array<ResolversTypes['FaqAnswer']>, ParentType, ContextType, Partial<QueryGetFaqAnswersArgs>>;
   getFaqTopic?: Resolver<ResolversTypes['FaqTopic'], ParentType, ContextType, RequireFields<QueryGetFaqTopicArgs, 'id'>>;
@@ -2441,6 +2498,17 @@ export type QuestionResolvers<ContextType = GraphQLContext, ParentType extends R
   text?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   topicId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ReactionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Reaction'] = ResolversParentTypes['Reaction']> = ResolversObject<{
+  createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  parentId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  parentType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  reaction?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -2574,6 +2642,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   Company?: CompanyResolvers<ContextType>;
   CompanyWithDetails?: CompanyWithDetailsResolvers<ContextType>;
   Document?: DocumentResolvers<ContextType>;
+  EntityReactionsResponse?: EntityReactionsResponseResolvers<ContextType>;
   FaqAnswer?: FaqAnswerResolvers<ContextType>;
   FaqTopic?: FaqTopicResolvers<ContextType>;
   FaucetRequest?: FaucetRequestResolvers<ContextType>;
@@ -2596,6 +2665,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   PriceUpdateEvent?: PriceUpdateEventResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   Question?: QuestionResolvers<ContextType>;
+  Reaction?: ReactionResolvers<ContextType>;
   Signature?: SignatureResolvers<ContextType>;
   SignatureTask?: SignatureTaskResolvers<ContextType>;
   Subscription?: SubscriptionResolvers<ContextType>;

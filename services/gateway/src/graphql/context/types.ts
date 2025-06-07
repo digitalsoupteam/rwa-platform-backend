@@ -12,7 +12,8 @@ import type {
   BlogClient,
   CompanyClient,
   PortfolioClient,
-  ChartsClient
+  ChartsClient,
+  ReactionsClient
 } from '../../clients/eden.clients';
 import type { createPubSub } from 'graphql-yoga';
 import { CacheService } from '../../services/cache.service';
@@ -39,6 +40,7 @@ export interface ServiceClients {
   portfolioClient: PortfolioClient;
   companyClient: CompanyClient;
   chartsClient: ChartsClient;
+  reactionsClient: ReactionsClient;
 }
 
 export interface Services {

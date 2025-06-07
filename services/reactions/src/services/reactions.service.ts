@@ -8,42 +8,8 @@ export class ReactionsService {
     private readonly reactionRepository: ReactionRepository
   ) {}
 
-  async toggle(data: {
-    parentId: string;
-    parentType: string;
-    userId: string;
-    reaction: string;
-  }) {
-    logger.debug("Toggling reaction", {
-      parentId: data.parentId,
-      userId: data.userId
-    });
-
-    const exists = await this.reactionRepository.exists(data.parentId, data.userId);
-
-    if (exists) {
-      return this.reactionRepository.delete(data.parentId, data.userId);
-    }
-
-    return this.reactionRepository.create(data);
-  }
-
-  async getAll(params: {
-    filter?: Record<string, any>;
-    sort?: { [key: string]: SortOrder };
-    limit?: number;
-    offset?: number;
-  }) {
-    logger.debug("Getting reactions list", params);
-
-    const reactions = await this.reactionRepository.findAll(
-      params.filter,
-      params.sort,
-      params.limit,
-      params.offset
-    );
-
-    return reactions.map(reaction => ({
+  private formatReaction(reaction: IReactionEntity) {
+    return {
       id: reaction._id.toString(),
       parentId: reaction.parentId,
       parentType: reaction.parentType,
@@ -51,6 +17,62 @@ export class ReactionsService {
       reaction: reaction.reaction,
       createdAt: reaction.createdAt,
       updatedAt: reaction.updatedAt
-    }));
+    };
+  }
+
+  async setReaction(data: {
+    parentId: string;
+    parentType: string;
+    userId: string;
+    reaction: string;
+  }) {
+    logger.debug("Setting reaction", {
+      parentId: data.parentId,
+      userId: data.userId,
+      reaction: data.reaction
+    });
+    
+    const reaction = await this.reactionRepository.create(data);
+    return this.formatReaction(reaction);
+  }
+
+  async resetReaction(data: {
+    parentId: string;
+    parentType: string;
+    userId: string;
+    reaction: string;
+  }) {
+    logger.debug("Resetting reaction", {
+      parentId: data.parentId,
+      userId: data.userId,
+      reaction: data.reaction
+    });
+
+    const reaction = await this.reactionRepository.delete(data.parentId, data.userId);
+    return this.formatReaction(reaction);
+  }
+
+  async getEntityReactions(params: {
+    parentId: string;
+    parentType: string;
+    userId?: string;
+  }) {
+    logger.debug("Getting entity reactions", {
+      parentId: params.parentId,
+      parentType: params.parentType,
+      userId: params.userId
+    });
+
+    const [reactions, userReactions] = await Promise.all([
+      this.reactionRepository.getEntityStats(params.parentId, params.parentType),
+      params.userId ?
+        this.reactionRepository.getUserReaction(params.parentId, params.userId) :
+        []
+    ]);
+
+    return {
+      reactions,
+      userReactions: userReactions.map(r => r.reaction)
+    };
   }
 }

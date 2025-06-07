@@ -15,6 +15,7 @@ import type { App as BlogApp } from '@services/blog/src';
 import type { App as PortfolioApp } from '@services/portfolio/src';
 import type { App as CompanyApp } from '@services/company/src';
 import type { App as ChartsApp } from '@services/charts/src';
+import type { App as ReactionsApp } from '@services/reactions/src';
 
 export const authClient = edenTreaty<AuthApp>(CONFIG.SERVICES.AUTH.URL);
 export const aiAssistantClient = edenTreaty<AiAssistantApp>(CONFIG.SERVICES.ASSISTANT.URL);
@@ -30,6 +31,7 @@ export const blogClient = edenTreaty<BlogApp>(CONFIG.SERVICES.BLOG.URL);
 export const portfolioClient = edenTreaty<PortfolioApp>(CONFIG.SERVICES.PORTFOLIO.URL);
 export const companyClient = edenTreaty<CompanyApp>(CONFIG.SERVICES.COMPANY.URL);
 export const chartsClient = edenTreaty<ChartsApp>(CONFIG.SERVICES.CHARTS.URL);
+export const reactionsClient = edenTreaty<ReactionsApp>(CONFIG.SERVICES.REACTIONS.URL);
 
 export type AuthClient = typeof authClient;
 export type AiAssistantClient = typeof aiAssistantClient;
@@ -45,3 +47,4 @@ export type BlogClient = typeof blogClient;
 export type PortfolioClient = typeof portfolioClient;
 export type CompanyClient = typeof companyClient;
 export type ChartsClient = typeof chartsClient;
+export type ReactionsClient = typeof reactionsClient;

@@ -1,0 +1,41 @@
+scalar JSON
+
+# Reaction type
+type Reaction {
+  id: ID!
+  parentId: String!
+  parentType: String!
+  userId: String!
+  reaction: String!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+# Entity reactions response
+type EntityReactionsResponse {
+  reactions: JSON! # Record<string, number>
+  userReactions: [String!]!
+}
+
+# Set reaction input
+input SetReactionInput {
+  parentId: String!
+  parentType: String!
+  reaction: String!
+}
+
+extend type Query {
+  # Get reactions for entity
+  getEntityReactions(
+    parentId: String!
+    parentType: String!
+  ): EntityReactionsResponse!
+}
+
+extend type Mutation {
+  # Set reaction
+  setReaction(input: SetReactionInput!): Reaction!
+
+  # Reset reaction
+  resetReaction(input: SetReactionInput!): Reaction
+}

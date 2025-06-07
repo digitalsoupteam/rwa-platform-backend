@@ -48,6 +48,9 @@ export const CONFIG = {
     },
     CHARTS: {
       URL: process.env.CHARTS_SERVICE_URL || "http://charts:3040"
+    },
+    REACTIONS: {
+      URL: process.env.REACTIONS_SERVICE_URL || "http://reactions:3026"
     }
   },
   

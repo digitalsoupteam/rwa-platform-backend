@@ -1,8 +1,10 @@
 import { Elysia } from "elysia";
 
-import { toggleReactionController } from "../controllers/toggleReaction.controller";
-import { getReactionsController } from "../controllers/getReactions.controller";
+import { setReactionController } from "../controllers/setReaction.controller";
+import { resetReactionController } from "../controllers/resetReaction.controller";
+import { getEntityReactionsController } from "../controllers/getEntityReactions.controller";
 
 export const ControllersPlugin = new Elysia({ name: "Controllers" })
-  .use(toggleReactionController)
-  .use(getReactionsController);
+  .use(setReactionController)
+  .use(resetReactionController)
+  .use(getEntityReactionsController);
