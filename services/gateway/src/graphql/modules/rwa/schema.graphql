@@ -35,6 +35,7 @@ type Pool {
   chainId: String!
   tags: [String!]
   riskScore: Float!
+  image: String
 
   # Contract Addresses
   rwaAddress: String!
@@ -149,6 +150,7 @@ input CreatePoolInput {
   incomingTranches: [IncomingTrancheInput!]
   description: String
   tags: [String!]
+  image: String
 }
 
 input EditPoolInput {
@@ -176,6 +178,7 @@ input EditPoolDataInput {
   incomingTranches: [IncomingTrancheInput!]
   description: String
   tags: [String!]
+  image: String
 }
 
 input OutgoingTrancheInput {

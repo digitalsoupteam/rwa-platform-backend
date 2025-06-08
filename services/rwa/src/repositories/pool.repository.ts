@@ -30,7 +30,8 @@ export class PoolRepository {
     "outgoingTranches" |
     "incomingTranches" |
     "description" |
-    "tags" 
+    "tags" |
+    "image"
   >>) {
     logger.debug(`Creating pool: ${JSON.stringify(data)}`);
     const doc = await this.model.create(data);
@@ -80,7 +81,8 @@ export class PoolRepository {
     "tags" |
     "riskScore" |
     "approvalSignaturesTaskId" |
-    "approvalSignaturesTaskExpired"
+    "approvalSignaturesTaskExpired" |
+    "image"
   >>) {
     logger.debug(`Updating pool fields: ${id}`);
     const doc = await this.model.findByIdAndUpdate(id, data, { new: true }).lean();

@@ -45,6 +45,10 @@ const poolSchemaDefinition = {
         max: 100,
         default: 0
     },
+    image: {
+        type: String,
+        trim: true
+    },
 
     // Contract Addresses
     rwaAddress: {

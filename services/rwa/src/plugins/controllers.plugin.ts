@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 
 import { createBusinessController } from "../controllers/business/createBusiness.controller";
+import { getTokenMetadataController } from "../controllers/token/getTokenMetadata.controller";
 import { editBusinessController } from "../controllers/business/editBusiness.controller";
 import { updateBusinessRiskScoreController } from "../controllers/business/updateBusinessRiskScore.controller";
 import { requestBusinessApprovalSignaturesController } from "../controllers/business/requestBusinessApprovalSignatures.controller";
@@ -32,4 +33,6 @@ export const ControllersPlugin = new Elysia({ name: "Controllers" })
   .use(requestPoolApprovalSignaturesController)
   .use(rejectPoolApprovalSignaturesController)
   .use(getPoolController)
-  .use(getPoolsController);
+  .use(getPoolsController)
+  // Token controllers
+  .use(getTokenMetadataController);

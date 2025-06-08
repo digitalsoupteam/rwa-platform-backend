@@ -5,12 +5,14 @@ import { PoolService } from "../services/pool.service";
 import { RepositoriesPlugin } from "./repositories.plugin";
 import { ClientsPlugin } from "./clients.plugin";
 import { CONFIG } from "../config";
+import { TokenService } from "../services/token.service";
 
 export const ServicesPlugin = new Elysia({ name: "Services" })
   .use(RepositoriesPlugin)
   .use(ClientsPlugin)
   .decorate("businessService", {} as BusinessService)
   .decorate("poolService", {} as PoolService)
+  .decorate("tokenService", {} as TokenService)
   .onStart(
     async ({ decorator }) => {
       logger.debug("Initializing services");
@@ -29,6 +31,11 @@ export const ServicesPlugin = new Elysia({ name: "Services" })
         decorator.signersManagerClient,
         decorator.poolEventsClient,
         CONFIG.SUPPORTED_NETWORKS
+      );
+
+      decorator.tokenService = new TokenService(
+        decorator.poolRepository,
+        decorator.businessRepository,
       );
     }
   );

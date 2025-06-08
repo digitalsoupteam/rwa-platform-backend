@@ -13,6 +13,7 @@ export const poolSchema = t.Object({
   chainId: t.String(),
   tags: t.Array(t.String()),
   riskScore: t.Number(),
+  image: t.Optional(t.String()),
 
   // Contract Addresses
   rwaAddress: t.String(),

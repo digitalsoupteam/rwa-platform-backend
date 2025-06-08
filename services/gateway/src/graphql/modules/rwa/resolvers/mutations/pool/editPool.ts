@@ -33,27 +33,7 @@ export const editPool: MutationResolvers['editPool'] = async (
 
   const response = await clients.rwaClient.editPool.post({
     id: input.id,
-    updateData: {
-      chainId: input.updateData.chainId,
-      name: input.updateData.name,
-      entryFeePercent: input.updateData.entryFeePercent,
-      exitFeePercent: input.updateData.exitFeePercent,
-      expectedHoldAmount: input.updateData.expectedHoldAmount,
-      expectedRwaAmount: input.updateData.expectedRwaAmount,
-      rewardPercent: input.updateData.rewardPercent,
-      entryPeriodStart: input.updateData.entryPeriodStart,
-      entryPeriodExpired: input.updateData.entryPeriodExpired,
-      completionPeriodExpired: input.updateData.completionPeriodExpired,
-      awaitCompletionExpired: input.updateData.awaitCompletionExpired,
-      floatingOutTranchesTimestamps: input.updateData.floatingOutTranchesTimestamps,
-      fixedSell: input.updateData.fixedSell,
-      allowEntryBurn: input.updateData.allowEntryBurn,
-      priceImpactPercent: input.updateData.priceImpactPercent,
-      outgoingTranches: input.updateData.outgoingTranches,
-      incomingTranches: input.updateData.incomingTranches,
-      description: input.updateData.description,
-      tags: input.updateData.tags
-    }
+    updateData: input.updateData
   });
 
   if (response.error) {

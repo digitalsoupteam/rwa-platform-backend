@@ -39,29 +39,11 @@ export const createPool: MutationResolvers['createPool'] = async (
   });
 
   const response = await clients.rwaClient.createPool.post({
-    name: input.name,
+    ...input,
     ownerId: business.ownerId,
     ownerType: business.ownerType,
-    businessId: input.businessId,
     chainId: business.chainId,
-    rwaAddress: business.tokenAddress,
-    description: input.description,
-    tags: input.tags,
-    entryFeePercent: input.entryFeePercent,
-    exitFeePercent: input.exitFeePercent,
-    expectedHoldAmount: input.expectedHoldAmount,
-    expectedRwaAmount: input.expectedRwaAmount,
-    rewardPercent: input.rewardPercent,
-    entryPeriodStart: input.entryPeriodStart,
-    entryPeriodExpired: input.entryPeriodExpired,
-    completionPeriodExpired: input.completionPeriodExpired,
-    awaitCompletionExpired: input.awaitCompletionExpired,
-    floatingOutTranchesTimestamps: input.floatingOutTranchesTimestamps,
-    fixedSell: input.fixedSell,
-    allowEntryBurn: input.allowEntryBurn,
-    priceImpactPercent: input.priceImpactPercent,
-    outgoingTranches: input.outgoingTranches,
-    incomingTranches: input.incomingTranches,
+    rwaAddress: business.tokenAddress
   });
 
   if (response.error) {

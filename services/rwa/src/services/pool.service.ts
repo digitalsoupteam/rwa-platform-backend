@@ -320,6 +320,7 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       id: pool._id.toString(),
       chainId: pool.chainId,
       name: pool.name,
+      image: pool.image ?? undefined,
       ownerId: pool.ownerId,
       ownerType: pool.ownerType,
       businessId: pool.businessId,
@@ -407,6 +408,7 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
     }>;
     description?: string;
     tags?: string[];
+    image?: string;
   }) {
     logger.debug("Creating new pool", { data });
 
@@ -448,6 +450,7 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       }>;
       description?: string;
       tags?: string[];
+      image?: string;
     }
   }) {
     logger.debug("Updating pool", params);
