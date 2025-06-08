@@ -143,6 +143,7 @@ services:
       - PORT=${RWA_PORT}
       - MONGODB_URI=${RWA_MONGODB_URI}
       - RABBITMQ_URL=${RWA_RABBITMQ_URL}
+      - REDIS_URL=${RWA_REDIS_URL}
       - SIGNERS_MANAGER_URL=${RWA_SIGNERS_MANAGER_URL}
       - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
@@ -155,6 +156,8 @@ services:
       mongodb:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   testnet-faucet:

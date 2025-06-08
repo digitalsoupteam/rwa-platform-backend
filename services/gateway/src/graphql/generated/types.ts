@@ -1440,6 +1440,7 @@ export type Subscription = {
   __typename?: 'Subscription';
   _?: Maybe<Scalars['Boolean']['output']>;
   countdown: Scalars['Int']['output'];
+  poolDeployed: Pool;
   priceUpdates: PriceUpdateEvent;
   transactionUpdates: TransactionEvent;
 };
@@ -2533,6 +2534,7 @@ export type SignatureTaskResolvers<ContextType = GraphQLContext, ParentType exte
 export type SubscriptionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Subscription'] = ResolversParentTypes['Subscription']> = ResolversObject<{
   _?: SubscriptionResolver<Maybe<ResolversTypes['Boolean']>, "_", ParentType, ContextType>;
   countdown?: SubscriptionResolver<ResolversTypes['Int'], "countdown", ParentType, ContextType, RequireFields<SubscriptionCountdownArgs, 'from'>>;
+  poolDeployed?: SubscriptionResolver<ResolversTypes['Pool'], "poolDeployed", ParentType, ContextType>;
   priceUpdates?: SubscriptionResolver<ResolversTypes['PriceUpdateEvent'], "priceUpdates", ParentType, ContextType, RequireFields<SubscriptionPriceUpdatesArgs, 'poolAddress'>>;
   transactionUpdates?: SubscriptionResolver<ResolversTypes['TransactionEvent'], "transactionUpdates", ParentType, ContextType, RequireFields<SubscriptionTransactionUpdatesArgs, 'poolAddress'>>;
 }>;

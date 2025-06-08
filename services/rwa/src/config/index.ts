@@ -2,6 +2,10 @@ export const CONFIG = {
   PORT: Number(process.env.PORT) || 3000,
   SERVICE_NAME: process.env.SERVICE_NAME || "rwa",
 
+  REDIS: {
+    URL: process.env.REDIS_URL || "redis://localhost:6379",
+  },
+
   OTHER_SERVICES: {
     SIGNATURES_MANAGER: {
       URL: process.env.SIGNERS_MANAGER_URL || "http://signers-manager"

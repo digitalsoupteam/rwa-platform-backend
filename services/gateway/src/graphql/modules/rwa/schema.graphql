@@ -240,3 +240,7 @@ extend type Mutation {
   requestPoolApprovalSignatures(input: RequestPoolApprovalSignaturesInput!): ApprovalSignaturesResponse!
   rejectPoolApprovalSignatures(id: ID!): Boolean!
 }
+
+extend type Subscription {
+  poolDeployed: Pool!
+}

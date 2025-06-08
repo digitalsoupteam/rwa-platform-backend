@@ -1,16 +1,7 @@
 import { SubscriptionResolvers, PriceUpdateEvent } from '../../../../generated/types';
 import { pipe, map } from 'graphql-yoga';
 import { logger } from '@shared/monitoring/src/logger';
-
-interface RedisEvent {
-  type: string;
-  payload: PriceUpdateEvent;
-  metadata: {
-    timestamp: number;
-    service: string;
-    version: string;
-  };
-}
+import { RedisEvent } from '../../../../context/types';
 
 export const priceUpdates: SubscriptionResolvers['priceUpdates'] = {
   subscribe: (_parent, { poolAddress }, { pubSub }) => {

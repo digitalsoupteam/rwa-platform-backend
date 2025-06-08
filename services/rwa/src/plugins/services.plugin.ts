@@ -27,6 +27,7 @@ export const ServicesPlugin = new Elysia({ name: "Services" })
         decorator.poolRepository,
         decorator.openRouterClient,
         decorator.signersManagerClient,
+        decorator.poolEventsClient,
         CONFIG.SUPPORTED_NETWORKS
       );
     }

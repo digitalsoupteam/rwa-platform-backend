@@ -5,6 +5,7 @@ import { OpenRouterClient } from "@shared/openrouter/client";
 import { SignersManagerClient } from "../clients/eden.clients";
 import { ethers } from "ethers";
 import { SortOrder } from "mongoose";
+import { PoolEventsClient } from "../clients/poolEvents.client";
 
 
 export class PoolService {
@@ -12,6 +13,7 @@ export class PoolService {
     private readonly poolRepository: PoolRepository,
     private readonly openRouterClient: OpenRouterClient,
     private readonly signersManagerClient: SignersManagerClient,
+    private readonly poolEventsClient: PoolEventsClient,
     private readonly supportedNetworks: {
       chainId: string;
       name: string;
@@ -554,7 +556,11 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
     };
     
     const updated = await this.poolRepository.updatePool(event.entityId, updateData);
-    return this.mapPool(updated);
+    const poolDto = this.mapPool(updated)
+
+    await this.poolEventsClient.publishPoolDeployed(poolDto);
+
+    return poolDto;
   }
 
   async syncPoolAwaitingBonusAmount(event: { emittedFrom: string, awaitingBonusAmount: string }) {

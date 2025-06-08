@@ -59,3 +59,13 @@ export interface GraphQLContext {
   token: string | null;
   pubSub: PubSubInstance;
 }
+
+export interface RedisEvent {
+  type: string;
+  payload: any;
+  metadata: {
+    timestamp: number;
+    service: string;
+    version: string;
+  };
+}

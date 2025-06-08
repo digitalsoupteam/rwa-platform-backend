@@ -82,6 +82,8 @@ export const poolSchema = t.Object({
   updatedAt: t.Number()
 });
 
+export type IPoolDTO = typeof poolSchema.static;
+
 export const createPoolRequest = t.Composite([
   t.Pick(poolSchema, [
     'ownerId',

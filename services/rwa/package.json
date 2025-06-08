@@ -13,6 +13,7 @@
     "@shared/openrouter": "workspace:*",
     "@shared/rabbitmq": "workspace:*",
     "@shared/blockchain-daemon": "workspace:*",
+    "@shared/redis-events": "workspace:*",
     "@shared/errors": "workspace:*"
   },
   "devDependencies": {

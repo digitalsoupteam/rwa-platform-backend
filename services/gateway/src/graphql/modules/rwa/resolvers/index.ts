@@ -4,6 +4,8 @@ import { getBusinesses } from './queries/getBusinesses';
 import { getPool } from './queries/getPool';
 import { getPools } from './queries/getPools';
 
+import { poolDeployed } from './subscriptions/poolDeployed';
+
 import { createBusiness } from './mutations/business/createBusiness';
 import { editBusiness } from './mutations/business/editBusiness';
 import { updateBusinessRiskScore } from './mutations/business/updateBusinessRiskScore';
@@ -35,4 +37,7 @@ export const rwaResolvers: Resolvers = {
     requestPoolApprovalSignatures,
     rejectPoolApprovalSignatures,
   },
+  Subscription: {
+    poolDeployed
+  }
 };
