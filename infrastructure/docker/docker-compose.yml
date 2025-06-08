@@ -395,6 +395,8 @@ services:
       - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
       - OPENROUTER_MODEL=${OPENROUTER_MODEL}
+      - RWA_SERVICE_URL=${AI_ASSISTANT_RWA_SERVICE_URL}
+      - PORTFOLIO_SERVICE_URL=${AI_ASSISTANT_PORTFOLIO_SERVICE_URL}
     volumes:
       - service_logs:/var/log
     networks:
@@ -402,6 +404,10 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+      rwa:
+        condition: service_started
+      portfolio:
+        condition: service_started
 
   portfolio:
     build:

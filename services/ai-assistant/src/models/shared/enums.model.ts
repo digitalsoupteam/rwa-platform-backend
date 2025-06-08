@@ -10,8 +10,6 @@ export const AssistantContextList = [
   // Context data
   "popular_pools",
   "user_portfolio",
-  "user_balance",
-  "market_data",
 ] as const;
 
 export const assistantContextSchema = t.Array(
@@ -22,8 +20,6 @@ export const assistantContextSchema = t.Array(
     // Context data
     t.Literal("popular_pools"),
     t.Literal("user_portfolio"),
-    t.Literal("user_balance"),
-    t.Literal("market_data"),
   ])
 );
 

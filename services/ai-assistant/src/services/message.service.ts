@@ -2,11 +2,13 @@ import { logger } from "@shared/monitoring/src/logger";
 import { MessageRepository } from "../repositories/message.repository";
 import { OpenRouterClient } from "@shared/openrouter/client";
 import { AssistantRepository } from "../repositories/assistant.repository";
+import { ContextService } from "./context.service";
 
 export class MessageService {
   constructor(
     private readonly messageRepository: MessageRepository,
     private readonly assistantRepository: AssistantRepository,
+    private readonly contextService: ContextService,
     private readonly openRouterClient: OpenRouterClient,
     private readonly openRouterModel: string,
   ) {}
@@ -16,6 +18,7 @@ export class MessageService {
    */
   async createMessage(data: {
     assistantId: string;
+    userId: string;
     text: string;
     model?: string;
   }) {
@@ -38,11 +41,14 @@ export class MessageService {
         5 // Last 5 messages for context
       );
 
+      // Get assistant-specific context
+      const context = await this.contextService.getContextForAssistant(assistant.contextPreferences, data.userId);
+
       // Prepare conversation history
       const messages = [
         {
           role: "system",
-          content: `You are ${assistant.name}, an AI assistant.`,
+          content: `You are ${assistant.name}, an AI assistant.\n\n${context || ''}`,
         },
         ...history.reverse().map((msg) => ({
           role: "user",
@@ -54,10 +60,11 @@ export class MessageService {
         },
       ];
 
-      // Get AI response
+      // Get AI response with middle-out compression enabled
       const completion = await this.openRouterClient.chatCompletion({
-        model: this.openRouterModel,
+        model: data.model || this.openRouterModel,
         messages,
+        transforms: ["middle-out"], // Enable middle-out compression for large contexts
       });
 
       // Save AI response
@@ -123,6 +130,7 @@ export class MessageService {
       text: message.text,
     };
   }
+
   /**
    * Deletes a message
    */
