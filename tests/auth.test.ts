@@ -62,7 +62,7 @@ describe("Auth Flow Tests", () => {
     });
 
     expect(result.errors).toBeDefined();
-    expect(result.errors[0].message).toBeDefined();
+    expect(result.errors[0].message).toBe("Failed to refresh token");
   });
 
   test("should fail with expired signature", async () => {
@@ -87,7 +87,7 @@ describe("Auth Flow Tests", () => {
     });
 
     expect(result.errors).toBeDefined();
-    expect(result.errors[0].message).toBeDefined();
+    expect(result.errors[0].message).toBe("Failed to authenticate");
   });
 
   test("should fail with future timestamp", async () => {
@@ -112,14 +112,13 @@ describe("Auth Flow Tests", () => {
     });
 
     expect(result.errors).toBeDefined();
-    expect(result.errors[0].message).toBeDefined();
+    expect(result.errors[0].message).toBe("Failed to authenticate");
   });
 
   test("should fail with other user signature", async () => {
     const invalidWallet = ethers.Wallet.createRandom();
 
     const typedData = await generateTypedData(wallet);
-
     const invalidSignature = await invalidWallet.signTypedData(
       typedData.domain,
       typedData.types,
@@ -130,10 +129,11 @@ describe("Auth Flow Tests", () => {
       input: {
         wallet: wallet.address,
         signature: invalidSignature,
+        timestamp: typedData.message.timestamp,
       },
     });
 
     expect(result.errors).toBeDefined();
-    expect(result.errors[0].message).toBeDefined();
+    expect(result.errors[0].message).toBe("Failed to authenticate");
   });
 });
