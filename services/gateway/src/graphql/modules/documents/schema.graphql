@@ -89,13 +89,13 @@ extend type Query {
   getDocument(id: ID!): Document!
 
   # Get documents list with filters
-  getDocuments(filter: GetDocumentsFilterInput): [Document!]!
+  getDocuments(input: GetDocumentsFilterInput): [Document!]!
 
   # Get single folder by id
   getFolder(id: ID!): Folder!
 
   # Get folders list with filters
-  getFolders(filter: GetFoldersFilterInput): [Folder!]!
+  getFolders(input: GetFoldersFilterInput): [Folder!]!
 }
 
 extend type Mutation {

@@ -53,8 +53,8 @@ export const GET_FOLDER = `
 `;
 
 export const GET_FOLDERS = `
-  query GetFolders($filter: GetFoldersFilterInput) {
-    getFolders(filter: $filter) {
+  query GetFolders($input: GetFoldersFilterInput) {
+    getFolders(input: $input) {
       id
       name
       parentId
@@ -129,8 +129,8 @@ export const GET_DOCUMENT = `
 `;
 
 export const GET_DOCUMENTS = `
-  query GetDocuments($filter: GetDocumentsFilterInput) {
-    getDocuments(filter: $filter) {
+  query GetDocuments($input: GetDocumentsFilterInput) {
+    getDocuments(input: $input) {
       id
       folderId
       name
