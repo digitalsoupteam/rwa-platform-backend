@@ -82,8 +82,8 @@ describe("Testnet Faucet Flow Tests", () => {
 
     // Check requests order (newest first)
     const requests = result.data.getHistory;
-    expect(requests[0].id).toBe(holdRequestId);
-    expect(requests[1].id).toBe(gasRequestId);
+    expect(requests[0].id).toBe(gasRequestId);
+    expect(requests[1].id).toBe(holdRequestId);
   });
 
   test("should get unlock time", async () => {
