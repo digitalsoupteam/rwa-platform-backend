@@ -150,6 +150,13 @@ export type CreateBusinessInput = {
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
+export type CreateBusinessWithAiInput = {
+  chainId: Scalars['String']['input'];
+  description: Scalars['String']['input'];
+  ownerId: Scalars['String']['input'];
+  ownerType: BusinessOwnerType;
+};
+
 export type CreateCompanyInput = {
   description: Scalars['String']['input'];
   name: Scalars['String']['input'];
@@ -212,12 +219,18 @@ export type CreatePoolInput = {
   expectedRwaAmount?: InputMaybe<Scalars['String']['input']>;
   fixedSell?: InputMaybe<Scalars['Boolean']['input']>;
   floatingOutTranchesTimestamps?: InputMaybe<Scalars['Boolean']['input']>;
+  image?: InputMaybe<Scalars['String']['input']>;
   incomingTranches?: InputMaybe<Array<IncomingTrancheInput>>;
   name: Scalars['String']['input'];
   outgoingTranches?: InputMaybe<Array<OutgoingTrancheInput>>;
   priceImpactPercent?: InputMaybe<Scalars['String']['input']>;
   rewardPercent?: InputMaybe<Scalars['String']['input']>;
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
+};
+
+export type CreatePoolWithAiInput = {
+  businessId: Scalars['String']['input'];
+  description: Scalars['String']['input'];
 };
 
 export type CreatePostInput = {
@@ -284,6 +297,7 @@ export type EditPoolDataInput = {
   expectedRwaAmount?: InputMaybe<Scalars['String']['input']>;
   fixedSell?: InputMaybe<Scalars['Boolean']['input']>;
   floatingOutTranchesTimestamps?: InputMaybe<Scalars['Boolean']['input']>;
+  image?: InputMaybe<Scalars['String']['input']>;
   incomingTranches?: InputMaybe<Array<IncomingTrancheInput>>;
   name?: InputMaybe<Scalars['String']['input']>;
   outgoingTranches?: InputMaybe<Array<OutgoingTrancheInput>>;
@@ -582,6 +596,7 @@ export type Mutation = {
   createAssistant: Assistant;
   createBlog: Blog;
   createBusiness: Business;
+  createBusinessWithAI: Business;
   createCompany: Company;
   createDocument: Document;
   createFaqAnswer: FaqAnswer;
@@ -591,6 +606,7 @@ export type Mutation = {
   createImage: Image;
   createMessage: Array<Message>;
   createPool: Pool;
+  createPoolWithAI: Pool;
   createPost: Post;
   createQuestion: Question;
   createQuestionAnswer: Question;
@@ -667,6 +683,11 @@ export type MutationCreateBusinessArgs = {
 };
 
 
+export type MutationCreateBusinessWithAiArgs = {
+  input: CreateBusinessWithAiInput;
+};
+
+
 export type MutationCreateCompanyArgs = {
   input: CreateCompanyInput;
 };
@@ -709,6 +730,11 @@ export type MutationCreateMessageArgs = {
 
 export type MutationCreatePoolArgs = {
   input: CreatePoolInput;
+};
+
+
+export type MutationCreatePoolWithAiArgs = {
+  input: CreatePoolWithAiInput;
 };
 
 
@@ -1018,6 +1044,7 @@ export type Pool = {
   fullReturnTimestamp?: Maybe<Scalars['Float']['output']>;
   holdToken?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
+  image?: Maybe<Scalars['String']['output']>;
   incomingTranches: Array<IncomingTranche>;
   isFullyReturned: Scalars['Boolean']['output'];
   isTargetReached: Scalars['Boolean']['output'];
@@ -1766,6 +1793,7 @@ export type ResolversTypes = ResolversObject<{
   CreateAssistantInput: CreateAssistantInput;
   CreateBlogInput: CreateBlogInput;
   CreateBusinessInput: CreateBusinessInput;
+  CreateBusinessWithAIInput: CreateBusinessWithAiInput;
   CreateCompanyInput: CreateCompanyInput;
   CreateDocumentInput: CreateDocumentInput;
   CreateFaqAnswerInput: CreateFaqAnswerInput;
@@ -1775,6 +1803,7 @@ export type ResolversTypes = ResolversObject<{
   CreateImageInput: CreateImageInput;
   CreateMessageInput: CreateMessageInput;
   CreatePoolInput: CreatePoolInput;
+  CreatePoolWithAIInput: CreatePoolWithAiInput;
   CreatePostInput: CreatePostInput;
   CreateQuestionAnswerInput: CreateQuestionAnswerInput;
   CreateQuestionInput: CreateQuestionInput;
@@ -1905,6 +1934,7 @@ export type ResolversParentTypes = ResolversObject<{
   CreateAssistantInput: CreateAssistantInput;
   CreateBlogInput: CreateBlogInput;
   CreateBusinessInput: CreateBusinessInput;
+  CreateBusinessWithAIInput: CreateBusinessWithAiInput;
   CreateCompanyInput: CreateCompanyInput;
   CreateDocumentInput: CreateDocumentInput;
   CreateFaqAnswerInput: CreateFaqAnswerInput;
@@ -1914,6 +1944,7 @@ export type ResolversParentTypes = ResolversObject<{
   CreateImageInput: CreateImageInput;
   CreateMessageInput: CreateMessageInput;
   CreatePoolInput: CreatePoolInput;
+  CreatePoolWithAIInput: CreatePoolWithAiInput;
   CreatePostInput: CreatePostInput;
   CreateQuestionAnswerInput: CreateQuestionAnswerInput;
   CreateQuestionInput: CreateQuestionInput;
@@ -2248,6 +2279,7 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   createAssistant?: Resolver<ResolversTypes['Assistant'], ParentType, ContextType, RequireFields<MutationCreateAssistantArgs, 'input'>>;
   createBlog?: Resolver<ResolversTypes['Blog'], ParentType, ContextType, RequireFields<MutationCreateBlogArgs, 'input'>>;
   createBusiness?: Resolver<ResolversTypes['Business'], ParentType, ContextType, RequireFields<MutationCreateBusinessArgs, 'input'>>;
+  createBusinessWithAI?: Resolver<ResolversTypes['Business'], ParentType, ContextType, RequireFields<MutationCreateBusinessWithAiArgs, 'input'>>;
   createCompany?: Resolver<ResolversTypes['Company'], ParentType, ContextType, RequireFields<MutationCreateCompanyArgs, 'input'>>;
   createDocument?: Resolver<ResolversTypes['Document'], ParentType, ContextType, RequireFields<MutationCreateDocumentArgs, 'input'>>;
   createFaqAnswer?: Resolver<ResolversTypes['FaqAnswer'], ParentType, ContextType, RequireFields<MutationCreateFaqAnswerArgs, 'input'>>;
@@ -2257,6 +2289,7 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   createImage?: Resolver<ResolversTypes['Image'], ParentType, ContextType, RequireFields<MutationCreateImageArgs, 'input'>>;
   createMessage?: Resolver<Array<ResolversTypes['Message']>, ParentType, ContextType, RequireFields<MutationCreateMessageArgs, 'input'>>;
   createPool?: Resolver<ResolversTypes['Pool'], ParentType, ContextType, RequireFields<MutationCreatePoolArgs, 'input'>>;
+  createPoolWithAI?: Resolver<ResolversTypes['Pool'], ParentType, ContextType, RequireFields<MutationCreatePoolWithAiArgs, 'input'>>;
   createPost?: Resolver<ResolversTypes['Post'], ParentType, ContextType, RequireFields<MutationCreatePostArgs, 'input'>>;
   createQuestion?: Resolver<ResolversTypes['Question'], ParentType, ContextType, RequireFields<MutationCreateQuestionArgs, 'input'>>;
   createQuestionAnswer?: Resolver<ResolversTypes['Question'], ParentType, ContextType, RequireFields<MutationCreateQuestionAnswerArgs, 'input'>>;
@@ -2357,6 +2390,7 @@ export type PoolResolvers<ContextType = GraphQLContext, ParentType extends Resol
   fullReturnTimestamp?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   holdToken?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  image?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   incomingTranches?: Resolver<Array<ResolversTypes['IncomingTranche']>, ParentType, ContextType>;
   isFullyReturned?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   isTargetReached?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;

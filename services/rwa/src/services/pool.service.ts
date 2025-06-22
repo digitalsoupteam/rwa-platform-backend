@@ -21,6 +21,157 @@ export class PoolService {
     }[]
   ) { }
 
+  private async generatePoolFields(description: string) {
+    const systemMessage = `You are a DeFi pool configuration expert. Analyze the following pool description and generate optimal pool parameters.
+
+Key concepts:
+1. The pool collects HOLD tokens during entry period and mints RWA tokens
+2. After reaching target, HOLD tokens are released to owner through outgoing tranches
+3. Owner must return HOLD tokens through incoming tranches with deadlines
+4. If returned on time and in full, owner receives bonus HOLD tokens
+
+Please analyze the pool description and generate:
+1. A concise pool name
+2. Relevant tags (up to 5)
+3. A structured description
+4. Pool configuration:
+   - Entry/exit fees (in basis points, 1-1000)
+   - Expected amounts of HOLD and RWA tokens
+   - Reward percent for bonus (in basis points)
+   - Time periods for entry and completion
+   - AMM parameters (price impact)
+   - Pool behavior flags
+5. Tranches schedule:
+   - Outgoing tranches: When and how much HOLD tokens owner can claim
+   - Incoming tranches: When and how much HOLD tokens owner must return
+
+Pool description: ${description}
+
+Response format:
+{
+  "name": "string",
+  "tags": ["string"],
+  "description": "string",
+  "entryFeePercent": "string (1-1000)",
+  "exitFeePercent": "string (1-1000)",
+  "expectedHoldAmount": "string",
+  "expectedRwaAmount": "string",
+  "rewardPercent": "string (1-1000)",
+  "priceImpactPercent": "string (1-1000)",
+  "entryPeriodStart": "number (unix timestamp)",
+  "entryPeriodExpired": "number (unix timestamp)",
+  "completionPeriodExpired": "number (unix timestamp)",
+  "awaitCompletionExpired": "boolean",
+  "floatingOutTranchesTimestamps": "boolean",
+  "fixedSell": "boolean",
+  "allowEntryBurn": "boolean",
+  "outgoingTranches": [{
+    "amount": "string",
+    "timestamp": "number (unix timestamp)"
+  }],
+  "incomingTranches": [{
+    "amount": "string",
+    "expiredAt": "number (unix timestamp)"
+  }]
+}
+
+Example response:
+{
+  "name": "Real Estate Development Fund",
+  "tags": ["real-estate", "development", "construction", "yield"],
+  "description": "Pool for financing a residential complex development project with quarterly returns",
+  "entryFeePercent": "100",
+  "exitFeePercent": "100",
+  "expectedHoldAmount": "1000000000000000000000",
+  "expectedRwaAmount": "1000000000000000000",
+  "rewardPercent": "500",
+  "priceImpactPercent": "100",
+  "entryPeriodStart": 1717171717,
+  "entryPeriodExpired": 1717571717,
+  "completionPeriodExpired": 1727171717,
+  "awaitCompletionExpired": true,
+  "floatingOutTranchesTimestamps": false,
+  "fixedSell": true,
+  "allowEntryBurn": false,
+  "outgoingTranches": [
+    {"amount": "250000000000000000000", "timestamp": 1717671717},
+    {"amount": "250000000000000000000", "timestamp": 1718171717},
+    {"amount": "250000000000000000000", "timestamp": 1718671717},
+    {"amount": "250000000000000000000", "timestamp": 1719171717}
+  ],
+  "incomingTranches": [
+    {"amount": "275000000000000000000", "expiredAt": 1720171717},
+    {"amount": "275000000000000000000", "expiredAt": 1721171717},
+    {"amount": "275000000000000000000", "expiredAt": 1722171717},
+    {"amount": "275000000000000000000", "expiredAt": 1723171717}
+  ]
+}`;
+
+    const response = await this.openRouterClient.chatCompletion({
+      model: "google/gemini-2.0-flash-001",
+      messages: [
+        { role: "system", content: systemMessage },
+        { role: "user", content: "Please analyze the provided pool description and generate the required fields." },
+      ],
+    });
+
+    const aiResponse = response.choices[0]?.message?.content;
+    if (!aiResponse) {
+      throw new Error("Failed to get AI response for pool field generation");
+    }
+
+    try {
+      return JSON.parse(aiResponse);
+    } catch (error) {
+      throw new Error("Failed to parse AI response as JSON");
+    }
+  }
+
+  async createPoolWithAI(data: {
+    description: string;
+    ownerId: string;
+    ownerType: string;
+    businessId: string;
+    chainId: string;
+    rwaAddress: string;
+  }) {
+    logger.debug("Creating new pool with AI", { data });
+
+    if (!this.isChainIdSupported(data.chainId)) {
+      throw new NotAllowedError(`Chain ID ${data.chainId} is not supported`);
+    }
+
+    const aiFields = await this.generatePoolFields(data.description);
+
+    const pool = await this.poolRepository.createPool({
+      name: aiFields.name,
+      ownerId: data.ownerId,
+      ownerType: data.ownerType,
+      businessId: data.businessId,
+      chainId: data.chainId,
+      rwaAddress: data.rwaAddress,
+      description: aiFields.description,
+      tags: aiFields.tags,
+      entryFeePercent: aiFields.entryFeePercent,
+      exitFeePercent: aiFields.exitFeePercent,
+      expectedHoldAmount: aiFields.expectedHoldAmount,
+      expectedRwaAmount: aiFields.expectedRwaAmount,
+      rewardPercent: aiFields.rewardPercent,
+      priceImpactPercent: aiFields.priceImpactPercent,
+      entryPeriodStart: aiFields.entryPeriodStart,
+      entryPeriodExpired: aiFields.entryPeriodExpired,
+      completionPeriodExpired: aiFields.completionPeriodExpired,
+      awaitCompletionExpired: aiFields.awaitCompletionExpired,
+      floatingOutTranchesTimestamps: aiFields.floatingOutTranchesTimestamps,
+      fixedSell: aiFields.fixedSell,
+      allowEntryBurn: aiFields.allowEntryBurn,
+      outgoingTranches: aiFields.outgoingTranches,
+      incomingTranches: aiFields.incomingTranches,
+    });
+
+    return this.mapPool(pool);
+  }
+
   private isChainIdSupported(chainId: string): boolean {
     return this.supportedNetworks.some((network) => network.chainId === chainId);
   }

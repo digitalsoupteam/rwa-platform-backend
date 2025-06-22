@@ -17,6 +17,8 @@ import { editPool } from './mutations/pool/editPool';
 import { updatePoolRiskScore } from './mutations/pool/updatePoolRiskScore';
 import { requestPoolApprovalSignatures } from './mutations/pool/requestPoolApprovalSignatures';
 import { rejectPoolApprovalSignatures } from './mutations/pool/rejectPoolApprovalSignatures';
+import { createBusinessWithAI } from './mutations/business/createBusinessWithAI';
+import { createPoolWithAI } from './mutations/pool/createPoolWithAI';
 
 export const rwaResolvers: Resolvers = {
   Query: {
@@ -27,11 +29,13 @@ export const rwaResolvers: Resolvers = {
   },
   Mutation: {
     createBusiness,
+    createBusinessWithAI,
     editBusiness,
     updateBusinessRiskScore,
     requestBusinessApprovalSignatures,
     rejectBusinessApprovalSignatures,
     createPool,
+    createPoolWithAI,
     editPool,
     updatePoolRiskScore,
     requestPoolApprovalSignatures,

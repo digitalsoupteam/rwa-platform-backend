@@ -8,6 +8,7 @@ import { requestBusinessApprovalSignaturesController } from "../controllers/busi
 import { rejectBusinessApprovalSignaturesController } from "../controllers/business/rejectBusinessApprovalSignatures.controller";
 import { getBusinessController } from "../controllers/business/getBusiness.controller";
 import { getBusinessesController } from "../controllers/business/getBusinesses.controller";
+import { createBusinessWithAIController } from "../controllers/business/createBusinessWithAI.controller";
 
 import { createPoolController } from "../controllers/pool/createPool.controller";
 import { editPoolController } from "../controllers/pool/editPool.controller";
@@ -16,6 +17,7 @@ import { requestPoolApprovalSignaturesController } from "../controllers/pool/req
 import { rejectPoolApprovalSignaturesController } from "../controllers/pool/rejectPoolApprovalSignatures.controller";
 import { getPoolController } from "../controllers/pool/getPool.controller";
 import { getPoolsController } from "../controllers/pool/getPools.controller";
+import { createPoolWithAIController } from "../controllers/pool/createPoolWithAI.controller";
 
 export const ControllersPlugin = new Elysia({ name: "Controllers" })
   // Business controllers
@@ -26,6 +28,7 @@ export const ControllersPlugin = new Elysia({ name: "Controllers" })
   .use(rejectBusinessApprovalSignaturesController)
   .use(getBusinessController)
   .use(getBusinessesController)
+  .use(createBusinessWithAIController)
   // Pool controllers
   .use(createPoolController)
   .use(editPoolController)
@@ -34,5 +37,6 @@ export const ControllersPlugin = new Elysia({ name: "Controllers" })
   .use(rejectPoolApprovalSignaturesController)
   .use(getPoolController)
   .use(getPoolsController)
+  .use(createPoolWithAIController)
   // Token controllers
   .use(getTokenMetadataController);

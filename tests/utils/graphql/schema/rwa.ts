@@ -48,6 +48,29 @@ export const GET_BUSINESSES = gql`
 `;
 
 // Business Mutations
+export const CREATE_BUSINESS_WITH_AI = gql`
+  mutation CreateBusinessWithAI($input: CreateBusinessWithAIInput!) {
+    createBusinessWithAI(input: $input) {
+      id
+      chainId
+      name
+      ownerId
+      ownerType
+      ownerWallet
+      tokenAddress
+      description
+      tags
+      riskScore
+      image
+      approvalSignaturesTaskId
+      approvalSignaturesTaskExpired
+      paused
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
 export const CREATE_BUSINESS = gql`
   mutation CreateBusiness($input: CreateBusinessInput!) {
     createBusiness(input: $input) {
@@ -286,6 +309,89 @@ export const GET_POOLS = gql`
 `;
 
 // Pool Mutations
+export const CREATE_POOL_WITH_AI = gql`
+  mutation CreatePoolWithAI($input: CreatePoolWithAIInput!) {
+    createPoolWithAI(input: $input) {
+      id
+      ownerId
+      ownerType
+      ownerWallet
+      name
+      businessId
+      description
+      chainId
+      tags
+      riskScore
+
+      # Contract Addresses
+      rwaAddress
+      poolAddress
+      holdToken
+      tokenId
+
+      # Pool Configuration
+      entryFeePercent
+      exitFeePercent
+      expectedHoldAmount
+      expectedRwaAmount
+      expectedBonusAmount
+      rewardPercent
+      priceImpactPercent
+      liquidityCoefficient
+
+      # Pool Flags
+      awaitCompletionExpired
+      floatingOutTranchesTimestamps
+      fixedSell
+      allowEntryBurn
+      paused
+
+      # Time Periods
+      entryPeriodStart
+      entryPeriodExpired
+      completionPeriodExpired
+      floatingTimestampOffset
+      fullReturnTimestamp
+
+      # Pool State
+      k
+      realHoldReserve
+      virtualHoldReserve
+      virtualRwaReserve
+      isTargetReached
+      isFullyReturned
+
+      # Amounts
+      totalClaimedAmount
+      totalReturnedAmount
+      awaitingBonusAmount
+      awaitingRwaAmount
+      outgoingTranchesBalance
+
+      # Tranches
+      outgoingTranches {
+        amount
+        timestamp
+        executedAmount
+      }
+      incomingTranches {
+        amount
+        expiredAt
+        returnedAmount
+      }
+      lastCompletedIncomingTranche
+
+      # Approval
+      approvalSignaturesTaskId
+      approvalSignaturesTaskExpired
+
+      # Timestamps
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
 export const CREATE_POOL = gql`
   mutation CreatePool($input: CreatePoolInput!) {
     createPool(input: $input) {

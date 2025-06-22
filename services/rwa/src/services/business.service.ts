@@ -38,7 +38,6 @@ export class BusinessService {
     entityOwnerType: string,
     owner: string,
   ): string {
-    // Generate initial hash of parameters
     const paramsHash = ethers.solidityPackedKeccak256(
       [
         "uint256",
@@ -64,9 +63,70 @@ export class BusinessService {
       ]
     );
 
-    // Return just the params hash - it will be combined with expired timestamp
-    // and signed in the signer service
     return paramsHash;
+  }
+
+  private async generateBusinessFields(description: string) {
+    const systemMessage = `You are a business analyst. Analyze the following business description and generate:
+1. A concise business name
+2. Relevant tags (up to 5)
+3. A structured description
+4. Initial risk assessment (1-100)
+
+Business description: ${description}
+
+Response format:
+{
+  "name": "string",
+  "tags": ["string"],
+  "description": "string",
+  "riskScore": number
+}`;
+
+    const response = await this.openRouterClient.chatCompletion({
+      model: "google/gemini-2.0-flash-001",
+      messages: [
+        { role: "system", content: systemMessage },
+        { role: "user", content: "Please analyze the provided business description and generate the required fields." },
+      ],
+    });
+
+    const aiResponse = response.choices[0]?.message?.content;
+    if (!aiResponse) {
+      throw new Error("Failed to get AI response for business field generation");
+    }
+
+    try {
+      return JSON.parse(aiResponse);
+    } catch (error) {
+      throw new Error("Failed to parse AI response as JSON");
+    }
+  }
+
+  async createBusinessWithAI(data: {
+    description: string;
+    ownerId: string;
+    ownerType: string;
+    chainId: string;
+  }) {
+    logger.debug("Creating new business with AI", { data });
+
+    if (!this.isChainIdSupported(data.chainId)) {
+      throw new NotAllowedError(`Chain ID ${data.chainId} is not supported`);
+    }
+
+    const aiFields = await this.generateBusinessFields(data.description);
+
+    const business = await this.businessRepository.createBusiness({
+      name: aiFields.name,
+      ownerId: data.ownerId,
+      ownerType: data.ownerType,
+      chainId: data.chainId,
+      description: aiFields.description,
+      tags: aiFields.tags,
+    });
+
+    return this.mapBusiness(business);
   }
 
   async createBusiness(data: {
@@ -161,9 +221,6 @@ REASONING: Moderate risk due to competitive market, but strong business model an
     if (!aiResponse) {
       throw new Error("Failed to get AI response for risk assessment");
     }
-
-    console.log('aiResponseaw1')
-    console.log(aiResponse)
 
     const match = aiResponse.match(/RISK_SCORE:\s*(\d+)/);
     if (!match) {

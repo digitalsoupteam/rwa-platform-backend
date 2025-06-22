@@ -108,6 +108,13 @@ type IncomingTranche {
   returnedAmount: String!
 }
 
+input CreateBusinessWithAIInput {
+  description: String!
+  ownerId: String!
+  ownerType: BusinessOwnerType!
+  chainId: String!
+}
+
 input CreateBusinessInput {
   name: String!
   ownerId: String!
@@ -128,6 +135,11 @@ input EditBusinessDataInput {
   tags: [String!]
   image: String
   chainId: String
+}
+
+input CreatePoolWithAIInput {
+  description: String!
+  businessId: String!
 }
 
 input CreatePoolInput {
@@ -230,6 +242,7 @@ extend type Query {
 
 extend type Mutation {
   # Business mutations
+  createBusinessWithAI(input: CreateBusinessWithAIInput!): Business!
   createBusiness(input: CreateBusinessInput!): Business!
   editBusiness(input: EditBusinessInput!): Business!
   updateBusinessRiskScore(id: ID!): Business!
@@ -237,6 +250,7 @@ extend type Mutation {
   rejectBusinessApprovalSignatures(id: ID!): Boolean!
 
   # Pool mutations
+  createPoolWithAI(input: CreatePoolWithAIInput!): Pool!
   createPool(input: CreatePoolInput!): Pool!
   editPool(input: EditPoolInput!): Pool!
   updatePoolRiskScore(id: ID!): Pool!

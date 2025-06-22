@@ -33,6 +33,17 @@ export const createBusinessRequest = t.Composite([
 export const createBusinessResponse = businessSchema;
 
 /*
+ * Create Business with AI
+ */
+export const createBusinessWithAIRequest = t.Object({
+  description: t.String(),
+  ownerId: t.String(),
+  ownerType: t.String(),
+  chainId: t.String(),
+});
+export const createBusinessWithAIResponse = businessSchema;
+
+/*
  * Edit Business
  */
 export const editBusinessRequest = t.Object({

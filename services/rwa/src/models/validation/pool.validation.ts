@@ -116,6 +116,19 @@ export const createPoolRequest = t.Composite([
 ]);
 export const createPoolResponse = poolSchema;
 
+/*
+ * Create Pool with AI
+ */
+export const createPoolWithAIRequest = t.Object({
+  description: t.String(),
+  ownerId: t.String(),
+  ownerType: t.String(),
+  businessId: t.String(),
+  chainId: t.String(),
+  rwaAddress: t.String()
+});
+export const createPoolWithAIResponse = poolSchema;
+
 export const editPoolRequest = t.Object({
   id: t.String(),
   updateData: t.Partial(t.Pick(poolSchema, [
