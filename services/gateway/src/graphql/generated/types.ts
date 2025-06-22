@@ -1224,7 +1224,7 @@ export type QueryGetDocumentArgs = {
 
 
 export type QueryGetDocumentsArgs = {
-  filter?: InputMaybe<GetDocumentsFilterInput>;
+  input?: InputMaybe<GetDocumentsFilterInput>;
 };
 
 
@@ -1240,7 +1240,7 @@ export type QueryGetFaqAnswerArgs = {
 
 
 export type QueryGetFaqAnswersArgs = {
-  filter?: InputMaybe<GetFaqAnswersFilterInput>;
+  input?: InputMaybe<GetFaqAnswersFilterInput>;
 };
 
 
@@ -1250,7 +1250,7 @@ export type QueryGetFaqTopicArgs = {
 
 
 export type QueryGetFaqTopicsArgs = {
-  filter?: InputMaybe<GetFaqTopicsFilterInput>;
+  input?: InputMaybe<GetFaqTopicsFilterInput>;
 };
 
 
@@ -1260,7 +1260,7 @@ export type QueryGetFolderArgs = {
 
 
 export type QueryGetFoldersArgs = {
-  filter?: InputMaybe<GetFoldersFilterInput>;
+  input?: InputMaybe<GetFoldersFilterInput>;
 };
 
 

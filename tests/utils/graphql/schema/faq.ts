@@ -53,8 +53,8 @@ export const GET_FAQ_TOPIC = `
 `;
 
 export const GET_FAQ_TOPICS = `
-  query GetFaqTopics($filter: GetFaqTopicsFilterInput) {
-    getFaqTopics(filter: $filter) {
+  query GetFaqTopics($input: GetFaqTopicsFilterInput) {
+    getFaqTopics(input: $input) {
       id
       name
       ownerId
@@ -132,8 +132,8 @@ export const GET_FAQ_ANSWER = `
 `;
 
 export const GET_FAQ_ANSWERS = `
-  query GetFaqAnswers($filter: GetFaqAnswersFilterInput) {
-    getFaqAnswers(filter: $filter) {
+  query GetFaqAnswers($input: GetFaqAnswersFilterInput) {
+    getFaqAnswers(input: $input) {
       id
       topicId
       question

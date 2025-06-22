@@ -93,13 +93,13 @@ extend type Query {
   getFaqTopic(id: ID!): FaqTopic!
 
   # Get topics list with filters
-  getFaqTopics(filter: GetFaqTopicsFilterInput): [FaqTopic!]!
+  getFaqTopics(input: GetFaqTopicsFilterInput): [FaqTopic!]!
 
   # Get single answer by id
   getFaqAnswer(id: ID!): FaqAnswer!
 
   # Get answers list with filters
-  getFaqAnswers(filter: GetFaqAnswersFilterInput): [FaqAnswer!]!
+  getFaqAnswers(input: GetFaqAnswersFilterInput): [FaqAnswer!]!
 }
 
 extend type Mutation {
