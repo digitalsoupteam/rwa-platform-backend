@@ -1,94 +1,30 @@
 version: "3.8"
 
 services:
-  nginx:
+  ai-assistant:
     build:
       context: ../..
-      dockerfile: infrastructure/docker/nginx/Dockerfile
-    ports:
-      - "${NGINX_PORT}:80"
-      - "${NGINX_SSL_PORT}:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./nginx/.htpasswd:/etc/nginx/conf.d/.htpasswd
-      - ./nginx/ssl:/etc/nginx/ssl
-      - nginx_logs:/var/log/nginx
-    networks:
-      - app-network
-
-  mongodb:
-    image: mongo:latest
-    volumes:
-      - mongodb_data:/data/db
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 15s
-    networks:
-      - app-network
-
-  redis:
-    image: redis:latest
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 15s
-    networks:
-      - app-network
-
-  rabbitmq:
-    image: rabbitmq:management
+      dockerfile: services/ai-assistant/Dockerfile
     environment:
-      - RABBITMQ_DEFAULT_USER=admin
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-    networks:
-      - app-network
-
-  gateway:
-    build:
-      context: ../..
-      dockerfile: services/gateway/Dockerfile
-    environment:
-      - SERVICE_NAME=${GATEWAY_SERVICE_NAME}
-      - PORT=${GATEWAY_PORT}
-      - JWT_SECRET=${GATEWAY_JWT_SECRET}
-      - AUTH_SERVICE_URL=${GATEWAY_AUTH_SERVICE_URL}
-      - BLOCKCHAIN_SCANNER_SERVICE_URL=${GATEWAY_BLOCKCHAIN_SCANNER_SERVICE_URL}
-      - TESTNET_FAUCET_SERVICE_URL=${GATEWAY_TESTNET_FAUCET_SERVICE_URL}
-      - ASSISTANT_SERVICE_URL=${GATEWAY_ASSISTANT_SERVICE_URL}
-      - RWA_SERVICE_URL=${GATEWAY_RWA_SERVICE_URL}
-      - FILES_SERVICE_URL=${GATEWAY_FILES_SERVICE_URL}
-      - DOCUMENTS_SERVICE_URL=${GATEWAY_DOCUMENTS_SERVICE_URL}
-      - GALLERY_SERVICE_URL=${GATEWAY_GALLERY_SERVICE_URL}
-      - QUESTIONS_SERVICE_URL=${GATEWAY_QUESTIONS_SERVICE_URL}
-      - PORTFOLIO_SERVICE_URL=${GATEWAY_PORTFOLIO_SERVICE_URL}
-      - BLOG_SERVICE_URL=${GATEWAY_BLOG_SERVICE_URL}
-      - FAQ_SERVICE_URL=${GATEWAY_FAQ_SERVICE_URL}
-      - COMPANY_SERVICE_URL=${GATEWAY_COMPANY_SERVICE_URL}
-      - SIGNERS_MANAGER_SERVICE_URL=${GATEWAY_SIGNERS_MANAGER_SERVICE_URL}
-      - CHARTS_SERVICE_URL=${GATEWAY_CHARTS_SERVICE_URL}
-      - REACTIONS_SERVICE_URL=${GATEWAY_REACTIONS_SERVICE_URL}
-      - REDIS_URL=${GATEWAY_REDIS_URL}
+      - SERVICE_NAME=${AI_ASSISTANT_SERVICE_NAME}
+      - PORT=${AI_ASSISTANT_PORT}
+      - MONGODB_URI=${AI_ASSISTANT_MONGODB_URI}
+      - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL}
+      - RWA_SERVICE_URL=${AI_ASSISTANT_RWA_SERVICE_URL}
+      - PORTFOLIO_SERVICE_URL=${AI_ASSISTANT_PORTFOLIO_SERVICE_URL}
     volumes:
       - service_logs:/var/log
     networks:
       - app-network
     depends_on:
-      redis:
+      mongodb:
         condition: service_healthy
+      rwa:
+        condition: service_started
+      portfolio:
+        condition: service_started
 
   auth:
     build:
@@ -134,6 +70,209 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  blog:
+    build:
+      context: ../..
+      dockerfile: services/blog/Dockerfile
+    environment:
+      - SERVICE_NAME=${BLOG_SERVICE_NAME}
+      - PORT=${BLOG_PORT}
+      - MONGODB_URI=${BLOG_MONGODB_URI}
+    volumes:
+      - service_logs:/var/log
+    networks:
+      - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  charts:
+    build:
+      context: ../..
+      dockerfile: services/charts/Dockerfile
+    environment:
+      - SERVICE_NAME=${CHARTS_SERVICE_NAME}
+      - PORT=${CHARTS_PORT}
+      - MONGODB_URI=${CHARTS_MONGODB_URI}
+      - RABBITMQ_URL=${CHARTS_RABBITMQ_URL}
+      - REDIS_URL=${CHARTS_REDIS_URL}
+    volumes:
+      - service_logs:/var/log
+    networks:
+      - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  company:
+    build:
+      context: ../..
+      dockerfile: services/company/Dockerfile
+    environment:
+      - SERVICE_NAME=${COMPANY_SERVICE_NAME}
+      - PORT=${COMPANY_PORT}
+      - MONGODB_URI=${COMPANY_MONGODB_URI}
+    volumes:
+      - service_logs:/var/log
+    networks:
+      - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  documents:
+    build:
+      context: ../..
+      dockerfile: services/documents/Dockerfile
+    environment:
+      - SERVICE_NAME=${DOCUMENTS_SERVICE_NAME}
+      - PORT=${DOCUMENTS_PORT}
+      - MONGODB_URI=${DOCUMENTS_MONGODB_URI}
+    volumes:
+      - service_logs:/var/log
+    networks:
+      - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  faq:
+    build:
+      context: ../..
+      dockerfile: services/faq/Dockerfile
+    environment:
+      - SERVICE_NAME=${FAQ_SERVICE_NAME}
+      - PORT=${FAQ_PORT}
+      - MONGODB_URI=${FAQ_MONGODB_URI}
+    volumes:
+      - service_logs:/var/log
+    networks:
+      - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  files:
+    build:
+      context: ../..
+      dockerfile: services/files/Dockerfile
+    environment:
+      - SERVICE_NAME=${FILES_SERVICE_NAME}
+      - PORT=${FILES_PORT}
+      - MONGODB_URI=${FILES_MONGODB_URI}
+      - STORAGE_ROOT_DIR=${FILES_STORAGE_ROOT_DIR}
+      - MAX_FILE_SIZE=${FILES_MAX_FILE_SIZE}
+    volumes:
+      - service_logs:/var/log
+      - ./volumes/filesservice:/app/storage
+    networks:
+      - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  gallery:
+    build:
+      context: ../..
+      dockerfile: services/gallery/Dockerfile
+    environment:
+      - SERVICE_NAME=${GALLERY_SERVICE_NAME}
+      - PORT=${GALLERY_PORT}
+      - MONGODB_URI=${GALLERY_MONGODB_URI}
+    volumes:
+      - service_logs:/var/log
+    networks:
+      - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  gateway:
+    build:
+      context: ../..
+      dockerfile: services/gateway/Dockerfile
+    environment:
+      - SERVICE_NAME=${GATEWAY_SERVICE_NAME}
+      - PORT=${GATEWAY_PORT}
+      - JWT_SECRET=${GATEWAY_JWT_SECRET}
+      - AUTH_SERVICE_URL=${GATEWAY_AUTH_SERVICE_URL}
+      - BLOCKCHAIN_SCANNER_SERVICE_URL=${GATEWAY_BLOCKCHAIN_SCANNER_SERVICE_URL}
+      - TESTNET_FAUCET_SERVICE_URL=${GATEWAY_TESTNET_FAUCET_SERVICE_URL}
+      - ASSISTANT_SERVICE_URL=${GATEWAY_ASSISTANT_SERVICE_URL}
+      - RWA_SERVICE_URL=${GATEWAY_RWA_SERVICE_URL}
+      - FILES_SERVICE_URL=${GATEWAY_FILES_SERVICE_URL}
+      - DOCUMENTS_SERVICE_URL=${GATEWAY_DOCUMENTS_SERVICE_URL}
+      - GALLERY_SERVICE_URL=${GATEWAY_GALLERY_SERVICE_URL}
+      - QUESTIONS_SERVICE_URL=${GATEWAY_QUESTIONS_SERVICE_URL}
+      - PORTFOLIO_SERVICE_URL=${GATEWAY_PORTFOLIO_SERVICE_URL}
+      - BLOG_SERVICE_URL=${GATEWAY_BLOG_SERVICE_URL}
+      - FAQ_SERVICE_URL=${GATEWAY_FAQ_SERVICE_URL}
+      - COMPANY_SERVICE_URL=${GATEWAY_COMPANY_SERVICE_URL}
+      - SIGNERS_MANAGER_SERVICE_URL=${GATEWAY_SIGNERS_MANAGER_SERVICE_URL}
+      - CHARTS_SERVICE_URL=${GATEWAY_CHARTS_SERVICE_URL}
+      - REACTIONS_SERVICE_URL=${GATEWAY_REACTIONS_SERVICE_URL}
+      - REDIS_URL=${GATEWAY_REDIS_URL}
+    volumes:
+      - service_logs:/var/log
+    networks:
+      - app-network
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  portfolio:
+    build:
+      context: ../..
+      dockerfile: services/portfolio/Dockerfile
+    environment:
+      - SERVICE_NAME=${PORTFOLIO_SERVICE_NAME}
+      - PORT=${PORTFOLIO_PORT}
+      - MONGODB_URI=${PORTFOLIO_MONGODB_URI}
+      - RABBITMQ_URL=${PORTFOLIO_RABBITMQ_URL}
+    volumes:
+      - service_logs:/var/log
+    networks:
+      - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  questions:
+    build:
+      context: ../..
+      dockerfile: services/questions/Dockerfile
+    environment:
+      - SERVICE_NAME=${QUESTIONS_SERVICE_NAME}
+      - PORT=${QUESTIONS_PORT}
+      - MONGODB_URI=${QUESTIONS_MONGODB_URI}
+    volumes:
+      - service_logs:/var/log
+    networks:
+      - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  reactions:
+    build:
+      context: ../..
+      dockerfile: services/reactions/Dockerfile
+    environment:
+      - SERVICE_NAME=${REACTIONS_SERVICE_NAME}
+      - PORT=${REACTIONS_PORT}
+      - MONGODB_URI=${REACTIONS_MONGODB_URI}
+    volumes:
+      - service_logs:/var/log
+    networks:
+      - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
   rwa:
     build:
       context: ../..
@@ -158,29 +297,6 @@ services:
       rabbitmq:
         condition: service_healthy
       redis:
-        condition: service_healthy
-
-  testnet-faucet:
-    build:
-      context: ../..
-      dockerfile: services/testnet-faucet/Dockerfile
-    environment:
-      - SERVICE_NAME=${TESTNET_FAUCET_SERVICE_NAME}
-      - PORT=${TESTNET_FAUCET_PORT}
-      - MONGODB_URI=${TESTNET_FAUCET_MONGODB_URI}
-      - PROVIDER_URL=${TESTNET_FAUCET_PROVIDER_URL}
-      - WALLET_PRIVATE_KEY=${TESTNET_FAUCET_WALLET_PRIVATE_KEY}
-      - GAS_TOKEN_AMOUNT=${TESTNET_FAUCET_GAS_TOKEN_AMOUNT}
-      - HOLD_TOKEN_AMOUNT=${TESTNET_FAUCET_HOLD_TOKEN_AMOUNT}
-      - REQUEST_GAS_DELAY_MS=${TESTNET_FAUCET_REQUEST_GAS_DELAY_MS}
-      - REQUEST_HOLD_DELAY_MS=${TESTNET_FAUCET_REQUEST_HOLD_DELAY_MS}
-      - HOLD_TOKEN_ADDRESS=${TESTNET_FAUCET_HOLD_TOKEN_ADDRESS}
-    volumes:
-      - service_logs:/var/log
-    networks:
-      - app-network
-    depends_on:
-      mongodb:
         condition: service_healthy
 
   signer-1:
@@ -253,14 +369,21 @@ services:
       rabbitmq:
         condition: service_healthy
 
-  documents:
+  testnet-faucet:
     build:
       context: ../..
-      dockerfile: services/documents/Dockerfile
+      dockerfile: services/testnet-faucet/Dockerfile
     environment:
-      - SERVICE_NAME=${DOCUMENTS_SERVICE_NAME}
-      - PORT=${DOCUMENTS_PORT}
-      - MONGODB_URI=${DOCUMENTS_MONGODB_URI}
+      - SERVICE_NAME=${TESTNET_FAUCET_SERVICE_NAME}
+      - PORT=${TESTNET_FAUCET_PORT}
+      - MONGODB_URI=${TESTNET_FAUCET_MONGODB_URI}
+      - PROVIDER_URL=${TESTNET_FAUCET_PROVIDER_URL}
+      - WALLET_PRIVATE_KEY=${TESTNET_FAUCET_WALLET_PRIVATE_KEY}
+      - GAS_TOKEN_AMOUNT=${TESTNET_FAUCET_GAS_TOKEN_AMOUNT}
+      - HOLD_TOKEN_AMOUNT=${TESTNET_FAUCET_HOLD_TOKEN_AMOUNT}
+      - REQUEST_GAS_DELAY_MS=${TESTNET_FAUCET_REQUEST_GAS_DELAY_MS}
+      - REQUEST_HOLD_DELAY_MS=${TESTNET_FAUCET_REQUEST_HOLD_DELAY_MS}
+      - HOLD_TOKEN_ADDRESS=${TESTNET_FAUCET_HOLD_TOKEN_ADDRESS}
     volumes:
       - service_logs:/var/log
     networks:
@@ -269,184 +392,61 @@ services:
       mongodb:
         condition: service_healthy
 
-  gallery:
+  nginx:
     build:
       context: ../..
-      dockerfile: services/gallery/Dockerfile
-    environment:
-      - SERVICE_NAME=${GALLERY_SERVICE_NAME}
-      - PORT=${GALLERY_PORT}
-      - MONGODB_URI=${GALLERY_MONGODB_URI}
+      dockerfile: infrastructure/docker/nginx/Dockerfile
+    ports:
+      - "${NGINX_PORT}:80"
+      - "${NGINX_SSL_PORT}:443"
     volumes:
-      - service_logs:/var/log
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/.htpasswd:/etc/nginx/conf.d/.htpasswd
+      - ./nginx/ssl:/etc/nginx/ssl
+      - nginx_logs:/var/log/nginx
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
 
-  blog:
-    build:
-      context: ../..
-      dockerfile: services/blog/Dockerfile
-    environment:
-      - SERVICE_NAME=${BLOG_SERVICE_NAME}
-      - PORT=${BLOG_PORT}
-      - MONGODB_URI=${BLOG_MONGODB_URI}
+  mongodb:
+    image: mongo:latest
     volumes:
-      - service_logs:/var/log
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
 
-  faq:
-    build:
-      context: ../..
-      dockerfile: services/faq/Dockerfile
-    environment:
-      - SERVICE_NAME=${FAQ_SERVICE_NAME}
-      - PORT=${FAQ_PORT}
-      - MONGODB_URI=${FAQ_MONGODB_URI}
+  redis:
+    image: redis:latest
     volumes:
-      - service_logs:/var/log
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
 
-  questions:
-    build:
-      context: ../..
-      dockerfile: services/questions/Dockerfile
+  rabbitmq:
+    image: rabbitmq:management
     environment:
-      - SERVICE_NAME=${QUESTIONS_SERVICE_NAME}
-      - PORT=${QUESTIONS_PORT}
-      - MONGODB_URI=${QUESTIONS_MONGODB_URI}
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
     volumes:
-      - service_logs:/var/log
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
-
-  reactions:
-    build:
-      context: ../..
-      dockerfile: services/reactions/Dockerfile
-    environment:
-      - SERVICE_NAME=${REACTIONS_SERVICE_NAME}
-      - PORT=${REACTIONS_PORT}
-      - MONGODB_URI=${REACTIONS_MONGODB_URI}
-    volumes:
-      - service_logs:/var/log
-    networks:
-      - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
-
-  files:
-    build:
-      context: ../..
-      dockerfile: services/files/Dockerfile
-    environment:
-      - SERVICE_NAME=${FILES_SERVICE_NAME}
-      - PORT=${FILES_PORT}
-      - MONGODB_URI=${FILES_MONGODB_URI}
-      - STORAGE_ROOT_DIR=${FILES_STORAGE_ROOT_DIR}
-      - MAX_FILE_SIZE=${FILES_MAX_FILE_SIZE}
-    volumes:
-      - service_logs:/var/log
-      - ./volumes/filesservice:/app/storage
-    networks:
-      - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
-
-  company:
-    build:
-      context: ../..
-      dockerfile: services/company/Dockerfile
-    environment:
-      - SERVICE_NAME=${COMPANY_SERVICE_NAME}
-      - PORT=${COMPANY_PORT}
-      - MONGODB_URI=${COMPANY_MONGODB_URI}
-    volumes:
-      - service_logs:/var/log
-    networks:
-      - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
-
-  ai-assistant:
-    build:
-      context: ../..
-      dockerfile: services/ai-assistant/Dockerfile
-    environment:
-      - SERVICE_NAME=${AI_ASSISTANT_SERVICE_NAME}
-      - PORT=${AI_ASSISTANT_PORT}
-      - MONGODB_URI=${AI_ASSISTANT_MONGODB_URI}
-      - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - OPENROUTER_MODEL=${OPENROUTER_MODEL}
-      - RWA_SERVICE_URL=${AI_ASSISTANT_RWA_SERVICE_URL}
-      - PORTFOLIO_SERVICE_URL=${AI_ASSISTANT_PORTFOLIO_SERVICE_URL}
-    volumes:
-      - service_logs:/var/log
-    networks:
-      - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      rwa:
-        condition: service_started
-      portfolio:
-        condition: service_started
-
-  portfolio:
-    build:
-      context: ../..
-      dockerfile: services/portfolio/Dockerfile
-    environment:
-      - SERVICE_NAME=${PORTFOLIO_SERVICE_NAME}
-      - PORT=${PORTFOLIO_PORT}
-      - MONGODB_URI=${PORTFOLIO_MONGODB_URI}
-      - RABBITMQ_URL=${PORTFOLIO_RABBITMQ_URL}
-    volumes:
-      - service_logs:/var/log
-    networks:
-      - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-
-  charts:
-    build:
-      context: ../..
-      dockerfile: services/charts/Dockerfile
-    environment:
-      - SERVICE_NAME=${CHARTS_SERVICE_NAME}
-      - PORT=${CHARTS_PORT}
-      - MONGODB_URI=${CHARTS_MONGODB_URI}
-      - RABBITMQ_URL=${CHARTS_RABBITMQ_URL}
-      - REDIS_URL=${CHARTS_REDIS_URL}
-    volumes:
-      - service_logs:/var/log
-    networks:
-      - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
 
 volumes:
   redis_data:
