@@ -195,8 +195,8 @@ export type CreateGalleryInput = {
 
 export type CreateImageInput = {
   description: Scalars['String']['input'];
+  file?: InputMaybe<Scalars['Upload']['input']>;
   galleryId: Scalars['String']['input'];
-  link: Scalars['String']['input'];
   name: Scalars['String']['input'];
 };
 
@@ -1265,7 +1265,7 @@ export type QueryGetFoldersArgs = {
 
 
 export type QueryGetGalleriesArgs = {
-  filter?: InputMaybe<GetGalleriesFilterInput>;
+  input?: InputMaybe<GetGalleriesFilterInput>;
 };
 
 
@@ -1285,7 +1285,7 @@ export type QueryGetImageArgs = {
 
 
 export type QueryGetImagesArgs = {
-  filter?: InputMaybe<GetImagesFilterInput>;
+  input?: InputMaybe<GetImagesFilterInput>;
 };
 
 

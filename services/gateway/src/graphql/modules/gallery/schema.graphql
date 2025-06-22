@@ -1,4 +1,5 @@
 scalar JSON
+scalar Upload
 
 # Gallery type
 type Gallery {
@@ -52,7 +53,7 @@ input CreateImageInput {
   galleryId: String!
   name: String!
   description: String!
-  link: String!
+  file: Upload
 }
 
 # Update image input
@@ -94,13 +95,13 @@ extend type Query {
   getGallery(id: ID!): Gallery!
 
   # Get galleries list with filters
-  getGalleries(filter: GetGalleriesFilterInput): [Gallery!]!
+  getGalleries(input: GetGalleriesFilterInput): [Gallery!]!
 
   # Get single image by id
   getImage(id: ID!): Image!
 
   # Get images list with filters
-  getImages(filter: GetImagesFilterInput): [Image!]!
+  getImages(input: GetImagesFilterInput): [Image!]!
 }
 
 extend type Mutation {

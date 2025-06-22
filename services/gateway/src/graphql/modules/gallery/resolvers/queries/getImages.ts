@@ -3,16 +3,16 @@ import { logger } from '@shared/monitoring/src/logger';
 
 export const getImages: QueryResolvers['getImages'] = async (
   _parent,
-  { filter },
+  { input },
   { clients }
 ) => {
-  logger.info('Getting images list', { filter });
+  logger.info('Getting images list', { input });
 
   const response = await clients.galleryClient.getImages.post({
-    filter: filter?.filter || {},
-    sort: filter?.sort || {},
-    limit: filter?.limit,
-    offset: filter?.offset,
+    filter: input?.filter || {},
+    sort: input?.sort || {},
+    limit: input?.limit,
+    offset: input?.offset,
   });
 
   if (response.error) {

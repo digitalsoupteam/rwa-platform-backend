@@ -16,6 +16,7 @@ import {
   GET_IMAGES,
 } from "./utils/graphql/schema/gallery";
 import { CREATE_BUSINESS } from "./utils/graphql/schema/rwa";
+import { CREATE_COMPANY } from "./utils/graphql/schema/company";
 
 describe("Gallery Flow", () => {
   let chainId: string;
@@ -25,6 +26,7 @@ describe("Gallery Flow", () => {
   let accessToken: string;
   let accessToken2: string;
   let userId: string;
+  let companyId: string;
   let businessId: string;
   let galleryId: string;
   let imageId: string;
@@ -37,18 +39,34 @@ describe("Gallery Flow", () => {
     ({ accessToken, userId } = await authenticate(wallet));
     ({ accessToken: accessToken2 } = await authenticate(wallet2));
 
-    // Create business for testing
-    const result = await makeGraphQLRequest(
-      CREATE_BUSINESS,
+    const companyResult = await makeGraphQLRequest(
+      CREATE_COMPANY,
       {
         input: {
-          name: "Test Business for Gallery",
-          chainId,
+          name: "Test Company for RWA",
+          description: "Test Description"
         },
       },
       accessToken
     );
-    
+
+    companyId = companyResult.data.createCompany.id;
+
+    const result = await makeGraphQLRequest(
+      CREATE_BUSINESS,
+      {
+        input: {
+          name: "Test Business",
+          ownerId: companyId,
+          ownerType: "company",
+          chainId,
+          description: "Test Description",
+          tags: ["test"]
+        },
+      },
+      accessToken
+    );
+
     businessId = result.data.createBusiness.id;
   });
 
@@ -70,6 +88,10 @@ describe("Gallery Flow", () => {
     });
 
     test("should require authentication for creating image", async () => {
+      // Create test image file
+      const imageContent = "fake image content";
+      const file = new File([imageContent], "test.jpg", { type: "image/jpeg" });
+
       const result = await makeGraphQLRequest(
         CREATE_IMAGE,
         {
@@ -77,9 +99,10 @@ describe("Gallery Flow", () => {
             galleryId: "some-gallery-id",
             name: "Test Image",
             description: "Test Description",
-            link: "https://example.com/test.jpg",
           },
-        }
+        },
+        undefined,
+        file
       );
 
       expect(result.errors).toBeDefined();
@@ -102,7 +125,7 @@ describe("Gallery Flow", () => {
       );
 
       expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toBe("Only business owner can create galleries");
+      expect(result.errors[0].message).toBe("User does not have required company permissions");
     });
 
     test("should not allow non-owner to update gallery", async () => {
@@ -137,10 +160,14 @@ describe("Gallery Flow", () => {
       );
 
       expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toBe("No access to this gallery");
+      expect(result.errors[0].message).toBe("User does not have required company permissions");
     });
 
     test("should not allow non-owner to create image in gallery", async () => {
+      // Create test image file
+      const imageContent = "fake image content";
+      const file = new File([imageContent], "test.jpg", { type: "image/jpeg" });
+
       const result = await makeGraphQLRequest(
         CREATE_IMAGE,
         {
@@ -148,18 +175,21 @@ describe("Gallery Flow", () => {
             galleryId,
             name: "Test Image",
             description: "Test Description",
-            link: "https://example.com/test.jpg",
           },
         },
-        accessToken2
+        accessToken2,
+        file
       );
 
       expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toBe("No access to this gallery");
+      expect(result.errors[0].message).toBe("User does not have required company permissions");
     });
 
     test("should not allow non-owner to update image", async () => {
       // First create an image as owner
+      const imageContent = "fake image content";
+      const file = new File([imageContent], "test.jpg", { type: "image/jpeg" });
+
       const createResult = await makeGraphQLRequest(
         CREATE_IMAGE,
         {
@@ -167,10 +197,10 @@ describe("Gallery Flow", () => {
             galleryId,
             name: "Test Image",
             description: "Test Description",
-            link: "https://example.com/test.jpg",
           },
         },
-        accessToken
+        accessToken,
+        file
       );
 
       expect(createResult.errors).toBeUndefined();
@@ -193,7 +223,7 @@ describe("Gallery Flow", () => {
       );
 
       expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toBe("No access to this image");
+      expect(result.errors[0].message).toBe("User does not have required company permissions");
     });
 
     test("should not allow non-owner to delete image", async () => {
@@ -206,7 +236,7 @@ describe("Gallery Flow", () => {
       );
 
       expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toBe("No access to this image");
+      expect(result.errors[0].message).toBe("User does not have required company permissions");
     });
 
     test("should not allow non-owner to delete gallery", async () => {
@@ -219,7 +249,7 @@ describe("Gallery Flow", () => {
       );
 
       expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toBe("No access to this gallery");
+      expect(result.errors[0].message).toBe("User does not have required company permissions");
     });
   });
 
@@ -241,8 +271,8 @@ describe("Gallery Flow", () => {
       expect(result.data.createGallery).toBeDefined();
       expect(result.data.createGallery.name).toBe("Test Gallery");
       expect(result.data.createGallery.parentId).toBe(businessId);
-      expect(result.data.createGallery.ownerId).toBe(userId);
-      expect(result.data.createGallery.ownerType).toBe("user");
+      expect(result.data.createGallery.ownerId).toBe(companyId);
+      expect(result.data.createGallery.ownerType).toBe("company");
       expect(result.data.createGallery.creator).toBe(userId);
 
       galleryId = result.data.createGallery.id;
@@ -261,17 +291,19 @@ describe("Gallery Flow", () => {
       expect(result.data.getGallery).toBeDefined();
       expect(result.data.getGallery.id).toBe(galleryId);
       expect(result.data.getGallery.name).toBe("Test Gallery");
-      expect(result.data.getGallery.ownerId).toBe(userId);
-      expect(result.data.getGallery.ownerType).toBe("user");
+      expect(result.data.getGallery.ownerId).toBe(companyId);
+      expect(result.data.getGallery.ownerType).toBe("company");
     });
 
     test("should get galleries with filter", async () => {
       const result = await makeGraphQLRequest(
         GET_GALLERIES,
         {
-          filter: {
-            parentIds: { $in: [businessId] },
-          },
+          input: {
+            filter: {
+              parentId: { $in: [businessId] },
+            },
+          }
         },
         accessToken
       );
@@ -281,8 +313,8 @@ describe("Gallery Flow", () => {
       expect(result.data.getGalleries).toBeArray();
       expect(result.data.getGalleries.length).toBeGreaterThan(0);
       expect(result.data.getGalleries[0].parentId).toBe(businessId);
-      expect(result.data.getGalleries[0].ownerId).toBe(userId);
-      expect(result.data.getGalleries[0].ownerType).toBe("user");
+      expect(result.data.getGalleries[0].ownerId).toBe(companyId);
+      expect(result.data.getGalleries[0].ownerType).toBe("company");
     });
 
     test("should update gallery", async () => {
@@ -303,14 +335,18 @@ describe("Gallery Flow", () => {
       expect(result.data.updateGallery).toBeDefined();
       expect(result.data.updateGallery.id).toBe(galleryId);
       expect(result.data.updateGallery.name).toBe("Updated Test Gallery");
-      expect(result.data.updateGallery.ownerId).toBe(userId);
-      expect(result.data.updateGallery.ownerType).toBe("user");
+      expect(result.data.updateGallery.ownerId).toBe(companyId);
+      expect(result.data.updateGallery.ownerType).toBe("company");
       expect(result.data.updateGallery.parentId).toBe(businessId);
     });
   });
 
   describe("Images", () => {
-    test("should create an image", async () => {
+    test("should create an image with file", async () => {
+      // Create test image file
+      const imageContent = "fake image content";
+      const file = new File([imageContent], "test.jpg", { type: "image/jpeg" });
+
       const result = await makeGraphQLRequest(
         CREATE_IMAGE,
         {
@@ -318,20 +354,20 @@ describe("Gallery Flow", () => {
             galleryId,
             name: "Test Image",
             description: "Test Description",
-            link: "https://example.com/test.jpg",
           },
         },
-        accessToken
+        accessToken,
+        file
       );
 
       expect(result.errors).toBeUndefined();
       expect(result.data.createImage).toBeDefined();
       expect(result.data.createImage.name).toBe("Test Image");
       expect(result.data.createImage.description).toBe("Test Description");
-      expect(result.data.createImage.link).toBe("https://example.com/test.jpg");
+      expect(result.data.createImage.link).toBeDefined(); // Path should be set by files service
       expect(result.data.createImage.galleryId).toBe(galleryId);
-      expect(result.data.createImage.ownerId).toBe(userId);
-      expect(result.data.createImage.ownerType).toBe("user");
+      expect(result.data.createImage.ownerId).toBe(companyId);
+      expect(result.data.createImage.ownerType).toBe("company");
       expect(result.data.createImage.creator).toBe(userId);
 
       imageId = result.data.createImage.id;
@@ -350,17 +386,19 @@ describe("Gallery Flow", () => {
       expect(result.data.getImage).toBeDefined();
       expect(result.data.getImage.id).toBe(imageId);
       expect(result.data.getImage.name).toBe("Test Image");
-      expect(result.data.getImage.ownerId).toBe(userId);
-      expect(result.data.getImage.ownerType).toBe("user");
+      expect(result.data.getImage.ownerId).toBe(companyId);
+      expect(result.data.getImage.ownerType).toBe("company");
     });
 
     test("should get images with filter", async () => {
       const result = await makeGraphQLRequest(
         GET_IMAGES,
         {
-          filter: {
-            galleryIds: { $in: [galleryId] },
-          },
+          input: {
+            filter: {
+              galleryId: { $in: [galleryId] },
+            },
+          }
         },
         accessToken
       );
@@ -369,9 +407,13 @@ describe("Gallery Flow", () => {
       expect(result.data.getImages).toBeDefined();
       expect(result.data.getImages).toBeArray();
       expect(result.data.getImages.length).toBeGreaterThan(0);
-      expect(result.data.getImages[0].galleryId).toBe(galleryId);
-      expect(result.data.getImages[0].ownerId).toBe(userId);
-      expect(result.data.getImages[0].ownerType).toBe("user");
+      
+      // Find the specific image we created
+      const createdImage = result.data.getImages.find(img => img.id === imageId);
+      expect(createdImage).toBeDefined();
+      expect(createdImage.galleryId).toBe(galleryId);
+      expect(createdImage.ownerId).toBe(companyId);
+      expect(createdImage.ownerType).toBe("company");
     });
 
     test("should update image", async () => {
@@ -396,8 +438,8 @@ describe("Gallery Flow", () => {
       expect(result.data.updateImage.name).toBe("Updated Test Image");
       expect(result.data.updateImage.description).toBe("Updated Test Description");
       expect(result.data.updateImage.link).toBe("https://example.com/updated.jpg");
-      expect(result.data.updateImage.ownerId).toBe(userId);
-      expect(result.data.updateImage.ownerType).toBe("user");
+      expect(result.data.updateImage.ownerId).toBe(companyId);
+      expect(result.data.updateImage.ownerType).toBe("company");
       expect(result.data.updateImage.galleryId).toBe(galleryId);
     });
 

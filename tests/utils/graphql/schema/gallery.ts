@@ -53,8 +53,8 @@ export const GET_GALLERY = `
 `;
 
 export const GET_GALLERIES = `
-  query GetGalleries($filter: GetGalleriesFilterInput) {
-    getGalleries(filter: $filter) {
+  query GetGalleries($input: GetGalleriesFilterInput) {
+    getGalleries(input: $input) {
       id
       name
       parentId
@@ -132,8 +132,8 @@ export const GET_IMAGE = `
 `;
 
 export const GET_IMAGES = `
-  query GetImages($filter: GetImagesFilterInput) {
-    getImages(filter: $filter) {
+  query GetImages($input: GetImagesFilterInput) {
+    getImages(input: $input) {
       id
       galleryId
       name

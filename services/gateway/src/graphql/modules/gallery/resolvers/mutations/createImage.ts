@@ -32,11 +32,21 @@ export const createImage: MutationResolvers['createImage'] = async (
     permission: 'content'
   });
 
+  // Upload file to files service
+  const fileResponse = await clients.filesClient.createFile.post({
+    file: input.file,
+  });
+
+  if (fileResponse.error) {
+    logger.error('Failed to upload file:', fileResponse.error);
+    throw new Error('Failed to upload file');
+  }
+
   const response = await clients.galleryClient.createImage.post({
     galleryId: input.galleryId,
     name: input.name,
     description: input.description,
-    link: input.link,
+    link: fileResponse.data.path,
     ownerId: gallery.ownerId,
     ownerType: gallery.ownerType,
     creator: user.id,
