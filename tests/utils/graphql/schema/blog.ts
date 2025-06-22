@@ -53,8 +53,8 @@ export const GET_BLOG = `
 `;
 
 export const GET_BLOGS = `
-  query GetBlogs($filter: GetBlogsFilterInput) {
-    getBlogs(filter: $filter) {
+  query GetBlogs($input: GetBlogsFilterInput) {
+    getBlogs(input: $input) {
       id
       name
       ownerId
@@ -75,6 +75,8 @@ export const CREATE_POST = `
       blogId
       title
       content
+      images
+      documents
       ownerId
       ownerType
       creator
@@ -93,6 +95,8 @@ export const UPDATE_POST = `
       blogId
       title
       content
+      images
+      documents
       ownerId
       ownerType
       creator
@@ -117,6 +121,8 @@ export const GET_POST = `
       blogId
       title
       content
+      images
+      documents
       ownerId
       ownerType
       creator
@@ -129,12 +135,14 @@ export const GET_POST = `
 `;
 
 export const GET_POSTS = `
-  query GetPosts($filter: GetPostsFilterInput) {
-    getPosts(filter: $filter) {
+  query GetPosts($input: GetPostsFilterInput) {
+    getPosts(input: $input) {
       id
       blogId
       title
       content
+      images
+      documents
       ownerId
       ownerType
       creator

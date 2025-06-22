@@ -19,17 +19,5 @@ export const getPost: QueryResolvers['getPost'] = async (
 
   const post = response.data;
 
-  return {
-    id: post.id,
-    blogId: post.blogId,
-    title: post.title,
-    content: post.content,
-    ownerId: post.ownerId,
-    ownerType: post.ownerType,
-    creator: post.creator,
-    parentId: post.parentId,
-    grandParentId: post.grandParentId,
-    createdAt: post.createdAt,
-    updatedAt: post.updatedAt,
-  };
+  return post;
 };

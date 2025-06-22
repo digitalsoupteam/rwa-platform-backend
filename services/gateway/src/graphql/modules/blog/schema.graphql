@@ -19,6 +19,8 @@ type Post {
   blogId: String!
   title: String!
   content: String!
+  images: [String!]!
+  documents: [String!]!
   ownerId: String!
   ownerType: String!
   creator: String!
@@ -41,6 +43,8 @@ input CreatePostInput {
   blogId: String!
   title: String!
   content: String!
+  images: [String!]
+  documents: [String!]
 }
 
 # Update post input
@@ -52,6 +56,8 @@ input UpdatePostInput {
 input UpdatePostDataInput {
   title: String
   content: String
+  images: [String!]
+  documents: [String!]
 }
 
 # Get blogs filter input
@@ -90,13 +96,13 @@ extend type Query {
   getBlog(id: ID!): Blog!
 
   # Get blogs list with filters
-  getBlogs(filter: GetBlogsFilterInput): [Blog!]!
+  getBlogs(input: GetBlogsFilterInput): [Blog!]!
 
   # Get single post by id
   getPost(id: ID!): Post!
 
   # Get posts list with filters
-  getPosts(filter: GetPostsFilterInput): [Post!]!
+  getPosts(input: GetPostsFilterInput): [Post!]!
 }
 
 extend type Mutation {

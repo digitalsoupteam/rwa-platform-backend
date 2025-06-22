@@ -34,6 +34,8 @@ export const createPost: MutationResolvers['createPost'] = async (
   const response = await clients.blogClient.createPost.post({
     title: input.title,
     content: input.content,
+    images: input.images,
+    documents: input.documents,
     ownerId: blog.ownerId,
     ownerType: blog.ownerType,
     creator: user.id,
@@ -49,17 +51,5 @@ export const createPost: MutationResolvers['createPost'] = async (
 
   const { data } = response;
 
-  return {
-    id: data.id,
-    title: data.title,
-    content: data.content,
-    ownerId: data.ownerId,
-    ownerType: data.ownerType,
-    creator: data.creator,
-    parentId: data.parentId,
-    grandParentId: data.grandParentId,
-    blogId: data.blogId,
-    createdAt: data.createdAt,
-    updatedAt: data.updatedAt,
-  };
+  return data;
 };

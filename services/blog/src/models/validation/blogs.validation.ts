@@ -1,5 +1,4 @@
 import { t } from "elysia";
-import { paginationSchema } from "./shared.validation";
 
 /*
  * Entity schemas
@@ -8,7 +7,7 @@ export const blogSchema = t.Object({
     id: t.String(),
     name: t.String(),
     ownerId: t.String(),
-  ownerType: t.String(),
+    ownerType: t.String(),
     creator: t.String(),
     parentId: t.String(),
     grandParentId: t.String(),
@@ -21,8 +20,10 @@ export const postSchema = t.Object({
     blogId: t.String(),
     title: t.String(),
     content: t.String(),
+    images: t.Array(t.String()),
+    documents: t.Array(t.String()),
     ownerId: t.String(),
-  ownerType: t.String(),
+    ownerType: t.String(),
     creator: t.String(),
     parentId: t.String(),
     grandParentId: t.String(),
@@ -36,7 +37,7 @@ export const postSchema = t.Object({
 export const createBlogRequest = t.Pick(blogSchema, [
     "name",
     "ownerId",
-  "ownerType",
+    "ownerType",
     "creator",
     "parentId",
     "grandParentId",
@@ -80,16 +81,23 @@ export const getBlogsResponse = t.Array(blogSchema);
 /*
  * Create post
  */
-export const createPostRequest = t.Pick(postSchema, [
-    'blogId', 
-    'title', 
+export const createPostRequest = t.Composite([
+    t.Pick(postSchema, [
+    'blogId',
+    'title',
     'content',
     'ownerId',
     'ownerType',
     'creator',
     'parentId',
     'grandParentId',
+    ]), 
+    t.Partial(t.Pick(postSchema, [
+    'images',
+    'documents'
+    ]))
 ])
+
 export const createPostResponse = postSchema;
 
 /*
@@ -99,7 +107,9 @@ export const updatePostRequest = t.Object({
     id: t.String(),
     updateData: t.Partial(t.Object({
         title: t.String(),
-        content: t.String()
+        content: t.String(),
+        images: t.Array(t.String()),
+        documents: t.Array(t.String())
     }))
 });
 export const updatePostResponse = postSchema;

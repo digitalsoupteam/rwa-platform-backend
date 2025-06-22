@@ -3,16 +3,16 @@ import { logger } from '@shared/monitoring/src/logger';
 
 export const getBlogs: QueryResolvers['getBlogs'] = async (
   _parent,
-  { filter },
+  { input },
   { clients }
 ) => {
-  logger.info('Getting blogs list', { filter });
+  logger.info('Getting blogs list', { input });
 
   const response = await clients.blogClient.getBlogs.post({
-    filter: filter?.filter || {},
-    sort: filter?.sort || {},
-    limit: filter?.limit,
-    offset: filter?.offset,
+    filter: input?.filter || {},
+    sort: input?.sort || {},
+    limit: input?.limit,
+    offset: input?.offset,
   });
 
   if (response.error) {

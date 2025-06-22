@@ -7,15 +7,18 @@ import {
 } from "../models/entity/post.entity";
 
 export class PostRepository {
-  constructor(private readonly model = PostEntity) {}
+  constructor(private readonly model = PostEntity) { }
 
-  async create(data: {blogId: Types.ObjectId | string} & Pick<IPostEntity,"title" | "content" | "ownerId" | "ownerType" | "creator" | "parentId" | "grandParentId">) {
+  async create(data: { blogId: Types.ObjectId | string }
+    & Pick<IPostEntity, "title" | "content" | "ownerId" | "ownerType" | "creator" | "parentId" | "grandParentId">
+    & Partial<Pick<IPostEntity, "images" | "documents">>
+  ) {
     logger.debug(`Creating post: ${data.title}`);
     const doc = await this.model.create(data);
     return doc.toObject();
   }
 
-  async update(id: string, data: Partial<Pick<IPostEntity, "title" | "content">>) {
+  async update(id: string, data: Partial<Pick<IPostEntity, "title" | "content" | "images" | "documents">>) {
     logger.debug(`Updating post: ${id}`);
     const doc = await this.model.findByIdAndUpdate(id, data, { new: true }).lean();
 

@@ -236,6 +236,8 @@ export type CreatePoolWithAiInput = {
 export type CreatePostInput = {
   blogId: Scalars['String']['input'];
   content: Scalars['String']['input'];
+  documents?: InputMaybe<Array<Scalars['String']['input']>>;
+  images?: InputMaybe<Array<Scalars['String']['input']>>;
   title: Scalars['String']['input'];
 };
 
@@ -1095,8 +1097,10 @@ export type Post = {
   content: Scalars['String']['output'];
   createdAt: Scalars['Float']['output'];
   creator: Scalars['String']['output'];
+  documents: Array<Scalars['String']['output']>;
   grandParentId: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  images: Array<Scalars['String']['output']>;
   ownerId: Scalars['String']['output'];
   ownerType: Scalars['String']['output'];
   parentId: Scalars['String']['output'];
@@ -1190,7 +1194,7 @@ export type QueryGetBlogArgs = {
 
 
 export type QueryGetBlogsArgs = {
-  filter?: InputMaybe<GetBlogsFilterInput>;
+  input?: InputMaybe<GetBlogsFilterInput>;
 };
 
 
@@ -1322,7 +1326,7 @@ export type QueryGetPostArgs = {
 
 
 export type QueryGetPostsArgs = {
-  filter?: InputMaybe<GetPostsFilterInput>;
+  input?: InputMaybe<GetPostsFilterInput>;
 };
 
 
@@ -1638,6 +1642,8 @@ export type UpdateMessageInput = {
 
 export type UpdatePostDataInput = {
   content?: InputMaybe<Scalars['String']['input']>;
+  documents?: InputMaybe<Array<Scalars['String']['input']>>;
+  images?: InputMaybe<Array<Scalars['String']['input']>>;
   title?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -2441,8 +2447,10 @@ export type PostResolvers<ContextType = GraphQLContext, ParentType extends Resol
   content?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   creator?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  documents?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
   grandParentId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  images?: Resolver<Array<ResolversTypes['String']>, ParentType, ContextType>;
   ownerId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   ownerType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   parentId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;

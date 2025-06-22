@@ -140,6 +140,8 @@ export class BlogsService {
     creator: string;
     parentId: string;
     grandParentId: string;
+    images?: string[];
+    documents?: string[];
   }) {
     logger.debug("Creating new post", { title: data.title });
     
@@ -150,6 +152,8 @@ export class BlogsService {
       blogId: post.blogId.toString(),
       title: post.title,
       content: post.content,
+      images: post.images,
+      documents: post.documents,
       ownerId: post.ownerId,
       ownerType: post.ownerType,
       creator: post.creator,
@@ -168,6 +172,8 @@ export class BlogsService {
     updateData: {
       title?: string;
       content?: string;
+      images?: string[];
+      documents?: string[];
     }
   }) {
     logger.debug("Updating post", params);
@@ -179,6 +185,8 @@ export class BlogsService {
       blogId: post.blogId.toString(),
       title: post.title,
       content: post.content,
+      images: post.images,
+      documents: post.documents,
       ownerId: post.ownerId,
       ownerType: post.ownerType,
       creator: post.creator,
@@ -211,6 +219,8 @@ export class BlogsService {
       blogId: post.blogId.toString(),
       title: post.title,
       content: post.content,
+      images: post.images,
+      documents: post.documents,
       ownerId: post.ownerId,
       ownerType: post.ownerType,
       creator: post.creator,
@@ -244,6 +254,8 @@ export class BlogsService {
       blogId: post.blogId.toString(),
       title: post.title,
       content: post.content,
+      images: post.images,
+      documents: post.documents,
       ownerId: post.ownerId,
       ownerType: post.ownerType,
       creator: post.creator,

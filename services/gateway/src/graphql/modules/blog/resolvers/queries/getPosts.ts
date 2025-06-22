@@ -3,16 +3,16 @@ import { logger } from '@shared/monitoring/src/logger';
 
 export const getPosts: QueryResolvers['getPosts'] = async (
   _parent,
-  { filter },
+  { input },
   { clients }
 ) => {
-  logger.info('Getting posts list', { filter });
+  logger.info('Getting posts list', { input });
 
   const response = await clients.blogClient.getPosts.post({
-    filter: filter?.filter || {},
-    sort: filter?.sort || {},
-    limit: filter?.limit,
-    offset: filter?.offset,
+    filter: input?.filter || {},
+    sort: input?.sort || {},
+    limit: input?.limit,
+    offset: input?.offset,
   });
 
   if (response.error) {
@@ -22,17 +22,5 @@ export const getPosts: QueryResolvers['getPosts'] = async (
 
   const { data } = response;
 
-  return data.map(post => ({
-    id: post.id,
-    blogId: post.blogId,
-    title: post.title,
-    content: post.content,
-    ownerId: post.ownerId,
-    ownerType: post.ownerType,
-    creator: post.creator,
-    parentId: post.parentId,
-    grandParentId: post.grandParentId,
-    createdAt: post.createdAt,
-    updatedAt: post.updatedAt,
-  }));
+  return data;
 };

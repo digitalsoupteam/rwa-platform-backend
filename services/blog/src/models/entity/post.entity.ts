@@ -35,6 +35,14 @@ const postSchemaDefinition = {
         type: String,
         required: true,
     },
+    images: {
+        type: [String],
+        default: []
+    },
+    documents: {
+        type: [String],
+        default: []
+    },
     createdAt: {
         type: Number,
         default: Math.floor(Date.now() / 1000)

@@ -44,17 +44,5 @@ export const updatePost: MutationResolvers['updatePost'] = async (
 
   const { data } = response;
 
-  return {
-    id: data.id,
-    blogId: data.blogId,
-    title: data.title,
-    content: data.content,
-    ownerId: data.ownerId,
-    ownerType: data.ownerType,
-    creator: data.creator,
-    parentId: data.parentId,
-    grandParentId: data.grandParentId,
-    createdAt: data.createdAt,
-    updatedAt: data.updatedAt,
-  };
+  return data;
 };
