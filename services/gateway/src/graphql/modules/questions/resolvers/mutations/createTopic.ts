@@ -42,13 +42,5 @@ export const createTopic: MutationResolvers['createTopic'] = async (
 
   const { data } = response;
 
-  return {
-    id: data.id,
-    name: data.name,
-    ownerId: data.ownerId,
-    ownerType: data.ownerType,
-    creator: data.creator,
-    parentId: data.parentId,
-    grandParentId: data.grandParentId,
-  };
+  return data;
 };

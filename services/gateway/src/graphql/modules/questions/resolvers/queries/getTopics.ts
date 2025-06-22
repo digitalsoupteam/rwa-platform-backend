@@ -3,16 +3,16 @@ import { logger } from '@shared/monitoring/src/logger';
 
 export const getTopics: QueryResolvers['getTopics'] = async (
   _parent,
-  { filter },
+  { input },
   { clients }
 ) => {
-  logger.info('Getting topics list', { filter });
+  logger.info('Getting topics list', { input });
 
   const response = await clients.questionsClient.getTopics.post({
-    filter: filter?.filter || {},
-    sort: filter?.sort || {},
-    limit: filter?.limit,
-    offset: filter?.offset,
+    filter: input?.filter || {},
+    sort: input?.sort || {},
+    limit: input?.limit,
+    offset: input?.offset,
   });
 
   if (response.error) {
@@ -22,13 +22,5 @@ export const getTopics: QueryResolvers['getTopics'] = async (
 
   const { data } = response;
 
-  return data.map(topic => ({
-    id: topic.id,
-    name: topic.name,
-    ownerId: topic.ownerId,
-    ownerType: topic.ownerType,
-    creator: topic.creator,
-    parentId: topic.parentId,
-    grandParentId: topic.grandParentId,
-  }));
+  return data;
 };

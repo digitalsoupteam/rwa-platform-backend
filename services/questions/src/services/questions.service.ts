@@ -66,7 +66,9 @@ export class QuestionsService {
       ownerType: topic.ownerType,
       creator: topic.creator,
       parentId: topic.parentId,
-      grandParentId: topic.grandParentId
+      grandParentId: topic.grandParentId,
+      createdAt: topic.createdAt,
+      updatedAt: topic.updatedAt,
     };
   }
 
@@ -85,7 +87,9 @@ export class QuestionsService {
       ownerType: topic.ownerType,
       creator: topic.creator,
       parentId: topic.parentId,
-      grandParentId: topic.grandParentId
+      grandParentId: topic.grandParentId,
+      createdAt: topic.createdAt,
+      updatedAt: topic.updatedAt,
     };
   }
 
@@ -124,7 +128,9 @@ export class QuestionsService {
       ownerType: topic.ownerType,
       creator: topic.creator,
       parentId: topic.parentId,
-      grandParentId: topic.grandParentId
+      grandParentId: topic.grandParentId,
+      createdAt: topic.createdAt,
+      updatedAt: topic.updatedAt,
     };
   }
 
@@ -153,7 +159,9 @@ export class QuestionsService {
       ownerType: topic.ownerType,
       creator: topic.creator,
       parentId: topic.parentId,
-      grandParentId: topic.grandParentId
+      grandParentId: topic.grandParentId,
+      createdAt: topic.createdAt,
+      updatedAt: topic.updatedAt,
     }));
   }
 

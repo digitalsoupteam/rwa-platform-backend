@@ -17,6 +17,8 @@ type Topic {
   creator: String!
   parentId: String!
   grandParentId: String!
+  createdAt: Float!
+  updatedAt: Float!
 }
 
 # Question type
@@ -112,13 +114,13 @@ extend type Query {
   getTopic(id: ID!): Topic!
 
   # Get topics list with filters
-  getTopics(filter: GetTopicsFilterInput): [Topic!]!
+  getTopics(input: GetTopicsFilterInput): [Topic!]!
 
   # Get single question by id
   getQuestion(id: ID!): Question!
 
   # Get questions list with filters
-  getQuestions(filter: GetQuestionsFilterInput): [Question!]!
+  getQuestions(input: GetQuestionsFilterInput): [Question!]!
 }
 
 extend type Mutation {

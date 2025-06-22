@@ -53,8 +53,8 @@ export const GET_TOPIC = `
 `;
 
 export const GET_TOPICS = `
-  query GetTopics($filter: GetTopicsFilterInput) {
-    getTopics(filter: $filter) {
+  query GetTopics($input: GetTopicsFilterInput) {
+    getTopics(input: $input) {
       id
       name
       ownerId
@@ -200,8 +200,8 @@ export const GET_QUESTION = `
 `;
 
 export const GET_QUESTIONS = `
-  query GetQuestions($filter: GetQuestionsFilterInput) {
-    getQuestions(filter: $filter) {
+  query GetQuestions($input: GetQuestionsFilterInput) {
+    getQuestions(input: $input) {
       id
       topicId
       text

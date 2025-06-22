@@ -19,13 +19,5 @@ export const getTopic: QueryResolvers['getTopic'] = async (
 
   const topic = response.data;
 
-  return {
-    id: topic.id,
-    name: topic.name,
-    ownerId: topic.ownerId,
-    ownerType: topic.ownerType,
-    creator: topic.creator,
-    parentId: topic.parentId,
-    grandParentId: topic.grandParentId,
-  };
+  return topic;
 };

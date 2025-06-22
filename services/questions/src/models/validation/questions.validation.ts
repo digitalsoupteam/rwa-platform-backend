@@ -12,6 +12,8 @@ export const topicSchema = t.Object({
   creator: t.String(),
   parentId: t.String(),
   grandParentId: t.String(),
+  createdAt: t.Number(),
+  updatedAt: t.Number(),
 });
 
 export const answerSchema = t.Object({

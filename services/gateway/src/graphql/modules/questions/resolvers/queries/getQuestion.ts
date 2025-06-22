@@ -19,19 +19,5 @@ export const getQuestion: QueryResolvers['getQuestion'] = async (
 
   const question = response.data;
 
-  return {
-    id: question.id,
-    topicId: question.topicId,
-    text: question.text,
-    answer: question.answer,
-    answered: question.answered,
-    likesCount: question.likesCount,
-    ownerId: question.ownerId,
-    ownerType: question.ownerType,
-    creator: question.creator,
-    parentId: question.parentId,
-    grandParentId: question.grandParentId,
-    createdAt: question.createdAt,
-    updatedAt: question.updatedAt,
-  };
+  return question;
 };

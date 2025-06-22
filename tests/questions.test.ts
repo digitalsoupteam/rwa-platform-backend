@@ -19,6 +19,7 @@ import {
   UPDATE_TOPIC,
 } from "./utils/graphql/schema/questions";
 import { CREATE_BUSINESS } from "./utils/graphql/schema/rwa";
+import { CREATE_COMPANY } from "./utils/graphql/schema/company";
 
 describe("Questions Flow", () => {
   let chainId: string;
@@ -28,6 +29,7 @@ describe("Questions Flow", () => {
   let accessToken: string;
   let accessToken2: string;
   let userId: string;
+  let companyId: string;
   let businessId: string;
   let topicId: string;
   let questionId: string;
@@ -40,18 +42,35 @@ describe("Questions Flow", () => {
     ({ accessToken, userId } = await authenticate(wallet));
     ({ accessToken: accessToken2 } = await authenticate(wallet2));
 
-    // Create business for testing
-    const result = await makeGraphQLRequest(
-      CREATE_BUSINESS,
+    const companyResult = await makeGraphQLRequest(
+      CREATE_COMPANY,
       {
         input: {
-          name: "Test Business for Questions",
-          chainId,
+          name: "Test Company for RWA",
+          description: "Test Description"
         },
       },
       accessToken
     );
-    
+
+    companyId = companyResult.data.createCompany.id;
+
+    const result = await makeGraphQLRequest(
+      CREATE_BUSINESS,
+      {
+        input: {
+          name: "Test Business",
+          ownerId: companyId,
+          ownerType: "company",
+          chainId,
+          description: "Test Description",
+          tags: ["test"]
+        },
+      },
+      accessToken
+    );
+
+
     businessId = result.data.createBusiness.id;
   });
 
@@ -159,7 +178,7 @@ describe("Questions Flow", () => {
       );
 
       expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toBe("Only business owner can create topics");
+      expect(result.errors[0].message).toBe("User does not have required company permissions");
     });
 
     test("should not allow non-owner to create question in topic", async () => {
@@ -192,7 +211,7 @@ describe("Questions Flow", () => {
       );
 
       expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toBe("No access to this topic");
+      expect(result.errors[0].message).toBe("User does not have required company permissions");
     });
 
     test("should not allow non-owner to update question text", async () => {
@@ -226,7 +245,7 @@ describe("Questions Flow", () => {
       );
 
       expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toBe("No access to this question");
+      expect(result.errors[0].message).toBe("User does not have required company permissions");
     });
 
     test("should not allow non-owner to create question answer", async () => {
@@ -242,7 +261,7 @@ describe("Questions Flow", () => {
       );
 
       expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toBe("No access to this question");
+      expect(result.errors[0].message).toBe("User does not have required company permissions");
     });
 
     test("should not allow non-owner to update question answer", async () => {
@@ -260,7 +279,7 @@ describe("Questions Flow", () => {
       );
 
       expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toBe("No access to this question");
+      expect(result.errors[0].message).toBe("User does not have required company permissions");
     });
 
     test("should not allow non-owner to update topic", async () => {
@@ -278,7 +297,7 @@ describe("Questions Flow", () => {
       );
 
       expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toBe("No access to this topic");
+      expect(result.errors[0].message).toBe("User does not have required company permissions");
     });
 
     test("should not allow non-owner to delete topic", async () => {
@@ -291,7 +310,7 @@ describe("Questions Flow", () => {
       );
 
       expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toBe("No access to this topic");
+      expect(result.errors[0].message).toBe("User does not have required company permissions");
     });
 
     test("should not allow non-owner to delete question", async () => {
@@ -304,9 +323,10 @@ describe("Questions Flow", () => {
       );
 
       expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toBe("No access to this question");
+      expect(result.errors[0].message).toBe("User does not have required company permissions");
     });
   });
+
 
   describe("Topics", () => {
     test("should create a topic", async () => {
@@ -326,8 +346,8 @@ describe("Questions Flow", () => {
       expect(result.data.createTopic).toBeDefined();
       expect(result.data.createTopic.name).toBe("Test Topic");
       expect(result.data.createTopic.parentId).toBe(businessId);
-      expect(result.data.createTopic.ownerId).toBe(userId);
-      expect(result.data.createTopic.ownerType).toBe("user");
+      expect(result.data.createTopic.ownerId).toBe(companyId);
+      expect(result.data.createTopic.ownerType).toBe("company");
       expect(result.data.createTopic.creator).toBe(userId);
       expect(result.data.createTopic.createdAt).toBeDefined();
       expect(result.data.createTopic.updatedAt).toBeDefined();
@@ -348,8 +368,8 @@ describe("Questions Flow", () => {
       expect(result.data.getTopic).toBeDefined();
       expect(result.data.getTopic.id).toBe(topicId);
       expect(result.data.getTopic.name).toBe("Test Topic");
-      expect(result.data.getTopic.ownerId).toBe(userId);
-      expect(result.data.getTopic.ownerType).toBe("user");
+      expect(result.data.getTopic.ownerId).toBe(companyId);
+      expect(result.data.getTopic.ownerType).toBe("company");
       expect(result.data.getTopic.createdAt).toBeDefined();
       expect(result.data.getTopic.updatedAt).toBeDefined();
     });
@@ -358,9 +378,11 @@ describe("Questions Flow", () => {
       const result = await makeGraphQLRequest(
         GET_TOPICS,
         {
-          filter: {
-            parentIds: { $in: [businessId] },
-          },
+          input: {
+            filter: {
+              parentId: { $in: [businessId] },
+            },
+          }
         },
         accessToken
       );
@@ -370,8 +392,8 @@ describe("Questions Flow", () => {
       expect(result.data.getTopics).toBeArray();
       expect(result.data.getTopics.length).toBeGreaterThan(0);
       expect(result.data.getTopics[0].parentId).toBe(businessId);
-      expect(result.data.getTopics[0].ownerId).toBe(userId);
-      expect(result.data.getTopics[0].ownerType).toBe("user");
+      expect(result.data.getTopics[0].ownerId).toBe(companyId);
+      expect(result.data.getTopics[0].ownerType).toBe("company");
     });
 
     test("should update topic", async () => {
@@ -392,8 +414,8 @@ describe("Questions Flow", () => {
       expect(result.data.updateTopic).toBeDefined();
       expect(result.data.updateTopic.id).toBe(topicId);
       expect(result.data.updateTopic.name).toBe("Updated Topic Name");
-      expect(result.data.updateTopic.ownerId).toBe(userId);
-      expect(result.data.updateTopic.ownerType).toBe("user");
+      expect(result.data.updateTopic.ownerId).toBe(companyId);
+      expect(result.data.updateTopic.ownerType).toBe("company");
       expect(result.data.updateTopic.createdAt).toBeDefined();
       expect(result.data.updateTopic.updatedAt).toBeDefined();
     });
@@ -419,8 +441,8 @@ describe("Questions Flow", () => {
       expect(result.data.createQuestion.answer).toBeNull();
       expect(result.data.createQuestion.answered).toBe(false);
       expect(result.data.createQuestion.likesCount).toBe(0);
-      expect(result.data.createQuestion.ownerId).toBe(userId);
-      expect(result.data.createQuestion.ownerType).toBe("user");
+      expect(result.data.createQuestion.ownerId).toBe(companyId);
+      expect(result.data.createQuestion.ownerType).toBe("company");
       expect(result.data.createQuestion.creator).toBe(userId);
 
       questionId = result.data.createQuestion.id;
@@ -439,17 +461,19 @@ describe("Questions Flow", () => {
       expect(result.data.getQuestion).toBeDefined();
       expect(result.data.getQuestion.id).toBe(questionId);
       expect(result.data.getQuestion.text).toBe("Test Question");
-      expect(result.data.getQuestion.ownerId).toBe(userId);
-      expect(result.data.getQuestion.ownerType).toBe("user");
+      expect(result.data.getQuestion.ownerId).toBe(companyId);
+      expect(result.data.getQuestion.ownerType).toBe("company");
     });
 
     test("should get questions with filter", async () => {
       const result = await makeGraphQLRequest(
         GET_QUESTIONS,
         {
-          filter: {
-            topicIds: { $in: [topicId] },
-          },
+          input: {
+            filter: {
+              topicId: { $in: [topicId] },
+            },
+          }
         },
         accessToken
       );
@@ -459,8 +483,8 @@ describe("Questions Flow", () => {
       expect(result.data.getQuestions).toBeArray();
       expect(result.data.getQuestions.length).toBeGreaterThan(0);
       expect(result.data.getQuestions[0].topicId).toBe(topicId);
-      expect(result.data.getQuestions[0].ownerId).toBe(userId);
-      expect(result.data.getQuestions[0].ownerType).toBe("user");
+      expect(result.data.getQuestions[0].ownerId).toBe(companyId);
+      expect(result.data.getQuestions[0].ownerType).toBe("company");
     });
 
     test("should update question text", async () => {
@@ -481,8 +505,8 @@ describe("Questions Flow", () => {
       expect(result.data.updateQuestionText).toBeDefined();
       expect(result.data.updateQuestionText.id).toBe(questionId);
       expect(result.data.updateQuestionText.text).toBe("Updated Test Question");
-      expect(result.data.updateQuestionText.ownerId).toBe(userId);
-      expect(result.data.updateQuestionText.ownerType).toBe("user");
+      expect(result.data.updateQuestionText.ownerId).toBe(companyId);
+      expect(result.data.updateQuestionText.ownerType).toBe("company");
     });
 
     test("should create question answer", async () => {
@@ -503,8 +527,8 @@ describe("Questions Flow", () => {
       expect(result.data.createQuestionAnswer.answer.text).toBe("Initial Answer");
       expect(result.data.createQuestionAnswer.answer.userId).toBe(userId);
       expect(result.data.createQuestionAnswer.answered).toBe(true);
-      expect(result.data.createQuestionAnswer.ownerId).toBe(userId);
-      expect(result.data.createQuestionAnswer.ownerType).toBe("user");
+      expect(result.data.createQuestionAnswer.ownerId).toBe(companyId);
+      expect(result.data.createQuestionAnswer.ownerType).toBe("company");
     });
 
     test("should update question answer", async () => {
@@ -527,8 +551,8 @@ describe("Questions Flow", () => {
       expect(result.data.updateQuestionAnswer.answer.text).toBe("Updated Answer");
       expect(result.data.updateQuestionAnswer.answer.userId).toBe(userId);
       expect(result.data.updateQuestionAnswer.answered).toBe(true);
-      expect(result.data.updateQuestionAnswer.ownerId).toBe(userId);
-      expect(result.data.updateQuestionAnswer.ownerType).toBe("user");
+      expect(result.data.updateQuestionAnswer.ownerId).toBe(companyId);
+      expect(result.data.updateQuestionAnswer.ownerType).toBe("company");
     });
 
     test("should toggle question like", async () => {

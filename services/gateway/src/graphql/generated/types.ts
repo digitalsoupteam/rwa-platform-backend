@@ -1336,7 +1336,7 @@ export type QueryGetQuestionArgs = {
 
 
 export type QueryGetQuestionsArgs = {
-  filter?: InputMaybe<GetQuestionsFilterInput>;
+  input?: InputMaybe<GetQuestionsFilterInput>;
 };
 
 
@@ -1356,7 +1356,7 @@ export type QueryGetTopicArgs = {
 
 
 export type QueryGetTopicsArgs = {
-  filter?: InputMaybe<GetTopicsFilterInput>;
+  input?: InputMaybe<GetTopicsFilterInput>;
 };
 
 
@@ -1507,6 +1507,7 @@ export type TokenBalance = {
 
 export type Topic = {
   __typename?: 'Topic';
+  createdAt: Scalars['Float']['output'];
   creator: Scalars['String']['output'];
   grandParentId: Scalars['String']['output'];
   id: Scalars['ID']['output'];
@@ -1514,6 +1515,7 @@ export type Topic = {
   ownerId: Scalars['String']['output'];
   ownerType: Scalars['String']['output'];
   parentId: Scalars['String']['output'];
+  updatedAt: Scalars['Float']['output'];
 };
 
 export type Transaction = {
@@ -2596,6 +2598,7 @@ export type TokenBalanceResolvers<ContextType = GraphQLContext, ParentType exten
 }>;
 
 export type TopicResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Topic'] = ResolversParentTypes['Topic']> = ResolversObject<{
+  createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   creator?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   grandParentId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
@@ -2603,6 +2606,7 @@ export type TopicResolvers<ContextType = GraphQLContext, ParentType extends Reso
   ownerId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   ownerType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   parentId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
