@@ -40,12 +40,13 @@ export const yogaServer = createYoga({
     useGraphQLSSE({
       endpoint: '/graphql/stream'
     })
-  ], 
+  ],
   cors: false,
   graphiql: {
     subscriptionsProtocol: 'SSE'
   },
   logging: true,
+  maskedErrors: false,
   context({ request }) {
     const authHeader = request.headers.get("Authorization");
     const token = authHeader?.split(" ")[1] ?? null;
