@@ -56,11 +56,7 @@ describe("RWA Pool Operations", () => {
       {
         input: {
           name: "Test Pool",
-          ownerId: businessData.companyId,
-          ownerType: "company",
           businessId: businessData.businessId,
-          chainId: businessData.chainId,
-          rwaAddress: businessData.tokenAddress
         },
       },
       accessToken

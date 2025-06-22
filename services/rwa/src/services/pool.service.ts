@@ -121,7 +121,16 @@ Example response:
     }
 
     try {
-      return JSON.parse(aiResponse);
+      // Find first { and last } to extract JSON object
+      const firstBrace = aiResponse.indexOf('{');
+      const lastBrace = aiResponse.lastIndexOf('}');
+      
+      if (firstBrace === -1 || lastBrace === -1 || firstBrace >= lastBrace) {
+        throw new Error("No valid JSON object found in AI response");
+      }
+      
+      const jsonString = aiResponse.substring(firstBrace, lastBrace + 1);
+      return JSON.parse(jsonString);
     } catch (error) {
       throw new Error("Failed to parse AI response as JSON");
     }

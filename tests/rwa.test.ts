@@ -36,6 +36,7 @@ describe("RWA Flow", () => {
   let poolId: string;
   let businessApprovalSignaturesTaskId: string;
   let poolApprovalSignaturesTaskId: string;
+  let tokenAddress: string;
 
   beforeAll(async () => {
     chainId = "97";
@@ -322,8 +323,6 @@ describe("RWA Flow", () => {
       tokenAddress = updatedBusiness.data.getBusiness.tokenAddress
     });
   });
-return
-  let tokenAddress: string;
 
   describe("Pool Operations", () => {
     test("should require authentication for creating pool", async () => {
@@ -332,11 +331,7 @@ return
         {
           input: {
             name: "Test Pool",
-            ownerId: companyId,
-            ownerType: "company",
-            businessId,
-            chainId,
-            rwaAddress: tokenAddress
+            businessId
           },
         }
       );
@@ -351,11 +346,7 @@ return
         {
           input: {
             name: "Test Pool",
-            ownerId: companyId,
-            ownerType: "company",
-            businessId,
-            chainId,
-            rwaAddress: tokenAddress
+            businessId
           },
         },
         accessToken
@@ -837,11 +828,7 @@ return
         {
           input: {
             name: "Unauthorized Pool",
-            ownerId: companyId,
-            ownerType: "company",
-            businessId,
-            chainId,
-            rwaAddress: tokenAddress
+            businessId
           },
         },
         accessToken2
