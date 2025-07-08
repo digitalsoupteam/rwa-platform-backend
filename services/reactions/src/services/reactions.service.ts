@@ -75,4 +75,23 @@ export class ReactionsService {
       userReactions: userReactions.map(r => r.reaction)
     };
   }
+
+  async getReactions(params: {
+    filter?: any;
+    sort?: { [key: string]: any };
+    limit?: number;
+    offset?: number;
+  } = {}) {
+    logger.debug("Getting reactions", params);
+
+    const {
+      filter = {},
+      sort = { createdAt: "desc" },
+      limit = 100,
+      offset = 0
+    } = params;
+
+    const reactions = await this.reactionRepository.findAll(filter, sort, limit, offset);
+    return reactions.map(reaction => this.formatReaction(reaction));
+  }
 }

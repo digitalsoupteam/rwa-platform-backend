@@ -43,7 +43,7 @@ const poolSchemaDefinition = {
         type: Number,
         min: 0,
         max: 100,
-        default: 0
+        default: 100
     },
     image: {
         type: String,

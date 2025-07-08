@@ -50,7 +50,10 @@ export const CONFIG = {
       URL: process.env.CHARTS_SERVICE_URL || "http://charts:3040"
     },
     REACTIONS: {
-      URL: process.env.REACTIONS_SERVICE_URL || "http://reactions:3026"
+      URL: process.env.REACTIONS_SERVICE_URL || "http://reactions:3027"
+    },
+    LOYALTY: {
+      URL: process.env.LOYALTY_SERVICE_URL || "http://loyalty:3026"
     }
   },
   

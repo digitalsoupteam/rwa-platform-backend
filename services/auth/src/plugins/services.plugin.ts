@@ -11,6 +11,7 @@ export const ServicesPlugin = new Elysia({ name: "Services" })
     console.log('Initialize services')
     decorator.authService = new AuthService(
       decorator.userRepository,
+      decorator.refreshTokenRepository,
       CONFIG.JWT.SECRET,
       CONFIG.JWT.ACCESS_TOKEN_EXPIRY as any,
       CONFIG.JWT.REFRESH_TOKEN_EXPIRY as any,

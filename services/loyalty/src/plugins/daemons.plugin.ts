@@ -12,17 +12,19 @@ export const DaemonsPlugin = new Elysia({ name: "Daemons" })
     async ({
       decorator
     }) => {
-      await new Promise(r => setTimeout(r, 10000));
+      await new Promise(r => setTimeout(r, 10000))
       logger.debug("Initializing daemons");
 
       // Initialize blockchain events daemon
       decorator.blockchainEventsDaemon = new BlockchainEventsDaemon(
         decorator.rabbitMQClient,
-        decorator.metricsService
+        decorator.loyaltyService
       );
 
       await decorator.blockchainEventsDaemon.initialize();
       await decorator.blockchainEventsDaemon.start();
+      
+      logger.info("Blockchain events daemon started");
     }
   )
   .onStop(
@@ -31,6 +33,7 @@ export const DaemonsPlugin = new Elysia({ name: "Daemons" })
     }) => {
       if (decorator.blockchainEventsDaemon) {
         await decorator.blockchainEventsDaemon.stop();
+        logger.info("Blockchain events daemon stopped");
       }
     }
   );

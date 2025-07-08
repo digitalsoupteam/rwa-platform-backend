@@ -13,11 +13,7 @@ export const refreshTokenController = new Elysia().use(ServicesPlugin).post(
       `POST /refreshToken - Refreshing token`
     );
 
-    const tokens = await authService.refreshToken({
-      refreshToken: body.refreshToken,
-    });
-
-    return tokens;
+    return authService.refreshToken(body);
   },
   {
     body: refreshTokenRequest,

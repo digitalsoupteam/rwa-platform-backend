@@ -1,11 +1,16 @@
+import { AuthenticationError } from '@shared/errors/app-errors';
 import { MutationResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/logger';
 
 export const refreshToken: MutationResolvers['refreshToken'] = async (
   _parent,
   { input },
-  { clients }
+  { clients, user }
 ) => {
+  if (!user) {
+    throw new AuthenticationError('Authentication required');
+  }
+
   logger.info('Refreshing token');
 
   const response = await clients.authClient.refreshToken.post({
@@ -19,10 +24,5 @@ export const refreshToken: MutationResolvers['refreshToken'] = async (
 
   const { data } = response;
 
-  return {
-    userId: data.userId,
-    wallet: data.wallet,
-    accessToken: data.accessToken,
-    refreshToken: data.refreshToken
-  };
+  return data;
 };

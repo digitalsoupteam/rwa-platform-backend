@@ -1,0 +1,125 @@
+scalar JSON
+
+# Fees type
+type Fees {
+  id: ID!
+  userWallet: String!
+  chainId: String!
+  tokenAddress: String!
+  buyCommissionAmount: String!
+  sellCommissionAmount: String!
+  tokenCreationCommissionAmount: String!
+  poolCreationCommissionAmount: String!
+  referralRewardAmount: String!
+  buyCommissionCount: Int!
+  sellCommissionCount: Int!
+  tokenCreationCommissionCount: Int!
+  poolCreationCommissionCount: Int!
+  referralRewardCount: Int!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+# Referral type
+type Referral {
+  id: ID!
+  userWallet: String!
+  referrerWallet: String!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+# Referrer withdraw type
+type ReferrerWithdraw {
+  id: ID!
+  referrerWallet: String!
+  chainId: String!
+  tokenAddress: String!
+  totalWithdrawnAmount: String!
+  taskId: String
+  taskExpiredAt: Float
+  taskCooldown: Float
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+# Referrer claim history type
+type ReferrerClaimHistory {
+  id: ID!
+  referrerWallet: String!
+  referralWallet: String!
+  chainId: String!
+  tokenAddress: String!
+  amount: String!
+  transactionHash: String!
+  logIndex: Int!
+  blockNumber: Int!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+# Register referral input
+input RegisterReferralInput {
+  referrerWallet: String!
+}
+
+# Create referrer withdraw task input
+input CreateReferrerWithdrawTaskInput {
+  chainId: String!
+  tokenAddress: String!
+  amount: String!
+}
+
+# Get fees filter input
+input GetFeesFilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+# Get referrals filter input
+input GetReferralsFilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+# Get referrer withdraws filter input
+input GetReferrerWithdrawsFilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+# Get referrer claim history filter input
+input GetReferrerClaimHistoryFilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+extend type Query {
+  # Get fees list with filters
+  getFees(input: GetFeesFilterInput): [Fees!]!
+
+  # Get referrals list with filters
+  getReferrals(input: GetReferralsFilterInput): [Referral!]!
+
+  # Get referrer withdraws list with filters
+  getReferrerWithdraws(input: GetReferrerWithdrawsFilterInput): [ReferrerWithdraw!]!
+
+  # Get referrer claim history list with filters
+  getReferrerClaimHistory(input: GetReferrerClaimHistoryFilterInput): [ReferrerClaimHistory!]!
+}
+
+extend type Mutation {
+  # Register new referral
+  registerReferral(input: RegisterReferralInput!): Referral!
+
+  # Create referrer withdraw task
+  createReferrerWithdrawTask(input: CreateReferrerWithdrawTaskInput!): ReferrerWithdraw!
+}

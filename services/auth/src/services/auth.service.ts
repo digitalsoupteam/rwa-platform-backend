@@ -4,10 +4,12 @@ import crypto from "crypto";
 import { logger } from "@shared/monitoring/src/logger";
 import { InvalidTokenError } from "@shared/errors/app-errors";
 import { UserRepository } from "../repositories/user.repository";
+import { RefreshTokenRepository } from "../repositories/refreshToken.repository";
 
 export class AuthService {
   constructor(
     private readonly userRepository: UserRepository,
+    private readonly refreshTokenRepository: RefreshTokenRepository,
     private readonly jwtSecret: string,
     private readonly accessTokenExpiry: jwt.SignOptions["expiresIn"],
     private readonly refreshTokenExpiry: jwt.SignOptions["expiresIn"],
@@ -50,7 +52,7 @@ We prioritize the security of your assets and personal data. To ensure secure ac
     const user = await this.userRepository.findOrCreate(data.wallet);
 
     // Generate tokens
-    const tokens = this.generateTokens(data.wallet, user._id.toString());
+    const tokens = await this.generateTokens(data.wallet, user._id.toString());
 
     return {
       userId: user._id.toString(),
@@ -68,18 +70,32 @@ We prioritize the security of your assets and personal data. To ensure secure ac
   }) {
     logger.debug("Refreshing token");
 
-    // Verify token payload
+    // Verify JWT token payload (this checks expiration automatically)
     const payload = this.verifyToken(data.refreshToken);
     if (payload.type !== "refresh") {
       logger.error("Invalid token type", { type: payload.type });
       throw new InvalidTokenError("Invalid token type");
     }
 
-    // Get user to return their data
-    const user = await this.userRepository.findByWallet(payload.wallet);
+    // Create token hash for database lookup
+    const tokenHash = crypto.createHash('sha256').update(data.refreshToken).digest('hex');
+    
+    // Find token in database
+    const tokenRecord = await this.refreshTokenRepository.findByTokenHash(tokenHash);
+    
+    if (!tokenRecord) {
+      logger.error("Refresh token not found in database");
+      throw new InvalidTokenError("Invalid refresh token");
+    }
+
+    // Delete the used refresh token (one-time use)
+    await this.refreshTokenRepository.deleteTokens(tokenRecord.userId, [tokenHash]);
+
+    // Get user by userId from token payload
+    const user = await this.userRepository.findById(payload.userId);
     
     // Generate new tokens
-    const tokens = this.generateTokens(payload.wallet, user._id.toString());
+    const tokens = await this.generateTokens(payload.wallet, user._id.toString());
 
     return {
       userId: user._id.toString(),
@@ -137,7 +153,7 @@ We prioritize the security of your assets and personal data. To ensure secure ac
   /**
    * Private method to generate access and refresh tokens
    */
-  private generateTokens(wallet: string, userId: string) {
+  private async generateTokens(wallet: string, userId: string) {
     const accessToken = jwt.sign(
       {
         userId,
@@ -160,6 +176,13 @@ We prioritize the security of your assets and personal data. To ensure secure ac
       { expiresIn: this.refreshTokenExpiry }
     );
 
+    // Save refresh token to database
+    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const decoded = jwt.decode(refreshToken) as any;
+    const expiresAt = decoded.exp;
+    
+    await this.refreshTokenRepository.create(userId, tokenHash, expiresAt);
+
     return { wallet, accessToken, refreshToken };
   }
 
@@ -168,6 +191,7 @@ We prioritize the security of your assets and personal data. To ensure secure ac
    */
   private verifyToken(token: string) {
     return jwt.verify(token, this.jwtSecret) as {
+      userId: string;
       wallet: string;
       type: "access" | "refresh";
       jti: string;
@@ -184,7 +208,40 @@ We prioritize the security of your assets and personal data. To ensure secure ac
 
     return {
       userId: user._id.toString(),
-      wallet: user.wallet
+      wallet: user.wallet,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+  }
+
+  /**
+   * Get user's refresh tokens
+   */
+  async getUserTokens(userId: string) {
+    logger.debug("Getting user tokens", { userId });
+
+    const tokens = await this.refreshTokenRepository.findByUserId(userId);
+    
+    return tokens.map(token => ({
+      tokenId: token._id.toString(),
+      userId: token.userId.toString(),
+      tokenHash: token.tokenHash,
+      expiresAt: token.expiresAt,
+      createdAt: token.createdAt,
+      updatedAt: token.updatedAt,
+    }));
+  }
+
+  /**
+   * Revoke refresh tokens for user
+   */
+  async revokeTokens(userId: string, tokenHashes: string[]) {
+    logger.debug("Revoking tokens for user", { userId, count: tokenHashes.length });
+
+    const revokedCount = await this.refreshTokenRepository.deleteTokens(userId, tokenHashes);
+    
+    return {
+      revokedCount
     };
   }
 }

@@ -46,4 +46,20 @@ export class ReactionRepository {
       .find({ parentId, userId })
       .lean();
   }
+
+  async findAll(
+    filter: any = {},
+    sort: { [key: string]: any } = { createdAt: "desc" },
+    limit: number = 100,
+    offset: number = 0
+  ) {
+    logger.debug(`Finding reactions with filter: ${JSON.stringify(filter)}`);
+    
+    return await this.model
+      .find(filter)
+      .sort(sort)
+      .skip(offset)
+      .limit(limit)
+      .lean();
+  }
 }

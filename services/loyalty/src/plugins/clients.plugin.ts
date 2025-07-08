@@ -1,10 +1,12 @@
 import { Elysia } from "elysia";
 import { logger } from "@shared/monitoring/src/logger";
-import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
 import { CONFIG } from "../config";
+import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
+import { signersManagerClient, SignersManagerClient } from "../clients/eden.clients";
 
 export const ClientsPlugin = new Elysia({ name: "Clients" })
   .decorate("rabbitMQClient", {} as RabbitMQClient)
+  .decorate("signersManagerClient", {} as SignersManagerClient)
   .onStart(async ({ decorator }) => {
     logger.debug("Initializing clients");
 
@@ -16,7 +18,13 @@ export const ClientsPlugin = new Elysia({ name: "Clients" })
     });
 
     await decorator.rabbitMQClient.connect();
+    logger.info("RabbitMQ client connected");
+
+    decorator.signersManagerClient = signersManagerClient;
+    
+    logger.info("Signers Manager client initialized");
   })
   .onStop(async ({ decorator }) => {
     await decorator.rabbitMQClient.disconnect();
+    logger.info("RabbitMQ client disconnected");
   });

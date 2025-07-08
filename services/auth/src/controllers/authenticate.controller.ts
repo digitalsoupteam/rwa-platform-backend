@@ -13,13 +13,7 @@ export const authenticateController = new Elysia().use(ServicesPlugin).post(
       `POST /authenticate - Authenticating user with wallet: ${body.wallet}`
     );
 
-    const tokens = await authService.authenticate({
-      wallet: body.wallet,
-      signature: body.signature,
-      timestamp: body.timestamp
-    });
-
-    return tokens;
+    return authService.authenticate(body);
   },
   {
     body: authenticateRequest,

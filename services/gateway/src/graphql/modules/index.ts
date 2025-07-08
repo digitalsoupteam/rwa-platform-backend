@@ -14,6 +14,7 @@ import { companyResolvers } from './company/resolvers';
 import { chartsResolvers } from './charts/resolvers';
 import { demoResolvers } from './demo/resolvers';
 import { reactionsResolvers } from './reactions/resolvers';
+import { loyaltyResolvers } from './loyalty/resolvers';
 
 
 export const resolvers = mergeResolvers([
@@ -32,4 +33,5 @@ export const resolvers = mergeResolvers([
   demoResolvers,
   chartsResolvers,
   reactionsResolvers,
+  loyaltyResolvers,
 ]);

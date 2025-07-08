@@ -4,7 +4,6 @@ scalar JSON
 type User {
   userId: String!
   wallet: String!
-  nonce: String!
   createdAt: Int!
   updatedAt: Int!
 }
@@ -15,6 +14,21 @@ type AuthTokens {
   wallet: String!
   accessToken: String!
   refreshToken: String!
+}
+
+
+type RefreshToken {
+  tokenId: String!
+  userId: String!
+  tokenHash: String!
+  expiresAt: Int!
+  createdAt: Int!
+  updatedAt: Int!
+}
+
+
+type RevokeTokensResult {
+  revokedCount: Int!
 }
 
 
@@ -29,10 +43,19 @@ input RefreshTokenInput {
   refreshToken: String!
 }
 
+
+input RevokeTokensInput {
+  tokenHashes: [String!]!
+}
+
+extend type Query {
+  getUserTokens: [RefreshToken!]!
+}
+
 extend type Mutation {
-  
   authenticate(input: AuthenticateInput!): AuthTokens!
   
-  
   refreshToken(input: RefreshTokenInput!): AuthTokens!
+  
+  revokeTokens(input: RevokeTokensInput!): RevokeTokensResult!
 }
