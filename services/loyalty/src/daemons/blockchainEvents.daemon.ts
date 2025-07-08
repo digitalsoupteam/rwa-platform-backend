@@ -1,6 +1,6 @@
 import { BaseBlockchainDaemon, BlockchainEvent, EventRouting } from "@shared/blockchain-daemon/src/baseBlockchain.daemon";
 import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
-import { MetricsService } from "../services/metrics.service";
+import { LoyaltyService } from "../services/loyalty.service";
 import { logger } from "@shared/monitoring/src/logger";
 
 /**
@@ -9,44 +9,32 @@ import { logger } from "@shared/monitoring/src/logger";
 export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
   constructor(
     rabbitClient: RabbitMQClient,
-    private readonly metricsService: MetricsService
+    private readonly loyaltyService: LoyaltyService
   ) {
     super(rabbitClient, "blockchain.events.loyalty");
   }
 
   protected getEventRouting(): EventRouting {
     return {
-      "RWA_Deployed": async (event: BlockchainEvent) => {
-        await this.metricsService.syncRWADeployed(event.data as any);
+      "Factory_CreateRWAFeeCollected": async (event: BlockchainEvent) => {
+        await this.loyaltyService.processCreateRWAFeeCollected(event.data as any);
       },
 
-      "Pool_Deployed": async (event: BlockchainEvent) => {
-        await this.metricsService.syncPoolDeployed(event.data as any);
+      "Factory_CreatePoolFeeCollected": async (event: BlockchainEvent) => {
+        await this.loyaltyService.processCreatePoolFeeCollected(event.data as any);
       },
 
       "Pool_RwaMinted": async (event: BlockchainEvent) => {
-        await this.metricsService.syncPoolRwaMinted(event.data as any);
+        await this.loyaltyService.processRwaMinted(event.data as any);
       },
 
       "Pool_RwaBurned": async (event: BlockchainEvent) => {
-        await this.metricsService.syncPoolRwaBurned(event.data as any);
+        await this.loyaltyService.processRwaBurned(event.data as any);
       },
 
-      "Pool_TargetReached": async (event: BlockchainEvent) => {
-        await this.metricsService.syncPoolTargetReached(event.data as any);
-      },
-
-      "Pool_FundsFullyReturned": async (event: BlockchainEvent) => {
-        await this.metricsService.syncPoolFundsFullyReturned(event.data as any);
-      },
-
-      "Pool_IncomingTrancheUpdate": async (event: BlockchainEvent) => {
-        await this.metricsService.syncPoolIncomingTrancheUpdate(event.data as any);
-      },
-
-      "Pool_OutgoingTrancheClaimed": async (event: BlockchainEvent) => {
-        await this.metricsService.syncPoolOutgoingTrancheClaimed(event.data as any);
-      },
+      "ReferralTreasury_Withdrawn": async (event: BlockchainEvent) => {
+        await this.loyaltyService.processReferralTreasuryWithdrawn(event.data as any);
+      }
     };
   }
 }

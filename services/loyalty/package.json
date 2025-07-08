@@ -10,10 +10,15 @@
     "test": "bun test"
   },
   "dependencies": {
+    "ethers": "latest",
     "elysia": "latest",
     "mongoose": "latest",
     "@shared/monitoring": "workspace:*",
-    "@shared/errors": "workspace:*"
+    "@shared/errors": "workspace:*",
+    "@elysiajs/eden": "latest",
+    "amqplib": "latest",
+    "@shared/rabbitmq": "workspace:*",
+    "@shared/blockchain-daemon": "workspace:*"
   },
   "devDependencies": {
     "bun-types": "latest"

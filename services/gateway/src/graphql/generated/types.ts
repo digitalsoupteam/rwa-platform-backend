@@ -251,6 +251,12 @@ export type CreateQuestionInput = {
   topicId: Scalars['String']['input'];
 };
 
+export type CreateReferrerWithdrawTaskInput = {
+  amount: Scalars['String']['input'];
+  chainId: Scalars['String']['input'];
+  tokenAddress: Scalars['String']['input'];
+};
+
 export type CreateTopicInput = {
   name: Scalars['String']['input'];
   parentId: Scalars['String']['input'];
@@ -367,6 +373,26 @@ export type FaucetTokenType =
   | 'gas'
   | 'hold';
 
+export type Fees = {
+  __typename?: 'Fees';
+  buyCommissionAmount: Scalars['String']['output'];
+  buyCommissionCount: Scalars['Int']['output'];
+  chainId: Scalars['String']['output'];
+  createdAt: Scalars['Float']['output'];
+  id: Scalars['ID']['output'];
+  poolCreationCommissionAmount: Scalars['String']['output'];
+  poolCreationCommissionCount: Scalars['Int']['output'];
+  referralRewardAmount: Scalars['String']['output'];
+  referralRewardCount: Scalars['Int']['output'];
+  sellCommissionAmount: Scalars['String']['output'];
+  sellCommissionCount: Scalars['Int']['output'];
+  tokenAddress: Scalars['String']['output'];
+  tokenCreationCommissionAmount: Scalars['String']['output'];
+  tokenCreationCommissionCount: Scalars['Int']['output'];
+  updatedAt: Scalars['Float']['output'];
+  userWallet: Scalars['String']['output'];
+};
+
 export type FilterInput = {
   filter?: InputMaybe<Scalars['JSON']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -447,6 +473,13 @@ export type GetFaqTopicsFilterInput = {
   sort?: InputMaybe<Scalars['JSON']['input']>;
 };
 
+export type GetFeesFilterInput = {
+  filter?: InputMaybe<Scalars['JSON']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<Scalars['JSON']['input']>;
+};
+
 export type GetFoldersFilterInput = {
   filter?: InputMaybe<Scalars['JSON']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -504,6 +537,34 @@ export type GetRawPriceDataInput = {
   poolAddress: Scalars['String']['input'];
   sort?: InputMaybe<Scalars['JSON']['input']>;
   startTime: Scalars['Float']['input'];
+};
+
+export type GetReactionsFilterInput = {
+  filter: Scalars['JSON']['input'];
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<Scalars['JSON']['input']>;
+};
+
+export type GetReferralsFilterInput = {
+  filter?: InputMaybe<Scalars['JSON']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<Scalars['JSON']['input']>;
+};
+
+export type GetReferrerClaimHistoryFilterInput = {
+  filter?: InputMaybe<Scalars['JSON']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<Scalars['JSON']['input']>;
+};
+
+export type GetReferrerWithdrawsFilterInput = {
+  filter?: InputMaybe<Scalars['JSON']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<Scalars['JSON']['input']>;
 };
 
 export type GetSignatureTaskInput = {
@@ -612,6 +673,7 @@ export type Mutation = {
   createPost: Post;
   createQuestion: Question;
   createQuestionAnswer: Question;
+  createReferrerWithdrawTask: ReferrerWithdraw;
   createTopic: Topic;
   deleteAssistant: IdResponse;
   deleteBlog: Scalars['ID']['output'];
@@ -630,6 +692,7 @@ export type Mutation = {
   editPool: Pool;
   grantPermission: Permission;
   refreshToken: AuthTokens;
+  registerReferral: Referral;
   rejectBusinessApprovalSignatures: Scalars['Boolean']['output'];
   rejectPoolApprovalSignatures: Scalars['Boolean']['output'];
   removeMember: Scalars['ID']['output'];
@@ -639,6 +702,7 @@ export type Mutation = {
   requestPoolApprovalSignatures: ApprovalSignaturesResponse;
   resetReaction?: Maybe<Reaction>;
   revokePermission: Scalars['ID']['output'];
+  revokeTokens: RevokeTokensResult;
   setReaction: Reaction;
   toggleQuestionLike: Scalars['Boolean']['output'];
   updateAssistant: Assistant;
@@ -755,6 +819,11 @@ export type MutationCreateQuestionAnswerArgs = {
 };
 
 
+export type MutationCreateReferrerWithdrawTaskArgs = {
+  input: CreateReferrerWithdrawTaskInput;
+};
+
+
 export type MutationCreateTopicArgs = {
   input: CreateTopicInput;
 };
@@ -845,6 +914,11 @@ export type MutationRefreshTokenArgs = {
 };
 
 
+export type MutationRegisterReferralArgs = {
+  input: RegisterReferralInput;
+};
+
+
 export type MutationRejectBusinessApprovalSignaturesArgs = {
   id: Scalars['ID']['input'];
 };
@@ -887,6 +961,11 @@ export type MutationResetReactionArgs = {
 
 export type MutationRevokePermissionArgs = {
   input: RevokePermissionInput;
+};
+
+
+export type MutationRevokeTokensArgs = {
+  input: RevokeTokensInput;
 };
 
 
@@ -1150,6 +1229,7 @@ export type Query = {
   getFaqAnswers: Array<FaqAnswer>;
   getFaqTopic: FaqTopic;
   getFaqTopics: Array<FaqTopic>;
+  getFees: Array<Fees>;
   getFolder: Folder;
   getFolders: Array<Folder>;
   getGalleries: Array<Gallery>;
@@ -1168,12 +1248,17 @@ export type Query = {
   getQuestion: Question;
   getQuestions: Array<Question>;
   getRawPriceData: Array<PriceData>;
+  getReactions: Array<Reaction>;
+  getReferrals: Array<Referral>;
+  getReferrerClaimHistory: Array<ReferrerClaimHistory>;
+  getReferrerWithdraws: Array<ReferrerWithdraw>;
   getSignatureTask: SignatureTask;
   getTopic: Topic;
   getTopics: Array<Topic>;
   getTransactions: Array<Transaction>;
   getUnlockTime: UnlockTimeResponse;
   getUserAssistants: Array<Assistant>;
+  getUserTokens: Array<RefreshToken>;
   getVolumeData: Array<VolumeData>;
 };
 
@@ -1251,6 +1336,11 @@ export type QueryGetFaqTopicArgs = {
 
 export type QueryGetFaqTopicsArgs = {
   input?: InputMaybe<GetFaqTopicsFilterInput>;
+};
+
+
+export type QueryGetFeesArgs = {
+  input?: InputMaybe<GetFeesFilterInput>;
 };
 
 
@@ -1345,6 +1435,26 @@ export type QueryGetRawPriceDataArgs = {
 };
 
 
+export type QueryGetReactionsArgs = {
+  input: GetReactionsFilterInput;
+};
+
+
+export type QueryGetReferralsArgs = {
+  input?: InputMaybe<GetReferralsFilterInput>;
+};
+
+
+export type QueryGetReferrerClaimHistoryArgs = {
+  input?: InputMaybe<GetReferrerClaimHistoryFilterInput>;
+};
+
+
+export type QueryGetReferrerWithdrawsArgs = {
+  input?: InputMaybe<GetReferrerWithdrawsFilterInput>;
+};
+
+
 export type QueryGetSignatureTaskArgs = {
   input: GetSignatureTaskInput;
 };
@@ -1402,8 +1512,69 @@ export type Reaction = {
   userId: Scalars['String']['output'];
 };
 
+export type ReactionType =
+  | 'angry'
+  | 'dislike'
+  | 'haha'
+  | 'like'
+  | 'love'
+  | 'sad'
+  | 'wow';
+
+export type Referral = {
+  __typename?: 'Referral';
+  createdAt: Scalars['Float']['output'];
+  id: Scalars['ID']['output'];
+  referrerWallet: Scalars['String']['output'];
+  updatedAt: Scalars['Float']['output'];
+  userWallet: Scalars['String']['output'];
+};
+
+export type ReferrerClaimHistory = {
+  __typename?: 'ReferrerClaimHistory';
+  amount: Scalars['String']['output'];
+  blockNumber: Scalars['Int']['output'];
+  chainId: Scalars['String']['output'];
+  createdAt: Scalars['Float']['output'];
+  id: Scalars['ID']['output'];
+  logIndex: Scalars['Int']['output'];
+  referralWallet: Scalars['String']['output'];
+  referrerWallet: Scalars['String']['output'];
+  tokenAddress: Scalars['String']['output'];
+  transactionHash: Scalars['String']['output'];
+  updatedAt: Scalars['Float']['output'];
+};
+
+export type ReferrerWithdraw = {
+  __typename?: 'ReferrerWithdraw';
+  chainId: Scalars['String']['output'];
+  createdAt: Scalars['Float']['output'];
+  id: Scalars['ID']['output'];
+  referrerWallet: Scalars['String']['output'];
+  taskCooldown?: Maybe<Scalars['Float']['output']>;
+  taskExpiredAt?: Maybe<Scalars['Float']['output']>;
+  taskId?: Maybe<Scalars['String']['output']>;
+  tokenAddress: Scalars['String']['output'];
+  totalWithdrawnAmount: Scalars['String']['output'];
+  updatedAt: Scalars['Float']['output'];
+};
+
+export type RefreshToken = {
+  __typename?: 'RefreshToken';
+  createdAt: Scalars['Int']['output'];
+  expiresAt: Scalars['Int']['output'];
+  tokenHash: Scalars['String']['output'];
+  tokenId: Scalars['String']['output'];
+  updatedAt: Scalars['Int']['output'];
+  userId: Scalars['String']['output'];
+};
+
 export type RefreshTokenInput = {
   refreshToken: Scalars['String']['input'];
+};
+
+export type RegisterReferralInput = {
+  referrerWallet: Scalars['String']['input'];
 };
 
 export type RemoveMemberInput = {
@@ -1434,10 +1605,19 @@ export type RevokePermissionInput = {
   id: Scalars['ID']['input'];
 };
 
+export type RevokeTokensInput = {
+  tokenHashes: Array<Scalars['String']['input']>;
+};
+
+export type RevokeTokensResult = {
+  __typename?: 'RevokeTokensResult';
+  revokedCount: Scalars['Int']['output'];
+};
+
 export type SetReactionInput = {
   parentId: Scalars['String']['input'];
   parentType: Scalars['String']['input'];
-  reaction: Scalars['String']['input'];
+  reaction: ReactionType;
 };
 
 export type Signature = {
@@ -1684,7 +1864,6 @@ export type UpdateTopicInput = {
 export type User = {
   __typename?: 'User';
   createdAt: Scalars['Int']['output'];
-  nonce: Scalars['String']['output'];
   updatedAt: Scalars['Int']['output'];
   userId: Scalars['String']['output'];
   wallet: Scalars['String']['output'];
@@ -1815,6 +1994,7 @@ export type ResolversTypes = ResolversObject<{
   CreatePostInput: CreatePostInput;
   CreateQuestionAnswerInput: CreateQuestionAnswerInput;
   CreateQuestionInput: CreateQuestionInput;
+  CreateReferrerWithdrawTaskInput: CreateReferrerWithdrawTaskInput;
   CreateTopicInput: CreateTopicInput;
   Document: ResolverTypeWrapper<Document>;
   EditBusinessDataInput: EditBusinessDataInput;
@@ -1827,6 +2007,7 @@ export type ResolversTypes = ResolversObject<{
   FaqTopic: ResolverTypeWrapper<FaqTopic>;
   FaucetRequest: ResolverTypeWrapper<FaucetRequest>;
   FaucetTokenType: FaucetTokenType;
+  Fees: ResolverTypeWrapper<Fees>;
   FilterInput: FilterInput;
   Float: ResolverTypeWrapper<Scalars['Float']['output']>;
   Folder: ResolverTypeWrapper<Folder>;
@@ -1838,6 +2019,7 @@ export type ResolversTypes = ResolversObject<{
   GetDocumentsFilterInput: GetDocumentsFilterInput;
   GetFaqAnswersFilterInput: GetFaqAnswersFilterInput;
   GetFaqTopicsFilterInput: GetFaqTopicsFilterInput;
+  GetFeesFilterInput: GetFeesFilterInput;
   GetFoldersFilterInput: GetFoldersFilterInput;
   GetGalleriesFilterInput: GetGalleriesFilterInput;
   GetImagesFilterInput: GetImagesFilterInput;
@@ -1846,6 +2028,10 @@ export type ResolversTypes = ResolversObject<{
   GetPostsFilterInput: GetPostsFilterInput;
   GetQuestionsFilterInput: GetQuestionsFilterInput;
   GetRawPriceDataInput: GetRawPriceDataInput;
+  GetReactionsFilterInput: GetReactionsFilterInput;
+  GetReferralsFilterInput: GetReferralsFilterInput;
+  GetReferrerClaimHistoryFilterInput: GetReferrerClaimHistoryFilterInput;
+  GetReferrerWithdrawsFilterInput: GetReferrerWithdrawsFilterInput;
   GetSignatureTaskInput: GetSignatureTaskInput;
   GetTopicsFilterInput: GetTopicsFilterInput;
   GetTransactionsInput: GetTransactionsInput;
@@ -1875,12 +2061,20 @@ export type ResolversTypes = ResolversObject<{
   Query: ResolverTypeWrapper<{}>;
   Question: ResolverTypeWrapper<Question>;
   Reaction: ResolverTypeWrapper<Reaction>;
+  ReactionType: ReactionType;
+  Referral: ResolverTypeWrapper<Referral>;
+  ReferrerClaimHistory: ResolverTypeWrapper<ReferrerClaimHistory>;
+  ReferrerWithdraw: ResolverTypeWrapper<ReferrerWithdraw>;
+  RefreshToken: ResolverTypeWrapper<RefreshToken>;
   RefreshTokenInput: RefreshTokenInput;
+  RegisterReferralInput: RegisterReferralInput;
   RemoveMemberInput: RemoveMemberInput;
   RequestBusinessApprovalSignaturesInput: RequestBusinessApprovalSignaturesInput;
   RequestPoolApprovalSignaturesInput: RequestPoolApprovalSignaturesInput;
   RequestTokenInput: RequestTokenInput;
   RevokePermissionInput: RevokePermissionInput;
+  RevokeTokensInput: RevokeTokensInput;
+  RevokeTokensResult: ResolverTypeWrapper<RevokeTokensResult>;
   SetReactionInput: SetReactionInput;
   Signature: ResolverTypeWrapper<Signature>;
   SignatureTask: ResolverTypeWrapper<SignatureTask>;
@@ -1956,6 +2150,7 @@ export type ResolversParentTypes = ResolversObject<{
   CreatePostInput: CreatePostInput;
   CreateQuestionAnswerInput: CreateQuestionAnswerInput;
   CreateQuestionInput: CreateQuestionInput;
+  CreateReferrerWithdrawTaskInput: CreateReferrerWithdrawTaskInput;
   CreateTopicInput: CreateTopicInput;
   Document: Document;
   EditBusinessDataInput: EditBusinessDataInput;
@@ -1966,6 +2161,7 @@ export type ResolversParentTypes = ResolversObject<{
   FaqAnswer: FaqAnswer;
   FaqTopic: FaqTopic;
   FaucetRequest: FaucetRequest;
+  Fees: Fees;
   FilterInput: FilterInput;
   Float: Scalars['Float']['output'];
   Folder: Folder;
@@ -1976,6 +2172,7 @@ export type ResolversParentTypes = ResolversObject<{
   GetDocumentsFilterInput: GetDocumentsFilterInput;
   GetFaqAnswersFilterInput: GetFaqAnswersFilterInput;
   GetFaqTopicsFilterInput: GetFaqTopicsFilterInput;
+  GetFeesFilterInput: GetFeesFilterInput;
   GetFoldersFilterInput: GetFoldersFilterInput;
   GetGalleriesFilterInput: GetGalleriesFilterInput;
   GetImagesFilterInput: GetImagesFilterInput;
@@ -1984,6 +2181,10 @@ export type ResolversParentTypes = ResolversObject<{
   GetPostsFilterInput: GetPostsFilterInput;
   GetQuestionsFilterInput: GetQuestionsFilterInput;
   GetRawPriceDataInput: GetRawPriceDataInput;
+  GetReactionsFilterInput: GetReactionsFilterInput;
+  GetReferralsFilterInput: GetReferralsFilterInput;
+  GetReferrerClaimHistoryFilterInput: GetReferrerClaimHistoryFilterInput;
+  GetReferrerWithdrawsFilterInput: GetReferrerWithdrawsFilterInput;
   GetSignatureTaskInput: GetSignatureTaskInput;
   GetTopicsFilterInput: GetTopicsFilterInput;
   GetTransactionsInput: GetTransactionsInput;
@@ -2012,12 +2213,19 @@ export type ResolversParentTypes = ResolversObject<{
   Query: {};
   Question: Question;
   Reaction: Reaction;
+  Referral: Referral;
+  ReferrerClaimHistory: ReferrerClaimHistory;
+  ReferrerWithdraw: ReferrerWithdraw;
+  RefreshToken: RefreshToken;
   RefreshTokenInput: RefreshTokenInput;
+  RegisterReferralInput: RegisterReferralInput;
   RemoveMemberInput: RemoveMemberInput;
   RequestBusinessApprovalSignaturesInput: RequestBusinessApprovalSignaturesInput;
   RequestPoolApprovalSignaturesInput: RequestPoolApprovalSignaturesInput;
   RequestTokenInput: RequestTokenInput;
   RevokePermissionInput: RevokePermissionInput;
+  RevokeTokensInput: RevokeTokensInput;
+  RevokeTokensResult: RevokeTokensResult;
   SetReactionInput: SetReactionInput;
   Signature: Signature;
   SignatureTask: SignatureTask;
@@ -2206,6 +2414,26 @@ export type FaucetRequestResolvers<ContextType = GraphQLContext, ParentType exte
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type FeesResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Fees'] = ResolversParentTypes['Fees']> = ResolversObject<{
+  buyCommissionAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  buyCommissionCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  chainId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  poolCreationCommissionAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  poolCreationCommissionCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  referralRewardAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  referralRewardCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  sellCommissionAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  sellCommissionCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  tokenAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  tokenCreationCommissionAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  tokenCreationCommissionCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  userWallet?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type FolderResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Folder'] = ResolversParentTypes['Folder']> = ResolversObject<{
   createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   creator?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -2301,6 +2529,7 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   createPost?: Resolver<ResolversTypes['Post'], ParentType, ContextType, RequireFields<MutationCreatePostArgs, 'input'>>;
   createQuestion?: Resolver<ResolversTypes['Question'], ParentType, ContextType, RequireFields<MutationCreateQuestionArgs, 'input'>>;
   createQuestionAnswer?: Resolver<ResolversTypes['Question'], ParentType, ContextType, RequireFields<MutationCreateQuestionAnswerArgs, 'input'>>;
+  createReferrerWithdrawTask?: Resolver<ResolversTypes['ReferrerWithdraw'], ParentType, ContextType, RequireFields<MutationCreateReferrerWithdrawTaskArgs, 'input'>>;
   createTopic?: Resolver<ResolversTypes['Topic'], ParentType, ContextType, RequireFields<MutationCreateTopicArgs, 'input'>>;
   deleteAssistant?: Resolver<ResolversTypes['IdResponse'], ParentType, ContextType, RequireFields<MutationDeleteAssistantArgs, 'id'>>;
   deleteBlog?: Resolver<ResolversTypes['ID'], ParentType, ContextType, RequireFields<MutationDeleteBlogArgs, 'id'>>;
@@ -2319,6 +2548,7 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   editPool?: Resolver<ResolversTypes['Pool'], ParentType, ContextType, RequireFields<MutationEditPoolArgs, 'input'>>;
   grantPermission?: Resolver<ResolversTypes['Permission'], ParentType, ContextType, RequireFields<MutationGrantPermissionArgs, 'input'>>;
   refreshToken?: Resolver<ResolversTypes['AuthTokens'], ParentType, ContextType, RequireFields<MutationRefreshTokenArgs, 'input'>>;
+  registerReferral?: Resolver<ResolversTypes['Referral'], ParentType, ContextType, RequireFields<MutationRegisterReferralArgs, 'input'>>;
   rejectBusinessApprovalSignatures?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationRejectBusinessApprovalSignaturesArgs, 'id'>>;
   rejectPoolApprovalSignatures?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationRejectPoolApprovalSignaturesArgs, 'id'>>;
   removeMember?: Resolver<ResolversTypes['ID'], ParentType, ContextType, RequireFields<MutationRemoveMemberArgs, 'input'>>;
@@ -2328,6 +2558,7 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   requestPoolApprovalSignatures?: Resolver<ResolversTypes['ApprovalSignaturesResponse'], ParentType, ContextType, RequireFields<MutationRequestPoolApprovalSignaturesArgs, 'input'>>;
   resetReaction?: Resolver<Maybe<ResolversTypes['Reaction']>, ParentType, ContextType, RequireFields<MutationResetReactionArgs, 'input'>>;
   revokePermission?: Resolver<ResolversTypes['ID'], ParentType, ContextType, RequireFields<MutationRevokePermissionArgs, 'input'>>;
+  revokeTokens?: Resolver<ResolversTypes['RevokeTokensResult'], ParentType, ContextType, RequireFields<MutationRevokeTokensArgs, 'input'>>;
   setReaction?: Resolver<ResolversTypes['Reaction'], ParentType, ContextType, RequireFields<MutationSetReactionArgs, 'input'>>;
   toggleQuestionLike?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationToggleQuestionLikeArgs, 'questionId'>>;
   updateAssistant?: Resolver<ResolversTypes['Assistant'], ParentType, ContextType, RequireFields<MutationUpdateAssistantArgs, 'input'>>;
@@ -2502,6 +2733,7 @@ export type QueryResolvers<ContextType = GraphQLContext, ParentType extends Reso
   getFaqAnswers?: Resolver<Array<ResolversTypes['FaqAnswer']>, ParentType, ContextType, Partial<QueryGetFaqAnswersArgs>>;
   getFaqTopic?: Resolver<ResolversTypes['FaqTopic'], ParentType, ContextType, RequireFields<QueryGetFaqTopicArgs, 'id'>>;
   getFaqTopics?: Resolver<Array<ResolversTypes['FaqTopic']>, ParentType, ContextType, Partial<QueryGetFaqTopicsArgs>>;
+  getFees?: Resolver<Array<ResolversTypes['Fees']>, ParentType, ContextType, Partial<QueryGetFeesArgs>>;
   getFolder?: Resolver<ResolversTypes['Folder'], ParentType, ContextType, RequireFields<QueryGetFolderArgs, 'id'>>;
   getFolders?: Resolver<Array<ResolversTypes['Folder']>, ParentType, ContextType, Partial<QueryGetFoldersArgs>>;
   getGalleries?: Resolver<Array<ResolversTypes['Gallery']>, ParentType, ContextType, Partial<QueryGetGalleriesArgs>>;
@@ -2520,12 +2752,17 @@ export type QueryResolvers<ContextType = GraphQLContext, ParentType extends Reso
   getQuestion?: Resolver<ResolversTypes['Question'], ParentType, ContextType, RequireFields<QueryGetQuestionArgs, 'id'>>;
   getQuestions?: Resolver<Array<ResolversTypes['Question']>, ParentType, ContextType, Partial<QueryGetQuestionsArgs>>;
   getRawPriceData?: Resolver<Array<ResolversTypes['PriceData']>, ParentType, ContextType, RequireFields<QueryGetRawPriceDataArgs, 'input'>>;
+  getReactions?: Resolver<Array<ResolversTypes['Reaction']>, ParentType, ContextType, RequireFields<QueryGetReactionsArgs, 'input'>>;
+  getReferrals?: Resolver<Array<ResolversTypes['Referral']>, ParentType, ContextType, Partial<QueryGetReferralsArgs>>;
+  getReferrerClaimHistory?: Resolver<Array<ResolversTypes['ReferrerClaimHistory']>, ParentType, ContextType, Partial<QueryGetReferrerClaimHistoryArgs>>;
+  getReferrerWithdraws?: Resolver<Array<ResolversTypes['ReferrerWithdraw']>, ParentType, ContextType, Partial<QueryGetReferrerWithdrawsArgs>>;
   getSignatureTask?: Resolver<ResolversTypes['SignatureTask'], ParentType, ContextType, RequireFields<QueryGetSignatureTaskArgs, 'input'>>;
   getTopic?: Resolver<ResolversTypes['Topic'], ParentType, ContextType, RequireFields<QueryGetTopicArgs, 'id'>>;
   getTopics?: Resolver<Array<ResolversTypes['Topic']>, ParentType, ContextType, Partial<QueryGetTopicsArgs>>;
   getTransactions?: Resolver<Array<ResolversTypes['Transaction']>, ParentType, ContextType, RequireFields<QueryGetTransactionsArgs, 'input'>>;
   getUnlockTime?: Resolver<ResolversTypes['UnlockTimeResponse'], ParentType, ContextType>;
   getUserAssistants?: Resolver<Array<ResolversTypes['Assistant']>, ParentType, ContextType, Partial<QueryGetUserAssistantsArgs>>;
+  getUserTokens?: Resolver<Array<ResolversTypes['RefreshToken']>, ParentType, ContextType>;
   getVolumeData?: Resolver<Array<ResolversTypes['VolumeData']>, ParentType, ContextType, RequireFields<QueryGetVolumeDataArgs, 'input'>>;
 }>;
 
@@ -2554,6 +2791,59 @@ export type ReactionResolvers<ContextType = GraphQLContext, ParentType extends R
   reaction?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ReferralResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Referral'] = ResolversParentTypes['Referral']> = ResolversObject<{
+  createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  referrerWallet?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  userWallet?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ReferrerClaimHistoryResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ReferrerClaimHistory'] = ResolversParentTypes['ReferrerClaimHistory']> = ResolversObject<{
+  amount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  blockNumber?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  chainId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  logIndex?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  referralWallet?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  referrerWallet?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  tokenAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  transactionHash?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type ReferrerWithdrawResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['ReferrerWithdraw'] = ResolversParentTypes['ReferrerWithdraw']> = ResolversObject<{
+  chainId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  referrerWallet?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  taskCooldown?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  taskExpiredAt?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  taskId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  tokenAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  totalWithdrawnAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type RefreshTokenResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['RefreshToken'] = ResolversParentTypes['RefreshToken']> = ResolversObject<{
+  createdAt?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  expiresAt?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  tokenHash?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  tokenId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type RevokeTokensResultResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['RevokeTokensResult'] = ResolversParentTypes['RevokeTokensResult']> = ResolversObject<{
+  revokedCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -2651,7 +2941,6 @@ export interface UploadScalarConfig extends GraphQLScalarTypeConfig<ResolversTyp
 
 export type UserResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = ResolversObject<{
   createdAt?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  nonce?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   wallet?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -2694,6 +2983,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   FaqAnswer?: FaqAnswerResolvers<ContextType>;
   FaqTopic?: FaqTopicResolvers<ContextType>;
   FaucetRequest?: FaucetRequestResolvers<ContextType>;
+  Fees?: FeesResolvers<ContextType>;
   Folder?: FolderResolvers<ContextType>;
   Gallery?: GalleryResolvers<ContextType>;
   IdResponse?: IdResponseResolvers<ContextType>;
@@ -2714,6 +3004,11 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   Query?: QueryResolvers<ContextType>;
   Question?: QuestionResolvers<ContextType>;
   Reaction?: ReactionResolvers<ContextType>;
+  Referral?: ReferralResolvers<ContextType>;
+  ReferrerClaimHistory?: ReferrerClaimHistoryResolvers<ContextType>;
+  ReferrerWithdraw?: ReferrerWithdrawResolvers<ContextType>;
+  RefreshToken?: RefreshTokenResolvers<ContextType>;
+  RevokeTokensResult?: RevokeTokensResultResolvers<ContextType>;
   Signature?: SignatureResolvers<ContextType>;
   SignatureTask?: SignatureTaskResolvers<ContextType>;
   Subscription?: SubscriptionResolvers<ContextType>;

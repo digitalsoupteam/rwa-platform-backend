@@ -8,6 +8,6 @@ export const CONFIG = {
 
   STORAGE: {
     ROOT_DIR: process.env.STORAGE_ROOT_DIR || "./storage",
-    MAX_FILE_SIZE: Number(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024, // 10MB
+    MAX_FILE_SIZE: Number(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024, // 10MB TODO optomize site (compress)
   }
 };

@@ -1,25 +1,25 @@
 import { Elysia } from "elysia";
 import mongoose from "mongoose";
 import { logger } from "@shared/monitoring/src/logger";
-import { ProductOwnerMetricsRepository } from "../repositories/productOwnerMetrics.repository";
-import { ProductOwnerTokenMetricsRepository } from "../repositories/productOwnerTokenMetrics.repository";
-import { UserPoolActivityRepository } from "../repositories/userPoolActivity.repository";
-import { UserPoolTokenActivityRepository } from "../repositories/userPoolTokenActivity.repository";
+import { FeesRepository } from "../repositories/fees.repository";
+import { ReferralRepository } from "../repositories/referral.repository";
+import { ReferrerClaimHistoryRepository } from "../repositories/referrerClaimHistory.repository";
 import { CONFIG } from "../config";
+import { ReferrerWithdrawRepository } from "../repositories/referrerWithdraw.repository";
 
 export const RepositoriesPlugin = new Elysia({ name: "Repositories" })
-  .decorate("productOwnerMetricsRepository", {} as ProductOwnerMetricsRepository)
-  .decorate("productOwnerTokenMetricsRepository", {} as ProductOwnerTokenMetricsRepository)
-  .decorate("userPoolActivityRepository", {} as UserPoolActivityRepository)
-  .decorate("userPoolTokenActivityRepository", {} as UserPoolTokenActivityRepository)
+  .decorate("feesRepository", {} as FeesRepository)
+  .decorate("referralRepository", {} as ReferralRepository)
+  .decorate("referrerClaimHistoryRepository", {} as ReferrerClaimHistoryRepository)
+  .decorate("referrerWithdrawRepository", {} as ReferrerWithdrawRepository)
   .onStart(
     async ({ decorator }) => {
       logger.debug("Initializing repositories");
       
-      decorator.productOwnerMetricsRepository = new ProductOwnerMetricsRepository();
-      decorator.productOwnerTokenMetricsRepository = new ProductOwnerTokenMetricsRepository();
-      decorator.userPoolActivityRepository = new UserPoolActivityRepository();
-      decorator.userPoolTokenActivityRepository = new UserPoolTokenActivityRepository();
+      decorator.feesRepository = new FeesRepository();
+      decorator.referralRepository = new ReferralRepository();
+      decorator.referrerClaimHistoryRepository = new ReferrerClaimHistoryRepository();
+      decorator.referrerWithdrawRepository = new ReferrerWithdrawRepository();
 
       logger.info("Connecting to MongoDB", {
         uri: CONFIG.MONGODB.URI,

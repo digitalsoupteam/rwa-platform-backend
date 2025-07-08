@@ -12,7 +12,7 @@ export const CONFIG = {
   JWT: {
     SECRET: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
     ACCESS_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY || '15m',
-    REFRESH_TOKEN_EXPIRY: process.env.REFRESH_TOKEN_EXPIRY || '7d'
+    REFRESH_TOKEN_EXPIRY: process.env.REFRESH_TOKEN_EXPIRY || '1d' // TODO CHECK docker
   },
   
   AUTH: {

@@ -20,7 +20,8 @@ import {
   companyClient,
   portfolioClient,
   chartsClient,
-  reactionsClient
+  reactionsClient,
+  loyaltyClient
 } from '../../clients/eden.clients';
 import type { GraphQLContext, User } from '../context/types';
 import { cacheService, ownershipService, parentService } from '../../services/services.init';
@@ -78,7 +79,8 @@ export const yogaServer = createYoga({
         portfolioClient,
         companyClient,
         chartsClient,
-        reactionsClient
+        reactionsClient,
+        loyaltyClient
       },
       services: {
         cache: cacheService,

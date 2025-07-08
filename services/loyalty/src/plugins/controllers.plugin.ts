@@ -1,12 +1,15 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { getProductOwnerMetricsController } from "../controllers/metrics/getProductOwnerMetrics.controller";
-import { getProductOwnerTokenMetricsController } from "../controllers/metrics/getProductOwnerTokenMetrics.controller";
-import { getUserPoolActivitiesController } from "../controllers/metrics/getUserPoolActivities.controller";
-import { getUserPoolTokenActivitiesController } from "../controllers/metrics/getUserPoolTokenActivities.controller";
+import { getFeesController } from "../controllers/getFees.controller";
+import { getReferralsController } from "../controllers/getReferrals.controller";
+import { registerReferralController } from "../controllers/registerReferral.controller";
+import { getReferrerWithdrawsController } from "../controllers/getReferrerWithdraws.controller";
+import { getReferrerClaimHistoryController } from "../controllers/getReferrerClaimHistory.controller";
+import { createReferrerWithdrawTaskController } from "../controllers/createReferrerWithdrawTask.controller";
 
 export const ControllersPlugin = new Elysia({ name: "Controllers" })
-  .use(getProductOwnerMetricsController)
-  .use(getProductOwnerTokenMetricsController)
-  .use(getUserPoolActivitiesController)
-  .use(getUserPoolTokenActivitiesController);
+  .use(getFeesController)
+  .use(getReferralsController)
+  .use(registerReferralController)
+  .use(getReferrerWithdrawsController)
+  .use(getReferrerClaimHistoryController)
+  .use(createReferrerWithdrawTaskController);

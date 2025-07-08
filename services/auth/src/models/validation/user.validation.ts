@@ -6,7 +6,8 @@ import { t } from "elysia";
 export const userSchema = t.Object({
   userId: t.String(),
   wallet: t.String({ minLength: 1 }),
-  nonce: t.String(),
+  createdAt: t.Number(),
+  updatedAt: t.Number(),
 });
 
 /*
@@ -49,4 +50,32 @@ export const getUserRequest = t.Object({
 export const getUserResponse = t.Object({
   userId: t.String(),
   wallet: t.String(),
+});
+
+/*
+ * Get user tokens
+ */
+export const getUserTokensRequest = t.Object({
+  userId: t.String({ minLength: 1 }),
+});
+
+export const getUserTokensResponse = t.Array(t.Object({
+  tokenId: t.String(),
+  userId: t.String(),
+  tokenHash: t.String(),
+  expiresAt: t.Number(),
+  createdAt: t.Number(),
+  updatedAt: t.Number(),
+}));
+
+/*
+ * Revoke tokens
+ */
+export const revokeTokensRequest = t.Object({
+  userId: t.String({ minLength: 1 }),
+  tokenHashes: t.Array(t.String({ minLength: 1 })),
+});
+
+export const revokeTokensResponse = t.Object({
+  revokedCount: t.Number(),
 });

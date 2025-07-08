@@ -12,10 +12,7 @@ export const getUserController = new Elysia().use(ServicesPlugin).post(
     logger.info(
       `POST /getUser - Getting user by ID: ${body.userId}`
     );
-
-    const user = await authService.getUser(body.userId);
-
-    return user;
+    return authService.getUser(body.userId);
   },
   {
     body: getUserRequest,

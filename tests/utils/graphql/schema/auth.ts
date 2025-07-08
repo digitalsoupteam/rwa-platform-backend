@@ -19,3 +19,24 @@ export const REFRESH_TOKEN = `
     }
   }
 `;
+
+export const GET_USER_TOKENS = `
+  query GetUserTokens {
+    getUserTokens {
+      tokenId
+      userId
+      tokenHash
+      expiresAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const REVOKE_TOKENS = `
+  mutation RevokeTokens($input: RevokeTokensInput!) {
+    revokeTokens(input: $input) {
+      revokedCount
+    }
+  }
+`;

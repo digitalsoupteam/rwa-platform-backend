@@ -161,7 +161,7 @@ Response format:
     params: {
       id: string,
       updateData: {
-        chainId?: string;
+        chainId?: string; // TODO CHECK
         name?: string;
         description?: string;
         tags?: string[];

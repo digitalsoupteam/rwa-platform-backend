@@ -1,5 +1,16 @@
 scalar JSON
 
+# Reaction types enum
+enum ReactionType {
+  like
+  dislike
+  love
+  angry
+  sad
+  wow
+  haha
+}
+
 # Reaction type
 type Reaction {
   id: ID!
@@ -21,7 +32,15 @@ type EntityReactionsResponse {
 input SetReactionInput {
   parentId: String!
   parentType: String!
-  reaction: String!
+  reaction: ReactionType!
+}
+
+# Get reactions filter input
+input GetReactionsFilterInput {
+  filter: JSON!
+  sort: JSON
+  limit: Int
+  offset: Int
 }
 
 extend type Query {
@@ -30,6 +49,9 @@ extend type Query {
     parentId: String!
     parentType: String!
   ): EntityReactionsResponse!
+
+  # Get reactions with filters
+  getReactions(input: GetReactionsFilterInput!): [Reaction!]!
 }
 
 extend type Mutation {

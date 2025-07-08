@@ -189,6 +189,27 @@ services:
       mongodb:
         condition: service_healthy
 
+  loyalty:
+    build:
+      context: ../..
+      dockerfile: services/loyalty/Dockerfile
+    environment:
+      - SERVICE_NAME=${LOYALTY_SERVICE_NAME}
+      - PORT=${LOYALTY_PORT}
+      - MONGODB_URI=${LOYALTY_MONGODB_URI}
+      - RABBITMQ_URL=${LOYALTY_RABBITMQ_URL}
+      - LOYALTY_REFERRAL_REWARD_PERCENTAGE=${LOYALTY_REFERRAL_REWARD_PERCENTAGE}
+      - SIGNERS_MANAGER_URL=${LOYALTY_SIGNERS_MANAGER_URL}
+    volumes:
+      - service_logs:/var/log
+    networks:
+      - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   gateway:
     build:
       context: ../..
@@ -213,6 +234,7 @@ services:
       - SIGNERS_MANAGER_SERVICE_URL=${GATEWAY_SIGNERS_MANAGER_SERVICE_URL}
       - CHARTS_SERVICE_URL=${GATEWAY_CHARTS_SERVICE_URL}
       - REACTIONS_SERVICE_URL=${GATEWAY_REACTIONS_SERVICE_URL}
+      - LOYALTY_SERVICE_URL=${GATEWAY_LOYALTY_SERVICE_URL}
       - REDIS_URL=${GATEWAY_REDIS_URL}
     volumes:
       - service_logs:/var/log
@@ -404,6 +426,7 @@ services:
       - ./nginx/.htpasswd:/etc/nginx/conf.d/.htpasswd
       - ./nginx/ssl:/etc/nginx/ssl
       - nginx_logs:/var/log/nginx
+      - ./volumes/filesservice:/app/storage
     networks:
       - app-network
 

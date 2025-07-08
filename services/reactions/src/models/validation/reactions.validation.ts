@@ -48,3 +48,14 @@ export const getEntityReactionsResponse = t.Object({
   reactions: t.Record(t.String(), t.Number()),
   userReactions: t.Array(t.String())
 });
+
+/*
+ * Get all reactions
+ */
+export const getReactionsRequest = t.Object({
+  filter: t.Record(t.String(), t.Any()),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  limit: t.Optional(t.Number()),
+  offset: t.Optional(t.Number())
+});
+export const getReactionsResponse = t.Array(reactionSchema);
