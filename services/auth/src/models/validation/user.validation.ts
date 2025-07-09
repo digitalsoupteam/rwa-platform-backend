@@ -47,10 +47,7 @@ export const getUserRequest = t.Object({
   userId: t.String({ minLength: 1 }),
 });
 
-export const getUserResponse = t.Object({
-  userId: t.String(),
-  wallet: t.String(),
-});
+export const getUserResponse = userSchema;
 
 /*
  * Get user tokens

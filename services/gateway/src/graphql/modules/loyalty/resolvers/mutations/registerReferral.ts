@@ -25,6 +25,20 @@ export const registerReferral: MutationResolvers['registerReferral'] = async (
 
   const userData = userResponse.data;
 
+  // Check if user was created more than 1 hour ago
+  const currentTime = Math.floor(Date.now() / 1000);
+  const oneHourInSeconds = 3600;
+  const timeSinceCreation = currentTime - userData.createdAt;
+
+  if (timeSinceCreation > oneHourInSeconds) {
+    logger.warn('User registration attempt after 1 hour limit', {
+      userId: user.id,
+      createdAt: userData.createdAt,
+      timeSinceCreation
+    });
+    throw new Error('User was already registered');
+  }
+
   const response = await clients.loyaltyClient.registerReferral.post({
     userWallet: userData.wallet,
     referrerWallet: input.referrerWallet,
