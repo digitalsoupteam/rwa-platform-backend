@@ -122,6 +122,25 @@ services:
       mongodb:
         condition: service_healthy
 
+  dao:
+    build:
+      context: ../..
+      dockerfile: services/dao/Dockerfile
+    environment:
+      - SERVICE_NAME=${DAO_SERVICE_NAME}
+      - PORT=${DAO_PORT}
+      - MONGODB_URI=${DAO_MONGODB_URI}
+      - RABBITMQ_URL=${DAO_RABBITMQ_URL}
+    volumes:
+      - service_logs:/var/log
+    networks:
+      - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
   documents:
     build:
       context: ../..
@@ -235,6 +254,7 @@ services:
       - CHARTS_SERVICE_URL=${GATEWAY_CHARTS_SERVICE_URL}
       - REACTIONS_SERVICE_URL=${GATEWAY_REACTIONS_SERVICE_URL}
       - LOYALTY_SERVICE_URL=${GATEWAY_LOYALTY_SERVICE_URL}
+      - DAO_SERVICE_URL=${GATEWAY_DAO_SERVICE_URL}
       - REDIS_URL=${GATEWAY_REDIS_URL}
     volumes:
       - service_logs:/var/log

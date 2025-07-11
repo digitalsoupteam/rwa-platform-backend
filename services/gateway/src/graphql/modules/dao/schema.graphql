@@ -1,0 +1,113 @@
+scalar JSON
+
+type Staking {
+  id: ID!
+  userWallet: String!
+  amount: String!
+  timestamp: Float!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+type Proposal {
+  id: ID!
+  proposer: String!
+  description: String!
+  status: String!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+type Vote {
+  id: ID!
+  voter: String!
+  proposalId: String!
+  support: Boolean!
+  weight: String!
+  reason: String
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+type StakingHistory {
+  id: ID!
+  userWallet: String!
+  amount: String!
+  txType: String!
+  timestamp: Float!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+type TimelockTask {
+  id: ID!
+  target: String!
+  value: String!
+  data: String!
+  predecessor: String
+  salt: String!
+  status: String!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+type TreasuryWithdraw {
+  id: ID!
+  tokenAddress: String!
+  amount: String!
+  recipient: String!
+  status: String!
+  createdAt: Float!
+  updatedAt: Float!
+}
+
+input GetStakingFilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+input GetProposalsFilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+input GetVotesFilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+input GetStakingHistoryFilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+input GetTimelockTasksFilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+input GetTreasuryWithdrawsFilterInput {
+  filter: JSON
+  sort: JSON
+  limit: Int
+  offset: Int
+}
+
+extend type Query {
+  getStaking(input: GetStakingFilterInput): [Staking!]!
+  getProposals(input: GetProposalsFilterInput): [Proposal!]!
+  getVotes(input: GetVotesFilterInput): [Vote!]!
+  getStakingHistory(input: GetStakingHistoryFilterInput): [StakingHistory!]!
+  getTimelockTasks(input: GetTimelockTasksFilterInput): [TimelockTask!]!
+  getTreasuryWithdraws(input: GetTreasuryWithdrawsFilterInput): [TreasuryWithdraw!]!
+}

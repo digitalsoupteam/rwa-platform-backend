@@ -54,6 +54,9 @@ export const CONFIG = {
     },
     LOYALTY: {
       URL: process.env.LOYALTY_SERVICE_URL || "http://loyalty:3026"
+    },
+    DAO: {
+      URL: process.env.DAO_SERVICE_URL || "http://dao:3029"
     }
   },
   

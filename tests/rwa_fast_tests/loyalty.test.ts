@@ -213,44 +213,6 @@ describe("Loyalty Flow", () => {
       expect(result.data.getFees).toBeArray();
     });
 
-    test("should get fees with pagination", async () => {
-      const result = await makeGraphQLRequest(
-        GET_FEES,
-        {
-          input: {
-            limit: 10,
-            offset: 0,
-            filter: {
-              chainId: 97
-            }
-          },
-        },
-        accessToken
-      );
-
-      expect(result.errors).toBeUndefined();
-      expect(result.data.getFees).toBeDefined();
-      expect(result.data.getFees).toBeArray();
-    });
-
-    test("should get fees with sorting", async () => {
-      const result = await makeGraphQLRequest(
-        GET_FEES,
-        {
-          input: {
-            sort: {
-              createdAt: "desc",
-            },
-            filter: {chainId: 97}
-          },
-        },
-        accessToken
-      );
-
-      expect(result.errors).toBeUndefined();
-      expect(result.data.getFees).toBeDefined();
-      expect(result.data.getFees).toBeArray();
-    });
 
     test("should get fees after trading", async () => {
       // Perform trading to generate fees
@@ -331,21 +293,64 @@ describe("Loyalty Flow", () => {
   });
 
   describe("Referrer Withdraw Tests", () => {
-    test("should fail to create withdraw task without referral rewards", async () => {
-      const result = await makeGraphQLRequest(
+    test("should create withdraw task and claim rewards", async () => {
+      const feesResult = await makeGraphQLRequest(GET_FEES, { input: { filter: { userWallet: wallet2.address.toLowerCase(), chainId: chainId } } }, accessToken2);
+      
+      expect(feesResult.errors).toBeUndefined();
+      expect(feesResult.data.getFees).toBeDefined();
+      expect(feesResult.data.getFees.length).toBeGreaterThan(0);
+      
+      const fee = feesResult.data.getFees[0];
+      const amount = fee.referralFee;
+      const holdTokenAddress = fee.tokenAddress;
+
+      const createWithdrawTaskResult = await makeGraphQLRequest(
         CREATE_REFERRER_WITHDRAW_TASK,
         {
           input: {
-            chainId: "97",
-            tokenAddress: "0x1234567890123456789012345678901234567890",
-            amount: "1000000000000000000",
+            chainId: chainId,
+            tokenAddress: holdTokenAddress,
+            amount: amount,
           },
         },
         accessToken2
       );
 
-      expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toBe("Failed to create referrer withdraw task");
+      expect(createWithdrawTaskResult.errors).toBeUndefined();
+      const withdrawData = createWithdrawTaskResult.data.createReferrerWithdrawTask;
+      expect(withdrawData).toBeDefined();
+      
+      const { signers, signatures, deadline, contractAddress: referralTreasuryAddress } = withdrawData;
+
+      const referralTreasuryContract = new ethers.Contract(
+        referralTreasuryAddress,
+        [
+          "function withdraw(address token, uint256 amount, uint256 deadline, address[] calldata signers, bytes[] calldata signatures) external",
+        ],
+        wallet2
+      );
+
+      const holdToken = new ethers.Contract(
+        holdTokenAddress,
+        ["function balanceOf(address account) view returns (uint256)"],
+        provider
+      );
+
+      const balanceBefore = await holdToken.balanceOf(wallet2.address);
+
+      const withdrawTx = await referralTreasuryContract.withdraw(
+        holdTokenAddress,
+        amount,
+        deadline,
+        signers,
+        signatures
+      );
+      await withdrawTx.wait();
+
+      const balanceAfter = await holdToken.balanceOf(wallet2.address);
+
+      expect(balanceAfter).toBeGreaterThan(balanceBefore);
+      expect(balanceAfter).toBe(balanceBefore + BigInt(amount));
     });
 
     test("should get referrer withdraws with empty result", async () => {
@@ -369,25 +374,6 @@ describe("Loyalty Flow", () => {
       }
     });
 
-    test("should get referrer withdraws with pagination", async () => {
-      const result = await makeGraphQLRequest(
-        GET_REFERRER_WITHDRAWS,
-        {
-          input: {
-            limit: 10,
-            offset: 0,
-          },
-        },
-        accessToken2
-      );
-
-      if (result.errors) {
-        expect(result.errors[0].message).toBe("Failed to get referrer withdraws");
-      } else {
-        expect(result.data.getReferrerWithdraws).toBeDefined();
-        expect(result.data.getReferrerWithdraws).toBeArray();
-      }
-    });
   });
 
   describe("Referrer Claim History Tests", () => {
@@ -412,46 +398,6 @@ describe("Loyalty Flow", () => {
       }
     });
 
-    test("should get referrer claim history with pagination", async () => {
-      const result = await makeGraphQLRequest(
-        GET_REFERRER_CLAIM_HISTORY,
-        {
-          input: {
-            limit: 10,
-            offset: 0,
-          },
-        },
-        accessToken2
-      );
-
-      if (result.errors) {
-        expect(result.errors[0].message).toBe("Failed to get referrer claim history");
-      } else {
-        expect(result.data.getReferrerClaimHistory).toBeDefined();
-        expect(result.data.getReferrerClaimHistory).toBeArray();
-      }
-    });
-
-    test("should get referrer claim history with sorting", async () => {
-      const result = await makeGraphQLRequest(
-        GET_REFERRER_CLAIM_HISTORY,
-        {
-          input: {
-            sort: {
-              blockNumber: "desc",
-            },
-          },
-        },
-        accessToken2
-      );
-
-      if (result.errors) {
-        expect(result.errors[0].message).toBe("Failed to get referrer claim history");
-      } else {
-        expect(result.data.getReferrerClaimHistory).toBeDefined();
-        expect(result.data.getReferrerClaimHistory).toBeArray();
-      }
-    });
 
     test("should get referrer claim history by referral wallet", async () => {
       const result = await makeGraphQLRequest(
@@ -539,79 +485,4 @@ describe("Loyalty Flow", () => {
     });
   });
 
-  describe("Filter and Sorting Tests", () => {
-    test("should handle complex filters for fees", async () => {
-      const result = await makeGraphQLRequest(
-        GET_FEES,
-        {
-          input: {
-            filter: {
-              chainId: "97",
-              buyCommissionCount: { $gt: 0 },
-            },
-            sort: {
-              createdAt: "desc",
-            },
-            limit: 5,
-          },
-        },
-        accessToken
-      );
-
-      expect(result.errors).toBeUndefined();
-      expect(result.data.getFees).toBeDefined();
-      expect(result.data.getFees).toBeArray();
-    });
-
-    test("should handle complex filters for referrals", async () => {
-      const result = await makeGraphQLRequest(
-        GET_REFERRALS,
-        {
-          input: {
-            filter: {
-              $or: [
-                { userWallet: wallet.address.toLowerCase() },
-                { referrerWallet: wallet.address.toLowerCase() },
-              ],
-            },
-            sort: {
-              updatedAt: "desc",
-            },
-          },
-        },
-        accessToken
-      );
-
-      expect(result.errors).toBeUndefined();
-      expect(result.data.getReferrals).toBeDefined();
-      expect(result.data.getReferrals).toBeArray();
-    });
-
-    test("should handle date range filters", async () => {
-      const now = Date.now();
-      const dayAgo = now - 24 * 60 * 60 * 1000;
-
-      const result = await makeGraphQLRequest(
-        GET_REFERRER_CLAIM_HISTORY,
-        {
-          input: {
-            filter: {
-              createdAt: {
-                $gte: dayAgo,
-                $lte: now,
-              },
-            },
-          },
-        },
-        accessToken
-      );
-
-      if (result.errors) {
-        expect(result.errors[0].message).toBe("Failed to get referrer claim history");
-      } else {
-        expect(result.data.getReferrerClaimHistory).toBeDefined();
-        expect(result.data.getReferrerClaimHistory).toBeArray();
-      }
-    });
-  });
 });

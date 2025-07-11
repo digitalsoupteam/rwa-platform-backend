@@ -11,6 +11,7 @@ export class Logger {
     // Common format for all transports
     const commonFormat = winston.format.combine(
       winston.format.timestamp(),
+      winston.format.errors({ stack: true }),
       winston.format.json()
     );
 
@@ -51,56 +52,24 @@ export class Logger {
     });
   }
 
-  debug(message: string, error?: unknown, metadata?: Record<string, unknown>): void {
-    let errorMessage = message;
-    if(!error) {
-      if (error instanceof Error) {
-        errorMessage += ` ${error.message}`;
-        // Include stack trace in metadata if available
-        if (error.stack) {
-          metadata = { ...metadata, stack: error.stack };
-        }
-      } else {
-        errorMessage += ` ${JSON.stringify(error)}`;
-      }
-    }
-    
-    this.logger.debug(errorMessage, metadata);
+  debug(message: string, metadata?: Record<string, unknown>): void {
+    this.logger.debug(message, metadata);
   }
 
   info(message: string, metadata?: Record<string, unknown>): void {
     this.logger.info(message, metadata);
   }
 
-  warn(message: string, error?: unknown, metadata?: Record<string, unknown>): void {
-    let errorMessage = message;
-    if(!error) {
-      if (error instanceof Error) {
-        errorMessage += ` ${error.message}`;
-        // Include stack trace in metadata if available
-        if (error.stack) {
-          metadata = { ...metadata, stack: error.stack };
-        }
-      } else {
-        errorMessage += ` ${JSON.stringify(error)}`;
-      }
-    }
-   
-    this.logger.warn(errorMessage, metadata);
+  warn(message: string, metadata?: Record<string, unknown>): void {
+    this.logger.warn(message, metadata);
   }
 
   error(message: string, error?: unknown, metadata?: Record<string, unknown>): void {
-    let errorMessage = message;
-    if (error instanceof Error) {
-      errorMessage += ` ${error.message}`;
-      // Include stack trace in metadata if available
-      if (error.stack) {
-        metadata = { ...metadata, stack: error.stack };
-      }
+    if (error) {
+      this.logger.error(message, { ...(metadata || {}), error });
     } else {
-      errorMessage += ` ${JSON.stringify(error)}`;
+      this.logger.error(message, metadata);
     }
-    this.logger.error(errorMessage, metadata);
   }
 }
 

@@ -57,9 +57,7 @@ export class Metrics {
     }
   
     // Increment counter multiple times based on count
-    for (let i = 0; i < count; i++) {
-      this.counters.get(metricName)?.inc(labels || {});
-    }
+    this.counters.get(metricName)?.inc(labels || {}, count);
   }
 
   gauge(name: string, value: number, labels?: Record<string, string>): void {

@@ -523,6 +523,13 @@ export type GetPostsFilterInput = {
   sort?: InputMaybe<Scalars['JSON']['input']>;
 };
 
+export type GetProposalsFilterInput = {
+  filter?: InputMaybe<Scalars['JSON']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<Scalars['JSON']['input']>;
+};
+
 export type GetQuestionsFilterInput = {
   filter?: InputMaybe<Scalars['JSON']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -571,6 +578,27 @@ export type GetSignatureTaskInput = {
   taskId: Scalars['String']['input'];
 };
 
+export type GetStakingFilterInput = {
+  filter?: InputMaybe<Scalars['JSON']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<Scalars['JSON']['input']>;
+};
+
+export type GetStakingHistoryFilterInput = {
+  filter?: InputMaybe<Scalars['JSON']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<Scalars['JSON']['input']>;
+};
+
+export type GetTimelockTasksFilterInput = {
+  filter?: InputMaybe<Scalars['JSON']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<Scalars['JSON']['input']>;
+};
+
 export type GetTopicsFilterInput = {
   filter?: InputMaybe<Scalars['JSON']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
@@ -585,12 +613,26 @@ export type GetTransactionsInput = {
   sort?: InputMaybe<Scalars['JSON']['input']>;
 };
 
+export type GetTreasuryWithdrawsFilterInput = {
+  filter?: InputMaybe<Scalars['JSON']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<Scalars['JSON']['input']>;
+};
+
 export type GetVolumeDataInput = {
   endTime: Scalars['Float']['input'];
   interval: Scalars['String']['input'];
   limit?: InputMaybe<Scalars['Int']['input']>;
   poolAddress: Scalars['String']['input'];
   startTime: Scalars['Float']['input'];
+};
+
+export type GetVotesFilterInput = {
+  filter?: InputMaybe<Scalars['JSON']['input']>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+  sort?: InputMaybe<Scalars['JSON']['input']>;
 };
 
 export type GrantPermissionInput = {
@@ -1211,6 +1253,16 @@ export type PriceUpdateEvent = {
   virtualRwaReserve: Scalars['String']['output'];
 };
 
+export type Proposal = {
+  __typename?: 'Proposal';
+  createdAt: Scalars['Float']['output'];
+  description: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  proposer: Scalars['String']['output'];
+  status: Scalars['String']['output'];
+  updatedAt: Scalars['Float']['output'];
+};
+
 export type Query = {
   __typename?: 'Query';
   _?: Maybe<Scalars['Boolean']['output']>;
@@ -1245,6 +1297,7 @@ export type Query = {
   getPools: Array<Pool>;
   getPost: Post;
   getPosts: Array<Post>;
+  getProposals: Array<Proposal>;
   getQuestion: Question;
   getQuestions: Array<Question>;
   getRawPriceData: Array<PriceData>;
@@ -1253,13 +1306,18 @@ export type Query = {
   getReferrerClaimHistory: Array<ReferrerClaimHistory>;
   getReferrerWithdraws: Array<ReferrerWithdraw>;
   getSignatureTask: SignatureTask;
+  getStaking: Array<Staking>;
+  getStakingHistory: Array<StakingHistory>;
+  getTimelockTasks: Array<TimelockTask>;
   getTopic: Topic;
   getTopics: Array<Topic>;
   getTransactions: Array<Transaction>;
+  getTreasuryWithdraws: Array<TreasuryWithdraw>;
   getUnlockTime: UnlockTimeResponse;
   getUserAssistants: Array<Assistant>;
   getUserTokens: Array<RefreshToken>;
   getVolumeData: Array<VolumeData>;
+  getVotes: Array<Vote>;
 };
 
 
@@ -1420,6 +1478,11 @@ export type QueryGetPostsArgs = {
 };
 
 
+export type QueryGetProposalsArgs = {
+  input?: InputMaybe<GetProposalsFilterInput>;
+};
+
+
 export type QueryGetQuestionArgs = {
   id: Scalars['ID']['input'];
 };
@@ -1460,6 +1523,21 @@ export type QueryGetSignatureTaskArgs = {
 };
 
 
+export type QueryGetStakingArgs = {
+  input?: InputMaybe<GetStakingFilterInput>;
+};
+
+
+export type QueryGetStakingHistoryArgs = {
+  input?: InputMaybe<GetStakingHistoryFilterInput>;
+};
+
+
+export type QueryGetTimelockTasksArgs = {
+  input?: InputMaybe<GetTimelockTasksFilterInput>;
+};
+
+
 export type QueryGetTopicArgs = {
   id: Scalars['ID']['input'];
 };
@@ -1475,6 +1553,11 @@ export type QueryGetTransactionsArgs = {
 };
 
 
+export type QueryGetTreasuryWithdrawsArgs = {
+  input?: InputMaybe<GetTreasuryWithdrawsFilterInput>;
+};
+
+
 export type QueryGetUserAssistantsArgs = {
   pagination?: InputMaybe<PaginationInput>;
 };
@@ -1482,6 +1565,11 @@ export type QueryGetUserAssistantsArgs = {
 
 export type QueryGetVolumeDataArgs = {
   input: GetVolumeDataInput;
+};
+
+
+export type QueryGetVotesArgs = {
+  input?: InputMaybe<GetVotesFilterInput>;
 };
 
 export type Question = {
@@ -1647,6 +1735,27 @@ export type SortFieldInput = {
   field: Scalars['String']['input'];
 };
 
+export type Staking = {
+  __typename?: 'Staking';
+  amount: Scalars['String']['output'];
+  createdAt: Scalars['Float']['output'];
+  id: Scalars['ID']['output'];
+  timestamp: Scalars['Float']['output'];
+  updatedAt: Scalars['Float']['output'];
+  userWallet: Scalars['String']['output'];
+};
+
+export type StakingHistory = {
+  __typename?: 'StakingHistory';
+  amount: Scalars['String']['output'];
+  createdAt: Scalars['Float']['output'];
+  id: Scalars['ID']['output'];
+  timestamp: Scalars['Float']['output'];
+  txType: Scalars['String']['output'];
+  updatedAt: Scalars['Float']['output'];
+  userWallet: Scalars['String']['output'];
+};
+
 export type Subscription = {
   __typename?: 'Subscription';
   _?: Maybe<Scalars['Boolean']['output']>;
@@ -1669,6 +1778,19 @@ export type SubscriptionPriceUpdatesArgs = {
 
 export type SubscriptionTransactionUpdatesArgs = {
   poolAddress: Scalars['String']['input'];
+};
+
+export type TimelockTask = {
+  __typename?: 'TimelockTask';
+  createdAt: Scalars['Float']['output'];
+  data: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  predecessor?: Maybe<Scalars['String']['output']>;
+  salt: Scalars['String']['output'];
+  status: Scalars['String']['output'];
+  target: Scalars['String']['output'];
+  updatedAt: Scalars['Float']['output'];
+  value: Scalars['String']['output'];
 };
 
 export type TokenBalance = {
@@ -1725,6 +1847,17 @@ export type TransactionEvent = {
   timestamp: Scalars['Float']['output'];
   transactionType: Scalars['String']['output'];
   userAddress: Scalars['String']['output'];
+};
+
+export type TreasuryWithdraw = {
+  __typename?: 'TreasuryWithdraw';
+  amount: Scalars['String']['output'];
+  createdAt: Scalars['Float']['output'];
+  id: Scalars['ID']['output'];
+  recipient: Scalars['String']['output'];
+  status: Scalars['String']['output'];
+  tokenAddress: Scalars['String']['output'];
+  updatedAt: Scalars['Float']['output'];
 };
 
 export type UnlockTimeResponse = {
@@ -1891,6 +2024,18 @@ export type VolumeData = {
   timestamp: Scalars['Float']['output'];
 };
 
+export type Vote = {
+  __typename?: 'Vote';
+  createdAt: Scalars['Float']['output'];
+  id: Scalars['ID']['output'];
+  proposalId: Scalars['String']['output'];
+  reason?: Maybe<Scalars['String']['output']>;
+  support: Scalars['Boolean']['output'];
+  updatedAt: Scalars['Float']['output'];
+  voter: Scalars['String']['output'];
+  weight: Scalars['String']['output'];
+};
+
 export type WithIndex<TObject> = TObject & Record<string, any>;
 export type ResolversObject<TObject> = WithIndex<TObject>;
 
@@ -2026,6 +2171,7 @@ export type ResolversTypes = ResolversObject<{
   GetOhlcPriceDataInput: GetOhlcPriceDataInput;
   GetPoolTransactionsInput: GetPoolTransactionsInput;
   GetPostsFilterInput: GetPostsFilterInput;
+  GetProposalsFilterInput: GetProposalsFilterInput;
   GetQuestionsFilterInput: GetQuestionsFilterInput;
   GetRawPriceDataInput: GetRawPriceDataInput;
   GetReactionsFilterInput: GetReactionsFilterInput;
@@ -2033,9 +2179,14 @@ export type ResolversTypes = ResolversObject<{
   GetReferrerClaimHistoryFilterInput: GetReferrerClaimHistoryFilterInput;
   GetReferrerWithdrawsFilterInput: GetReferrerWithdrawsFilterInput;
   GetSignatureTaskInput: GetSignatureTaskInput;
+  GetStakingFilterInput: GetStakingFilterInput;
+  GetStakingHistoryFilterInput: GetStakingHistoryFilterInput;
+  GetTimelockTasksFilterInput: GetTimelockTasksFilterInput;
   GetTopicsFilterInput: GetTopicsFilterInput;
   GetTransactionsInput: GetTransactionsInput;
+  GetTreasuryWithdrawsFilterInput: GetTreasuryWithdrawsFilterInput;
   GetVolumeDataInput: GetVolumeDataInput;
+  GetVotesFilterInput: GetVotesFilterInput;
   GrantPermissionInput: GrantPermissionInput;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   IdResponse: ResolverTypeWrapper<IdResponse>;
@@ -2058,6 +2209,7 @@ export type ResolversTypes = ResolversObject<{
   Post: ResolverTypeWrapper<Post>;
   PriceData: ResolverTypeWrapper<PriceData>;
   PriceUpdateEvent: ResolverTypeWrapper<PriceUpdateEvent>;
+  Proposal: ResolverTypeWrapper<Proposal>;
   Query: ResolverTypeWrapper<{}>;
   Question: ResolverTypeWrapper<Question>;
   Reaction: ResolverTypeWrapper<Reaction>;
@@ -2080,12 +2232,16 @@ export type ResolversTypes = ResolversObject<{
   SignatureTask: ResolverTypeWrapper<SignatureTask>;
   SortDirection: SortDirection;
   SortFieldInput: SortFieldInput;
+  Staking: ResolverTypeWrapper<Staking>;
+  StakingHistory: ResolverTypeWrapper<StakingHistory>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Subscription: ResolverTypeWrapper<{}>;
+  TimelockTask: ResolverTypeWrapper<TimelockTask>;
   TokenBalance: ResolverTypeWrapper<TokenBalance>;
   Topic: ResolverTypeWrapper<Topic>;
   Transaction: ResolverTypeWrapper<Transaction>;
   TransactionEvent: ResolverTypeWrapper<TransactionEvent>;
+  TreasuryWithdraw: ResolverTypeWrapper<TreasuryWithdraw>;
   UnlockTimeResponse: ResolverTypeWrapper<UnlockTimeResponse>;
   UpdateAssistantInput: UpdateAssistantInput;
   UpdateBlogDataInput: UpdateBlogDataInput;
@@ -2118,6 +2274,7 @@ export type ResolversTypes = ResolversObject<{
   UserPermission: ResolverTypeWrapper<UserPermission>;
   UserWithPermissions: ResolverTypeWrapper<UserWithPermissions>;
   VolumeData: ResolverTypeWrapper<VolumeData>;
+  Vote: ResolverTypeWrapper<Vote>;
 }>;
 
 /** Mapping between all available schema types and the resolvers parents */
@@ -2179,6 +2336,7 @@ export type ResolversParentTypes = ResolversObject<{
   GetOhlcPriceDataInput: GetOhlcPriceDataInput;
   GetPoolTransactionsInput: GetPoolTransactionsInput;
   GetPostsFilterInput: GetPostsFilterInput;
+  GetProposalsFilterInput: GetProposalsFilterInput;
   GetQuestionsFilterInput: GetQuestionsFilterInput;
   GetRawPriceDataInput: GetRawPriceDataInput;
   GetReactionsFilterInput: GetReactionsFilterInput;
@@ -2186,9 +2344,14 @@ export type ResolversParentTypes = ResolversObject<{
   GetReferrerClaimHistoryFilterInput: GetReferrerClaimHistoryFilterInput;
   GetReferrerWithdrawsFilterInput: GetReferrerWithdrawsFilterInput;
   GetSignatureTaskInput: GetSignatureTaskInput;
+  GetStakingFilterInput: GetStakingFilterInput;
+  GetStakingHistoryFilterInput: GetStakingHistoryFilterInput;
+  GetTimelockTasksFilterInput: GetTimelockTasksFilterInput;
   GetTopicsFilterInput: GetTopicsFilterInput;
   GetTransactionsInput: GetTransactionsInput;
+  GetTreasuryWithdrawsFilterInput: GetTreasuryWithdrawsFilterInput;
   GetVolumeDataInput: GetVolumeDataInput;
+  GetVotesFilterInput: GetVotesFilterInput;
   GrantPermissionInput: GrantPermissionInput;
   ID: Scalars['ID']['output'];
   IdResponse: IdResponse;
@@ -2210,6 +2373,7 @@ export type ResolversParentTypes = ResolversObject<{
   Post: Post;
   PriceData: PriceData;
   PriceUpdateEvent: PriceUpdateEvent;
+  Proposal: Proposal;
   Query: {};
   Question: Question;
   Reaction: Reaction;
@@ -2230,12 +2394,16 @@ export type ResolversParentTypes = ResolversObject<{
   Signature: Signature;
   SignatureTask: SignatureTask;
   SortFieldInput: SortFieldInput;
+  Staking: Staking;
+  StakingHistory: StakingHistory;
   String: Scalars['String']['output'];
   Subscription: {};
+  TimelockTask: TimelockTask;
   TokenBalance: TokenBalance;
   Topic: Topic;
   Transaction: Transaction;
   TransactionEvent: TransactionEvent;
+  TreasuryWithdraw: TreasuryWithdraw;
   UnlockTimeResponse: UnlockTimeResponse;
   UpdateAssistantInput: UpdateAssistantInput;
   UpdateBlogDataInput: UpdateBlogDataInput;
@@ -2268,6 +2436,7 @@ export type ResolversParentTypes = ResolversObject<{
   UserPermission: UserPermission;
   UserWithPermissions: UserWithPermissions;
   VolumeData: VolumeData;
+  Vote: Vote;
 }>;
 
 export type AnswerResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Answer'] = ResolversParentTypes['Answer']> = ResolversObject<{
@@ -2716,6 +2885,16 @@ export type PriceUpdateEventResolvers<ContextType = GraphQLContext, ParentType e
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type ProposalResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Proposal'] = ResolversParentTypes['Proposal']> = ResolversObject<{
+  createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  proposer?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type QueryResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = ResolversObject<{
   _?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   getAssistant?: Resolver<ResolversTypes['Assistant'], ParentType, ContextType, RequireFields<QueryGetAssistantArgs, 'id'>>;
@@ -2749,6 +2928,7 @@ export type QueryResolvers<ContextType = GraphQLContext, ParentType extends Reso
   getPools?: Resolver<Array<ResolversTypes['Pool']>, ParentType, ContextType, RequireFields<QueryGetPoolsArgs, 'input'>>;
   getPost?: Resolver<ResolversTypes['Post'], ParentType, ContextType, RequireFields<QueryGetPostArgs, 'id'>>;
   getPosts?: Resolver<Array<ResolversTypes['Post']>, ParentType, ContextType, Partial<QueryGetPostsArgs>>;
+  getProposals?: Resolver<Array<ResolversTypes['Proposal']>, ParentType, ContextType, Partial<QueryGetProposalsArgs>>;
   getQuestion?: Resolver<ResolversTypes['Question'], ParentType, ContextType, RequireFields<QueryGetQuestionArgs, 'id'>>;
   getQuestions?: Resolver<Array<ResolversTypes['Question']>, ParentType, ContextType, Partial<QueryGetQuestionsArgs>>;
   getRawPriceData?: Resolver<Array<ResolversTypes['PriceData']>, ParentType, ContextType, RequireFields<QueryGetRawPriceDataArgs, 'input'>>;
@@ -2757,13 +2937,18 @@ export type QueryResolvers<ContextType = GraphQLContext, ParentType extends Reso
   getReferrerClaimHistory?: Resolver<Array<ResolversTypes['ReferrerClaimHistory']>, ParentType, ContextType, Partial<QueryGetReferrerClaimHistoryArgs>>;
   getReferrerWithdraws?: Resolver<Array<ResolversTypes['ReferrerWithdraw']>, ParentType, ContextType, Partial<QueryGetReferrerWithdrawsArgs>>;
   getSignatureTask?: Resolver<ResolversTypes['SignatureTask'], ParentType, ContextType, RequireFields<QueryGetSignatureTaskArgs, 'input'>>;
+  getStaking?: Resolver<Array<ResolversTypes['Staking']>, ParentType, ContextType, Partial<QueryGetStakingArgs>>;
+  getStakingHistory?: Resolver<Array<ResolversTypes['StakingHistory']>, ParentType, ContextType, Partial<QueryGetStakingHistoryArgs>>;
+  getTimelockTasks?: Resolver<Array<ResolversTypes['TimelockTask']>, ParentType, ContextType, Partial<QueryGetTimelockTasksArgs>>;
   getTopic?: Resolver<ResolversTypes['Topic'], ParentType, ContextType, RequireFields<QueryGetTopicArgs, 'id'>>;
   getTopics?: Resolver<Array<ResolversTypes['Topic']>, ParentType, ContextType, Partial<QueryGetTopicsArgs>>;
   getTransactions?: Resolver<Array<ResolversTypes['Transaction']>, ParentType, ContextType, RequireFields<QueryGetTransactionsArgs, 'input'>>;
+  getTreasuryWithdraws?: Resolver<Array<ResolversTypes['TreasuryWithdraw']>, ParentType, ContextType, Partial<QueryGetTreasuryWithdrawsArgs>>;
   getUnlockTime?: Resolver<ResolversTypes['UnlockTimeResponse'], ParentType, ContextType>;
   getUserAssistants?: Resolver<Array<ResolversTypes['Assistant']>, ParentType, ContextType, Partial<QueryGetUserAssistantsArgs>>;
   getUserTokens?: Resolver<Array<ResolversTypes['RefreshToken']>, ParentType, ContextType>;
   getVolumeData?: Resolver<Array<ResolversTypes['VolumeData']>, ParentType, ContextType, RequireFields<QueryGetVolumeDataArgs, 'input'>>;
+  getVotes?: Resolver<Array<ResolversTypes['Vote']>, ParentType, ContextType, Partial<QueryGetVotesArgs>>;
 }>;
 
 export type QuestionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Question'] = ResolversParentTypes['Question']> = ResolversObject<{
@@ -2865,12 +3050,46 @@ export type SignatureTaskResolvers<ContextType = GraphQLContext, ParentType exte
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type StakingResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Staking'] = ResolversParentTypes['Staking']> = ResolversObject<{
+  amount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  timestamp?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  userWallet?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
+export type StakingHistoryResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['StakingHistory'] = ResolversParentTypes['StakingHistory']> = ResolversObject<{
+  amount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  timestamp?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  txType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  userWallet?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type SubscriptionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Subscription'] = ResolversParentTypes['Subscription']> = ResolversObject<{
   _?: SubscriptionResolver<Maybe<ResolversTypes['Boolean']>, "_", ParentType, ContextType>;
   countdown?: SubscriptionResolver<ResolversTypes['Int'], "countdown", ParentType, ContextType, RequireFields<SubscriptionCountdownArgs, 'from'>>;
   poolDeployed?: SubscriptionResolver<ResolversTypes['Pool'], "poolDeployed", ParentType, ContextType>;
   priceUpdates?: SubscriptionResolver<ResolversTypes['PriceUpdateEvent'], "priceUpdates", ParentType, ContextType, RequireFields<SubscriptionPriceUpdatesArgs, 'poolAddress'>>;
   transactionUpdates?: SubscriptionResolver<ResolversTypes['TransactionEvent'], "transactionUpdates", ParentType, ContextType, RequireFields<SubscriptionTransactionUpdatesArgs, 'poolAddress'>>;
+}>;
+
+export type TimelockTaskResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['TimelockTask'] = ResolversParentTypes['TimelockTask']> = ResolversObject<{
+  createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  data?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  predecessor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  salt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  target?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  value?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type TokenBalanceResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['TokenBalance'] = ResolversParentTypes['TokenBalance']> = ResolversObject<{
@@ -2929,6 +3148,17 @@ export type TransactionEventResolvers<ContextType = GraphQLContext, ParentType e
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type TreasuryWithdrawResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['TreasuryWithdraw'] = ResolversParentTypes['TreasuryWithdraw']> = ResolversObject<{
+  amount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  recipient?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  tokenAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type UnlockTimeResponseResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['UnlockTimeResponse'] = ResolversParentTypes['UnlockTimeResponse']> = ResolversObject<{
   gasUnlockTime?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   holdUnlockTime?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
@@ -2969,6 +3199,18 @@ export type VolumeDataResolvers<ContextType = GraphQLContext, ParentType extends
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type VoteResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Vote'] = ResolversParentTypes['Vote']> = ResolversObject<{
+  createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  proposalId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  reason?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  support?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  voter?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  weight?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   Answer?: AnswerResolvers<ContextType>;
   ApprovalSignaturesResponse?: ApprovalSignaturesResponseResolvers<ContextType>;
@@ -3001,6 +3243,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   Post?: PostResolvers<ContextType>;
   PriceData?: PriceDataResolvers<ContextType>;
   PriceUpdateEvent?: PriceUpdateEventResolvers<ContextType>;
+  Proposal?: ProposalResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   Question?: QuestionResolvers<ContextType>;
   Reaction?: ReactionResolvers<ContextType>;
@@ -3011,16 +3254,21 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   RevokeTokensResult?: RevokeTokensResultResolvers<ContextType>;
   Signature?: SignatureResolvers<ContextType>;
   SignatureTask?: SignatureTaskResolvers<ContextType>;
+  Staking?: StakingResolvers<ContextType>;
+  StakingHistory?: StakingHistoryResolvers<ContextType>;
   Subscription?: SubscriptionResolvers<ContextType>;
+  TimelockTask?: TimelockTaskResolvers<ContextType>;
   TokenBalance?: TokenBalanceResolvers<ContextType>;
   Topic?: TopicResolvers<ContextType>;
   Transaction?: TransactionResolvers<ContextType>;
   TransactionEvent?: TransactionEventResolvers<ContextType>;
+  TreasuryWithdraw?: TreasuryWithdrawResolvers<ContextType>;
   UnlockTimeResponse?: UnlockTimeResponseResolvers<ContextType>;
   Upload?: GraphQLScalarType;
   User?: UserResolvers<ContextType>;
   UserPermission?: UserPermissionResolvers<ContextType>;
   UserWithPermissions?: UserWithPermissionsResolvers<ContextType>;
   VolumeData?: VolumeDataResolvers<ContextType>;
+  Vote?: VoteResolvers<ContextType>;
 }>;
 
