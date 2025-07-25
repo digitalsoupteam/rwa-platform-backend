@@ -24,7 +24,7 @@ describe("AI Assistant Flow Tests", () => {
       {
         input: {
           name: "Test Assistant",
-          contextPreferences: ["investor_base", "market_data"],
+          contextPreferences: ["investor_base", "popular_pools"],
         },
       },
       accessToken
@@ -36,7 +36,7 @@ describe("AI Assistant Flow Tests", () => {
     expect(result.data.createAssistant.name).toBe("Test Assistant");
     expect(result.data.createAssistant.contextPreferences).toEqual([
       "investor_base",
-      "market_data",
+      "popular_pools",
     ]);
 
     assistantId = result.data.createAssistant.id;
@@ -83,7 +83,7 @@ describe("AI Assistant Flow Tests", () => {
         input: {
           id: assistantId,
           name: "Updated Assistant",
-          contextPreferences: ["product_owner_base"],
+          contextPreferences: ["product_owner_base", "user_portfolio"],
         },
       },
       accessToken
@@ -94,6 +94,7 @@ describe("AI Assistant Flow Tests", () => {
     expect(result.data.updateAssistant.name).toBe("Updated Assistant");
     expect(result.data.updateAssistant.contextPreferences).toEqual([
       "product_owner_base",
+      "user_portfolio",
     ]);
   });
 
@@ -246,7 +247,7 @@ describe("AI Assistant Flow Tests", () => {
     let result = await makeGraphQLRequest(CREATE_ASSISTANT, {
       input: {
         name: "Test Assistant",
-        contextPreferences: ["investor_base"],
+        contextPreferences: ["investor_base", "popular_pools"],
       },
     });
     expect(result.errors).toBeDefined();

@@ -8,8 +8,6 @@ enum AssistantContext {
   # Context data
   popular_pools
   user_portfolio
-  user_balance
-  market_data
 }
 
 # Message type
