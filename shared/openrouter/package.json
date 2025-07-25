@@ -7,6 +7,6 @@
     "@shared/monitoring": "workspace:*"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "@types/bun": "1.2.19"
   }
 }

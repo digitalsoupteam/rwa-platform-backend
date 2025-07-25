@@ -9,10 +9,10 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
-    "ioredis": "^5.3.2",
+    "ioredis": "5.6.1",
     "@shared/monitoring": "workspace:*"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "@types/bun": "1.2.19"
   }
 }

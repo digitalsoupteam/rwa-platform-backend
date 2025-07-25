@@ -11,6 +11,6 @@
     "nginx:up": "docker compose -f infrastructure/docker/docker-compose.yml up -d nginx"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "1.2.19"
   }
 }

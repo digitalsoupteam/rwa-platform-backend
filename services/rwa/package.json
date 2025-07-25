@@ -4,11 +4,11 @@
   "type": "module",
   "scripts": {},
   "dependencies": {
-    "elysia": "latest",
-    "@elysiajs/eden": "latest",
-    "mongoose": "latest",
-    "amqplib": "latest",
-    "ethers": "latest",
+    "elysia": "1.3.5",
+    "@elysiajs/eden": "1.3.2",
+    "mongoose": "8.16.4",
+    "amqplib": "0.10.8",
+    "ethers": "6.15.0",
     "@shared/monitoring": "workspace:*",
     "@shared/openrouter": "workspace:*",
     "@shared/rabbitmq": "workspace:*",
@@ -17,6 +17,6 @@
     "@shared/errors": "workspace:*"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "@types/bun": "1.2.19"
   }
 }

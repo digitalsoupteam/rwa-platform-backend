@@ -5,6 +5,6 @@
   "type": "module",
   "dependencies": {},
   "devDependencies": {
-    "bun-types": "latest"
+    "@types/bun": "1.2.19"
   }
 }

@@ -6,9 +6,9 @@
   "dependencies": {
     "@shared/errors": "workspace:*",
     "@shared/monitoring": "workspace:*",
-    "amqplib": "latest"
+    "amqplib": "0.10.8"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "@types/bun": "1.2.19"
   }
 }

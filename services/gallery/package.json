@@ -10,12 +10,12 @@
     "test": "bun test"
   },
   "dependencies": {
-    "elysia": "latest",
-    "mongoose": "latest",
+    "elysia": "1.3.5",
+    "mongoose": "8.16.4",
     "@shared/monitoring": "workspace:*",
     "@shared/errors": "workspace:*"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "@types/bun": "1.2.19"
   }
 }
