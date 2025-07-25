@@ -8,7 +8,9 @@ export class ReferralRepository {
 
   async create(data: Pick<IReferralEntity,
     "userWallet" |
-    "referrerWallet" 
+    "userId" |
+    "referrerWallet" |
+    "referrerId"
   >) {
     logger.debug(`Creating referral: ${data.userWallet} -> ${data.referrerWallet}`);
 
@@ -21,6 +23,26 @@ export class ReferralRepository {
 
     const doc = await this.model.findOne({
       userWallet,
+    }).lean();
+
+    return doc;
+  }
+
+  async findByReferrerWallet(referrerWallet: string) {
+    logger.debug(`Finding referral by referrer wallet: ${referrerWallet}`);
+
+    const doc = await this.model.findOne({
+      referrerWallet,
+    }).lean();
+
+    return doc;
+  }
+
+  async findByUserId(userId: string) {
+    logger.debug(`Finding referral by user id: ${userId} `);
+
+    const doc = await this.model.findOne({
+      userId,
     }).lean();
 
     return doc;

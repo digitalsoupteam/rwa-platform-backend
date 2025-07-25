@@ -4,6 +4,7 @@ scalar JSON
 type Fees {
   id: ID!
   userWallet: String!
+  userId: String!
   chainId: String!
   tokenAddress: String!
   buyCommissionAmount: String!
@@ -24,7 +25,9 @@ type Fees {
 type Referral {
   id: ID!
   userWallet: String!
-  referrerWallet: String!
+  userId: String!
+  referrerWallet: String
+  referrerId: String
   createdAt: Float!
   updatedAt: Float!
 }
@@ -33,6 +36,7 @@ type Referral {
 type ReferrerWithdraw {
   id: ID!
   referrerWallet: String!
+  referrerId: String!
   chainId: String!
   tokenAddress: String!
   totalWithdrawnAmount: String!
@@ -47,6 +51,7 @@ type ReferrerWithdraw {
 type ReferrerClaimHistory {
   id: ID!
   referrerWallet: String!
+  referrerId: String!
   referralWallet: String!
   chainId: String!
   tokenAddress: String!
@@ -60,7 +65,7 @@ type ReferrerClaimHistory {
 
 # Register referral input
 input RegisterReferralInput {
-  referrerWallet: String!
+  referrerId: String
 }
 
 # Create referrer withdraw task input

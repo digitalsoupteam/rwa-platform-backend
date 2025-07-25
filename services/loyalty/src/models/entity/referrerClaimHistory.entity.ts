@@ -6,6 +6,11 @@ const referrerClaimHistorySchemaDefinition = {
     required: true,
     trim: true,
   },
+  referrerId: {
+    type: String,
+    required: true,
+    trim: true,
+  },
   chainId: {
     type: String,
     required: true,
@@ -60,6 +65,7 @@ const referrerClaimHistorySchema = new Schema(referrerClaimHistorySchemaDefiniti
 
 // Indexes for efficient queries
 referrerClaimHistorySchema.index({ referrerWallet: 1 });
+referrerClaimHistorySchema.index({ referrerId: 1 });
 referrerClaimHistorySchema.index({ referralWallet: 1 });
 referrerClaimHistorySchema.index({ chainId: 1 });
 referrerClaimHistorySchema.index({ tokenAddress: 1 });

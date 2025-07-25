@@ -27,6 +27,7 @@ export const createReferrerWithdrawTask: MutationResolvers['createReferrerWithdr
 
   const response = await clients.loyaltyClient.createReferrerWithdrawTask.post({
     referrerWallet: userData.wallet,
+    referrerId: user.id,
     chainId: input.chainId,
     tokenAddress: input.tokenAddress,
     amount: input.amount,

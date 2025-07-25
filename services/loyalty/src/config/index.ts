@@ -21,4 +21,11 @@ export const CONFIG = {
   LOYALTY: {
     REFERRAL_REWARD_PERCENTAGE: Number(process.env.LOYALTY_REFERRAL_REWARD_PERCENTAGE) || 0.1,
   },
+  SUPPORTED_NETWORKS: [
+    {
+      chainId: '97',
+      name: "BSC Testnet",
+      referralTreasuryAddress: "0x5Be8ef43955d48357080334DAa7DC68cDcc7a6c6",
+    }
+  ]
 };

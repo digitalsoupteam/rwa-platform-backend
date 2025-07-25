@@ -12,7 +12,7 @@ export const registerReferralController = new Elysia()
     "/registerReferral",
     async ({ body, loyaltyService }) => {
       logger.info(
-        `POST /registerReferral - Registering referral: ${body.userWallet} -> ${body.referrerWallet}`
+        `POST /registerReferral - Registering referral for user: ${body.userId}`
       );
       
       const referral = await loyaltyService.registerReferral(body);

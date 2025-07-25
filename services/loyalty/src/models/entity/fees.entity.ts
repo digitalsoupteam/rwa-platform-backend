@@ -1,7 +1,15 @@
 import mongoose, { Schema, InferRawDocType, Types } from "mongoose";
-
+// TODO Добавить историю начислений
+// Суммаризация раз в сутки
+// Включить объемы, проекты
+// Сбор стейкинга.
 const feesSchemaDefinition = {
   userWallet: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  userId: {
     type: String,
     required: true,
     trim: true,
@@ -83,9 +91,10 @@ const feesSchema = new Schema(feesSchemaDefinition, {
 
 // Indexes for efficient queries
 feesSchema.index({ userWallet: 1 });
+feesSchema.index({ userId: 1 });
 feesSchema.index({ chainId: 1 });
 feesSchema.index({ tokenAddress: 1 });
-feesSchema.index({ userWallet: 1, chainId: 1, tokenAddress: 1 }, { unique: true });
+feesSchema.index({ userAddress: 1, chainId: 1, tokenAddress: 1 }, { unique: true });
 feesSchema.index({ createdAt: -1 });
 feesSchema.index({ referralRewardAmount: -1 });
 

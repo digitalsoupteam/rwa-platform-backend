@@ -17,23 +17,23 @@ export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
   protected getEventRouting(): EventRouting {
     return {
       "Factory_CreateRWAFeeCollected": async (event: BlockchainEvent) => {
-        await this.loyaltyService.processCreateRWAFeeCollected(event.data as any);
+        await this.loyaltyService.processCreateRWAFeeCollected(event as any);
       },
 
       "Factory_CreatePoolFeeCollected": async (event: BlockchainEvent) => {
-        await this.loyaltyService.processCreatePoolFeeCollected(event.data as any);
+        await this.loyaltyService.processCreatePoolFeeCollected(event as any);
       },
 
       "Pool_RwaMinted": async (event: BlockchainEvent) => {
-        await this.loyaltyService.processRwaMinted(event.data as any);
+        await this.loyaltyService.processRwaMinted(event as any);
       },
 
       "Pool_RwaBurned": async (event: BlockchainEvent) => {
-        await this.loyaltyService.processRwaBurned(event.data as any);
+        await this.loyaltyService.processRwaBurned(event as any);
       },
 
       "ReferralTreasury_Withdrawn": async (event: BlockchainEvent) => {
-        await this.loyaltyService.processReferralTreasuryWithdrawn(event.data as any);
+        await this.loyaltyService.processReferralTreasuryWithdrawn(event as any);
       }
     };
   }

@@ -4,9 +4,10 @@ export const GET_STAKING = gql`
   query GetStaking($input: GetStakingFilterInput) {
     getStaking(input: $input) {
       id
-      userWallet
+      staker
       amount
-      timestamp
+      lastStakeTimestamp
+      chainId
       createdAt
       updatedAt
     }
@@ -17,9 +18,16 @@ export const GET_PROPOSALS = gql`
   query GetProposals($input: GetProposalsFilterInput) {
     getProposals(input: $input) {
       id
+      proposalId
       proposer
+      target
+      data
       description
-      status
+      startTime
+      endTime
+      state
+      transactionHash
+      logIndex
       createdAt
       updatedAt
     }
@@ -30,11 +38,16 @@ export const GET_VOTES = gql`
   query GetVotes($input: GetVotesFilterInput) {
     getVotes(input: $input) {
       id
-      voter
       proposalId
+      chainId
+      governanceAddress
+      voterWallet
       support
       weight
       reason
+      transactionHash
+      logIndex
+      blockNumber
       createdAt
       updatedAt
     }
@@ -45,10 +58,12 @@ export const GET_STAKING_HISTORY = gql`
   query GetStakingHistory($input: GetStakingHistoryFilterInput) {
     getStakingHistory(input: $input) {
       id
-      userWallet
+      staker
       amount
-      txType
-      timestamp
+      operation
+      chainId
+      transactionHash
+      logIndex
       createdAt
       updatedAt
     }
@@ -59,12 +74,12 @@ export const GET_TIMELOCK_TASKS = gql`
   query GetTimelockTasks($input: GetTimelockTasksFilterInput) {
     getTimelockTasks(input: $input) {
       id
+      txHash
       target
-      value
       data
-      predecessor
-      salt
-      status
+      eta
+      executed
+      chainId
       createdAt
       updatedAt
     }
@@ -75,10 +90,12 @@ export const GET_TREASURY_WITHDRAWS = gql`
   query GetTreasuryWithdraws($input: GetTreasuryWithdrawsFilterInput) {
     getTreasuryWithdraws(input: $input) {
       id
-      tokenAddress
-      amount
       recipient
-      status
+      token
+      amount
+      chainId
+      transactionHash
+      logIndex
       createdAt
       updatedAt
     }

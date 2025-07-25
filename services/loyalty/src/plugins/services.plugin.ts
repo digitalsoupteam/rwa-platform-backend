@@ -17,7 +17,11 @@ export const ServicesPlugin = new Elysia({ name: "Services" })
       decorator.loyaltyService = new LoyaltyService(
         decorator.feesRepository,
         decorator.referralRepository,
-        CONFIG.LOYALTY.REFERRAL_REWARD_PERCENTAGE
+        decorator.referrerWithdrawRepository,
+        decorator.referrerClaimHistoryRepository,
+        CONFIG.LOYALTY.REFERRAL_REWARD_PERCENTAGE,
+        decorator.signersManagerClient,
+        CONFIG.SUPPORTED_NETWORKS
       );
 
       logger.info("Loyalty service initialized");

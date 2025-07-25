@@ -6,6 +6,11 @@ const referrerWithdrawSchemaDefinition = {
     required: true,
     trim: true,
   },
+  referrerId: {
+    type: String,
+    required: true,
+    trim: true,
+  },
   chainId: {
     type: String,
     required: true,
@@ -52,6 +57,7 @@ const referrerWithdrawSchema = new Schema(referrerWithdrawSchemaDefinition, {
 
 // Indexes for efficient queries
 referrerWithdrawSchema.index({ referrerWallet: 1 });
+referrerWithdrawSchema.index({ referrerId: 1 });
 referrerWithdrawSchema.index({ chainId: 1 });
 referrerWithdrawSchema.index({ tokenAddress: 1 });
 referrerWithdrawSchema.index({ referrerWallet: 1, chainId: 1, tokenAddress: 1 }, { unique: true });

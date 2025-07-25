@@ -38,6 +38,17 @@ export const requestHoldSchema = t.Object({
 export const requestHoldResponse = faucetRequestSchema;
 
 /*
+ * Request platform
+ */
+export const requestPlatformSchema = t.Object({
+  userId: t.String(),
+  wallet: t.String(),
+  amount: t.Number()
+});
+
+export const requestPlatformResponse = faucetRequestSchema;
+
+/*
  * Get history
  */
 export const getHistorySchema = t.Object({

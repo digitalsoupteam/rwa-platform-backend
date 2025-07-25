@@ -3,9 +3,12 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 export const GATEWAY_URL = "https://localhost/gateway/graphql";
 
 export const TESTNET_RPC =
-  "https://rpc.ankr.com/bsc_testnet_chapel/46ed43307df1caf3e5552edd36e32161b6173775e5c6d08575ad9831af6ecbe8";
+  "https://bsc-testnet-rpc.publicnode.com";
 
-export const FACTORY_ADDRESS = "0xb2889D76166eDe1Bf0460f391914e8C266E3f9CE";
+// export const TESTNET_RPC =
+//   "https://rpc.ankr.com/bsc_testnet_chapel/46ed43307df1caf3e5552edd36e32161b6173775e5c6d08575ad9831af6ecbe8";
+
+export const FACTORY_ADDRESS = "0xD1b0e186A2B0d602f27cE2e046Fa95BBe9FE6d84";
 
 export const HOLD_TOKEN_ADDRESS = "0x66670d16331dc923Ff095f5B0A658F01e6794216";
 
@@ -14,3 +17,5 @@ export const GOVERNANCE_ADDRESS = "0xE03529aB3814A7dAf6Eed6e7283704f0e026F4B2";
 export const PLATFORM_TOKEN_ADDRESS = "0x7E3FebA69952ca6f7f85afE992511269311e4436";
 export const TIMELOCK_ADDRESS = "0x9343AEE07Edae565b9fa2ee3521d8F683D3dB405";
 export const TREASURY_ADDRESS = "0x2FB30De3d0fcF56a769854B8CD4167b8A3099055";
+
+export const REFERRAL_TREASURY_ADDRESS = "0x5Be8ef43955d48357080334DAa7DC68cDcc7a6c6";

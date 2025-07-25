@@ -5,12 +5,14 @@ import { t } from "elysia";
  */
 export const FaucetTokenTypeList = [
   "gas",
-  "hold"
+  "hold",
+  "platform"
 ] as const;
 
 export const faucetTokenTypeSchema = t.Union([
   t.Literal("gas"),
-  t.Literal("hold")
+  t.Literal("hold"),
+  t.Literal("platform")
 ]);
 
 export type FaucetTokenType = typeof faucetTokenTypeSchema.static;

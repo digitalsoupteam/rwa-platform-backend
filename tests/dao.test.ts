@@ -124,7 +124,9 @@ describe("DAO Flow", () => {
         const user2Stake = result.data.getStaking.find((s:any) => s.staker === user2.address.toLowerCase());
 
         expect(user1Stake.amount).toBe(ethers.parseEther("2000").toString());
+        expect(user1Stake.chainId).toBe(chainId);
         expect(user2Stake.amount).toBe(ethers.parseEther("1000").toString());
+        expect(user2Stake.chainId).toBe(chainId);
     });
 
     test("should get staking history", async () => {
@@ -136,6 +138,8 @@ describe("DAO Flow", () => {
         expect(result.data.getStakingHistory).toBeArray();
         expect(result.data.getStakingHistory.length).toBe(2);
         expect(result.data.getStakingHistory.every((h: any) => h.operation === 'staked')).toBe(true);
+        expect(result.data.getStakingHistory.every((h: any) => h.chainId === chainId)).toBe(true);
+        expect(result.data.getStakingHistory.every((h: any) => typeof h.transactionHash === 'string')).toBe(true);
     });
 
     test("should get proposals", async () => {
@@ -151,6 +155,8 @@ describe("DAO Flow", () => {
         expect(proposal.proposalId).toBe(proposalId);
         expect(proposal.proposer.toLowerCase()).toBe(user1.address.toLowerCase());
         expect(proposal.description).toBe("Test Proposal");
+        expect(proposal.state).toBeDefined();
+        expect(proposal.chainId).toBe(chainId);
     });
 
     test("should get votes for the proposal", async () => {
@@ -168,10 +174,16 @@ describe("DAO Flow", () => {
         expect(vote1.support).toBe(true);
         expect(vote1.weight).toBe(ethers.parseEther("2000").toString());
         expect(vote1.reason).toBe("I support this!");
+        expect(vote1.chainId).toBe(chainId);
+        expect(vote1.governanceAddress.toLowerCase()).toBe(GOVERNANCE_ADDRESS.toLowerCase());
+        expect(vote1.voterWallet.toLowerCase()).toBe(user1.address.toLowerCase());
 
         expect(vote2.support).toBe(false);
         expect(vote2.weight).toBe(ethers.parseEther("1000").toString());
         expect(vote2.reason).toBe("I do not support this.");
+        expect(vote2.chainId).toBe(chainId);
+        expect(vote2.governanceAddress.toLowerCase()).toBe(GOVERNANCE_ADDRESS.toLowerCase());
+        expect(vote2.voterWallet.toLowerCase()).toBe(user2.address.toLowerCase());
     });
     
     test("should get empty array for timelock tasks", async () => {

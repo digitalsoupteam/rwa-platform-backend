@@ -2,61 +2,79 @@ scalar JSON
 
 type Staking {
   id: ID!
-  userWallet: String!
+  staker: String!
   amount: String!
-  timestamp: Float!
+  lastStakeTimestamp: Float!
+  chainId: String!
   createdAt: Float!
   updatedAt: Float!
 }
 
 type Proposal {
   id: ID!
+  proposalId: String!
   proposer: String!
+  target: String!
+  data: String!
   description: String!
-  status: String!
+  startTime: Float!
+  endTime: Float!
+  state: String!
+  chainId: String!
+  transactionHash: String!
+  logIndex: Float!
   createdAt: Float!
   updatedAt: Float!
 }
 
 type Vote {
   id: ID!
-  voter: String!
   proposalId: String!
+  chainId: String!
+  governanceAddress: String!
+  voterWallet: String!
   support: Boolean!
   weight: String!
-  reason: String
+  reason: String!
+  transactionHash: String!
+  logIndex: Float!
+  blockNumber: Float!
   createdAt: Float!
   updatedAt: Float!
 }
 
 type StakingHistory {
   id: ID!
-  userWallet: String!
+  staker: String!
   amount: String!
-  txType: String!
-  timestamp: Float!
+  operation: String!
+  chainId: String!
+  transactionHash: String!
+  logIndex: Float!
   createdAt: Float!
   updatedAt: Float!
 }
 
 type TimelockTask {
   id: ID!
+  txHash: String!
   target: String!
-  value: String!
   data: String!
-  predecessor: String
-  salt: String!
-  status: String!
+  eta: Float!
+  executed: Boolean!
+  chainId: String!
   createdAt: Float!
   updatedAt: Float!
 }
 
 type TreasuryWithdraw {
   id: ID!
-  tokenAddress: String!
-  amount: String!
   recipient: String!
-  status: String!
+  token: String!
+  amount: String!
+  chainId: String!
+  transactionHash: String!
+  logIndex: Float!
   createdAt: Float!
   updatedAt: Float!
 }

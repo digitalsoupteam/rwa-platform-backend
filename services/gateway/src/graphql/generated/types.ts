@@ -390,6 +390,7 @@ export type Fees = {
   tokenCreationCommissionAmount: Scalars['String']['output'];
   tokenCreationCommissionCount: Scalars['Int']['output'];
   updatedAt: Scalars['Float']['output'];
+  userId: Scalars['String']['output'];
   userWallet: Scalars['String']['output'];
 };
 
@@ -1255,11 +1256,19 @@ export type PriceUpdateEvent = {
 
 export type Proposal = {
   __typename?: 'Proposal';
+  chainId: Scalars['String']['output'];
   createdAt: Scalars['Float']['output'];
+  data: Scalars['String']['output'];
   description: Scalars['String']['output'];
+  endTime: Scalars['Float']['output'];
   id: Scalars['ID']['output'];
+  logIndex: Scalars['Float']['output'];
+  proposalId: Scalars['String']['output'];
   proposer: Scalars['String']['output'];
-  status: Scalars['String']['output'];
+  startTime: Scalars['Float']['output'];
+  state: Scalars['String']['output'];
+  target: Scalars['String']['output'];
+  transactionHash: Scalars['String']['output'];
   updatedAt: Scalars['Float']['output'];
 };
 
@@ -1613,8 +1622,10 @@ export type Referral = {
   __typename?: 'Referral';
   createdAt: Scalars['Float']['output'];
   id: Scalars['ID']['output'];
-  referrerWallet: Scalars['String']['output'];
+  referrerId?: Maybe<Scalars['String']['output']>;
+  referrerWallet?: Maybe<Scalars['String']['output']>;
   updatedAt: Scalars['Float']['output'];
+  userId: Scalars['String']['output'];
   userWallet: Scalars['String']['output'];
 };
 
@@ -1627,6 +1638,7 @@ export type ReferrerClaimHistory = {
   id: Scalars['ID']['output'];
   logIndex: Scalars['Int']['output'];
   referralWallet: Scalars['String']['output'];
+  referrerId: Scalars['String']['output'];
   referrerWallet: Scalars['String']['output'];
   tokenAddress: Scalars['String']['output'];
   transactionHash: Scalars['String']['output'];
@@ -1638,6 +1650,7 @@ export type ReferrerWithdraw = {
   chainId: Scalars['String']['output'];
   createdAt: Scalars['Float']['output'];
   id: Scalars['ID']['output'];
+  referrerId: Scalars['String']['output'];
   referrerWallet: Scalars['String']['output'];
   taskCooldown?: Maybe<Scalars['Float']['output']>;
   taskExpiredAt?: Maybe<Scalars['Float']['output']>;
@@ -1662,7 +1675,7 @@ export type RefreshTokenInput = {
 };
 
 export type RegisterReferralInput = {
-  referrerWallet: Scalars['String']['input'];
+  referrerId?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type RemoveMemberInput = {
@@ -1738,22 +1751,25 @@ export type SortFieldInput = {
 export type Staking = {
   __typename?: 'Staking';
   amount: Scalars['String']['output'];
+  chainId: Scalars['String']['output'];
   createdAt: Scalars['Float']['output'];
   id: Scalars['ID']['output'];
-  timestamp: Scalars['Float']['output'];
+  lastStakeTimestamp: Scalars['Float']['output'];
+  staker: Scalars['String']['output'];
   updatedAt: Scalars['Float']['output'];
-  userWallet: Scalars['String']['output'];
 };
 
 export type StakingHistory = {
   __typename?: 'StakingHistory';
   amount: Scalars['String']['output'];
+  chainId: Scalars['String']['output'];
   createdAt: Scalars['Float']['output'];
   id: Scalars['ID']['output'];
-  timestamp: Scalars['Float']['output'];
-  txType: Scalars['String']['output'];
+  logIndex: Scalars['Float']['output'];
+  operation: Scalars['String']['output'];
+  staker: Scalars['String']['output'];
+  transactionHash: Scalars['String']['output'];
   updatedAt: Scalars['Float']['output'];
-  userWallet: Scalars['String']['output'];
 };
 
 export type Subscription = {
@@ -1782,15 +1798,15 @@ export type SubscriptionTransactionUpdatesArgs = {
 
 export type TimelockTask = {
   __typename?: 'TimelockTask';
+  chainId: Scalars['String']['output'];
   createdAt: Scalars['Float']['output'];
   data: Scalars['String']['output'];
+  eta: Scalars['Float']['output'];
+  executed: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
-  predecessor?: Maybe<Scalars['String']['output']>;
-  salt: Scalars['String']['output'];
-  status: Scalars['String']['output'];
   target: Scalars['String']['output'];
+  txHash: Scalars['String']['output'];
   updatedAt: Scalars['Float']['output'];
-  value: Scalars['String']['output'];
 };
 
 export type TokenBalance = {
@@ -1852,11 +1868,13 @@ export type TransactionEvent = {
 export type TreasuryWithdraw = {
   __typename?: 'TreasuryWithdraw';
   amount: Scalars['String']['output'];
+  chainId: Scalars['String']['output'];
   createdAt: Scalars['Float']['output'];
   id: Scalars['ID']['output'];
+  logIndex: Scalars['Float']['output'];
   recipient: Scalars['String']['output'];
-  status: Scalars['String']['output'];
-  tokenAddress: Scalars['String']['output'];
+  token: Scalars['String']['output'];
+  transactionHash: Scalars['String']['output'];
   updatedAt: Scalars['Float']['output'];
 };
 
@@ -2026,13 +2044,18 @@ export type VolumeData = {
 
 export type Vote = {
   __typename?: 'Vote';
+  blockNumber: Scalars['Float']['output'];
+  chainId: Scalars['String']['output'];
   createdAt: Scalars['Float']['output'];
+  governanceAddress: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  logIndex: Scalars['Float']['output'];
   proposalId: Scalars['String']['output'];
-  reason?: Maybe<Scalars['String']['output']>;
+  reason: Scalars['String']['output'];
   support: Scalars['Boolean']['output'];
+  transactionHash: Scalars['String']['output'];
   updatedAt: Scalars['Float']['output'];
-  voter: Scalars['String']['output'];
+  voterWallet: Scalars['String']['output'];
   weight: Scalars['String']['output'];
 };
 
@@ -2599,6 +2622,7 @@ export type FeesResolvers<ContextType = GraphQLContext, ParentType extends Resol
   tokenCreationCommissionAmount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tokenCreationCommissionCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userWallet?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -2886,11 +2910,19 @@ export type PriceUpdateEventResolvers<ContextType = GraphQLContext, ParentType e
 }>;
 
 export type ProposalResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Proposal'] = ResolversParentTypes['Proposal']> = ResolversObject<{
+  chainId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  data?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  endTime?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  logIndex?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  proposalId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   proposer?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  status?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  startTime?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  state?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  target?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  transactionHash?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -2982,8 +3014,10 @@ export type ReactionResolvers<ContextType = GraphQLContext, ParentType extends R
 export type ReferralResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Referral'] = ResolversParentTypes['Referral']> = ResolversObject<{
   createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  referrerWallet?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  referrerId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  referrerWallet?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  userId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   userWallet?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -2996,6 +3030,7 @@ export type ReferrerClaimHistoryResolvers<ContextType = GraphQLContext, ParentTy
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   logIndex?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   referralWallet?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  referrerId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   referrerWallet?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   tokenAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   transactionHash?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -3007,6 +3042,7 @@ export type ReferrerWithdrawResolvers<ContextType = GraphQLContext, ParentType e
   chainId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  referrerId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   referrerWallet?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   taskCooldown?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   taskExpiredAt?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
@@ -3052,22 +3088,25 @@ export type SignatureTaskResolvers<ContextType = GraphQLContext, ParentType exte
 
 export type StakingResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Staking'] = ResolversParentTypes['Staking']> = ResolversObject<{
   amount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  chainId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  timestamp?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  lastStakeTimestamp?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  staker?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  userWallet?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type StakingHistoryResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['StakingHistory'] = ResolversParentTypes['StakingHistory']> = ResolversObject<{
   amount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  chainId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  timestamp?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  txType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  logIndex?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  operation?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  staker?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  transactionHash?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  userWallet?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -3080,15 +3119,15 @@ export type SubscriptionResolvers<ContextType = GraphQLContext, ParentType exten
 }>;
 
 export type TimelockTaskResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['TimelockTask'] = ResolversParentTypes['TimelockTask']> = ResolversObject<{
+  chainId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   data?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  eta?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  executed?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  predecessor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  salt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  status?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   target?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  txHash?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  value?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -3150,11 +3189,13 @@ export type TransactionEventResolvers<ContextType = GraphQLContext, ParentType e
 
 export type TreasuryWithdrawResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['TreasuryWithdraw'] = ResolversParentTypes['TreasuryWithdraw']> = ResolversObject<{
   amount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  chainId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  logIndex?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   recipient?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  status?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  tokenAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  token?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  transactionHash?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -3200,13 +3241,18 @@ export type VolumeDataResolvers<ContextType = GraphQLContext, ParentType extends
 }>;
 
 export type VoteResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Vote'] = ResolversParentTypes['Vote']> = ResolversObject<{
+  blockNumber?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  chainId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  governanceAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  logIndex?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   proposalId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  reason?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  reason?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   support?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  transactionHash?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
-  voter?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  voterWallet?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   weight?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;

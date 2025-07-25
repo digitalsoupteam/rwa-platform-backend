@@ -10,6 +10,11 @@ export const ClientsPlugin = new Elysia({ name: "Clients" })
   .onStart(async ({ decorator }) => {
     logger.debug("Initializing clients");
 
+    
+    decorator.signersManagerClient = signersManagerClient;
+    
+    logger.info("Signers Manager client initialized");
+
     // Initialize RabbitMQ client
     decorator.rabbitMQClient = new RabbitMQClient({
       uri: CONFIG.RABBITMQ.URI,
@@ -20,9 +25,6 @@ export const ClientsPlugin = new Elysia({ name: "Clients" })
     await decorator.rabbitMQClient.connect();
     logger.info("RabbitMQ client connected");
 
-    decorator.signersManagerClient = signersManagerClient;
-    
-    logger.info("Signers Manager client initialized");
   })
   .onStop(async ({ decorator }) => {
     await decorator.rabbitMQClient.disconnect();

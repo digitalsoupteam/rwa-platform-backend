@@ -8,6 +8,7 @@ export class ReferrerClaimHistoryRepository {
 
   async create(data: Pick<IReferrerClaimHistoryEntity,
     "referrerWallet" |
+    "referrerId" |
     "chainId" |
     "tokenAddress" |
     "referralWallet" |

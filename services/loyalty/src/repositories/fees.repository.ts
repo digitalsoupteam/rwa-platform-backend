@@ -8,12 +8,13 @@ export class FeesRepository {
   constructor(private readonly model = FeesEntity) {}
 
 
-  async addBuyCommission(userWallet: string, chainId: string, tokenAddress: string, amount: string) {
+  async addBuyCommission(userWallet: string, userId: string, chainId: string, tokenAddress: string, amount: string) {
     logger.debug(`Adding buy commission: ${amount} for wallet: ${userWallet}`);
     
     const doc = await this.model.findOneAndUpdate(
-      { userWallet, chainId, tokenAddress },
+      { userWallet, userId, chainId, tokenAddress },
       {
+        $set: { userId },
         $inc: {
           buyCommissionCount: 1,
           buyCommissionAmount: mongoose.Types.Decimal128.fromString(amount)
@@ -29,12 +30,13 @@ export class FeesRepository {
     return doc;
   }
 
-  async addSellCommission(userWallet: string, chainId: string, tokenAddress: string, amount: string) {
+  async addSellCommission(userWallet: string, userId: string, chainId: string, tokenAddress: string, amount: string) {
     logger.debug(`Adding sell commission: ${amount} for wallet: ${userWallet}`);
     
     const doc = await this.model.findOneAndUpdate(
-      { userWallet, chainId, tokenAddress },
+      { userWallet, userId, chainId, tokenAddress },
       {
+        $set: { userId },
         $inc: {
           sellCommissionCount: 1,
           sellCommissionAmount: mongoose.Types.Decimal128.fromString(amount)
@@ -50,12 +52,13 @@ export class FeesRepository {
     return doc;
   }
 
-  async addTokenCreationCommission(userWallet: string, chainId: string, tokenAddress: string, amount: string) {
+  async addTokenCreationCommission(userWallet: string, userId: string, chainId: string, tokenAddress: string, amount: string) {
     logger.debug(`Adding token creation commission: ${amount} for wallet: ${userWallet}`);
     
     const doc = await this.model.findOneAndUpdate(
-      { userWallet, chainId, tokenAddress },
+      { userWallet, userId, chainId, tokenAddress },
       {
+        $set: { userId },
         $inc: {
           tokenCreationCommissionCount: 1,
           tokenCreationCommissionAmount: mongoose.Types.Decimal128.fromString(amount)
@@ -71,12 +74,13 @@ export class FeesRepository {
     return doc;
   }
 
-  async addPoolCreationCommission(userWallet: string, chainId: string, tokenAddress: string, amount: string) {
+  async addPoolCreationCommission(userWallet: string, userId: string, chainId: string, tokenAddress: string, amount: string) {
     logger.debug(`Adding pool creation commission: ${amount} for wallet: ${userWallet}`);
     
     const doc = await this.model.findOneAndUpdate(
-      { userWallet, chainId, tokenAddress },
+      { userWallet, userId, chainId, tokenAddress },
       {
+        $set: { userId },
         $inc: {
           poolCreationCommissionCount: 1,
           poolCreationCommissionAmount: mongoose.Types.Decimal128.fromString(amount)
@@ -92,12 +96,13 @@ export class FeesRepository {
     return doc;
   }
 
-  async addReferralReward(userWallet: string, chainId: string, tokenAddress: string, amount: string) {
+  async addReferralReward(userWallet: string, userId: string, chainId: string, tokenAddress: string, amount: string) {
     logger.debug(`Adding referral reward: ${amount} for wallet: ${userWallet}`);
     
     const doc = await this.model.findOneAndUpdate(
-      { userWallet, chainId, tokenAddress },
+      { userWallet, userId, chainId, tokenAddress },
       {
+        $set: { userId },
         $inc: {
           referralRewardCount: 1,
           referralRewardAmount: mongoose.Types.Decimal128.fromString(amount)

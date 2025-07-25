@@ -262,7 +262,7 @@ async function handleDeploy(id) {
 
         // Contract addresses
         const HOLD_TOKEN_ADDRESS = '0x66670d16331dc923Ff095f5B0A658F01e6794216';
-        const FACTORY_ADDRESS = '0xb2889D76166eDe1Bf0460f391914e8C266E3f9CE';
+        const FACTORY_ADDRESS = '0xD1b0e186A2B0d602f27cE2e046Fa95BBe9FE6d84';
 
         // Contract ABIs
         const holdTokenABI = [{

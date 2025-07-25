@@ -8,7 +8,7 @@ export const getTreasuryWithdraws: QueryResolvers['getTreasuryWithdraws'] = asyn
 ) => {
   logger.info('Getting treasury withdraws list', { input });
 
-  const response = await clients.daoClient.getTreasuryWithdraws.post({
+  const response = await clients.daoClient.getTreasuryWithdrawals.post({
     filter: input?.filter || {},
     sort: input?.sort || {},
     limit: input?.limit,

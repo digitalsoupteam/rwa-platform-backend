@@ -6,6 +6,7 @@ import { t } from "elysia";
 export const feesSchema = t.Object({
   id: t.String(),
   userWallet: t.String(),
+  userId: t.String(),
   chainId: t.String(),
   tokenAddress: t.String(),
   buyCommissionAmount: t.String(),
@@ -25,7 +26,9 @@ export const feesSchema = t.Object({
 export const referralSchema = t.Object({
   id: t.String(),
   userWallet: t.String(),
-  referrerWallet: t.String(),
+  userId: t.String(),
+  referrerWallet: t.Optional(t.String()),
+  referrerId: t.Optional(t.String()),
   createdAt: t.Number(),
   updatedAt: t.Number(),
 });
@@ -33,6 +36,7 @@ export const referralSchema = t.Object({
 export const referrerWithdrawSchema = t.Object({
   id: t.String(),
   referrerWallet: t.String(),
+  referrerId: t.String(),
   chainId: t.String(),
   tokenAddress: t.String(),
   totalWithdrawnAmount: t.String(),
@@ -46,6 +50,7 @@ export const referrerWithdrawSchema = t.Object({
 export const referrerClaimHistorySchema = t.Object({
   id: t.String(),
   referrerWallet: t.String(),
+  referrerId: t.String(),
   referralWallet: t.String(),
   chainId: t.String(),
   tokenAddress: t.String(),
@@ -84,7 +89,9 @@ export const getReferralsResponse = t.Array(referralSchema);
  */
 export const registerReferralRequest = t.Object({
   userWallet: t.String({pattern: "^0x[a-f0-9]{40}$"}),
-  referrerWallet: t.String({pattern: "^0x[a-f0-9]{40}$"}),
+  userId: t.String(),
+  referrerWallet: t.Optional(t.String({pattern: "^0x[a-f0-9]{40}$"})),
+  referrerId: t.Optional(t.String()),
 });
 export const registerReferralResponse = referralSchema;
 
@@ -115,6 +122,7 @@ export const getReferrerClaimHistoryResponse = t.Array(referrerClaimHistorySchem
  */
 export const createReferrerWithdrawTaskRequest = t.Object({
   referrerWallet: t.String({pattern: "^0x[a-f0-9]{40}$"}),
+  referrerId: t.String(),
   chainId: t.String(),
   tokenAddress: t.String(),
   amount: t.String(),

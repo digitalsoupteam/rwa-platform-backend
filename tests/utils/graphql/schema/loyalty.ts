@@ -3,7 +3,9 @@ export const REGISTER_REFERRAL = `
     registerReferral(input: $input) {
       id
       userWallet
+      userId
       referrerWallet
+      referrerId
       createdAt
       updatedAt
     }
@@ -14,6 +16,7 @@ export const CREATE_REFERRER_WITHDRAW_TASK = `
   mutation CreateReferrerWithdrawTask($input: CreateReferrerWithdrawTaskInput!) {
     createReferrerWithdrawTask(input: $input) {
       id
+      referrerId
       referrerWallet
       chainId
       tokenAddress
@@ -32,6 +35,7 @@ export const GET_FEES = `
     getFees(input: $input) {
       id
       userWallet
+      userId
       chainId
       tokenAddress
       buyCommissionAmount
@@ -55,7 +59,9 @@ export const GET_REFERRALS = `
     getReferrals(input: $input) {
       id
       userWallet
+      userId
       referrerWallet
+      referrerId
       createdAt
       updatedAt
     }
@@ -67,6 +73,7 @@ export const GET_REFERRER_WITHDRAWS = `
     getReferrerWithdraws(input: $input) {
       id
       referrerWallet
+      referrerId
       chainId
       tokenAddress
       totalWithdrawnAmount
@@ -84,6 +91,7 @@ export const GET_REFERRER_CLAIM_HISTORY = `
     getReferrerClaimHistory(input: $input) {
       id
       referrerWallet
+      referrerId
       referralWallet
       chainId
       tokenAddress

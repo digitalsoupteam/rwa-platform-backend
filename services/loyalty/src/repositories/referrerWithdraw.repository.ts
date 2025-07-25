@@ -8,6 +8,7 @@ export class ReferrerWithdrawRepository {
 
   async createOrUpdate(data: Pick<IReferrerWithdrawEntity,
     "referrerWallet" |
+    "referrerId" |
     "chainId" |
     "tokenAddress" |
     "taskId" |
@@ -29,6 +30,7 @@ export class ReferrerWithdrawRepository {
     const doc = await this.model.findOneAndUpdate(
       {
         referrerWallet: data.referrerWallet,
+        referrerId: data.referrerId,
         chainId: data.chainId,
         tokenAddress: data.tokenAddress
       },
@@ -43,11 +45,11 @@ export class ReferrerWithdrawRepository {
     return doc;
   }
 
-  async addWithdrawnAmount(referrerWallet: string, chainId: string, tokenAddress: string, amount: string) {
+  async addWithdrawnAmount(referrerWallet: string, referrerId: string, chainId: string, tokenAddress: string, amount: string) {
     logger.debug(`Adding withdrawn amount: ${amount} for referrer: ${referrerWallet}`);
     
     const doc = await this.model.findOneAndUpdate(
-      { referrerWallet, chainId, tokenAddress },
+      { referrerWallet, referrerId, chainId, tokenAddress },
       {
         $inc: {
           totalWithdrawnAmount: mongoose.Types.Decimal128.fromString(amount)
@@ -63,11 +65,12 @@ export class ReferrerWithdrawRepository {
     return doc;
   }
 
-  async findByReferrerAndToken(referrerWallet: string, chainId: string, tokenAddress: string) {
+  async findByReferrerAndToken(referrerWallet: string, referrerId: string, chainId: string, tokenAddress: string) {
     logger.debug(`Finding referrer withdraw by wallet: ${referrerWallet}, chain: ${chainId}, token: ${tokenAddress}`);
 
     const doc = await this.model.findOne({
       referrerWallet,
+      referrerId,
       chainId,
       tokenAddress
     }).lean();

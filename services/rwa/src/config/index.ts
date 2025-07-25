@@ -34,7 +34,7 @@ export const CONFIG = {
     {
       chainId: '97', 
       name: "BSC Testnet",
-      factoryAddress: "0xb2889D76166eDe1Bf0460f391914e8C266E3f9CE",
+      factoryAddress: "0xD1b0e186A2B0d602f27cE2e046Fa95BBe9FE6d84",
     }
   ]
 };

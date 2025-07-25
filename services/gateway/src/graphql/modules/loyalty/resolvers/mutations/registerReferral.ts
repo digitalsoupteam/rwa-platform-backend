@@ -19,33 +19,33 @@ export const registerReferral: MutationResolvers['registerReferral'] = async (
   });
 
   if (userResponse.error) {
-    logger.error('Failed to get user data:', userResponse.error);
+    logger.error('Failed to get user data', userResponse.error);
     throw new Error('Failed to get user data');
   }
 
   const userData = userResponse.data;
 
-  // Check if user was created more than 1 hour ago
-  const currentTime = Math.floor(Date.now() / 1000);
-  const oneHourInSeconds = 3600;
-  const timeSinceCreation = currentTime - userData.createdAt;
-
-  if (timeSinceCreation > oneHourInSeconds) {
-    logger.warn('User registration attempt after 1 hour limit', {
-      userId: user.id,
-      createdAt: userData.createdAt,
-      timeSinceCreation
+  let referrerWallet: string | undefined = undefined;
+  if (input.referrerId) {
+    const referrerResponse = await clients.authClient.getUser.post({
+      userId: input.referrerId,
     });
-    throw new Error('User was already registered');
+    if (referrerResponse.error) {
+      logger.warn('Failed to get referrer user data', { error: referrerResponse.error });
+    } else {
+      referrerWallet = referrerResponse.data.wallet;
+    }
   }
 
   const response = await clients.loyaltyClient.registerReferral.post({
     userWallet: userData.wallet,
-    referrerWallet: input.referrerWallet,
+    userId: user.id,
+    referrerWallet: referrerWallet,
+    referrerId: input.referrerId,
   });
 
   if (response.error) {
-    logger.error('Failed to register referral:', response.error);
+    logger.error('Failed to register referral', response.error);
     throw new Error('Failed to register referral');
   }
 

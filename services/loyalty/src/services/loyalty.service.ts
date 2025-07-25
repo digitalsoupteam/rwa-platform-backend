@@ -14,6 +14,12 @@ import { IReferrerWithdrawEntity } from "../models/entity/referrerWithdraw.entit
 import { IReferrerClaimHistoryEntity } from "../models/entity/referrerClaimHistory.entity";
 
 
+interface NetworkConfig {
+    chainId: string;
+    name: string;
+    referralTreasuryAddress: string;
+}
+
 export class LoyaltyService {
     constructor(
         private readonly feesRepository: FeesRepository,
@@ -21,184 +27,243 @@ export class LoyaltyService {
         private readonly referrerWithdrawRepository: ReferrerWithdrawRepository,
         private readonly referrerClaimHistoryRepository: ReferrerClaimHistoryRepository,
         private readonly referralRewardPercentage: number,
-        private readonly signersManagerClient: SignersManagerClient
+        private readonly signersManagerClient: SignersManagerClient,
+        private readonly supportedNetworks: NetworkConfig[]
     ) { }
+
+    private isChainIdSupported(chainId: string): boolean {
+        return this.supportedNetworks.some((network) => network.chainId === chainId);
+    }
+    
+    private getNetworkConfig(chainId: string): NetworkConfig {
+        const network = this.supportedNetworks.find((network) => network.chainId === chainId);
+        if (!network) {
+            throw new NotAllowedError(`Chain ID ${chainId} is not supported`);
+        }
+        return network;
+    }
 
     /**
      * Process Factory_CreateRWAFeeCollected event
      */
     async processCreateRWAFeeCollected(event: {
-        emittedFrom: string;
-        sender: string;
-        amount: string;
-        token: string;
-        chainId: string;
-        transactionHash: string;
-        blockNumber: number;
+        data: {
+            sender: string;
+            amount: string;
+            token: string;
+        },
+        chainId: number;
     }) {
-        logger.info(`Processing RWA creation fee collected: ${event.amount} for ${event.sender}`);
+        const { sender, amount, token } = event.data;
+        logger.info(`Processing RWA creation fee collected: ${amount} for ${sender}`);
+        
+        const userReferral = await this.referralRepository.findByUserWallet(sender.toLowerCase());
+        if (!userReferral) {
+            logger.warn(`User with wallet ${sender} not found. Skipping fee processing.`);
+            return;
+        }
 
         await this.feesRepository.addTokenCreationCommission(
-            event.sender,
-            event.chainId,
-            event.token,
-            event.amount
+            sender,
+            userReferral.userId,
+            String(event.chainId),
+            token,
+            amount
         );
 
         // Process referral reward if user has referrer
-        await this.processReferralReward(event.sender, event.chainId, event.token, event.amount);
+        await this.processReferralReward(sender, userReferral.userId, String(event.chainId), token, amount);
     }
 
     /**
      * Process Factory_CreatePoolFeeCollected event
      */
     async processCreatePoolFeeCollected(event: {
-        emittedFrom: string;
-        sender: string;
-        amount: string;
-        token: string;
-        chainId: string;
-        transactionHash: string;
-        blockNumber: number;
+        data: {
+            sender: string;
+            amount: string;
+            token: string;
+        },
+        chainId: number;
     }) {
-        logger.info(`Processing pool creation fee collected: ${event.amount} for ${event.sender}`);
+        const { sender, amount, token } = event.data;
+        logger.info(`Processing pool creation fee collected: ${amount} for ${sender}`);
+        
+        const userReferral = await this.referralRepository.findByUserWallet(sender.toLowerCase());
+        if (!userReferral) {
+            logger.warn(`User with wallet ${sender} not found. Skipping fee processing.`);
+            return;
+        }
 
         await this.feesRepository.addPoolCreationCommission(
-            event.sender,
-            event.chainId,
-            event.token,
-            event.amount
+            sender,
+            userReferral.userId,
+            String(event.chainId),
+            token,
+            amount
         );
 
         // Process referral reward if user has referrer
-        await this.processReferralReward(event.sender, event.chainId, event.token, event.amount);
+        await this.processReferralReward(sender, userReferral.userId, String(event.chainId), token, amount);
     }
 
     /**
      * Process Pool_RwaMinted event (buy commission)
      */
     async processRwaMinted(event: {
-        emittedFrom: string;
-        minter: string;
-        rwaAmountMinted: string;
-        holdAmountPaid: string;
-        feePaid: string;
-        percentBefore: string;
-        userPercent: string;
-        targetReached: boolean;
-        businessId: string;
-        poolId: string;
-        holdToken: string;
-        chainId: string;
-        transactionHash: string;
-        blockNumber: number;
+        data: {
+            minter: string;
+            rwaAmountMinted: string;
+            holdAmountPaid: string;
+            feePaid: string;
+            percentBefore: string;
+            userPercent: string;
+            targetReached: boolean;
+            businessId: string;
+            poolId: string;
+            holdToken: string;
+        },
+        chainId: number;
     }) {
-        logger.info(`Processing RWA minted: ${event.feePaid} fee for ${event.minter}`);
+        const { minter, feePaid, holdToken } = event.data;
+        logger.info(`Processing RWA minted: ${feePaid} fee for ${minter}`);
+        
+        const userReferral = await this.referralRepository.findByUserWallet(minter.toLowerCase());
+        if (!userReferral) {
+            logger.warn(`User with wallet ${minter} not found. Skipping fee processing.`);
+            return;
+        }
 
         await this.feesRepository.addBuyCommission(
-            event.minter,
-            event.chainId,
-            event.holdToken,
-            event.feePaid
+            minter,
+            userReferral.userId,
+            String(event.chainId),
+            holdToken,
+            feePaid
         );
 
         // Process referral reward if user has referrer
-        await this.processReferralReward(event.minter, event.chainId, event.holdToken, event.feePaid);
+        await this.processReferralReward(minter, userReferral.userId, String(event.chainId), holdToken, feePaid);
     }
 
     /**
      * Process Pool_RwaBurned event (sell commission)
      */
     async processRwaBurned(event: {
-        emittedFrom: string;
-        burner: string;
-        rwaAmountBurned: string;
-        holdAmountReceived: string;
-        bonusAmountReceived: string;
-        holdFeePaid: string;
-        bonusFeePaid: string;
-        percentBefore: string;
-        userPercent: string;
-        targetReached: boolean;
-        businessId: string;
-        poolId: string;
-        holdToken: string;
-        chainId: string;
-        transactionHash: string;
-        blockNumber: number;
+        data: {
+            burner: string;
+            rwaAmountBurned: string;
+            holdAmountReceived: string;
+            bonusAmountReceived: string;
+            holdFeePaid: string;
+            bonusFeePaid: string;
+            percentBefore: string;
+            userPercent: string;
+            targetReached: boolean;
+            businessId: string;
+            poolId: string;
+            holdToken: string;
+        },
+        chainId: number;
     }) {
-        logger.info(`Processing RWA burned: ${event.holdFeePaid} + ${event.bonusFeePaid} fees for ${event.burner}`);
+        const { burner, holdFeePaid, bonusFeePaid, holdToken } = event.data;
+        logger.info(`Processing RWA burned: ${holdFeePaid} + ${bonusFeePaid} fees for ${burner}`);
+
+        const userReferral = await this.referralRepository.findByUserWallet(burner.toLowerCase());
+        if (!userReferral) {
+            logger.warn(`User with wallet ${burner} not found. Skipping fee processing.`);
+            return;
+        }
 
         // Total fee is hold fee + bonus fee using BigInt for precision
-        const holdFee = BigInt(event.holdFeePaid);
-        const bonusFee = BigInt(event.bonusFeePaid);
+        const holdFee = BigInt(holdFeePaid);
+        const bonusFee = BigInt(bonusFeePaid);
         const totalFee = (holdFee + bonusFee).toString();
 
         await this.feesRepository.addSellCommission(
-            event.burner,
-            event.chainId,
-            event.holdToken,
+            burner,
+            userReferral.userId,
+            String(event.chainId),
+            holdToken,
             totalFee
         );
 
         // Process referral reward if user has referrer
-        await this.processReferralReward(event.burner, event.chainId, event.holdToken, totalFee);
+        await this.processReferralReward(burner, userReferral.userId, String(event.chainId), holdToken, totalFee);
     }
 
     /**
      * Process ReferralTreasury_Withdrawn event
      */
     async processReferralTreasuryWithdrawn(event: {
-        emittedFrom: string;
-        referrer: string;
-        token: string;
-        amount: string;
-        chainId: string;
-        transactionHash: string;
-        blockNumber: number;
+        data: {
+            user: string;
+            token: string;
+            amount: string;
+        },
+        chainId: number;
     }) {
-        logger.info(`Processing referral treasury withdrawn: ${event.amount} for referrer: ${event.referrer}`);
-
+        const { user, token, amount } = event.data;
+        logger.info(`Processing referral treasury withdrawn: ${amount} for user: ${user}`);
+console.log('aw1')
+        const referrerUser = await this.referralRepository.findByReferrerWallet(user.toLowerCase());
+        
+console.log('aw121', JSON.stringify(referrerUser, null, 4))
+if (!referrerUser) {
+            logger.warn(`Referrer with wallet ${user} not found. Skipping withdraw processing.`);
+            return;
+        }
+console.log('aw12')
+console.log(user, referrerUser.userId, String(event.chainId), token, amount)
         // Add withdrawn amount to referrer's withdraw record
         await this.referrerWithdrawRepository.addWithdrawnAmount(
-            event.referrer,
-            event.chainId,
-            event.token,
-            event.amount
+            user,
+            referrerUser.userId,
+            String(event.chainId),
+            token,
+            amount
         );
-
-        logger.debug(`Referrer ${event.referrer} withdrew ${event.amount} of token ${event.token} on chain ${event.chainId}`);
+console.log('aw13')
+        logger.debug(`Referrer ${user} withdrew ${amount} of token ${token} on chain ${event.chainId}`);
     }
 
     /**
      * Register referral relationship
      */
-    async registerReferral(params: {userWallet: string, referrerWallet: string}) {
-        logger.info(`Registering referral: ${params.userWallet} -> ${params.referrerWallet}`);
+    async registerReferral(params: { userWallet: string, userId: string, referrerWallet?: string, referrerId?: string }) {
+        logger.info(`Registering referral for user: ${params.userId}`);
+
+        // Check if user already has a referrer
+        const existingReferral = await this.referralRepository.findByUserId(params.userId);
+        if (existingReferral) {
+            throw new Error("User already has a referrer");
+        }
 
         // Validate that user is not trying to refer themselves
-        if (params.userWallet.toLowerCase() === params.referrerWallet.toLowerCase()) {
+        if (params.referrerId && params.userId === params.referrerId) {
+            throw new Error("User cannot refer themselves");
+        }
+        if (params.referrerWallet && params.userWallet.toLowerCase() === params.referrerWallet.toLowerCase()) {
             throw new Error("User cannot refer themselves");
         }
 
-        // Check if user already has a referrer on this chain
-        const existingReferral = await this.referralRepository.findByUserWallet(params.userWallet);
-        if (existingReferral) {
-            throw new Error("User already has a referrer on this chain");
-        }
-
-        const referral = await this.referralRepository.create(params);
+        const referral = await this.referralRepository.create({
+            userWallet: params.userWallet,
+            userId: params.userId,
+            referrerWallet: params.referrerWallet,
+            referrerId: params.referrerId
+        });
         return this.mapReferral(referral);
     }
 
     /**
      * Process referral reward for a commission
      */
-    private async processReferralReward(userWallet: string, chainId: string, tokenAddress: string, commissionAmount: string) {
-        const referral = await this.referralRepository.findByUserWallet(userWallet);
-
-        if (!referral ) {
-            logger.debug(`No active referral found for user: ${userWallet}`);
+    private async processReferralReward(userWallet: string, userId: string, chainId: string, tokenAddress: string, commissionAmount: string) {
+        const referral = await this.referralRepository.findByUserId(userId);
+       
+        if (!referral || !referral.referrerWallet || !referral.referrerId) {
+            logger.debug(`No active referrer found for user: ${userId}`);
             return;
         }
 
@@ -211,6 +276,7 @@ export class LoyaltyService {
 
         await this.feesRepository.addReferralReward(
             referral.referrerWallet,
+            referral.referrerId,
             chainId,
             tokenAddress,
             rewardAmount
@@ -224,6 +290,7 @@ export class LoyaltyService {
         return {
             id: fees._id.toString(),
             userWallet: fees.userWallet,
+            userId: fees.userId,
             chainId: fees.chainId,
             tokenAddress: fees.tokenAddress,
             buyCommissionAmount: fees.buyCommissionAmount?.toString() || "0",
@@ -248,7 +315,9 @@ export class LoyaltyService {
         return {
             id: referral._id.toString(),
             userWallet: referral.userWallet,
+            userId: referral.userId,
             referrerWallet: referral.referrerWallet,
+            referrerId: referral.referrerId,
             createdAt: referral.createdAt,
             updatedAt: referral.updatedAt
         };
@@ -271,8 +340,6 @@ export class LoyaltyService {
             params.limit,
             params.offset
         );
-
-        console.log(JSON.stringify(fees.map(fee => this.mapFees(fee)), null, 4))
 
         return fees.map(fee => this.mapFees(fee));
     }
@@ -303,17 +370,23 @@ export class LoyaltyService {
      */
     async createReferrerWithdrawTask(params: {
         referrerWallet: string;
+        referrerId: string;
         chainId: string;
         tokenAddress: string;
         amount: string;
     }) {
         logger.debug("Requesting claim signatures", params);
 
+        if (!this.isChainIdSupported(params.chainId)) {
+            throw new NotAllowedError(`Chain ID ${params.chainId} is not supported`);
+        }
+
         const now = Math.floor(Date.now() / 1000);
 
         // Get current fees for this referrer and token
         const fees = await this.feesRepository.findAll({
             userWallet: params.referrerWallet,
+            userId: params.referrerId,
             chainId: params.chainId,
             tokenAddress: params.tokenAddress
         });
@@ -327,6 +400,7 @@ export class LoyaltyService {
         // Get current withdraw record
         const withdrawRecord = await this.referrerWithdrawRepository.findByReferrerAndToken(
             params.referrerWallet,
+            params.referrerId,
             params.chainId,
             params.tokenAddress
         );
@@ -352,17 +426,20 @@ export class LoyaltyService {
         }
 
         const expired = now + 600; // 10 minutes
-        const cooldown = now + 3600; // 1 hour cooldown
+        const cooldown = now + 3600; // 1 hour TODO 1 month
 
-        const messageHash = this.generateClaimMessageHash(
+        const network = this.getNetworkConfig(params.chainId);
+
+        const messageHash = this.generateWithdrawMessageHash(
             params.chainId,
+            network.referralTreasuryAddress,
             params.referrerWallet,
             params.tokenAddress,
             params.amount
         );
 
         const taskResponse = await this.signersManagerClient.createSignatureTask.post({
-            ownerId: params.referrerWallet,
+            ownerId: params.referrerId,
             ownerType: "user",
             hash: messageHash,
             expired,
@@ -374,6 +451,7 @@ export class LoyaltyService {
         // Update withdraw record with new task info
         const withdraws = await this.referrerWithdrawRepository.createOrUpdate({
             referrerWallet: params.referrerWallet,
+            referrerId: params.referrerId,
             chainId: params.chainId,
             tokenAddress: params.tokenAddress,
             totalWithdrawnAmount: withdrawRecord?.totalWithdrawnAmount || mongoose.Types.Decimal128.fromString("0"),
@@ -388,30 +466,33 @@ export class LoyaltyService {
     /**
      * Generate message hash for claim operation
      */
-    private generateClaimMessageHash(
+    private generateWithdrawMessageHash(
         chainId: string,
+        referralTreasuryAddress: string,
         referrerWallet: string,
         tokenAddress: string,
         amount: string
     ): string {
-        const paramsHash = ethers.solidityPackedKeccak256(
+        const innerHash = ethers.solidityPackedKeccak256(
             [
                 "uint256",
+                "address",
+                "address",
                 "string",
                 "address",
-                "address",
-                "uint256"
+                "uint256",
             ],
             [
                 BigInt(chainId),
-                "claimReferralRewards",
+                ethers.getAddress(referralTreasuryAddress),
                 ethers.getAddress(referrerWallet),
+                "withdraw",
                 ethers.getAddress(tokenAddress),
-                BigInt(amount)
+                BigInt(amount),
             ]
         );
 
-        return paramsHash;
+        return innerHash;
     }
 
     /**
@@ -463,6 +544,7 @@ export class LoyaltyService {
         return {
             id: withdraw._id.toString(),
             referrerWallet: withdraw.referrerWallet,
+            referrerId: withdraw.referrerId,
             chainId: withdraw.chainId,
             tokenAddress: withdraw.tokenAddress,
             totalWithdrawnAmount: withdraw.totalWithdrawnAmount?.toString() || "0",
@@ -481,6 +563,7 @@ export class LoyaltyService {
         return {
             id: claim._id.toString(),
             referrerWallet: claim.referrerWallet,
+            referrerId: claim.referrerId,
             referralWallet: claim.referralWallet,
             chainId: claim.chainId,
             tokenAddress: claim.tokenAddress,

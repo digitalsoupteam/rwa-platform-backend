@@ -6,9 +6,17 @@ const referralSchemaDefinition = {
     required: true,
     trim: true,
   },
-  referrerWallet: {
+  userId: {
     type: String,
     required: true,
+    trim: true,
+  },
+  referrerWallet: {
+    type: String,
+    trim: true,
+  },
+  referrerId: {
+    type: String,
     trim: true,
   },
   
@@ -29,7 +37,9 @@ const referralSchema = new Schema(referralSchemaDefinition, {
 
 // Indexes for efficient queries
 referralSchema.index({ userWallet: 1 }, { unique: true });
+referralSchema.index({ userId: 1 }, { unique: true });
 referralSchema.index({ referrerWallet: 1 });
+referralSchema.index({ referrerId: 1 });
 referralSchema.index({ createdAt: -1 });
 
 export type IReferralEntity = InferRawDocType<
