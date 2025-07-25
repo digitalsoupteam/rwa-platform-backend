@@ -11,6 +11,17 @@ enum ReactionType {
   haha
 }
 
+# Parent types enum
+enum ParentType {
+  post
+  business
+  pool
+  blog
+  company
+  document
+  image
+}
+
 # Reaction type
 type Reaction {
   id: ID!
@@ -31,7 +42,7 @@ type EntityReactionsResponse {
 # Set reaction input
 input SetReactionInput {
   parentId: String!
-  parentType: String!
+  parentType: ParentType!
   reaction: ReactionType!
 }
 

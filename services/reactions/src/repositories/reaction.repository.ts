@@ -14,12 +14,12 @@ export class ReactionRepository {
     return doc.toObject();
   }
 
-  async delete(parentId: string, userId: string) {
-    logger.debug(`Deleting reaction for parent: ${parentId} by user: ${userId}`);
-    const doc = await this.model.findOneAndDelete({ parentId, userId }).lean();
+  async delete(data: Pick<IReactionEntity, "parentId" | "parentType" | "userId" | "reaction">) {
+    logger.debug(`Deleting reaction for parent: ${data.parentId} by user: ${data.userId}`);
+    const doc = await this.model.findOneAndDelete(data).lean();
 
     if (!doc) {
-      throw new NotFoundError("Reaction", `${parentId}:${userId}`);
+      throw new NotFoundError("Reaction", `${data.parentId}:${data.userId}:${data.reaction}`);
     }
 
     return doc;

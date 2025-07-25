@@ -36,7 +36,7 @@ reactionSchema.index({ parentType: 1 });
 reactionSchema.index({ userId: 1 });
 reactionSchema.index({ reaction: 1 });
 reactionSchema.index({ parentId: 1, parentType: 1 });
-reactionSchema.index({ parentId: 1, userId: 1 }, { unique: true });
+reactionSchema.index({ parentId: 1, parentType: 1, userId: 1, reaction: 1 }, { unique: true });
 
 export type IReactionEntity = InferRawDocType<typeof reactionSchemaDefinition> & { _id: Types.ObjectId };
 export const ReactionEntity = mongoose.model("Reaction", reactionSchema);

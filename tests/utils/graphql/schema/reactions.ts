@@ -36,8 +36,8 @@ export const GET_ENTITY_REACTIONS = `
 `;
 
 export const GET_REACTIONS = `
-  query GetReactions($filter: JSON!, $sort: JSON, $limit: Int, $offset: Int) {
-    getReactions(filter: $filter, sort: $sort, limit: $limit, offset: $offset) {
+  query GetReactions($input: GetReactionsFilterInput!) {
+    getReactions(input: $input) {
       id
       parentId
       parentType

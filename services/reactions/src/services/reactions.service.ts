@@ -48,7 +48,7 @@ export class ReactionsService {
       reaction: data.reaction
     });
 
-    const reaction = await this.reactionRepository.delete(data.parentId, data.userId);
+    const reaction = await this.reactionRepository.delete(data);
     return this.formatReaction(reaction);
   }
 

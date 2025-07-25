@@ -48,10 +48,8 @@ export type Assistant = {
 
 export type AssistantContext =
   | 'investor_base'
-  | 'market_data'
   | 'popular_pools'
   | 'product_owner_base'
-  | 'user_balance'
   | 'user_portfolio';
 
 export type AuthTokens = {
@@ -106,8 +104,7 @@ export type Business = {
 };
 
 export type BusinessOwnerType =
-  | 'company'
-  | 'user';
+  | 'company';
 
 export type Company = {
   __typename?: 'Company';
@@ -1129,6 +1126,15 @@ export type PaginationInput = {
   sort?: InputMaybe<SortFieldInput>;
 };
 
+export type ParentType =
+  | 'blog'
+  | 'business'
+  | 'company'
+  | 'document'
+  | 'image'
+  | 'pool'
+  | 'post';
+
 export type ParentTypes =
   | 'business'
   | 'pool';
@@ -1717,7 +1723,7 @@ export type RevokeTokensResult = {
 
 export type SetReactionInput = {
   parentId: Scalars['String']['input'];
-  parentType: Scalars['String']['input'];
+  parentType: ParentType;
   reaction: ReactionType;
 };
 
@@ -2225,6 +2231,7 @@ export type ResolversTypes = ResolversObject<{
   OutgoingTranche: ResolverTypeWrapper<OutgoingTranche>;
   OutgoingTrancheInput: OutgoingTrancheInput;
   PaginationInput: PaginationInput;
+  ParentType: ParentType;
   ParentTypes: ParentTypes;
   Permission: ResolverTypeWrapper<Permission>;
   Pool: ResolverTypeWrapper<Pool>;
