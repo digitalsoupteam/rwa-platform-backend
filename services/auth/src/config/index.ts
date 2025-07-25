@@ -1,22 +1,20 @@
 
 export const CONFIG = {
-  PORT: Number(process.env.PORT) || 3000,
-  SERVICE_NAME: process.env.SERVICE_NAME || 'auth',
-  VERSION: process.env.VERSION || '1.0.0',
+  PORT: Number(process.env.PORT),
+  SERVICE_NAME: String(process.env.SERVICE_NAME),
   
   MONGODB: {
-    URI: process.env.MONGODB_URI || 'mongodb://mongodb:27017/auth'
-    
+    URI: String(process.env.MONGODB_URI)
   },
   
   JWT: {
-    SECRET: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
-    ACCESS_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY || '15m',
-    REFRESH_TOKEN_EXPIRY: process.env.REFRESH_TOKEN_EXPIRY || '1d' // TODO CHECK docker
+    SECRET: String(process.env.JWT_SECRET),
+    ACCESS_TOKEN_EXPIRY: String(process.env.ACCESS_TOKEN_EXPIRY),
+    REFRESH_TOKEN_EXPIRY: String(process.env.REFRESH_TOKEN_EXPIRY)
   },
   
   AUTH: {
-    DOMAIN_NAME: 'RWA Platform',
-    DOMAIN_VERSION: '1'
+    DOMAIN_NAME: String(process.env.DOMAIN_NAME),
+    DOMAIN_VERSION: String(process.env.DOMAIN_VERSION)
   }
 };

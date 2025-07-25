@@ -1,13 +1,13 @@
 export const CONFIG = {
-    PORT: Number(process.env.PORT) || 3000,
-    SERVICE_NAME: process.env.SERVICE_NAME || "signer",
+    PORT: Number(process.env.PORT),
+    SERVICE_NAME: String(process.env.SERVICE_NAME),
   
   RABBITMQ: {
-    URI: process.env.RABBITMQ_URI || "amqp://localhost:5672",
-    MAX_RECONNECT_ATTEMPTS: 5,
-    RECONNECT_INTERVAL: 5000,
+    URI: String(process.env.RABBITMQ_URI),
+    MAX_RECONNECT_ATTEMPTS: Number(process.env.RABBITMQ_MAX_RECONNECT_ATTEMPTS),
+    RECONNECT_INTERVAL: Number(process.env.RABBITMQ_RECONNECT_INTERVAL),
   },
   SIGNER: {
-    PRIVATE_KEY: process.env.SIGNER_PRIVATE_KEY || "",
+    PRIVATE_KEY: String(process.env.SIGNER_PRIVATE_KEY),
   },
 } as const;

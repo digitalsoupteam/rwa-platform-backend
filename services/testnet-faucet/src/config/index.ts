@@ -3,29 +3,29 @@
  */
 export const CONFIG = {
   // Service settings
-  PORT: Number(process.env.PORT) || 3000,
-  SERVICE_NAME: process.env.SERVICE_NAME || 'testnet-faucet',
+  PORT: Number(process.env.PORT),
+  SERVICE_NAME: String(process.env.SERVICE_NAME),
 
   // MongoDB settings
   MONGODB: {
-    URI: process.env.MONGODB_URI || "mongodb://mongodb:27017/testnet-faucet"
+    URI: String(process.env.MONGODB_URI)
   },
 
   // Blockchain integration settings
   BLOCKCHAIN: {
-    PROVIDER_URL: process.env.PROVIDER_URL || "https://polygon-mumbai.infura.io/v3/YOUR_INFURA_PROJECT_ID",
-    WALLET_PRIVATE_KEY: process.env.WALLET_PRIVATE_KEY || "",
-    HOLD_TOKEN_ADDRESS: process.env.HOLD_TOKEN_ADDRESS || "0x0000000000000000000000000000000000000000",
-    PLATFORM_TOKEN_ADDRESS: process.env.PLATFORM_TOKEN_ADDRESS || "0x0000000000000000000000000000000000000000"
+    PROVIDER_URL: String(process.env.PROVIDER_URL),
+    WALLET_PRIVATE_KEY: String(process.env.WALLET_PRIVATE_KEY),
+    HOLD_TOKEN_ADDRESS: String(process.env.HOLD_TOKEN_ADDRESS),
+    PLATFORM_TOKEN_ADDRESS: String(process.env.PLATFORM_TOKEN_ADDRESS)
   },
 
   // Faucet business logic settings
   FAUCET: {
-    GAS_TOKEN_AMOUNT: Number(process.env.GAS_TOKEN_AMOUNT) || 0.02,
-    HOLD_TOKEN_AMOUNT: Number(process.env.HOLD_TOKEN_AMOUNT) || 10000,
-    PLATFORM_TOKEN_AMOUNT: Number(process.env.PLATFORM_TOKEN_AMOUNT) || 10000,
-    REQUEST_GAS_DELAY: Number(process.env.REQUEST_GAS_DELAY) || 60,
-    REQUEST_HOLD_DELAY: Number(process.env.REQUEST_HOLD_DELAY) || 60,
-    REQUEST_PLATFORM_DELAY: Number(process.env.REQUEST_PLATFORM_DELAY) || 60
+    GAS_TOKEN_AMOUNT: Number(process.env.GAS_TOKEN_AMOUNT),
+    HOLD_TOKEN_AMOUNT: Number(process.env.HOLD_TOKEN_AMOUNT),
+    PLATFORM_TOKEN_AMOUNT: Number(process.env.PLATFORM_TOKEN_AMOUNT),
+    REQUEST_GAS_DELAY_MS: Number(process.env.REQUEST_GAS_DELAY_MS),
+    REQUEST_HOLD_DELAY_MS: Number(process.env.REQUEST_HOLD_DELAY_MS),
+    REQUEST_PLATFORM_DELAY_MS: Number(process.env.REQUEST_PLATFORM_DELAY_MS)
   }
 } as const;

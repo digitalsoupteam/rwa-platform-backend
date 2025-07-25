@@ -1,25 +1,25 @@
 export const CONFIG = {
-  PORT: Number(process.env.PORT) || 3000,
-  SERVICE_NAME: process.env.SERVICE_NAME || "loyalty",
+  PORT: Number(process.env.PORT),
+  SERVICE_NAME: String(process.env.SERVICE_NAME),
 
   MONGODB: {
-    URI: process.env.MONGODB_URI || "mongodb://mongodb:27017/loyalty",
+    URI: String(process.env.MONGODB_URI),
   },
   RABBITMQ: {
-    URI: process.env.RABBITMQ_URL || 'amqp://localhost:5672',
-    EXCHANGE: process.env.RABBITMQ_EXCHANGE || 'blockchain.events',
-    RECONNECT_INTERVAL: Number(process.env.RABBITMQ_RECONNECT_INTERVAL) || 5000,
-    MAX_RECONNECT_ATTEMPTS: Number(process.env.RABBITMQ_MAX_RECONNECT_ATTEMPTS) || 10,
+    URI: String(process.env.RABBITMQ_URL),
+    EXCHANGE: String(process.env.RABBITMQ_EXCHANGE),
+    RECONNECT_INTERVAL: Number(process.env.RABBITMQ_RECONNECT_INTERVAL),
+    MAX_RECONNECT_ATTEMPTS: Number(process.env.RABBITMQ_MAX_RECONNECT_ATTEMPTS),
   },
   
   OTHER_SERVICES: {
     SIGNERS_MANAGER: {
-      URL: process.env.SIGNERS_MANAGER_URL || "http://signers-manager"
+      URL: String(process.env.SIGNERS_MANAGER_URL)
     }
   },
   
   LOYALTY: {
-    REFERRAL_REWARD_PERCENTAGE: Number(process.env.LOYALTY_REFERRAL_REWARD_PERCENTAGE) || 0.1,
+    REFERRAL_REWARD_PERCENTAGE: Number(process.env.LOYALTY_REFERRAL_REWARD_PERCENTAGE),
   },
   SUPPORTED_NETWORKS: [
     {

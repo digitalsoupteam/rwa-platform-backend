@@ -1,76 +1,71 @@
 export const CONFIG = {
-  PORT: Number(process.env.PORT) || 3000,
-  SERVICE_NAME: process.env.SERVICE_NAME || 'gateway',
-  JWT_SECRET: process.env.JWT_SECRET || "default-secret-key-change-in-production",
+  PORT: Number(process.env.PORT),
+  SERVICE_NAME: String(process.env.SERVICE_NAME),
+  JWT_SECRET: String(process.env.JWT_SECRET),
   
   SERVICES: {
     AUTH: {
-      URL: process.env.AUTH_SERVICE_URL || "http://auth:3000"
+      URL: String(process.env.AUTH_SERVICE_URL)
     },
     BLOCKCHAIN_SCANNER: {
-      URL: process.env.BLOCKCHAIN_SCANNER_SERVICE_URL || "http://blockchain-scanner:3000"
+      URL: String(process.env.BLOCKCHAIN_SCANNER_SERVICE_URL)
     },
     TESTNET_FAUCET: {
-      URL: process.env.TESTNET_FAUCET_SERVICE_URL || "http://testnet-faucet:3000"
+      URL: String(process.env.TESTNET_FAUCET_SERVICE_URL)
     },
     ASSISTANT: {
-      URL: process.env.ASSISTANT_SERVICE_URL || "http://ai-assistant:3000"
+      URL: String(process.env.ASSISTANT_SERVICE_URL)
     },
     RWA: {
-      URL: process.env.RWA_SERVICE_URL || "http://rwa:3000"
+      URL: String(process.env.RWA_SERVICE_URL)
     },
     SIGNERS_MANAGER: {
-      URL: process.env.SIGNERS_MANAGER_SERVICE_URL || "http://signers-manager:3000"
+      URL: String(process.env.SIGNERS_MANAGER_SERVICE_URL)
     },
     FILES: {
-      URL: process.env.FILES_SERVICE_URL || "http://files:3000"
+      URL: String(process.env.FILES_SERVICE_URL)
     },
     GALLERY: {
-      URL: process.env.GALLERY_SERVICE_URL || "http://gallery:3000"
+      URL: String(process.env.GALLERY_SERVICE_URL)
     },
     FAQ: {
-      URL: process.env.FAQ_SERVICE_URL || "http://faq:3000"
+      URL: String(process.env.FAQ_SERVICE_URL)
     },
     BLOG: {
-      URL: process.env.BLOG_SERVICE_URL || "http://blog:3000"
+      URL: String(process.env.BLOG_SERVICE_URL)
     },
     QUESTIONS: {
-      URL: process.env.QUESTIONS_SERVICE_URL || "http://questions:3000"
+      URL: String(process.env.QUESTIONS_SERVICE_URL)
     },
     PORTFOLIO: {
-      URL: process.env.PORTFOLIO_SERVICE_URL || "http://portfolio:3000"
+      URL: String(process.env.PORTFOLIO_SERVICE_URL)
     },
     COMPANY: {
-      URL: process.env.COMPANY_SERVICE_URL || "http://company:3000"
+      URL: String(process.env.COMPANY_SERVICE_URL)
     },
     DOCUMENTS: {
-      URL: process.env.DOCUMENTS_SERVICE_URL || "http://documents:3000"
+      URL: String(process.env.DOCUMENTS_SERVICE_URL)
     },
     CHARTS: {
-      URL: process.env.CHARTS_SERVICE_URL || "http://charts:3040"
+      URL: String(process.env.CHARTS_SERVICE_URL)
     },
     REACTIONS: {
-      URL: process.env.REACTIONS_SERVICE_URL || "http://reactions:3027"
+      URL: String(process.env.REACTIONS_SERVICE_URL)
     },
     LOYALTY: {
-      URL: process.env.LOYALTY_SERVICE_URL || "http://loyalty:3026"
+      URL: String(process.env.LOYALTY_SERVICE_URL)
     },
     DAO: {
-      URL: process.env.DAO_SERVICE_URL || "http://dao:3029"
+      URL: String(process.env.DAO_SERVICE_URL)
     }
   },
   
   MONITORING: {
-    PROMETHEUS_URL: process.env.PROMETHEUS_URL || "http://prometheus:9090",
-    LOKI_URL: process.env.LOKI_URL || "http://loki:3100"
+    PROMETHEUS_URL: String(process.env.PROMETHEUS_URL),
+    LOKI_URL: String(process.env.LOKI_URL)
   },
 
   REDIS: {
-    URL: process.env.REDIS_URL || "redis://redis:6379"
-  },
-
-  RABBITMQ: {
-    URL: process.env.RABBITMQ_URL || "amqp://localhost:5672", 
-    CHARTS_EXCHANGE: process.env.RABBITMQ_CHARTS_EXCHANGE || "charts.events" 
+    URL: String(process.env.REDIS_URL)
   }
 };
