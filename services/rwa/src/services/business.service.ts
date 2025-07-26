@@ -98,11 +98,11 @@ Response format:
       // Find first { and last } to extract JSON object
       const firstBrace = aiResponse.indexOf('{');
       const lastBrace = aiResponse.lastIndexOf('}');
-      
+
       if (firstBrace === -1 || lastBrace === -1 || firstBrace >= lastBrace) {
         throw new Error("No valid JSON object found in AI response");
       }
-      
+
       const jsonString = aiResponse.substring(firstBrace, lastBrace + 1);
 
       return JSON.parse(jsonString);
@@ -161,7 +161,7 @@ Response format:
     params: {
       id: string,
       updateData: {
-        chainId?: string; // TODO CHECK
+        chainId?: string;
         name?: string;
         description?: string;
         tags?: string[];
@@ -170,6 +170,20 @@ Response format:
     }
   ) {
     logger.debug("Updating business info", params);
+
+    const business = await this.businessRepository.findById(params.id);
+
+    if (business.approvalSignaturesTaskId) {
+      const immutableFields = [
+        'chainId',
+      ];
+
+      for (const field of immutableFields) {
+        if (params.updateData[field as keyof typeof params.updateData] !== undefined) {
+          throw new NotAllowedError(`Cannot edit ${field} while approval signatures task is pending`);
+        }
+      }
+    }
 
     const updated = await this.businessRepository.updateBusiness(params.id, params.updateData);
 
@@ -247,11 +261,11 @@ REASONING: Moderate risk due to competitive market, but strong business model an
     return this.mapBusiness(updated);
   }
 
-  async requestApprovalSignatures(params: { 
-    id: string, 
-    ownerWallet: string, 
-    deployerWallet: string, 
-    createRWAFee: string 
+  async requestApprovalSignatures(params: {
+    id: string,
+    ownerWallet: string,
+    deployerWallet: string,
+    createRWAFee: string
   }) {
     logger.debug("Requesting approval signatures", params);
 
