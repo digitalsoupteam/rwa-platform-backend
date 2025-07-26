@@ -425,8 +425,8 @@ console.log('aw13')
             throw new NotAllowedError(`Cooldown period active. Try again in ${remainingCooldown} seconds`);
         }
 
-        const expired = now + 600; // 10 minutes
-        const cooldown = now + 3600; // 1 hour TODO 1 month
+        const expired = now + 60 * 10; // 10 minutes
+        const cooldown = now + 60 * 60 * 24 * 30; // 1 month
 
         const network = this.getNetworkConfig(params.chainId);
 
