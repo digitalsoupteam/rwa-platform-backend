@@ -1,8 +1,5 @@
 import mongoose, { Schema, InferRawDocType, Types } from "mongoose";
-// TODO Добавить историю начислений
-// Суммаризация раз в сутки
-// Включить объемы, проекты
-// Сбор стейкинга.
+
 const feesSchemaDefinition = {
   userWallet: {
     type: String,

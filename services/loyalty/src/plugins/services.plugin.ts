@@ -19,6 +19,7 @@ export const ServicesPlugin = new Elysia({ name: "Services" })
         decorator.referralRepository,
         decorator.referrerWithdrawRepository,
         decorator.referrerClaimHistoryRepository,
+        decorator.commissionHistoryRepository,
         CONFIG.LOYALTY.REFERRAL_REWARD_PERCENTAGE,
         decorator.signersManagerClient,
         CONFIG.SUPPORTED_NETWORKS

@@ -10,8 +10,10 @@ import { NotAllowedError } from "@shared/errors/app-errors";
 import { ethers } from "ethers";
 import { ReferrerWithdrawRepository } from "../repositories/referrerWithdraw.repository";
 import { ReferrerClaimHistoryRepository } from "../repositories/referrerClaimHistory.repository";
+import { CommissionHistoryRepository } from "../repositories/commissionHistory.repository";
 import { IReferrerWithdrawEntity } from "../models/entity/referrerWithdraw.entity";
 import { IReferrerClaimHistoryEntity } from "../models/entity/referrerClaimHistory.entity";
+import { ICommissionHistoryEntity } from "../models/entity/commissionHistory.entity";
 
 
 interface NetworkConfig {
@@ -26,6 +28,7 @@ export class LoyaltyService {
         private readonly referralRepository: ReferralRepository,
         private readonly referrerWithdrawRepository: ReferrerWithdrawRepository,
         private readonly referrerClaimHistoryRepository: ReferrerClaimHistoryRepository,
+        private readonly commissionHistoryRepository: CommissionHistoryRepository,
         private readonly referralRewardPercentage: number,
         private readonly signersManagerClient: SignersManagerClient,
         private readonly supportedNetworks: NetworkConfig[]
@@ -53,6 +56,7 @@ export class LoyaltyService {
             token: string;
         },
         chainId: number;
+        transactionHash: string;
     }) {
         const { sender, amount, token } = event.data;
         logger.info(`Processing RWA creation fee collected: ${amount} for ${sender}`);
@@ -71,8 +75,21 @@ export class LoyaltyService {
             amount
         );
 
+        // Record commission history
+        await this.commissionHistoryRepository.create({
+            userWallet: sender,
+            userId: userReferral.userId,
+            chainId: String(event.chainId),
+            tokenAddress: token,
+            amount: amount,
+            actionType: 'token_creation_commission',
+            transactionHash: event.transactionHash,
+            relatedUserWallet: undefined,
+            relatedUserId: undefined
+        });
+
         // Process referral reward if user has referrer
-        await this.processReferralReward(sender, userReferral.userId, String(event.chainId), token, amount);
+        await this.processReferralReward(sender, userReferral.userId, String(event.chainId), token, amount, event.transactionHash);
     }
 
     /**
@@ -85,6 +102,7 @@ export class LoyaltyService {
             token: string;
         },
         chainId: number;
+        transactionHash: string;
     }) {
         const { sender, amount, token } = event.data;
         logger.info(`Processing pool creation fee collected: ${amount} for ${sender}`);
@@ -103,8 +121,21 @@ export class LoyaltyService {
             amount
         );
 
+        // Record commission history
+        await this.commissionHistoryRepository.create({
+            userWallet: sender,
+            userId: userReferral.userId,
+            chainId: String(event.chainId),
+            tokenAddress: token,
+            amount: amount,
+            actionType: 'pool_creation_commission',
+            transactionHash: event.transactionHash,
+            relatedUserWallet: undefined,
+            relatedUserId: undefined
+        });
+
         // Process referral reward if user has referrer
-        await this.processReferralReward(sender, userReferral.userId, String(event.chainId), token, amount);
+        await this.processReferralReward(sender, userReferral.userId, String(event.chainId), token, amount, event.transactionHash);
     }
 
     /**
@@ -124,6 +155,7 @@ export class LoyaltyService {
             holdToken: string;
         },
         chainId: number;
+        transactionHash: string;
     }) {
         const { minter, feePaid, holdToken } = event.data;
         logger.info(`Processing RWA minted: ${feePaid} fee for ${minter}`);
@@ -142,8 +174,21 @@ export class LoyaltyService {
             feePaid
         );
 
+        // Record commission history
+        await this.commissionHistoryRepository.create({
+            userWallet: minter,
+            userId: userReferral.userId,
+            chainId: String(event.chainId),
+            tokenAddress: holdToken,
+            amount: feePaid,
+            actionType: 'buy_commission',
+            transactionHash: event.transactionHash,
+            relatedUserWallet: undefined,
+            relatedUserId: undefined
+        });
+
         // Process referral reward if user has referrer
-        await this.processReferralReward(minter, userReferral.userId, String(event.chainId), holdToken, feePaid);
+        await this.processReferralReward(minter, userReferral.userId, String(event.chainId), holdToken, feePaid, event.transactionHash);
     }
 
     /**
@@ -165,6 +210,7 @@ export class LoyaltyService {
             holdToken: string;
         },
         chainId: number;
+        transactionHash: string;
     }) {
         const { burner, holdFeePaid, bonusFeePaid, holdToken } = event.data;
         logger.info(`Processing RWA burned: ${holdFeePaid} + ${bonusFeePaid} fees for ${burner}`);
@@ -188,8 +234,21 @@ export class LoyaltyService {
             totalFee
         );
 
+        // Record commission history
+        await this.commissionHistoryRepository.create({
+            userWallet: burner,
+            userId: userReferral.userId,
+            chainId: String(event.chainId),
+            tokenAddress: holdToken,
+            amount: totalFee,
+            actionType: 'sell_commission',
+            transactionHash: event.transactionHash,
+            relatedUserWallet: undefined,
+            relatedUserId: undefined
+        });
+
         // Process referral reward if user has referrer
-        await this.processReferralReward(burner, userReferral.userId, String(event.chainId), holdToken, totalFee);
+        await this.processReferralReward(burner, userReferral.userId, String(event.chainId), holdToken, totalFee, event.transactionHash);
     }
 
     /**
@@ -223,6 +282,7 @@ console.log(user, referrerUser.userId, String(event.chainId), token, amount)
             token,
             amount
         );
+
 console.log('aw13')
         logger.debug(`Referrer ${user} withdrew ${amount} of token ${token} on chain ${event.chainId}`);
     }
@@ -259,7 +319,7 @@ console.log('aw13')
     /**
      * Process referral reward for a commission
      */
-    private async processReferralReward(userWallet: string, userId: string, chainId: string, tokenAddress: string, commissionAmount: string) {
+    private async processReferralReward(userWallet: string, userId: string, chainId: string, tokenAddress: string, commissionAmount: string, transactionHash: string) {
         const referral = await this.referralRepository.findByUserId(userId);
        
         if (!referral || !referral.referrerWallet || !referral.referrerId) {
@@ -281,6 +341,19 @@ console.log('aw13')
             tokenAddress,
             rewardAmount
         );
+
+        // Record commission history for referral reward
+        await this.commissionHistoryRepository.create({
+            userWallet: referral.referrerWallet,
+            userId: referral.referrerId,
+            chainId: chainId,
+            tokenAddress: tokenAddress,
+            amount: rewardAmount,
+            actionType: 'referral_reward',
+            transactionHash: transactionHash,
+            relatedUserWallet: userWallet,
+            relatedUserId: userId
+        });
     }
 
     /**
@@ -574,5 +647,46 @@ console.log('aw13')
             createdAt: claim.createdAt,
             updatedAt: claim.updatedAt
         };
+    }
+
+    /**
+     * Transform commission history entity to DTO
+     */
+    private mapCommissionHistory(history: ICommissionHistoryEntity) {
+        return {
+            id: history._id.toString(),
+            userWallet: history.userWallet,
+            userId: history.userId,
+            chainId: history.chainId,
+            tokenAddress: history.tokenAddress,
+            amount: history.amount?.toString() || "0",
+            actionType: history.actionType,
+            transactionHash: history.transactionHash,
+            relatedUserWallet: history.relatedUserWallet ?? undefined,
+            relatedUserId: history.relatedUserId ?? undefined,
+            createdAt: history.createdAt,
+            updatedAt: history.updatedAt
+        };
+    }
+
+    /**
+     * Gets commission history list with filters, pagination and sorting
+     */
+    async getCommissionHistory(params: {
+        filter?: Record<string, any>,
+        sort?: { [key: string]: SortOrder },
+        limit?: number,
+        offset?: number
+    }) {
+        logger.debug("Getting commission history list", params);
+        
+        const history = await this.commissionHistoryRepository.findAll(
+            params.filter,
+            params.sort,
+            params.limit,
+            params.offset
+        );
+
+        return history.map(item => this.mapCommissionHistory(item));
     }
 }

@@ -62,6 +62,21 @@ export const referrerClaimHistorySchema = t.Object({
   updatedAt: t.Number(),
 });
 
+export const commissionHistorySchema = t.Object({
+  id: t.String(),
+  userWallet: t.String(),
+  userId: t.String(),
+  chainId: t.String(),
+  tokenAddress: t.String(),
+  amount: t.String(),
+  actionType: t.String(),
+  transactionHash: t.String(),
+  relatedUserWallet: t.Optional(t.String()),
+  relatedUserId: t.Optional(t.String()),
+  createdAt: t.Number(),
+  updatedAt: t.Number(),
+});
+
 /*
  * Get fees
  */
@@ -128,3 +143,14 @@ export const createReferrerWithdrawTaskRequest = t.Object({
   amount: t.String(),
 });
 export const createReferrerWithdrawTaskResponse = referrerWithdrawSchema;
+
+/*
+ * Get commission history
+ */
+export const getCommissionHistoryRequest = t.Object({
+  filter: t.Optional(t.Record(t.String(), t.Any())),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  limit: t.Optional(t.Number()),
+  offset: t.Optional(t.Number())
+});
+export const getCommissionHistoryResponse = t.Array(commissionHistorySchema);
