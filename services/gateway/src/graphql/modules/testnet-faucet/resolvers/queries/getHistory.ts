@@ -28,13 +28,5 @@ export const getHistory: QueryResolvers['getHistory'] = async (
 
   const { data } = response;
 
-  return data.map(request => ({
-    id: request.id,
-    userId: request.userId,
-    wallet: request.wallet,
-    tokenType: request.tokenType,
-    amount: request.amount,
-    transactionHash: request.transactionHash,
-    createdAt: request.createdAt,
-  }));
+  return data;
 };

@@ -67,5 +67,6 @@ export const getUnlockTimeSchema = t.Object({
 
 export const getUnlockTimeResponse = t.Object({
   gasUnlockTime: t.Number(),
-  holdUnlockTime: t.Number()
+  holdUnlockTime: t.Number(),
+  platformUnlockTime: t.Number()
 });

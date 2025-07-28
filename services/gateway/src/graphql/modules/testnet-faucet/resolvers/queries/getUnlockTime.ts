@@ -24,8 +24,5 @@ export const getUnlockTime: QueryResolvers['getUnlockTime'] = async (
 
   const { data } = response;
 
-  return {
-    gasUnlockTime: data.gasUnlockTime,
-    holdUnlockTime: data.holdUnlockTime,
-  };
+  return data;
 };

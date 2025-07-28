@@ -368,7 +368,8 @@ export type FaucetRequest = {
 
 export type FaucetTokenType =
   | 'gas'
-  | 'hold';
+  | 'hold'
+  | 'platform';
 
 export type Fees = {
   __typename?: 'Fees';
@@ -739,6 +740,7 @@ export type Mutation = {
   requestBusinessApprovalSignatures: ApprovalSignaturesResponse;
   requestGas: FaucetRequest;
   requestHold: FaucetRequest;
+  requestPlatform: FaucetRequest;
   requestPoolApprovalSignatures: ApprovalSignaturesResponse;
   resetReaction?: Maybe<Reaction>;
   revokePermission: Scalars['ID']['output'];
@@ -985,6 +987,11 @@ export type MutationRequestGasArgs = {
 
 
 export type MutationRequestHoldArgs = {
+  input: RequestTokenInput;
+};
+
+
+export type MutationRequestPlatformArgs = {
   input: RequestTokenInput;
 };
 
@@ -1888,6 +1895,7 @@ export type UnlockTimeResponse = {
   __typename?: 'UnlockTimeResponse';
   gasUnlockTime: Scalars['Float']['output'];
   holdUnlockTime: Scalars['Float']['output'];
+  platformUnlockTime: Scalars['Float']['output'];
 };
 
 export type UpdateAssistantInput = {
@@ -2755,6 +2763,7 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   requestBusinessApprovalSignatures?: Resolver<ResolversTypes['ApprovalSignaturesResponse'], ParentType, ContextType, RequireFields<MutationRequestBusinessApprovalSignaturesArgs, 'input'>>;
   requestGas?: Resolver<ResolversTypes['FaucetRequest'], ParentType, ContextType, RequireFields<MutationRequestGasArgs, 'input'>>;
   requestHold?: Resolver<ResolversTypes['FaucetRequest'], ParentType, ContextType, RequireFields<MutationRequestHoldArgs, 'input'>>;
+  requestPlatform?: Resolver<ResolversTypes['FaucetRequest'], ParentType, ContextType, RequireFields<MutationRequestPlatformArgs, 'input'>>;
   requestPoolApprovalSignatures?: Resolver<ResolversTypes['ApprovalSignaturesResponse'], ParentType, ContextType, RequireFields<MutationRequestPoolApprovalSignaturesArgs, 'input'>>;
   resetReaction?: Resolver<Maybe<ResolversTypes['Reaction']>, ParentType, ContextType, RequireFields<MutationResetReactionArgs, 'input'>>;
   revokePermission?: Resolver<ResolversTypes['ID'], ParentType, ContextType, RequireFields<MutationRevokePermissionArgs, 'input'>>;
@@ -3210,6 +3219,7 @@ export type TreasuryWithdrawResolvers<ContextType = GraphQLContext, ParentType e
 export type UnlockTimeResponseResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['UnlockTimeResponse'] = ResolversParentTypes['UnlockTimeResponse']> = ResolversObject<{
   gasUnlockTime?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   holdUnlockTime?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  platformUnlockTime?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 

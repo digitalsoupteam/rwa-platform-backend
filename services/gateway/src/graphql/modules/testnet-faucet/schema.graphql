@@ -4,6 +4,7 @@ scalar JSON
 enum FaucetTokenType {
   gas
   hold
+  platform
 }
 
 # Faucet request type
@@ -21,6 +22,7 @@ type FaucetRequest {
 type UnlockTimeResponse {
   gasUnlockTime: Float!
   holdUnlockTime: Float!
+  platformUnlockTime: Float!
 }
 
 # Request token input
@@ -42,4 +44,7 @@ extend type Mutation {
 
   # Request hold token
   requestHold(input: RequestTokenInput!): FaucetRequest!
+
+  # Request platform token
+  requestPlatform(input: RequestTokenInput!): FaucetRequest!
 }

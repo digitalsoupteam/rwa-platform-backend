@@ -8,10 +8,13 @@ export class FaucetService {
     private readonly faucetRequestRepository: FaucetRequestRepository,
     private readonly blockchainClient: BlockchainClient,
     private readonly holdTokenAddress: string,
+    private readonly platformTokenAddress: string,
     private readonly gasTokenAmount: number,
     private readonly holdTokenAmount: number,
+    private readonly platformTokenAmount: number,
     private readonly requestGasDelay: number,
-    private readonly requestHoldDelay: number
+    private readonly requestHoldDelay: number,
+    private readonly requestPlatformDelay: number
   ) {}
 
   /**
@@ -56,13 +59,17 @@ export class FaucetService {
   async getTokenUnlockTime(data: { userId: string }) {
     logger.debug("Getting token unlock time", { userId: data.userId });
 
-    const [lastGasRequest, lastHoldRequest] = await Promise.all([
+    const [lastGasRequest, lastHoldRequest, lastPlatformRequest] = await Promise.all([
       this.faucetRequestRepository.findAll(
         { userId: data.userId, tokenType: "gas" },
         { limit: 1, sort: { createdAt: 'asc' } }
       ),
       this.faucetRequestRepository.findAll(
         { userId: data.userId, tokenType: "hold" },
+        { limit: 1, sort: { createdAt: 'asc' } }
+      ),
+      this.faucetRequestRepository.findAll(
+        { userId: data.userId, tokenType: "platform" },
         { limit: 1, sort: { createdAt: 'asc' } }
       ),
     ]);
@@ -73,6 +80,9 @@ export class FaucetService {
       gasUnlockTime: lastGasRequest[0] ? currentTime + this.requestGasDelay : 0,
       holdUnlockTime: lastHoldRequest[0]
         ? currentTime + this.requestHoldDelay
+        : 0,
+      platformUnlockTime: lastPlatformRequest[0]
+        ? currentTime + this.requestPlatformDelay
         : 0,
     };
   }
@@ -139,6 +149,45 @@ export class FaucetService {
       userId: data.userId,
       wallet: data.wallet,
       tokenType: "hold",
+      amount: transferAmount,
+      transactionHash: txHash,
+    });
+
+    return {
+      id: result._id.toString(),
+      userId: result.userId,
+      wallet: result.wallet,
+      tokenType: result.tokenType,
+      amount: result.amount,
+      transactionHash: result.transactionHash,
+      createdAt: (result as any).createdAt as number,
+    };
+  }
+
+  /**
+   * Requests PLATFORM tokens to be sent to a wallet
+   */
+  async requestPlatformToken(data: {
+    userId: string;
+    wallet: string;
+    amount: number;
+  }) {
+    logger.debug("Processing PLATFORM token request", data);
+
+    const transferAmount =
+      data.amount > this.platformTokenAmount ? this.platformTokenAmount : data.amount;
+
+    // Use configured platform token address and amount
+    const txHash = await this.blockchainClient.transferERC20Token(
+      this.platformTokenAddress,
+      data.wallet,
+      `${transferAmount}`
+    );
+
+    const result = await this.faucetRequestRepository.create({
+      userId: data.userId,
+      wallet: data.wallet,
+      tokenType: "platform",
       amount: transferAmount,
       transactionHash: txHash,
     });
