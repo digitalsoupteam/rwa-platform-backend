@@ -5,7 +5,9 @@ import {
   QuestionEntity,
   IQuestionEntity,
 } from "../models/entity/question.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class QuestionRepository {
   constructor(private readonly model = QuestionEntity) {}
 

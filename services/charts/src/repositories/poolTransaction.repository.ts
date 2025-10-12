@@ -5,7 +5,9 @@ import {
   IPoolTransactionEntity,
   PoolTransactionType
 } from "../models/entity/poolTransaction.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class PoolTransactionRepository {
   constructor(private readonly model = PoolTransactionEntity) {}
 

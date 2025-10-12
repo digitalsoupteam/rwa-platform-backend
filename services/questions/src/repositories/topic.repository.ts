@@ -5,7 +5,9 @@ import {
   TopicEntity,
   ITopicEntity,
 } from "../models/entity/topic.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class TopicRepository {
   constructor(private readonly model = TopicEntity) {}
 

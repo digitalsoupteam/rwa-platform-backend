@@ -1,35 +1,29 @@
-import { Elysia } from 'elysia';
-import { logger } from '@shared/monitoring/src/logger';
-import { CONFIG } from './config';
-import { ErrorHandlerPlugin } from '@shared/errors/error-handler.plugin';
-import { RepositoriesPlugin } from './plugins/repositories.plugin';
-import { ServicesPlugin } from './plugins/services.plugin';
-import { ControllersPlugin } from './plugins/controllers.plugin';
+import { createApp } from './app';
+import { tracer } from '@shared/monitoring/src/tracing';
 
-
-const app = new Elysia()
-  .onError(ErrorHandlerPlugin)
-  
-  .use(RepositoriesPlugin)
-  .use(ServicesPlugin)
-  .use(ControllersPlugin)
-  
-  .listen(CONFIG.PORT, () => {
-    logger.info(`🚀 Auth Service ready at http://127.0.0.1:${CONFIG.PORT}`);
-  });
-
+const app = await tracer.startActiveSpan(
+  'auth.init.main',
+  async (span) => {
+    const appInstance = await createApp(
+      Number(process.env.PORT),
+      String(process.env.MONGODB_URI),
+      String(process.env.JWT_SECRET),
+      String(process.env.ACCESS_TOKEN_EXPIRY),
+      String(process.env.REFRESH_TOKEN_EXPIRY),
+      String(process.env.DOMAIN_NAME),
+      String(process.env.DOMAIN_VERSION)
+    );
+    
+    span.end();
+    return appInstance;
+  }
+)
 
 const shutdown = async () => {
-  logger.info('Shutting down...');
-  
   try {
     await app.stop();
-    logger.info('Server stopped');
-    
-    logger.info('Shutdown completed');
     process.exit(0);
   } catch (error) {
-    logger.error('Error during shutdown:', error);
     process.exit(1);
   }
 };

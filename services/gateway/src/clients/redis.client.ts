@@ -1,5 +1,6 @@
 
 import Redis from "ioredis";
 import { CONFIG } from "../config";
+import { RedisWithTracing } from "@shared/monitoring/src/redis";
 
-export const redisClient = new Redis(CONFIG.REDIS.URL);
+export const redisClient = new RedisWithTracing(CONFIG.REDIS.URL);

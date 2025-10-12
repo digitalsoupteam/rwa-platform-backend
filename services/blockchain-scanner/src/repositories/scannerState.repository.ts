@@ -2,7 +2,9 @@ import { logger } from "@shared/monitoring/src/logger";
 import { NotFoundError } from "@shared/errors/app-errors";
 import { ScannerStateEntity, IScannerStateEntity } from "../models/entity/scannerState.entity";
 import type { FilterQuery, SortOrder } from "mongoose";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class ScannerStateRepository {
   constructor(private readonly model = ScannerStateEntity) {}
 

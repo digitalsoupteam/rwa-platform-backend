@@ -4,23 +4,25 @@ import {
   getSignatureTaskRequest,
   getSignatureTaskResponse,
 } from "../models/validation/signature.validation";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 
-export const getSignatureTaskController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/getSignatureTask",
-    async ({ body, signaturesService }) => {
-      logger.info(
-        `POST /getSignatureTask - Getting signature task: ${body.taskId}`
-      );
+export const getSignatureTaskController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "GetSignatureTaskController" })
+    .use(servicesPlugin)
+    .post(
+      "/getSignatureTask",
+      async ({ body, signaturesService }) => {
+        logger.info(
+          `POST /getSignatureTask - Getting signature task: ${body.taskId}`
+        );
 
-      const result = await signaturesService.getSignatureTask(body.taskId);
+        const result = await signaturesService.getSignatureTask(body.taskId);
 
-      return result;
-    },
-    {
-      body: getSignatureTaskRequest,
-      response: getSignatureTaskResponse,
-    }
-  );
+        return result;
+      },
+      {
+        body: getSignatureTaskRequest,
+        response: getSignatureTaskResponse,
+      }
+    );
+};

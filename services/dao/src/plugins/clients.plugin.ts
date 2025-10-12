@@ -1,24 +1,47 @@
 import { Elysia } from "elysia";
 import { logger } from "@shared/monitoring/src/logger";
-import { CONFIG } from "../config";
 import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const ClientsPlugin = new Elysia({ name: "Clients" })
-  .decorate("rabbitMQClient", {} as RabbitMQClient)
-  .onStart(async ({ decorator }) => {
-    logger.debug("Initializing clients");
+export const createClientsPlugin = async (
+  rabbitMqUri: string,
+  rabbitMqMaxReconnectAttempts: number,
+  rabbitMqReconnectInterval: number
+) => {
+  const rabbitMQClient = withTraceSync(
+    'dao.init.clients.rabbitmq',
+    () => new RabbitMQClient({
+      uri: rabbitMqUri,
+      reconnectAttempts: rabbitMqMaxReconnectAttempts,
+      reconnectInterval: rabbitMqReconnectInterval,
+    })
+  );
 
-    // Initialize RabbitMQ client
-    decorator.rabbitMQClient = new RabbitMQClient({
-      uri: CONFIG.RABBITMQ.URI,
-      reconnectAttempts: CONFIG.RABBITMQ.MAX_RECONNECT_ATTEMPTS,
-      reconnectInterval: CONFIG.RABBITMQ.RECONNECT_INTERVAL,
-    });
+  await withTraceAsync(
+    'dao.init.clients.rabbitmq_connect',
+    async () => {
+      logger.debug("Initializing clients");
+      await rabbitMQClient.connect();
+      logger.info("RabbitMQ client connected");
+    }
+  );
 
-    await decorator.rabbitMQClient.connect();
-    logger.info("RabbitMQ client connected");
-  })
-  .onStop(async ({ decorator }) => {
-    await decorator.rabbitMQClient.disconnect();
-    logger.info("RabbitMQ client disconnected");
-  });
+  const plugin = withTraceSync(
+    'dao.init.clients.plugin',
+    () => new Elysia({ name: "Clients" })
+      .decorate("rabbitMQClient", rabbitMQClient)
+      .onStop(async () => {
+        await withTraceAsync(
+          'dao.stop.clients',
+          async () => {
+            await rabbitMQClient.disconnect();
+            logger.info("RabbitMQ client disconnected");
+          }
+        );
+      })
+  );
+
+  return plugin;
+}
+
+export type ClientsPlugin = Awaited<ReturnType<typeof createClientsPlugin>>

@@ -5,7 +5,9 @@ import {
   TokenBalanceEntity,
   ITokenBalanceEntity,
 } from "../models/entity/tokenBalance.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class TokenBalanceRepository {
   constructor(private readonly model = TokenBalanceEntity) {}
 

@@ -6,19 +6,21 @@ import {
   getDocumentResponse,
 } from "../../models/validation/documents.validation";
 
-export const getDocumentController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/getDocument",
-    async ({ body, documentsService }) => {
-      logger.info(
-        `POST /getDocument - Getting document with ID: ${body.id}`
-      );
+export const getDocumentController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "GetDocumentController" })
+    .use(servicesPlugin)
+    .post(
+      "/getDocument",
+      async ({ body, documentsService }) => {
+        logger.info(
+          `POST /getDocument - Getting document with ID: ${body.id}`
+        );
 
-      return await documentsService.getDocument(body.id);
-    },
-    {
-      body: getDocumentRequest,
-      response: getDocumentResponse,
-    }
-  );
+        return await documentsService.getDocument(body.id);
+      },
+      {
+        body: getDocumentRequest,
+        response: getDocumentResponse,
+      }
+    );
+};

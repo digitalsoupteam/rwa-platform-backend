@@ -1,21 +1,38 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
 import { OpenRouterClient } from "@shared/openrouter/client";
-import { CONFIG } from "../config";
-import { RwaClient, rwaClient, PortfolioClient, portfolioClient } from "../clients/eden.clients";
+import { withTraceSync } from "@shared/monitoring/src/tracing";
+import { createPortfolioClient, createRwaClient } from "../clients/eden.clients";
 
-export const ClientsPlugin = new Elysia({ name: "Clients" })
-  .decorate("openRouterClient", {} as OpenRouterClient)
-  .decorate("rwaClient", {} as RwaClient)
-  .decorate("portfolioClient", {} as PortfolioClient)
-  .onStart(async ({ decorator }) => {
-    logger.debug("Initializing clients");
+export const createClientsPlugin = (
+  openRouterApiKey: string,
+  openRouterBaseUrl: string,
+  rwaServiceUrl: string,
+  portfolioServiceUrl: string,
+) => {
+  const openRouterClient = withTraceSync(
+    'ai-assistant.init.clients.openrouter',
+    () => new OpenRouterClient(openRouterApiKey, openRouterBaseUrl)
+  );
 
-    decorator.rwaClient = rwaClient;
-    decorator.portfolioClient = portfolioClient;
+  const rwaClient = withTraceSync(
+    'ai-assistant.init.clients.rwa',
+    () => createRwaClient(rwaServiceUrl)
+  );
 
-    decorator.openRouterClient = new OpenRouterClient(
-      CONFIG.OPENROUTER.API_KEY,
-      CONFIG.OPENROUTER.BASE_URL
-    );
-  });
+  const portfolioClient = withTraceSync(
+    'ai-assistant.init.clients.portfolio',
+    () => createPortfolioClient(portfolioServiceUrl)
+  );
+
+  const plugin = withTraceSync(
+    'ai-assistant.init.clients.plugin',
+    () => new Elysia({ name: "Clients" })
+      .decorate("openRouterClient", openRouterClient)
+      .decorate("rwaClient", rwaClient)
+      .decorate("portfolioClient", portfolioClient)
+  );
+
+  return plugin;
+}
+
+export type ClientsPlugin = ReturnType<typeof createClientsPlugin>

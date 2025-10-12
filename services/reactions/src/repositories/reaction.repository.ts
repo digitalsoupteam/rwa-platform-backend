@@ -4,7 +4,9 @@ import {
   ReactionEntity,
   IReactionEntity,
 } from "../models/entity/reaction.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class ReactionRepository {
   constructor(private readonly model = ReactionEntity) { }
 

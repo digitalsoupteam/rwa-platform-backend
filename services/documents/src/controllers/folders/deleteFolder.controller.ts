@@ -6,19 +6,21 @@ import {
   deleteFolderResponse,
 } from "../../models/validation/documents.validation";
 
-export const deleteFolderController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/deleteFolder",
-    async ({ body, documentsService }) => {
-      logger.info(
-        `POST /deleteFolder - Deleting folder with ID: ${body.id}`
-      );
+export const deleteFolderController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "DeleteFolderController" })
+    .use(servicesPlugin)
+    .post(
+      "/deleteFolder",
+      async ({ body, documentsService }) => {
+        logger.info(
+          `POST /deleteFolder - Deleting folder with ID: ${body.id}`
+        );
 
-      return await documentsService.deleteFolder(body.id);
-    },
-    {
-      body: deleteFolderRequest,
-      response: deleteFolderResponse,
-    }
-  );
+        return await documentsService.deleteFolder(body.id);
+      },
+      {
+        body: deleteFolderRequest,
+        response: deleteFolderResponse,
+      }
+    );
+};

@@ -6,19 +6,21 @@ import {
     getBlogResponse,
 } from "../../models/validation/blogs.validation";
 
-export const getBlogController = new Elysia()
-    .use(ServicesPlugin)
-    .post(
-        "/getBlog",
-        async ({ body, blogsService }) => {
-            logger.info(
-                `POST /getBlog - Getting blog`
-            );
+export const getBlogController = (servicesPlugin: ServicesPlugin) => {
+    return new Elysia({ name: "GetBlogController" })
+        .use(servicesPlugin)
+        .post(
+            "/getBlog",
+            async ({ body, blogsService }) => {
+                logger.info(
+                    `POST /getBlog - Getting blog`
+                );
 
-            return await blogsService.getBlog(body.id);
-        },
-        {
-            body: getBlogRequest,
-            response: getBlogResponse,
-        }
-    );
+                return await blogsService.getBlog(body.id);
+            },
+            {
+                body: getBlogRequest,
+                response: getBlogResponse,
+            }
+        );
+};

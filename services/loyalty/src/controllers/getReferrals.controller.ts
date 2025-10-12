@@ -6,19 +6,21 @@ import {
   getReferralsResponse,
 } from "../models/validation/loyalty.validation";
 
-export const getReferralsController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/getReferrals",
-    async ({ body, loyaltyService }) => {
-      logger.info(
-        `POST /getReferrals - Getting referrals`
-      );
-      
-      return await loyaltyService.getReferrals(body);
-    },
-    {
-      body: getReferralsRequest,
-      response: getReferralsResponse,
-    }
-  );
+export const getReferralsController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "GetReferralsController" })
+    .use(servicesPlugin)
+    .post(
+      "/getReferrals",
+      async ({ body, loyaltyService }) => {
+        logger.info(
+          `POST /getReferrals - Getting referrals`
+        );
+
+        return await loyaltyService.getReferrals(body);
+      },
+      {
+        body: getReferralsRequest,
+        response: getReferralsResponse,
+      }
+    );
+};

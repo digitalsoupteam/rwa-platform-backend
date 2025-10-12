@@ -2,10 +2,12 @@ import { BaseBlockchainDaemon, BlockchainEvent, EventRouting } from "@shared/blo
 import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
 import { PortfolioService } from "../services/portfolio.service";
 import { logger } from "@shared/monitoring/src/logger";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
 /**
  * Portfolio service implementation of blockchain events daemon
  */
+@TracingDecorator()
 export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
   constructor(
     rabbitClient: RabbitMQClient,
@@ -36,7 +38,7 @@ export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
           transactionHash: event.transactionHash,
           blockNumber: event.blockNumber,
           amount: Number(amount),
-          pool,
+          poolAddress: pool,
         });
 
         logger.info(`Processed swap event for user`, {

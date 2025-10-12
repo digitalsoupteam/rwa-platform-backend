@@ -1,4 +1,6 @@
+import { tracer } from "@shared/monitoring/src/tracing";
 import mongoose, { Schema, InferRawDocType } from "mongoose";
+
 
 const refreshTokenSchemaDefinition = {
   userId: {

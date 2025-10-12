@@ -5,7 +5,9 @@ import {
   AssistantEntity,
   IAssistantEntity,
 } from "../models/entity/assistant.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class AssistantRepository {
   constructor(private readonly model = AssistantEntity) {}
 

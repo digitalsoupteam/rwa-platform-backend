@@ -6,19 +6,21 @@ import {
   getTreasuryWithdrawalsResponse,
 } from "../models/validation/dao.validation";
 
-export const getTreasuryWithdrawalsController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/getTreasuryWithdrawals",
-    async ({ body, daoService }) => {
-      logger.info(
-        `POST /getTreasuryWithdrawals - Getting treasury withdrawals`
-      );
-      
-      return await daoService.getTreasuryWithdrawals(body);
-    },
-    {
-      body: getTreasuryWithdrawalsRequest,
-      response: getTreasuryWithdrawalsResponse,
-    }
-  );
+export const getTreasuryWithdrawalsController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "GetTreasuryWithdrawalsController" })
+    .use(servicesPlugin)
+    .post(
+      "/getTreasuryWithdrawals",
+      async ({ body, daoService }) => {
+        logger.info(
+          `POST /getTreasuryWithdrawals - Getting treasury withdrawals`
+        );
+
+        return await daoService.getTreasuryWithdrawals(body);
+      },
+      {
+        body: getTreasuryWithdrawalsRequest,
+        response: getTreasuryWithdrawalsResponse,
+      }
+    );
+};

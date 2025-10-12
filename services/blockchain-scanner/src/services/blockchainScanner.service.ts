@@ -3,10 +3,12 @@ import { AppError, NotFoundError } from "@shared/errors/app-errors";
 import { EventRepository } from "../repositories/event.repository";
 import { ScannerStateRepository } from "../repositories/scannerState.repository";
 import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
 /**
  * Service for handling blockchain events
  */
+@TracingDecorator()
 export class BlockchainScannerService {
   private readonly EXCHANGE_NAME = "blockchain.events";
 

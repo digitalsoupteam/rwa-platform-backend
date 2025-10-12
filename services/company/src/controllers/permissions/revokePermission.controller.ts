@@ -6,8 +6,9 @@ import {
   revokePermissionResponse,
 } from "../../models/validation/company.validation";
 
-export const revokePermissionController = new Elysia()
-  .use(ServicesPlugin)
+export const revokePermissionController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "RevokePermissionController" })
+    .use(servicesPlugin)
   .post(
     "/revokePermission",
     async ({ body, companyService }) => {
@@ -22,3 +23,4 @@ export const revokePermissionController = new Elysia()
       response: revokePermissionResponse,
     }
   );
+};

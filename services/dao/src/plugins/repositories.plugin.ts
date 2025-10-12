@@ -7,37 +7,73 @@ import { StakingRepository } from "../repositories/staking.repository";
 import { StakingHistoryRepository } from "../repositories/stakingHistory.repository";
 import { TimelockTaskRepository } from "../repositories/timelockTask.repository";
 import { TreasuryWithdrawRepository } from "../repositories/treasuryWithdraw.repository";
-import { CONFIG } from "../config";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const RepositoriesPlugin = new Elysia({ name: "Repositories" })
-  .decorate("proposalRepository", {} as ProposalRepository)
-  .decorate("voteRepository", {} as VoteRepository)
-  .decorate("stakingRepository", {} as StakingRepository)
-  .decorate("stakingHistoryRepository", {} as StakingHistoryRepository)
-  .decorate("timelockTaskRepository", {} as TimelockTaskRepository)
-  .decorate("treasuryWithdrawRepository", {} as TreasuryWithdrawRepository)
-  .onStart(
-    async ({ decorator }) => {
-      logger.debug("Initializing repositories");
-      
-      decorator.proposalRepository = new ProposalRepository();
-      decorator.voteRepository = new VoteRepository();
-      decorator.stakingRepository = new StakingRepository();
-      decorator.stakingHistoryRepository = new StakingHistoryRepository();
-      decorator.timelockTaskRepository = new TimelockTaskRepository();
-      decorator.treasuryWithdrawRepository = new TreasuryWithdrawRepository();
+export const createRepositoriesPlugin = async (mongoUri: string) => {
+  const proposalRepository = withTraceSync(
+    'dao.init.repositories.proposal',
+    () => new ProposalRepository()
+  );
 
-      logger.info("Connecting to MongoDB", {
-        uri: CONFIG.MONGODB.URI,
+  const voteRepository = withTraceSync(
+    'dao.init.repositories.vote',
+    () => new VoteRepository()
+  );
+
+  const stakingRepository = withTraceSync(
+    'dao.init.repositories.staking',
+    () => new StakingRepository()
+  );
+
+  const stakingHistoryRepository = withTraceSync(
+    'dao.init.repositories.staking_history',
+    () => new StakingHistoryRepository()
+  );
+
+  const timelockTaskRepository = withTraceSync(
+    'dao.init.repositories.timelock_task',
+    () => new TimelockTaskRepository()
+  );
+
+  const treasuryWithdrawRepository = withTraceSync(
+    'dao.init.repositories.treasury_withdraw',
+    () => new TreasuryWithdrawRepository()
+  );
+
+  await withTraceAsync(
+    'dao.init.repositories_plugin.mongoose',
+    async (ctx) => {
+      logger.info("Connecting to MongoDB", { uri: mongoUri });
+      mongoose.connection.once('connected', () => {
+        logger.info("MongoDB connected successfully");
+        ctx.end();
       });
-
-      await mongoose.connect(CONFIG.MONGODB.URI);
-
-      logger.info("MongoDB connected successfully");
+      await mongoose.connect(mongoUri);
     }
-  )
-  .onStop(async () => {
-    logger.info("Disconnecting from MongoDB");
-    await mongoose.disconnect();
-    logger.info("MongoDB disconnected successfully");
-  });
+  );
+
+  const plugin = withTraceSync(
+    'dao.init.repositories.plugin',
+    () => new Elysia({ name: "Repositories" })
+      .decorate("proposalRepository", proposalRepository)
+      .decorate("voteRepository", voteRepository)
+      .decorate("stakingRepository", stakingRepository)
+      .decorate("stakingHistoryRepository", stakingHistoryRepository)
+      .decorate("timelockTaskRepository", timelockTaskRepository)
+      .decorate("treasuryWithdrawRepository", treasuryWithdrawRepository)
+      .onStop(async () => {
+        await withTraceAsync(
+          'dao.stop.repositories_plugin',
+          async () => {
+            logger.info("Disconnecting from MongoDB");
+            await mongoose.disconnect();
+            logger.info("MongoDB disconnected successfully");
+          }
+        );
+      })
+  );
+
+  return plugin;
+}
+
+export type RepositoriesPlugin = Awaited<ReturnType<typeof createRepositoriesPlugin>>

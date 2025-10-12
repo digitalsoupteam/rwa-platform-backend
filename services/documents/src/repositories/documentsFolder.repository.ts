@@ -5,7 +5,9 @@ import {
   DocumentsFolderEntity,
   IDocumentsFolderEntity,
 } from "../models/entity/documentsFolder.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class DocumentsFolderRepository {
   constructor(private readonly model = DocumentsFolderEntity) {}
 

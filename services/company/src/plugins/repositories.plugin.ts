@@ -4,31 +4,55 @@ import { logger } from "@shared/monitoring/src/logger";
 import { CompanyRepository } from "../repositories/company.repository";
 import { MemberRepository } from "../repositories/members.repository";
 import { PermissionRepository } from "../repositories/permissions.repository";
-import { CONFIG } from "../config";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const RepositoriesPlugin = new Elysia({ name: "Repositories" })
-  .decorate("companyRepository", {} as CompanyRepository)
-  .decorate("memberRepository", {} as MemberRepository)
-  .decorate("permissionRepository", {} as PermissionRepository)
-  .onStart(
-    async ({ decorator }) => {
-      logger.debug("Initializing repositories");
-      
-      decorator.companyRepository = new CompanyRepository();
-      decorator.memberRepository = new MemberRepository();
-      decorator.permissionRepository = new PermissionRepository();
+export const createRepositoriesPlugin = async (mongoUri: string) => {
+  const companyRepository = withTraceSync(
+    'company.init.repositories.company',
+    () => new CompanyRepository()
+  );
 
-      logger.info("Connecting to MongoDB", {
-        uri: CONFIG.MONGODB.URI,
+  const memberRepository = withTraceSync(
+    'company.init.repositories.member',
+    () => new MemberRepository()
+  );
+
+  const permissionRepository = withTraceSync(
+    'company.init.repositories.permission',
+    () => new PermissionRepository()
+  );
+
+  await withTraceAsync(
+    'company.init.repositories_plugin.mongoose',
+    async (ctx) => {
+      logger.info("Connecting to MongoDB", { uri: mongoUri });
+      mongoose.connection.once('connected', () => {
+        logger.info("MongoDB connected successfully");
+        ctx.end();
       });
-
-      await mongoose.connect(CONFIG.MONGODB.URI);
-
-      logger.info("MongoDB connected successfully");
+      await mongoose.connect(mongoUri);
     }
-  )
-  .onStop(async () => {
-    logger.info("Disconnecting from MongoDB");
-    await mongoose.disconnect();
-    logger.info("MongoDB disconnected successfully");
-  });
+  );
+
+  const plugin = withTraceSync(
+    'company.init.repositories.plugin',
+    () => new Elysia({ name: "Repositories" })
+      .decorate("companyRepository", companyRepository)
+      .decorate("memberRepository", memberRepository)
+      .decorate("permissionRepository", permissionRepository)
+      .onStop(async () => {
+        await withTraceAsync(
+          'company.stop.repositories_plugin',
+          async () => {
+            logger.info("Disconnecting from MongoDB");
+            await mongoose.disconnect();
+            logger.info("MongoDB disconnected successfully");
+          }
+        );
+      })
+  );
+
+  return plugin;
+}
+
+export type RepositoriesPlugin = Awaited<ReturnType<typeof createRepositoriesPlugin>>

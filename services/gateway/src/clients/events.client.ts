@@ -4,9 +4,10 @@ import Redis from 'ioredis';
 import { CONFIG } from "../config";
 import { logger } from "@shared/monitoring/src/logger";
 
+import { RedisWithTracing } from "@shared/monitoring/src/redis";
 
-const publishClient = new Redis(CONFIG.REDIS.URL);
-const subscribeClient = new Redis(CONFIG.REDIS.URL);
+const publishClient =  new RedisWithTracing(CONFIG.REDIS.URL);
+const subscribeClient = new RedisWithTracing(CONFIG.REDIS.URL);
 
 
 publishClient.on('connect', () => logger.info('Redis publisher connected'));

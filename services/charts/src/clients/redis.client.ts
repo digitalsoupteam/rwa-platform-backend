@@ -1,7 +1,8 @@
 import { RedisEventsClient } from "@shared/redis-events/src/redis-events.client";
 import { logger } from "@shared/monitoring/src/logger";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
-
+@TracingDecorator()
 export class ChartEventsClient {
   constructor(private readonly redisClient: RedisEventsClient) { }
 

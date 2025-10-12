@@ -6,19 +6,21 @@ import {
   deleteBlogResponse,
 } from "../../models/validation/blogs.validation";
 
-export const deleteBlogController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/deleteBlog",
-    async ({ body, blogsService }) => {
-      logger.info(
-        `POST /deleteBlog - Deleting blog`
-      );
+export const deleteBlogController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "DeleteBlogController" })
+    .use(servicesPlugin)
+    .post(
+      "/deleteBlog",
+      async ({ body, blogsService }) => {
+        logger.info(
+          `POST /deleteBlog - Deleting blog`
+        );
 
-      return await blogsService.deleteBlog(body.id);
-    },
-    {
-      body: deleteBlogRequest,
-      response: deleteBlogResponse,
-    }
-  );
+        return await blogsService.deleteBlog(body.id);
+      },
+      {
+        body: deleteBlogRequest,
+        response: deleteBlogResponse,
+      }
+    );
+};

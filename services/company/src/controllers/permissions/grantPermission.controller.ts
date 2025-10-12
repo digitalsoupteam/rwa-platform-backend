@@ -6,8 +6,9 @@ import {
   grantPermissionResponse,
 } from "../../models/validation/company.validation";
 
-export const grantPermissionController = new Elysia()
-  .use(ServicesPlugin)
+export const grantPermissionController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "GrantPermissionController" })
+    .use(servicesPlugin)
   .post(
     "/grantPermission",
     async ({ body, companyService }) => {
@@ -22,3 +23,4 @@ export const grantPermissionController = new Elysia()
       response: grantPermissionResponse,
     }
   );
+};

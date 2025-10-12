@@ -6,16 +6,18 @@ import {
   getPoolTransactionsResponse,
 } from "../models/validation/poolTransaction.validation";
 
-export const getPoolTransactionsController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/getPoolTransactions",
-    async ({ body, transactionsService }) => {
-      logger.info(`POST /getPoolTransactions - Getting transactions with filter: ${JSON.stringify(body.filter)}`);
-      return await transactionsService.getTransactions(body);
-    },
-    {
-      body: getPoolTransactionsRequest,
-      response: getPoolTransactionsResponse,
-    }
-  );
+export const getPoolTransactionsController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "GetPoolTransactionsController" })
+    .use(servicesPlugin)
+    .post(
+      "/getPoolTransactions",
+      async ({ body, transactionsService }) => {
+        logger.info(`POST /getPoolTransactions - Getting transactions with filter: ${JSON.stringify(body.filter)}`);
+        return await transactionsService.getTransactions(body);
+      },
+      {
+        body: getPoolTransactionsRequest,
+        response: getPoolTransactionsResponse,
+      }
+    );
+};

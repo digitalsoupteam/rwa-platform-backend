@@ -4,9 +4,11 @@ import { IPriceDataEntity } from "../models/entity/priceData.entity";
 import { FilterQuery, SortOrder } from "mongoose";
 import { ValidationError } from "@shared/errors/app-errors";
 import { ChartEventsClient } from "../clients/redis.client";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
 export type OhlcInterval = '1m' | '5m' | '15m' | '30m' | '1h' | '2h' | '4h' | '6h' | '12h' | '1d' | '1w';
 
+@TracingDecorator()
 export class ChartsService {
   constructor(
     private readonly priceDataRepository: PriceDataRepository,

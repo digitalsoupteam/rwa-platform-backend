@@ -3,7 +3,9 @@ import { MessageRepository } from "../repositories/message.repository";
 import { OpenRouterClient } from "@shared/openrouter/client";
 import { AssistantRepository } from "../repositories/assistant.repository";
 import { ContextService } from "./context.service";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class MessageService {
   constructor(
     private readonly messageRepository: MessageRepository,
@@ -18,7 +20,6 @@ export class MessageService {
    */
   async createMessage(data: {
     assistantId: string;
-    userId: string;
     text: string;
     model?: string;
   }) {
@@ -42,7 +43,7 @@ export class MessageService {
       );
 
       // Get assistant-specific context
-      const context = await this.contextService.getContextForAssistant(assistant.contextPreferences, data.userId);
+      const context = await this.contextService.getContextForAssistant(assistant.contextPreferences, assistant.userId);
 
       // Prepare conversation history
       const messages = [

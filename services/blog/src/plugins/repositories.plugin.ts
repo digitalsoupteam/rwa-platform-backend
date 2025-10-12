@@ -1,31 +1,47 @@
 import { Elysia } from "elysia";
 import mongoose from "mongoose";
-import { logger } from "@shared/monitoring/src/logger";
 import { BlogRepository } from "../repositories/blog.repository";
 import { PostRepository } from "../repositories/post.repository";
-import { CONFIG } from "../config";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const RepositoriesPlugin = new Elysia({ name: "Repositories" })
-  .decorate("blogRepository", {} as BlogRepository)
-  .decorate("postRepository", {} as PostRepository)
-  .onStart(
-    async ({ decorator }) => {
-      logger.debug("Initializing repositories");
-      
-      decorator.blogRepository = new BlogRepository();
-      decorator.postRepository = new PostRepository();
+export const createRepositoriesPlugin = async (mongoUri: string) => {
+  const blogRepository = withTraceSync(
+    'blog.init.repositories.blog',
+    () => new BlogRepository()
+  );
 
-      logger.info("Connecting to MongoDB", {
-        uri: CONFIG.MONGODB.URI,
-      });
+  const postRepository = withTraceSync(
+    'blog.init.repositories.post',
+    () => new PostRepository()
+  );
 
-      await mongoose.connect(CONFIG.MONGODB.URI);
-
-      logger.info("MongoDB connected successfully");
+  await withTraceAsync(
+    'blog.init.repositories_plugin.mongoose',
+    async (ctx) => {
+      mongoose.connection.once('connected', () => {
+        console.log('blog mongoose connected')
+        ctx.end();
+      })
+      await mongoose.connect(mongoUri);
     }
-  )
-  .onStop(async () => {
-    logger.info("Disconnecting from MongoDB");
-    await mongoose.disconnect();
-    logger.info("MongoDB disconnected successfully");
-  });
+  );
+
+  const plugin = withTraceSync(
+    'blog.init.repositories.plugin',
+    () => new Elysia({ name: "Repositories" })
+      .decorate("blogRepository", blogRepository)
+      .decorate("postRepository", postRepository)
+      .onStop(async () => {
+        await withTraceAsync(
+          'blog.stop.repositories_plugin',
+          async () => {
+            await mongoose.disconnect();
+          }
+        );
+      })
+  );
+
+  return plugin;
+}
+
+export type RepositoriesPlugin = Awaited<ReturnType<typeof createRepositoriesPlugin>>

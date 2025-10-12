@@ -2,7 +2,9 @@ import { logger } from "@shared/monitoring/src/logger";
 import { SignatureRepository } from "../repositories/signature.repository";
 import { SignatureTaskRepository } from "../repositories/signatureTask.repository";
 import { SignerClient } from "../clients/signer.client";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class SignaturesService {
   constructor(
     private readonly signatureRepository: SignatureRepository,

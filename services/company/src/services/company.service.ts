@@ -3,7 +3,9 @@ import { CompanyRepository } from "../repositories/company.repository";
 import { PermissionRepository } from "../repositories/permissions.repository";
 import { MemberRepository } from "../repositories/members.repository";
 import { SortOrder } from "mongoose";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class CompanyService {
   constructor(
     private readonly companyRepository: CompanyRepository,
@@ -131,7 +133,7 @@ export class CompanyService {
    * Deletes a company and all associated data
    */
   async deleteCompany(companyId: string) {
-    logger.debug("Deleting company and associated data", companyId);
+    logger.debug("Deleting company and associated data", { companyId });
 
     // Delete all permissions in company
     await this.permissionRepository.deleteMany({ companyId });
@@ -190,7 +192,7 @@ export class CompanyService {
    * Removes member from company
    */
   async removeMember(memberId: string) {
-    logger.debug("Removing member", memberId);
+    logger.debug("Removing member", {memberId});
 
     // Delete all user permissions in company
     await this.permissionRepository.deleteMany({ memberId });

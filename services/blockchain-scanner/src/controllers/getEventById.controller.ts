@@ -6,17 +6,21 @@ import {
   getEventByIdResponse,
 } from "../models/validation/event.validation";
 
-export const getEventByIdController = new Elysia().use(ServicesPlugin).post(
-  "/getEventById",
-  async ({ body, blockchainScannerService }) => {
-    logger.info(
-      `POST /getEventById - Getting event with id: ${body.id}`
-    );
+export const getEventByIdController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "GetEventByIdController" })
+    .use(servicesPlugin)
+    .post(
+      "/getEventById",
+      async ({ body, blockchainScannerService }) => {
+        logger.info(
+          `POST /getEventById - Getting event with id: ${body.id}`
+        );
 
-    return await blockchainScannerService.getEventById(body.id);
-  },
-  {
-    body: getEventByIdRequest,
-    response: getEventByIdResponse,
-  }
-);
+        return await blockchainScannerService.getEventById(body.id);
+      },
+      {
+        body: getEventByIdRequest,
+        response: getEventByIdResponse,
+      }
+    );
+};

@@ -6,19 +6,21 @@ import {
   updateDocumentResponse,
 } from "../../models/validation/documents.validation";
 
-export const updateDocumentController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/updateDocument",
-    async ({ body, documentsService }) => {
-      logger.info(
-        `POST /updateDocument - Updating document with ID: ${body.id}`
-      );
+export const updateDocumentController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "UpdateDocumentController" })
+    .use(servicesPlugin)
+    .post(
+      "/updateDocument",
+      async ({ body, documentsService }) => {
+        logger.info(
+          `POST /updateDocument - Updating document with ID: ${body.id}`
+        );
 
-      return await documentsService.updateDocument(body);
-    },
-    {
-      body: updateDocumentRequest,
-      response: updateDocumentResponse,
-    }
-  );
+        return await documentsService.updateDocument(body);
+      },
+      {
+        body: updateDocumentRequest,
+        response: updateDocumentResponse,
+      }
+    );
+};

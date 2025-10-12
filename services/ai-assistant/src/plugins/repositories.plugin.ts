@@ -1,30 +1,47 @@
 import { Elysia } from "elysia";
 import mongoose from "mongoose";
-import { logger } from "@shared/monitoring/src/logger";
 import { AssistantRepository } from "../repositories/assistant.repository";
 import { MessageRepository } from "../repositories/message.repository";
-import { CONFIG } from "../config";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const RepositoriesPlugin = new Elysia({ name: "Repositories" })
-  .decorate("assistantRepository", {} as AssistantRepository)
-  .decorate("messageRepository", {} as MessageRepository)
-  .onStart(
-    async ({ decorator }) => {
-      logger.debug("Initializing repositories");
-      decorator.assistantRepository = new AssistantRepository();
-      decorator.messageRepository = new MessageRepository();
+export const createRepositoriesPlugin = async (mongoUri: string) => {
+  const assistantRepository = withTraceSync(
+    'ai-assistant.init.repositories.assistant',
+    () => new AssistantRepository()
+  );
 
-      logger.info("Connecting to MongoDB", {
-        uri: CONFIG.MONGODB.URI,
-      });
+  const messageRepository = withTraceSync(
+    'ai-assistant.init.repositories.message',
+    () => new MessageRepository()
+  );
 
-      await mongoose.connect(CONFIG.MONGODB.URI);
-
-      logger.info("MongoDB connected successfully");
+  await withTraceAsync(
+    'ai-assistant.init.repositories_plugin.mongoose',
+    async (ctx) => {
+      mongoose.connection.once('connected', () => {
+        console.log('ai-assistant mongoose connected')
+        ctx.end();
+      })
+      await mongoose.connect(mongoUri);
     }
-  )
-  .onStop(async () => {
-    logger.info("Disconnecting from MongoDB");
-    await mongoose.disconnect();
-    logger.info("MongoDB disconnected successfully");
-  });
+  );
+
+  const plugin = withTraceSync(
+    'ai-assistant.init.repositories.plugin',
+    () => new Elysia({ name: "Repositories" })
+      .decorate("assistantRepository", assistantRepository)
+      .decorate("messageRepository", messageRepository)
+      .onStop(async () => {
+        await withTraceAsync(
+          'ai-assistant.stop.repositories_plugin',
+          async () => {
+            await mongoose.disconnect();
+          }
+        );
+      })
+  );
+
+  return plugin;
+}
+
+export type RepositoriesPlugin = Awaited<ReturnType<typeof createRepositoriesPlugin>>

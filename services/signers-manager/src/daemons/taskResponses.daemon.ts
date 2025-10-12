@@ -2,6 +2,7 @@ import { logger } from "@shared/monitoring/src/logger";
 import { SignerClient } from "../clients/signer.client";
 import { SignaturesService } from "../services/signatures.service";
 import type { ConsumeMessage } from "amqplib";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
 interface SignatureResponse {
   signer: string;
@@ -13,6 +14,7 @@ interface SignatureResponse {
 /**
  * Daemon for handling signature responses from signer service
  */
+@TracingDecorator()
 export class TaskResponsesDaemon {
   private initialized: boolean = false;
 

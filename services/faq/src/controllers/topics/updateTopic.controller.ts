@@ -6,19 +6,21 @@ import {
   updateTopicResponse,
 } from "../../models/validation/faq.validation";
 
-export const updateTopicController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/updateTopic",
-    async ({ body, faqService }) => {
-      logger.info(
-        `POST /updateTopic - Updating topic with ID: ${body.id}`
-      );
+export const updateTopicController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "UpdateTopicController" })
+    .use(servicesPlugin)
+    .post(
+      "/updateTopic",
+      async ({ body, faqService }) => {
+        logger.info(
+          `POST /updateTopic - Updating topic with ID: ${body.id}`
+        );
 
-      return await faqService.updateTopic(body);
-    },
-    {
-      body: updateTopicRequest,
-      response: updateTopicResponse,
-    }
-  );
+        return await faqService.updateTopic(body);
+      },
+      {
+        body: updateTopicRequest,
+        response: updateTopicResponse,
+      }
+    );
+};

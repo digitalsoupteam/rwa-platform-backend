@@ -1,27 +1,29 @@
 import { Elysia } from "elysia";
 import { logger } from "@shared/monitoring/src/logger";
 import { SignatureService } from "../services/signature.service";
-import { CONFIG } from "../config";
 import { ClientsPlugin } from "./clients.plugin";
+import { withTraceSync } from "@shared/monitoring/src/tracing";
 
-export const ServicesPlugin = new Elysia({ name: "Services" })
-  .use(ClientsPlugin)
-  .decorate("signatureService", {} as SignatureService)
-  .onStart(
-    async ({ decorator }) => {
-      logger.debug("Initializing services");
-
-      await new Promise(r => setTimeout(r, 10000))
-      
-      if (!CONFIG.SIGNER.PRIVATE_KEY) {
-        throw new Error("SIGNER_PRIVATE_KEY is not set");
-      }
-
-      decorator.signatureService = new SignatureService(
-        decorator.signersManagerClient,
-        CONFIG.SIGNER.PRIVATE_KEY
-      );
-
-      logger.debug("Services initialized successfully");
-    }
+export const createServicesPlugin = (
+  clientsPlugin: ClientsPlugin,
+  privateKey: string
+) => {
+  const signatureService = withTraceSync(
+    'signer.init.services.signature',
+    () => new SignatureService(
+      clientsPlugin.decorator.signersManagerClient,
+      privateKey
+    )
   );
+
+  const plugin = withTraceSync(
+    'signer.init.services.plugin',
+    () => new Elysia({ name: "Services" })
+      .use(clientsPlugin)
+      .decorate("signatureService", signatureService)
+  );
+
+  return plugin;
+}
+
+export type ServicesPlugin = ReturnType<typeof createServicesPlugin>

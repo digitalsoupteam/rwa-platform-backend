@@ -5,7 +5,9 @@ import {
   CompanyEntity,
   ICompanyEntity,
 } from "../models/entity/company.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class CompanyRepository {
   constructor(private readonly model = CompanyEntity) {}
 

@@ -6,19 +6,21 @@ import {
   createFolderResponse,
 } from "../../models/validation/documents.validation";
 
-export const createFolderController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/createFolder",
-    async ({ body, documentsService }) => {
-      logger.info(
-        `POST /createFolder - Creating folder with name: ${body.name}`
-      );
+export const createFolderController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "CreateFolderController" })
+    .use(servicesPlugin)
+    .post(
+      "/createFolder",
+      async ({ body, documentsService }) => {
+        logger.info(
+          `POST /createFolder - Creating folder with name: ${body.name}`
+        );
 
-      return await documentsService.createFolder(body);
-    },
-    {
-      body: createFolderRequest,
-      response: createFolderResponse,
-    }
-  );
+        return await documentsService.createFolder(body);
+      },
+      {
+        body: createFolderRequest,
+        response: createFolderResponse,
+      }
+    );
+};

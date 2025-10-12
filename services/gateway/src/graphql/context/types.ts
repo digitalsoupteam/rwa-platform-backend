@@ -1,9 +1,9 @@
-import type { 
-  AiAssistantClient, 
-  AuthClient, 
-  TestnetFaucetClient, 
-  RwaClient, 
-  FilesClient, 
+import type {
+  AiAssistantClient,
+  AuthClient,
+  TestnetFaucetClient,
+  RwaClient,
+  FilesClient,
   SignersManagerClient,
   DocumentsClient,
   GalleryClient,
@@ -21,6 +21,7 @@ import type { createPubSub } from 'graphql-yoga';
 import { CacheService } from '../../services/cache.service';
 import { OwnershipService } from '../../services/ownership.service';
 import { ParentService } from '../../services/parent.service';
+import type { Context } from '@opentelemetry/api';
 
 export interface User {
   id: string;
@@ -62,6 +63,7 @@ export interface GraphQLContext {
   user: User | null;
   token: string | null;
   pubSub: PubSubInstance;
+  traceContext: Context;
 }
 
 export interface RedisEvent {

@@ -6,8 +6,9 @@ import {
   deleteCompanyResponse,
 } from "../../models/validation/company.validation";
 
-export const deleteCompanyController = new Elysia()
-  .use(ServicesPlugin)
+export const deleteCompanyController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "DeleteCompanyController" })
+    .use(servicesPlugin)
   .post(
     "/deleteCompany",
     async ({ body, companyService }) => {
@@ -22,3 +23,4 @@ export const deleteCompanyController = new Elysia()
       response: deleteCompanyResponse,
     }
   );
+};

@@ -1,28 +1,48 @@
 import { Elysia } from "elysia";
 import mongoose from "mongoose";
-import { logger } from "@shared/monitoring/src/logger";
 import { UserRepository } from "../repositories/user.repository";
 import { RefreshTokenRepository } from "../repositories/refreshToken.repository";
-import { CONFIG } from "../config";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const RepositoriesPlugin = new Elysia({ name: "Repositories" })
-  .decorate("userRepository", {} as UserRepository)
-  .decorate("refreshTokenRepository", {} as RefreshTokenRepository)
-  .onStart(async ({ decorator }) => {
-    logger.debug("Initializing repositories");
-    decorator.userRepository = new UserRepository();
-    decorator.refreshTokenRepository = new RefreshTokenRepository();
 
-    logger.info("Connecting to MongoDB", {
-      uri: CONFIG.MONGODB.URI,
-    });
+export const createRepositoriesPlugin = async (mongoUri: string) => {
+  const userRepository = withTraceSync(
+    'auth.init.repositories.user',
+    () => new UserRepository()
+  );
 
-    await mongoose.connect(CONFIG.MONGODB.URI);
+  const refreshTokenRepository = withTraceSync(
+    'auth.init.repositories.refresh_token',
+    () => new RefreshTokenRepository()
+  );
 
-    logger.info("MongoDB connected successfully");
-  })
-  .onStop(async () => {
-    logger.info("Disconnecting from MongoDB");
-    await mongoose.disconnect();
-    logger.info("MongoDB disconnected successfully");
-  });
+  await withTraceAsync(
+    'auth.init.repositories_plugin.mongoose',
+    async (ctx) => {
+      mongoose.connection.once('connected', () => {
+        console.log('aw1 mongoose cpnnected')
+        ctx.end();
+      })
+      await mongoose.connect(mongoUri);
+    }
+  );
+
+  const plugin = withTraceSync(
+    'auth.init.repositories.plugin',
+    () => new Elysia({ name: "Repositories" })
+      .decorate("userRepository", userRepository)
+      .decorate("refreshTokenRepository", refreshTokenRepository)
+      .onStop(async () => {
+        await withTraceAsync(
+          'auth.stop.repositories_plugin',
+          async () => {
+            await mongoose.disconnect();
+          }
+        );
+      })
+  );
+
+  return plugin;
+}
+
+export type RepositoriesPlugin = Awaited<ReturnType<typeof createRepositoriesPlugin>>

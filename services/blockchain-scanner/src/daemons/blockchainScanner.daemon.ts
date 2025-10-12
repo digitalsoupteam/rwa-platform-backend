@@ -1,9 +1,9 @@
 import { ethers } from "ethers";
 import { logger } from "@shared/monitoring/src/logger";
 import { BlockchainError } from "@shared/errors/app-errors";
-import { CONFIG } from "../config";
 import EventEmitterABI from "../abi/EventEmitter.json";
 import { BlockchainScannerService } from "../services/blockchainScanner.service";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
 type BlockchainEventData = {
   chainId: number;
@@ -20,6 +20,7 @@ type BlockchainEventData = {
  * Daemon for scanning blockchain
  * Handles blockchain interaction and periodic scanning
  */
+@TracingDecorator()
 export class BlockchainScannerDaemon {
   // Blockchain related
   private provider: ethers.JsonRpcProvider;

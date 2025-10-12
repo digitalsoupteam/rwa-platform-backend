@@ -6,19 +6,21 @@ import {
   createPoolWithAIResponse,
 } from "../../models/validation/pool.validation";
 
-export const createPoolWithAIController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/createPoolWithAI",
-    async ({ body, poolService }) => {
-      logger.info(
-        `POST /createPoolWithAI - Creating pool from description`
-      );
+export const createPoolWithAIController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "CreatePoolWithAIController" })
+    .use(servicesPlugin)
+    .post(
+      "/createPoolWithAI",
+      async ({ body, poolService }) => {
+        logger.info(
+          `POST /createPoolWithAI - Creating pool from description`
+        );
 
-      return await poolService.createPoolWithAI(body);
-    },
-    {
-      body: createPoolWithAIRequest,
-      response: createPoolWithAIResponse,
-    }
-  );
+        return await poolService.createPoolWithAI(body);
+      },
+      {
+        body: createPoolWithAIRequest,
+        response: createPoolWithAIResponse,
+      }
+    );
+};

@@ -3,29 +3,49 @@ import mongoose from "mongoose";
 import { logger } from "@shared/monitoring/src/logger";
 import { EventRepository } from "../repositories/event.repository";
 import { ScannerStateRepository } from "../repositories/scannerState.repository";
-import { CONFIG } from "../config";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const RepositoriesPlugin = new Elysia({ name: "Repositories" })
-  .decorate("eventRepository", {} as EventRepository)
-  .decorate("scannerStateRepository", {} as ScannerStateRepository)
-  .onStart(
-    async ({ decorator }) => {
-      logger.debug("Initializing repositories");
+export const createRepositoriesPlugin = async (mongoUri: string) => {
+  const eventRepository = withTraceSync(
+    'blockchain-scanner.init.repositories.event',
+    () => new EventRepository()
+  );
 
-      decorator.eventRepository = new EventRepository();
-      decorator.scannerStateRepository = new ScannerStateRepository();
+  const scannerStateRepository = withTraceSync(
+    'blockchain-scanner.init.repositories.scanner_state',
+    () => new ScannerStateRepository()
+  );
 
-      logger.info("Connecting to MongoDB", {
-        uri: CONFIG.MONGODB.URI,
+  await withTraceAsync(
+    'blockchain-scanner.init.repositories_plugin.mongoose',
+    async (ctx) => {
+      logger.info("Connecting to MongoDB", { uri: mongoUri });
+      mongoose.connection.once('connected', () => {
+        logger.info("MongoDB connected successfully");
+        ctx.end();
       });
-
-      await mongoose.connect(CONFIG.MONGODB.URI);
-
-      logger.info("MongoDB connected successfully");
+      await mongoose.connect(mongoUri);
     }
-  )
-  .onStop(async () => {
-    logger.info("Disconnecting from MongoDB");
-    await mongoose.disconnect();
-    logger.info("MongoDB disconnected successfully");
-  });
+  );
+
+  const plugin = withTraceSync(
+    'blockchain-scanner.init.repositories.plugin',
+    () => new Elysia({ name: "Repositories" })
+      .decorate("eventRepository", eventRepository)
+      .decorate("scannerStateRepository", scannerStateRepository)
+      .onStop(async () => {
+        await withTraceAsync(
+          'blockchain-scanner.stop.repositories_plugin',
+          async () => {
+            logger.info("Disconnecting from MongoDB");
+            await mongoose.disconnect();
+            logger.info("MongoDB disconnected successfully");
+          }
+        );
+      })
+  );
+
+  return plugin;
+}
+
+export type RepositoriesPlugin = Awaited<ReturnType<typeof createRepositoriesPlugin>>

@@ -3,7 +3,9 @@ import { TopicRepository } from "../repositories/topic.repository";
 import { QuestionRepository } from "../repositories/question.repository";
 import { FilterQuery, SortOrder, Types } from "mongoose";
 import { QuestionLikesRepository } from "../repositories/questionLikes.repository";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class QuestionsService {
   constructor(
     private readonly topicRepository: TopicRepository,

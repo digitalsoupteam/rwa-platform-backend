@@ -3,10 +3,11 @@ import { writeFile, unlink } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { randomUUID } from "node:crypto";
 import { logger } from "@shared/monitoring/src/logger";
-import { CONFIG } from "../config";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class StorageClient {
-  constructor(private readonly rootDir = CONFIG.STORAGE.ROOT_DIR) {
+  constructor(private readonly rootDir: string) {
     // Ensure root directory exists
     if (!existsSync(rootDir)) {
       mkdirSync(rootDir, { recursive: true });

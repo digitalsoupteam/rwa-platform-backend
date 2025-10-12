@@ -1,38 +1,39 @@
-import { Elysia } from 'elysia';
-import { logger } from '@shared/monitoring/src/logger';
-import { CONFIG } from './config';
-import { ErrorHandlerPlugin } from '@shared/errors/error-handler.plugin';
-import { RepositoriesPlugin } from './plugins/repositories.plugin';
-import { ClientsPlugin } from './plugins/clients.plugin';
-import { ServicesPlugin } from './plugins/services.plugin';
-import { DaemonsPlugin } from './plugins/daemons.plugin';
-import { ControllersPlugin } from './plugins/controllers.plugin';
+import { createApp } from './app';
+import { tracer } from '@shared/monitoring/src/tracing';
 
+const app = await tracer.startActiveSpan(
+  'rwa.init.main',
+  async (span) => {
+    const appInstance = await createApp(
+      Number(process.env.PORT),
+      String(process.env.MONGODB_URI),
+      String(process.env.REDIS_URL),
+      String(process.env.SERVICE_NAME),
+      String(process.env.OPENROUTER_API_KEY),
+      String(process.env.OPENROUTER_BASE_URL),
+      String(process.env.RABBITMQ_URI),
+      Number(process.env.RABBITMQ_MAX_RECONNECT_ATTEMPTS),
+      Number(process.env.RABBITMQ_RECONNECT_INTERVAL),
+      String(process.env.SIGNERS_MANAGER_URL),
+      [
+        {
+          chainId: '97',
+          name: "BSC Testnet",
+          factoryAddress: "0xD1b0e186A2B0d602f27cE2e046Fa95BBe9FE6d84",
+        }
+      ]
+    );
 
-const app = new Elysia()
-  .onError(ErrorHandlerPlugin)
-  .use(RepositoriesPlugin)
-  .use(ClientsPlugin)
-  .use(ServicesPlugin)
-  .use(DaemonsPlugin)
-  .use(ControllersPlugin)
-  
-  .listen(CONFIG.PORT, () => {
-    logger.info(`🚀 RWA Service ready at http://127.0.0.1:${CONFIG.PORT}`);
-  });
-
+    span.end();
+    return appInstance;
+  }
+);
 
 const shutdown = async () => {
-  logger.info('Shutting down...');
-  
   try {
     await app.stop();
-    logger.info('Server stopped');
-    
-    logger.info('Shutdown completed');
     process.exit(0);
   } catch (error) {
-    logger.error('Error during shutdown:', error);
     process.exit(1);
   }
 };

@@ -3,28 +3,49 @@ import mongoose from "mongoose";
 import { logger } from "@shared/monitoring/src/logger";
 import { SignatureRepository } from "../repositories/signature.repository";
 import { SignatureTaskRepository } from "../repositories/signatureTask.repository";
-import { CONFIG } from "../config";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const RepositoriesPlugin = new Elysia({ name: "Repositories" })
-  .decorate("signatureRepository", {} as SignatureRepository)
-  .decorate("signatureTaskRepository", {} as SignatureTaskRepository)
-  .onStart(
-    async ({ decorator }) => {
-      logger.debug("Initializing repositories");
-      decorator.signatureRepository = new SignatureRepository();
-      decorator.signatureTaskRepository = new SignatureTaskRepository();
+export const createRepositoriesPlugin = async (mongoUri: string) => {
+  const signatureRepository = withTraceSync(
+    'signers-manager.init.repositories.signature',
+    () => new SignatureRepository()
+  );
 
-      logger.info("Connecting to MongoDB", {
-        uri: CONFIG.MONGODB.URI,
+  const signatureTaskRepository = withTraceSync(
+    'signers-manager.init.repositories.signature_task',
+    () => new SignatureTaskRepository()
+  );
+
+  await withTraceAsync(
+    'signers-manager.init.repositories_plugin.mongoose',
+    async (ctx) => {
+      logger.info("Connecting to MongoDB", { uri: mongoUri });
+      mongoose.connection.once('connected', () => {
+        logger.info("MongoDB connected successfully");
+        ctx.end();
       });
-
-      await mongoose.connect(CONFIG.MONGODB.URI);
-
-      logger.info("MongoDB connected successfully");
+      await mongoose.connect(mongoUri);
     }
-  )
-  .onStop(async () => {
-    logger.info("Disconnecting from MongoDB");
-    await mongoose.disconnect();
-    logger.info("MongoDB disconnected successfully");
-  });
+  );
+
+  const plugin = withTraceSync(
+    'signers-manager.init.repositories.plugin',
+    () => new Elysia({ name: "Repositories" })
+      .decorate("signatureRepository", signatureRepository)
+      .decorate("signatureTaskRepository", signatureTaskRepository)
+      .onStop(async () => {
+        await withTraceAsync(
+          'signers-manager.stop.repositories_plugin',
+          async () => {
+            logger.info("Disconnecting from MongoDB");
+            await mongoose.disconnect();
+            logger.info("MongoDB disconnected successfully");
+          }
+        );
+      })
+  );
+
+  return plugin;
+}
+
+export type RepositoriesPlugin = Awaited<ReturnType<typeof createRepositoriesPlugin>>

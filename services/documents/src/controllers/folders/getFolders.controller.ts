@@ -6,19 +6,21 @@ import {
   getFoldersResponse,
 } from "../../models/validation/documents.validation";
 
-export const getFoldersController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/getFolders",
-    async ({ body, documentsService }) => {
-      logger.info(
-        `POST /getFolders - Getting folders with filters`
-      );
-      
-      return await documentsService.getFolders(body);
-    },
-    {
-      body: getFoldersRequest,
-      response: getFoldersResponse,
-    }
-  );
+export const getFoldersController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "GetFoldersController" })
+    .use(servicesPlugin)
+    .post(
+      "/getFolders",
+      async ({ body, documentsService }) => {
+        logger.info(
+          `POST /getFolders - Getting folders with filters`
+        );
+        
+        return await documentsService.getFolders(body);
+      },
+      {
+        body: getFoldersRequest,
+        response: getFoldersResponse,
+      }
+    );
+};

@@ -5,7 +5,9 @@ import {
   AnswerEntity,
   IAnswerEntity,
 } from "../models/entity/answer.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class AnswerRepository {
   constructor(private readonly model = AnswerEntity) {}
 

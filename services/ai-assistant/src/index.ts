@@ -1,37 +1,29 @@
-import { Elysia } from 'elysia';
-import { logger } from '@shared/monitoring/src/logger';
-import { CONFIG } from './config';
-import { ErrorHandlerPlugin } from '@shared/errors/error-handler.plugin';
-import { RepositoriesPlugin } from './plugins/repositories.plugin';
-import { ClientsPlugin } from './plugins/clients.plugin';
-import { ServicesPlugin } from './plugins/services.plugin';
-import { ControllersPlugin } from './plugins/controllers.plugin';
+import { createApp } from './app';
+import { tracer } from '@shared/monitoring/src/tracing';
 
-
-const app = new Elysia()
-  .onError(ErrorHandlerPlugin)
-  
-  .use(RepositoriesPlugin)
-  .use(ClientsPlugin)
-  .use(ServicesPlugin)
-  .use(ControllersPlugin)
-  
-  .listen(CONFIG.PORT, () => {
-    logger.info(`🚀 AI Assistant Service ready at http://127.0.0.1:${CONFIG.PORT}`);
-  });
-
+const app = await tracer.startActiveSpan(
+  'ai-assistant.init.main',
+  async (span) => {
+    const appInstance = await createApp(
+      Number(process.env.PORT),
+      String(process.env.MONGODB_URI),
+      String(process.env.OPENROUTER_API_KEY),
+      String(process.env.OPENROUTER_BASE_URL),
+      String(process.env.OPENROUTER_MODEL),
+      String(process.env.RWA_SERVICE_URL),
+      String(process.env.PORTFOLIO_SERVICE_URL),
+    );
+    
+    span.end();
+    return appInstance;
+  }
+);
 
 const shutdown = async () => {
-  logger.info('Shutting down...');
-  
   try {
     await app.stop();
-    logger.info('Server stopped');
-    
-    logger.info('Shutdown completed');
     process.exit(0);
   } catch (error) {
-    logger.error('Error during shutdown:', error);
     process.exit(1);
   }
 };

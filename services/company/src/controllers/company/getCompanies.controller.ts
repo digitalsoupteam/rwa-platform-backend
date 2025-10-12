@@ -6,8 +6,9 @@ import {
   getCompaniesResponse,
 } from "../../models/validation/company.validation";
 
-export const getCompaniesController = new Elysia()
-  .use(ServicesPlugin)
+export const getCompaniesController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "GetCompaniesController" })
+    .use(servicesPlugin)
   .post(
     "/getCompanies",
     async ({ body, companyService }) => {
@@ -22,3 +23,4 @@ export const getCompaniesController = new Elysia()
       response: getCompaniesResponse,
     }
   );
+};

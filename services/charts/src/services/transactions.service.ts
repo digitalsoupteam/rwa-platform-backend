@@ -4,7 +4,9 @@ import { PoolTransactionRepository } from "../repositories/poolTransaction.repos
 import { IPoolTransactionEntity, PoolTransactionType } from "../models/entity/poolTransaction.entity";
 import { FilterQuery, SortOrder } from "mongoose";
 import { ChartEventsClient } from "../clients/redis.client";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class TransactionsService {
   constructor(
     private readonly poolTransactionRepository: PoolTransactionRepository,

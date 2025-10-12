@@ -1,6 +1,7 @@
 import { ConsumeMessage } from "amqplib";
 import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
 import { logger } from "@shared/monitoring/src/logger";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
 export interface SignatureResponse {
   taskId: string;
@@ -9,6 +10,7 @@ export interface SignatureResponse {
   signature: string;
 }
 
+@TracingDecorator()
 export class SignersManagerClient {
   private readonly SIGN_EXCHANGE = "sign.exchange";
   private readonly RESPONSES_QUEUE = "sign.responses";

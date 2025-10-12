@@ -2,7 +2,9 @@ import { logger } from "@shared/monitoring/src/logger";
 import { NotFoundError } from "@shared/errors/app-errors";
 import { FilterQuery, SortOrder } from "mongoose";
 import { ReferralEntity, IReferralEntity } from "../models/entity/referral.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class ReferralRepository {
   constructor(private readonly model = ReferralEntity) { }
 

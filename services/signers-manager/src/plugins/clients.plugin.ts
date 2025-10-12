@@ -1,29 +1,54 @@
 import { Elysia } from "elysia";
 import { logger } from "@shared/monitoring/src/logger";
-import { CONFIG } from "../config";
 import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
 import { SignerClient } from "../clients/signer.client";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const ClientsPlugin = new Elysia({ name: "Clients" })
-  .decorate("rabbitMQClient", {} as RabbitMQClient)
-  .decorate("signerClient", {} as SignerClient)
-  .onStart(async ({ decorator }) => {
-    logger.debug("Initializing clients");
+export const createClientsPlugin = async (
+  rabbitMqUri: string,
+  rabbitMqMaxReconnectAttempts: number,
+  rabbitMqReconnectInterval: number
+) => {
+  const rabbitMQClient = withTraceSync(
+    'signers-manager.init.clients.rabbitmq',
+    () => new RabbitMQClient({
+      uri: rabbitMqUri,
+      reconnectAttempts: rabbitMqMaxReconnectAttempts,
+      reconnectInterval: rabbitMqReconnectInterval,
+    })
+  );
 
-    // Initialize RabbitMQ client
-    decorator.rabbitMQClient = new RabbitMQClient({
-      uri: CONFIG.RABBITMQ.URI,
-      reconnectAttempts: CONFIG.RABBITMQ.MAX_RECONNECT_ATTEMPTS,
-      reconnectInterval: CONFIG.RABBITMQ.RECONNECT_INTERVAL,
-    });
+  await withTraceAsync(
+    'signers-manager.init.clients.rabbitmq_connect',
+    async () => await rabbitMQClient.connect()
+  );
 
-    await decorator.rabbitMQClient.connect();
+  const signerClient = withTraceSync(
+    'signers-manager.init.clients.signer',
+    () => new SignerClient(rabbitMQClient)
+  );
 
-    decorator.signerClient = new SignerClient(decorator.rabbitMQClient)
-    await decorator.signerClient.initialize()
+  await withTraceAsync(
+    'signers-manager.init.clients.signer_initialize',
+    async () => await signerClient.initialize()
+  );
 
-    logger.debug("Signer client initialized");
-  })
-  .onStop(async ({ decorator }) => {
-    await decorator.rabbitMQClient.disconnect();
-  });
+  const plugin = withTraceSync(
+    'signers-manager.init.clients.plugin',
+    () => new Elysia({ name: "Clients" })
+      .decorate("rabbitMQClient", rabbitMQClient)
+      .decorate("signerClient", signerClient)
+      .onStop(async () => {
+        await withTraceAsync(
+          'signers-manager.stop.clients',
+          async () => {
+            await rabbitMQClient.disconnect();
+          }
+        );
+      })
+  );
+
+  return plugin;
+}
+
+export type ClientsPlugin = Awaited<ReturnType<typeof createClientsPlugin>>

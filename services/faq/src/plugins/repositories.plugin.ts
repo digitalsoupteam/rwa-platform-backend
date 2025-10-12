@@ -1,31 +1,47 @@
 import { Elysia } from "elysia";
 import mongoose from "mongoose";
-import { logger } from "@shared/monitoring/src/logger";
 import { TopicRepository } from "../repositories/topic.repository";
 import { AnswerRepository } from "../repositories/answer.repository";
-import { CONFIG } from "../config";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const RepositoriesPlugin = new Elysia({ name: "Repositories" })
-  .decorate("topicRepository", {} as TopicRepository)
-  .decorate("answerRepository", {} as AnswerRepository)
-  .onStart(
-    async ({ decorator }) => {
-      logger.debug("Initializing repositories");
-      
-      decorator.topicRepository = new TopicRepository();
-      decorator.answerRepository = new AnswerRepository();
+export const createRepositoriesPlugin = async (mongoUri: string) => {
+  const topicRepository = withTraceSync(
+    'faq.init.repositories.topic',
+    () => new TopicRepository()
+  );
 
-      logger.info("Connecting to MongoDB", {
-        uri: CONFIG.MONGODB.URI,
-      });
+  const answerRepository = withTraceSync(
+    'faq.init.repositories.answer',
+    () => new AnswerRepository()
+  );
 
-      await mongoose.connect(CONFIG.MONGODB.URI);
-
-      logger.info("MongoDB connected successfully");
+  await withTraceAsync(
+    'faq.init.repositories_plugin.mongoose',
+    async (ctx) => {
+      mongoose.connection.once('connected', () => {
+        console.log('faq mongoose connected')
+        ctx.end();
+      })
+      await mongoose.connect(mongoUri);
     }
-  )
-  .onStop(async () => {
-    logger.info("Disconnecting from MongoDB");
-    await mongoose.disconnect();
-    logger.info("MongoDB disconnected successfully");
-  });
+  );
+
+  const plugin = withTraceSync(
+    'faq.init.repositories.plugin',
+    () => new Elysia({ name: "Repositories" })
+      .decorate("topicRepository", topicRepository)
+      .decorate("answerRepository", answerRepository)
+      .onStop(async () => {
+        await withTraceAsync(
+          'faq.stop.repositories_plugin',
+          async () => {
+            await mongoose.disconnect();
+          }
+        );
+      })
+  );
+
+  return plugin;
+}
+
+export type RepositoriesPlugin = Awaited<ReturnType<typeof createRepositoriesPlugin>>

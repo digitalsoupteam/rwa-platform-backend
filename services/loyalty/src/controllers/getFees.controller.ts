@@ -6,19 +6,21 @@ import {
   getFeesResponse,
 } from "../models/validation/loyalty.validation";
 
-export const getFeesController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/getFees",
-    async ({ body, loyaltyService }) => {
-      logger.info(
-        `POST /getFees - Getting fees`
-      );
-      
-      return await loyaltyService.getFees(body);
-    },
-    {
-      body: getFeesRequest,
-      response: getFeesResponse,
-    }
-  );
+export const getFeesController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "GetFeesController" })
+    .use(servicesPlugin)
+    .post(
+      "/getFees",
+      async ({ body, loyaltyService }) => {
+        logger.info(
+          `POST /getFees - Getting fees`
+        );
+
+        return await loyaltyService.getFees(body);
+      },
+      {
+        body: getFeesRequest,
+        response: getFeesResponse,
+      }
+    );
+};

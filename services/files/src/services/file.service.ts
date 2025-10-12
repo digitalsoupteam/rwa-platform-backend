@@ -1,8 +1,9 @@
 import { logger } from "@shared/monitoring/src/logger";
 import { FileRepository } from "../repositories/file.repository";
 import { StorageClient } from "../clients/storage.client";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
-
+@TracingDecorator()
 export class FileService {
   constructor(
     private readonly fileRepository: FileRepository,

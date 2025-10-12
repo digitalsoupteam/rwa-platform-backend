@@ -6,19 +6,21 @@ import {
   updateBlogResponse,
 } from "../../models/validation/blogs.validation";
 
-export const updateBlogController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/updateBlog",
-    async ({ body, blogsService }) => {
-      logger.info(
-        `POST /updateBlog - Updating blog: ${body.id}`
-      );
+export const updateBlogController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "UpdateBlogController" })
+    .use(servicesPlugin)
+    .post(
+      "/updateBlog",
+      async ({ body, blogsService }) => {
+        logger.info(
+          `POST /updateBlog - Updating blog: ${body.id}`
+        );
 
-      return await blogsService.updateBlog(body);
-    },
-    {
-      body: updateBlogRequest,
-      response: updateBlogResponse,
-    }
-  );
+        return await blogsService.updateBlog(body);
+      },
+      {
+        body: updateBlogRequest,
+        response: updateBlogResponse,
+      }
+    );
+};

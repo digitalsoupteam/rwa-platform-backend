@@ -3,35 +3,49 @@ import { logger } from "@shared/monitoring/src/logger";
 import { BlockchainEventsDaemon } from "../daemons/blockchainEvents.daemon";
 import { ClientsPlugin } from "./clients.plugin";
 import { ServicesPlugin } from "./services.plugin";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const DaemonsPlugin = new Elysia({ name: "Daemons" })
-  .use(ClientsPlugin)
-  .use(ServicesPlugin)
-  .decorate("blockchainEventsDaemon", {} as BlockchainEventsDaemon)
-  .onStart(
-    async ({
-      decorator
-    }) => {
-      await new Promise(r => setTimeout(r, 10000))
+export const createDaemonsPlugin = async (
+  clientsPlugin: ClientsPlugin,
+  servicesPlugin: ServicesPlugin
+) => {
+  const blockchainEventsDaemon = withTraceSync(
+    'charts.init.daemons.blockchain_events',
+    () => new BlockchainEventsDaemon(
+      clientsPlugin.decorator.rabbitMQClient,
+      servicesPlugin.decorator.chartsService,
+      servicesPlugin.decorator.transactionsService
+    )
+  );
+
+  await withTraceAsync(
+    'charts.init.daemons.initialize',
+    async () => {
       logger.debug("Initializing daemons");
-
-      // Initialize blockchain events daemon
-      decorator.blockchainEventsDaemon = new BlockchainEventsDaemon(
-        decorator.rabbitMQClient,
-        decorator.chartsService,
-        decorator.transactionsService
-      );
-
-      await decorator.blockchainEventsDaemon.initialize();
-      await decorator.blockchainEventsDaemon.start();
-    }
-  )
-  .onStop(
-    async ({
-      decorator
-    }) => {
-      if (decorator.blockchainEventsDaemon) {
-        await decorator.blockchainEventsDaemon.stop();
-      }
+      await blockchainEventsDaemon.initialize();
+      await blockchainEventsDaemon.start();
     }
   );
+
+  const plugin = withTraceSync(
+    'charts.init.daemons.plugin',
+    () => new Elysia({ name: "Daemons" })
+      .use(clientsPlugin)
+      .use(servicesPlugin)
+      .decorate("blockchainEventsDaemon", blockchainEventsDaemon)
+      .onStop(async () => {
+        await withTraceAsync(
+          'charts.stop.daemons',
+          async () => {
+            if (blockchainEventsDaemon) {
+              await blockchainEventsDaemon.stop();
+            }
+          }
+        );
+      })
+  );
+
+  return plugin;
+}
+
+export type DaemonsPlugin = Awaited<ReturnType<typeof createDaemonsPlugin>>

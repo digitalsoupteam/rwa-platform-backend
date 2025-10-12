@@ -6,19 +6,21 @@ import {
   getStakingHistoryResponse,
 } from "../models/validation/dao.validation";
 
-export const getStakingHistoryController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/getStakingHistory",
-    async ({ body, daoService }) => {
-      logger.info(
-        `POST /getStakingHistory - Getting staking history`
-      );
-      
-      return await daoService.getStakingHistory(body);
-    },
-    {
-      body: getStakingHistoryRequest,
-      response: getStakingHistoryResponse,
-    }
-  );
+export const getStakingHistoryController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "GetStakingHistoryController" })
+    .use(servicesPlugin)
+    .post(
+      "/getStakingHistory",
+      async ({ body, daoService }) => {
+        logger.info(
+          `POST /getStakingHistory - Getting staking history`
+        );
+
+        return await daoService.getStakingHistory(body);
+      },
+      {
+        body: getStakingHistoryRequest,
+        response: getStakingHistoryResponse,
+      }
+    );
+};

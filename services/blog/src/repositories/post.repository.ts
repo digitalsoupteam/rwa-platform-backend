@@ -5,7 +5,9 @@ import {
   PostEntity,
   IPostEntity,
 } from "../models/entity/post.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class PostRepository {
   constructor(private readonly model = PostEntity) { }
 

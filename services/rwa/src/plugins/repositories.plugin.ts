@@ -3,28 +3,49 @@ import mongoose from "mongoose";
 import { logger } from "@shared/monitoring/src/logger";
 import { BusinessRepository } from "../repositories/business.repository";
 import { PoolRepository } from "../repositories/pool.repository";
-import { CONFIG } from "../config";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const RepositoriesPlugin = new Elysia({ name: "Repositories" })
-  .decorate("businessRepository", {} as BusinessRepository)
-  .decorate("poolRepository", {} as PoolRepository)
-  .onStart(
-    async ({ decorator }) => {
-      logger.debug("Initializing repositories");
-      decorator.businessRepository = new BusinessRepository();
-      decorator.poolRepository = new PoolRepository();
+export const createRepositoriesPlugin = async (mongoUri: string) => {
+  const businessRepository = withTraceSync(
+    'rwa.init.repositories.business',
+    () => new BusinessRepository()
+  );
 
-      logger.info("Connecting to MongoDB", {
-        uri: CONFIG.MONGODB.URI,
+  const poolRepository = withTraceSync(
+    'rwa.init.repositories.pool',
+    () => new PoolRepository()
+  );
+
+  await withTraceAsync(
+    'rwa.init.repositories_plugin.mongoose',
+    async (ctx) => {
+      logger.info("Connecting to MongoDB", { uri: mongoUri });
+      mongoose.connection.once('connected', () => {
+        logger.info("MongoDB connected successfully");
+        ctx.end();
       });
-
-      await mongoose.connect(CONFIG.MONGODB.URI);
-
-      logger.info("MongoDB connected successfully");
+      await mongoose.connect(mongoUri);
     }
-  )
-  .onStop(async () => {
-    logger.info("Disconnecting from MongoDB");
-    await mongoose.disconnect();
-    logger.info("MongoDB disconnected successfully");
-  });
+  );
+
+  const plugin = withTraceSync(
+    'rwa.init.repositories.plugin',
+    () => new Elysia({ name: "Repositories" })
+      .decorate("businessRepository", businessRepository)
+      .decorate("poolRepository", poolRepository)
+      .onStop(async () => {
+        await withTraceAsync(
+          'rwa.stop.repositories_plugin',
+          async () => {
+            logger.info("Disconnecting from MongoDB");
+            await mongoose.disconnect();
+            logger.info("MongoDB disconnected successfully");
+          }
+        );
+      })
+  );
+
+  return plugin;
+}
+
+export type RepositoriesPlugin = Awaited<ReturnType<typeof createRepositoriesPlugin>>

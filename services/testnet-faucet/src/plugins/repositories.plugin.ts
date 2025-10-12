@@ -2,22 +2,43 @@ import { Elysia } from "elysia";
 import mongoose from "mongoose";
 import { logger } from "@shared/monitoring/src/logger";
 import { FaucetRequestRepository } from "../repositories/faucetRequest.repository";
-import { CONFIG } from "../config";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const RepositoriesPlugin = new Elysia({ name: "Repositories" })
-  .decorate("faucetRequestRepository", {} as FaucetRequestRepository)
-  .onStart(async ({ decorator }) => {
-    decorator.faucetRequestRepository = new FaucetRequestRepository();
-    logger.info("Connecting to MongoDB", {
-      uri: CONFIG.MONGODB.URI,
-    });
+export const createRepositoriesPlugin = async (mongoUri: string) => {
+  const faucetRequestRepository = withTraceSync(
+    'testnet-faucet.init.repositories.faucet_request',
+    () => new FaucetRequestRepository()
+  );
 
-    await mongoose.connect(CONFIG.MONGODB.URI);
+  await withTraceAsync(
+    'testnet-faucet.init.repositories_plugin.mongoose',
+    async (ctx) => {
+      logger.info("Connecting to MongoDB", { uri: mongoUri });
+      mongoose.connection.once('connected', () => {
+        logger.info("MongoDB connected successfully");
+        ctx.end();
+      });
+      await mongoose.connect(mongoUri);
+    }
+  );
 
-    logger.info("MongoDB connected successfully");
-  })
-  .onStop(async () => {
-    logger.info("Disconnecting from MongoDB");
-    await mongoose.disconnect();
-    logger.info("MongoDB disconnected successfully");
-  });
+  const plugin = withTraceSync(
+    'testnet-faucet.init.repositories.plugin',
+    () => new Elysia({ name: "Repositories" })
+      .decorate("faucetRequestRepository", faucetRequestRepository)
+      .onStop(async () => {
+        await withTraceAsync(
+          'testnet-faucet.stop.repositories_plugin',
+          async () => {
+            logger.info("Disconnecting from MongoDB");
+            await mongoose.disconnect();
+            logger.info("MongoDB disconnected successfully");
+          }
+        );
+      })
+  );
+
+  return plugin;
+}
+
+export type RepositoriesPlugin = Awaited<ReturnType<typeof createRepositoriesPlugin>>

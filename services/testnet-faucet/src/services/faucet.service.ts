@@ -2,7 +2,9 @@ import { logger } from "@shared/monitoring/src/logger";
 import { AppError } from "@shared/errors/app-errors";
 import { FaucetRequestRepository } from "../repositories/faucetRequest.repository";
 import { BlockchainClient } from "../clients/blockchain.client";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class FaucetService {
   constructor(
     private readonly faucetRequestRepository: FaucetRequestRepository,

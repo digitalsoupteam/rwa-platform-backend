@@ -2,7 +2,9 @@ import { logger } from "@shared/monitoring/src/logger";
 import { FilterQuery, SortOrder } from "mongoose";
 import mongoose from "mongoose";
 import { CommissionHistoryEntity, ICommissionHistoryEntity } from "../models/entity/commissionHistory.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class CommissionHistoryRepository {
   constructor(private readonly model = CommissionHistoryEntity) {}
 

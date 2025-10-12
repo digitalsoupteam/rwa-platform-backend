@@ -3,7 +3,9 @@ import { NotFoundError } from "@shared/errors/app-errors";
 import { FilterQuery, SortOrder } from "mongoose";
 import mongoose from "mongoose";
 import { FeesEntity, IFeesEntity } from "../models/entity/fees.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class FeesRepository {
   constructor(private readonly model = FeesEntity) {}
 

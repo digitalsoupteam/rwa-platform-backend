@@ -2,7 +2,9 @@ import { logger } from "@shared/monitoring/src/logger";
 import { BlogRepository } from "../repositories/blog.repository";
 import { PostRepository } from "../repositories/post.repository";
 import { FilterQuery, SortOrder, Types } from "mongoose";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class BlogsService {
   constructor(
     private readonly blogRepository: BlogRepository,

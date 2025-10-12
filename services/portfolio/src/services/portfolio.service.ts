@@ -4,9 +4,11 @@ import { TransactionRepository } from "../repositories/transaction.repository";
 import { ITokenBalanceEntity } from "../models/entity/tokenBalance.entity";
 import { ITransactionEntity } from "../models/entity/transaction.entity";
 import { SortOrder } from "mongoose";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
+@TracingDecorator()
 export class PortfolioService {
   constructor(
     private readonly tokenBalanceRepository: TokenBalanceRepository,

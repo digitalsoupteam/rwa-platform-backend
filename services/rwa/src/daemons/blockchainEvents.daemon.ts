@@ -3,10 +3,12 @@ import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
 import { BusinessService } from "../services/business.service";
 import { PoolService } from "../services/pool.service";
 import { logger } from "@shared/monitoring/src/logger";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
 /**
  * RWA service implementation of blockchain events daemon
  */
+@TracingDecorator()
 export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
   constructor(
     rabbitClient: RabbitMQClient,

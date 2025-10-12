@@ -3,6 +3,9 @@ import { CacheService } from './cache.service';
 import { ForbiddenError } from '@shared/errors/app-errors';
 
 
+import { TracingDecorator } from '@shared/monitoring/src/tracingDecorator';
+
+@TracingDecorator()
 export class OwnershipService {
   constructor(
     private cacheService: CacheService,

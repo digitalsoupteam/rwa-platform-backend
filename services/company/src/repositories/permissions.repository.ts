@@ -5,7 +5,9 @@ import {
   PermissionEntity,
   IPermissionEntity,
 } from "../models/entity/permissions.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class PermissionRepository {
   constructor(private readonly model = PermissionEntity) { }
 

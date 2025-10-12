@@ -16,20 +16,94 @@ import { deleteQuestionController } from "../controllers/questions/deleteQuestio
 import { getQuestionController } from "../controllers/questions/getQuestion.controller";
 import { getQuestionsController } from "../controllers/questions/getQuestions.controller";
 import { toggleQuestionLikeController } from "../controllers/questions/toggleQuestionLike.controller";
+import { withTraceSync } from "@shared/monitoring/src/tracing";
+import type { ServicesPlugin } from "./services.plugin";
 
-export const ControllersPlugin = new Elysia({ name: "Controllers" })
-  // Topics routes
-  .use(createTopicController)
-  .use(updateTopicController)
-  .use(deleteTopicController)
-  .use(getTopicController)
-  .use(getTopicsController)
-  // Questions routes
-  .use(createQuestionController)
-  .use(updateQuestionTextController)
-  .use(createQuestionAnswerController)
-  .use(updateQuestionAnswerController)
-  .use(deleteQuestionController)
-  .use(getQuestionController)
-  .use(getQuestionsController)
-  .use(toggleQuestionLikeController);
+export const createControllersPlugin = (servicesPlugin: ServicesPlugin) => {
+  const createTopicCtrl = withTraceSync(
+    'questions.init.controllers.create_topic',
+    () => createTopicController(servicesPlugin)
+  );
+
+  const updateTopicCtrl = withTraceSync(
+    'questions.init.controllers.update_topic',
+    () => updateTopicController(servicesPlugin)
+  );
+
+  const deleteTopicCtrl = withTraceSync(
+    'questions.init.controllers.delete_topic',
+    () => deleteTopicController(servicesPlugin)
+  );
+
+  const getTopicCtrl = withTraceSync(
+    'questions.init.controllers.get_topic',
+    () => getTopicController(servicesPlugin)
+  );
+
+  const getTopicsCtrl = withTraceSync(
+    'questions.init.controllers.get_topics',
+    () => getTopicsController(servicesPlugin)
+  );
+
+  const createQuestionCtrl = withTraceSync(
+    'questions.init.controllers.create_question',
+    () => createQuestionController(servicesPlugin)
+  );
+
+  const updateQuestionTextCtrl = withTraceSync(
+    'questions.init.controllers.update_question_text',
+    () => updateQuestionTextController(servicesPlugin)
+  );
+
+  const createQuestionAnswerCtrl = withTraceSync(
+    'questions.init.controllers.create_question_answer',
+    () => createQuestionAnswerController(servicesPlugin)
+  );
+
+  const updateQuestionAnswerCtrl = withTraceSync(
+    'questions.init.controllers.update_question_answer',
+    () => updateQuestionAnswerController(servicesPlugin)
+  );
+
+  const deleteQuestionCtrl = withTraceSync(
+    'questions.init.controllers.delete_question',
+    () => deleteQuestionController(servicesPlugin)
+  );
+
+  const getQuestionCtrl = withTraceSync(
+    'questions.init.controllers.get_question',
+    () => getQuestionController(servicesPlugin)
+  );
+
+  const getQuestionsCtrl = withTraceSync(
+    'questions.init.controllers.get_questions',
+    () => getQuestionsController(servicesPlugin)
+  );
+
+  const toggleQuestionLikeCtrl = withTraceSync(
+    'questions.init.controllers.toggle_question_like',
+    () => toggleQuestionLikeController(servicesPlugin)
+  );
+
+  const plugin = withTraceSync(
+    'questions.init.controllers.plugin',
+    () => new Elysia({ name: "Controllers" })
+      .use(createTopicCtrl)
+      .use(updateTopicCtrl)
+      .use(deleteTopicCtrl)
+      .use(getTopicCtrl)
+      .use(getTopicsCtrl)
+      .use(createQuestionCtrl)
+      .use(updateQuestionTextCtrl)
+      .use(createQuestionAnswerCtrl)
+      .use(updateQuestionAnswerCtrl)
+      .use(deleteQuestionCtrl)
+      .use(getQuestionCtrl)
+      .use(getQuestionsCtrl)
+      .use(toggleQuestionLikeCtrl)
+  );
+
+  return plugin;
+}
+
+export type ControllersPlugin = ReturnType<typeof createControllersPlugin>

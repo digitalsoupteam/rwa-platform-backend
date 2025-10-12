@@ -6,19 +6,21 @@ import {
   getProposalsResponse,
 } from "../models/validation/dao.validation";
 
-export const getProposalsController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/getProposals",
-    async ({ body, daoService }) => {
-      logger.info(
-        `POST /getProposals - Getting proposals`
-      );
-      
-      return await daoService.getProposals(body);
-    },
-    {
-      body: getProposalsRequest,
-      response: getProposalsResponse,
-    }
-  );
+export const getProposalsController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "GetProposalsController" })
+    .use(servicesPlugin)
+    .post(
+      "/getProposals",
+      async ({ body, daoService }) => {
+        logger.info(
+          `POST /getProposals - Getting proposals`
+        );
+
+        return await daoService.getProposals(body);
+      },
+      {
+        body: getProposalsRequest,
+        response: getProposalsResponse,
+      }
+    );
+};

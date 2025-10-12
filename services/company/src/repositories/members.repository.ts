@@ -5,7 +5,9 @@ import {
   MemberEntity,
   IMemberEntity,
 } from "../models/entity/members.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class MemberRepository {
   constructor(private readonly model = MemberEntity) {}
 

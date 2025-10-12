@@ -5,7 +5,9 @@ import {
   GalleryEntity,
   IGalleryEntity,
 } from "../models/entity/gallery.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class GalleryRepository {
   constructor(private readonly model = GalleryEntity) {}
 

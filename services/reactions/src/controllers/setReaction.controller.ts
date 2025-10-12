@@ -6,19 +6,21 @@ import {
   setReactionResponse,
 } from "../models/validation/reactions.validation";
 
-export const setReactionController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/setReaction",
-    async ({ body, reactionsService }) => {
-      logger.info(
-        `POST /setReaction - Setting reaction for parent: ${body.parentId} by user: ${body.userId}`
-      );
+export const setReactionController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "SetReactionController" })
+    .use(servicesPlugin)
+    .post(
+      "/setReaction",
+      async ({ body, reactionsService }) => {
+        logger.info(
+          `POST /setReaction - Setting reaction for parent: ${body.parentId} by user: ${body.userId}`
+        );
 
-      return reactionsService.setReaction(body);
-    },
-    {
-      body: setReactionRequest,
-      response: setReactionResponse,
-    }
-  );
+        return reactionsService.setReaction(body);
+      },
+      {
+        body: setReactionRequest,
+        response: setReactionResponse,
+      }
+    );
+};

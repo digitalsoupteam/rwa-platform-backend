@@ -1,10 +1,12 @@
 import { logger } from "@shared/monitoring/src/logger";
 import { SignersManagerClient } from "../clients/signersManager.client";
 import { SignatureService } from "../services/signature.service";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
 /**
  * Daemon for handling signature requests
  */
+@TracingDecorator()
 export class SignatureDaemon {
   private isRunning: boolean = false;
 

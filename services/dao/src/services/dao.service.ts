@@ -12,7 +12,9 @@ import { IStakingHistoryEntity } from "../models/entity/stakingHistory.entity";
 import { ITimelockTaskEntity } from "../models/entity/timelockTask.entity";
 import { ITreasuryWithdrawEntity } from "../models/entity/treasuryWithdraw.entity";
 import { IStakingEntity } from "../models/entity/staking.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class DaoService {
     constructor(
         private readonly proposalRepository: ProposalRepository,

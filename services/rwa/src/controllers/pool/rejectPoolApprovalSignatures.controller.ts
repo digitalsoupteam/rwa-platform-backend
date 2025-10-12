@@ -6,19 +6,21 @@ import {
   rejectPoolApprovalSignaturesResponse,
 } from "../../models/validation/pool.validation";
 
-export const rejectPoolApprovalSignaturesController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/rejectPoolApprovalSignatures",
-    async ({ body, poolService }) => {
-      logger.info(
-        `POST /rejectPoolApprovalSignatures - Rejecting approval signatures for pool with ID: ${body.id}`
-      );
+export const rejectPoolApprovalSignaturesController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "RejectPoolApprovalSignaturesController" })
+    .use(servicesPlugin)
+    .post(
+      "/rejectPoolApprovalSignatures",
+      async ({ body, poolService }) => {
+        logger.info(
+          `POST /rejectPoolApprovalSignatures - Rejecting approval signatures for pool with ID: ${body.id}`
+        );
 
-      return await poolService.rejectApprovalSignatures(body.id);
-    },
-    {
-      body: rejectPoolApprovalSignaturesRequest,
-      response: rejectPoolApprovalSignaturesResponse,
-    }
-  );
+        return await poolService.rejectApprovalSignatures(body.id);
+      },
+      {
+        body: rejectPoolApprovalSignaturesRequest,
+        response: rejectPoolApprovalSignaturesResponse,
+      }
+    );
+};
