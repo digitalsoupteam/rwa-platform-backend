@@ -3,7 +3,9 @@ import {
   IFaucetRequestEntity,
 } from "../models/entity/faucet.entity";
 import { FaucetTokenType } from "../models/shared/enums.model";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class FaucetRequestRepository {
   async create(data: {
     userId: string;

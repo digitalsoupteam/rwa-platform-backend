@@ -6,8 +6,9 @@ import {
   removeMemberResponse,
 } from "../../models/validation/company.validation";
 
-export const removeMemberController = new Elysia()
-  .use(ServicesPlugin)
+export const removeMemberController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "RemoveMemberController" })
+    .use(servicesPlugin)
   .post(
     "/removeMember",
     async ({ body, companyService }) => {
@@ -22,3 +23,4 @@ export const removeMemberController = new Elysia()
       response: removeMemberResponse,
     }
   );
+};

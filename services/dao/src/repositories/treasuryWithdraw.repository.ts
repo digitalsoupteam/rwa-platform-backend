@@ -2,7 +2,9 @@ import { logger } from "@shared/monitoring/src/logger";
 import { FilterQuery, SortOrder } from "mongoose";
 import mongoose from "mongoose";
 import { TreasuryWithdrawEntity, ITreasuryWithdrawEntity } from "../models/entity/treasuryWithdraw.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class TreasuryWithdrawRepository {
   constructor(private readonly model = TreasuryWithdrawEntity) {}
 

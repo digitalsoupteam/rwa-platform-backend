@@ -5,11 +5,13 @@ import {
   PriceDataEntity,
   IPriceDataEntity,
 } from "../models/entity/priceData.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
 // Define the type for the data needed to create a PriceData entry
 // Excludes _id, createdAt, and updatedAt as they are auto-managed or set by default
 type CreatePriceData = Omit<IPriceDataEntity, '_id' | 'createdAt' | 'updatedAt'>;
 
+@TracingDecorator()
 export class PriceDataRepository {
   constructor(private readonly model = PriceDataEntity) {}
 

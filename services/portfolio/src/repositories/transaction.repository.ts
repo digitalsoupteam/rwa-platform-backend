@@ -5,7 +5,9 @@ import {
   TransactionEntity,
   ITransactionEntity,
 } from "../models/entity/transaction.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class TransactionRepository {
   constructor(private readonly model = TransactionEntity) {}
 

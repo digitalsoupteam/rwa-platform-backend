@@ -3,24 +3,45 @@ import { logger } from "@shared/monitoring/src/logger";
 import { FaucetService } from "../services/faucet.service";
 import { RepositoriesPlugin } from "./repositories.plugin";
 import { ClientsPlugin } from "./clients.plugin";
-import { CONFIG } from "../config";
+import { withTraceSync } from "@shared/monitoring/src/tracing";
 
-export const ServicesPlugin = new Elysia({ name: "Services" })
-  .use(RepositoriesPlugin)
-  .use(ClientsPlugin)
-  .decorate("faucetService", {} as FaucetService)
-  .onStart(({ decorator }) => {
-    logger.debug("Initializing services");
-    decorator.faucetService = new FaucetService(
-      decorator.faucetRequestRepository,
-      decorator.blockchainClient,
-      CONFIG.BLOCKCHAIN.HOLD_TOKEN_ADDRESS,
-      CONFIG.BLOCKCHAIN.PLATFORM_TOKEN_ADDRESS,
-      CONFIG.FAUCET.GAS_TOKEN_AMOUNT,
-      CONFIG.FAUCET.HOLD_TOKEN_AMOUNT,
-      CONFIG.FAUCET.PLATFORM_TOKEN_AMOUNT,
-      CONFIG.FAUCET.REQUEST_GAS_DELAY_MS,
-      CONFIG.FAUCET.REQUEST_HOLD_DELAY_MS,
-      CONFIG.FAUCET.REQUEST_PLATFORM_DELAY_MS
-    );
-  });
+export const createServicesPlugin = (
+  repositoriesPlugin: RepositoriesPlugin,
+  clientsPlugin: ClientsPlugin,
+  holdTokenAddress: string,
+  platformTokenAddress: string,
+  gasTokenAmount: number,
+  holdTokenAmount: number,
+  platformTokenAmount: number,
+  requestGasDelay: number,
+  requestHoldDelay: number,
+  requestPlatformDelay: number
+) => {
+  const faucetService = withTraceSync(
+    'testnet-faucet.init.services.faucet',
+    () => new FaucetService(
+      repositoriesPlugin.decorator.faucetRequestRepository,
+      clientsPlugin.decorator.blockchainClient,
+      holdTokenAddress,
+      platformTokenAddress,
+      gasTokenAmount,
+      holdTokenAmount,
+      platformTokenAmount,
+      requestGasDelay,
+      requestHoldDelay,
+      requestPlatformDelay
+    )
+  );
+
+  const plugin = withTraceSync(
+    'testnet-faucet.init.services.plugin',
+    () => new Elysia({ name: "Services" })
+      .use(repositoriesPlugin)
+      .use(clientsPlugin)
+      .decorate("faucetService", faucetService)
+  );
+
+  return plugin;
+}
+
+export type ServicesPlugin = ReturnType<typeof createServicesPlugin>

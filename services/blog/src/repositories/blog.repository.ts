@@ -5,7 +5,9 @@ import {
   BlogEntity,
   IBlogEntity,
 } from "../models/entity/blog.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class BlogRepository {
   constructor(private readonly model = BlogEntity) {}
 

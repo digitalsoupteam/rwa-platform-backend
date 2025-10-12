@@ -2,7 +2,9 @@ import { logger } from "@shared/monitoring/src/logger";
 import { FilterQuery, SortOrder } from "mongoose";
 import { ReactionRepository } from "../repositories/reaction.repository";
 import { IReactionEntity } from "../models/entity/reaction.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class ReactionsService {
   constructor(
     private readonly reactionRepository: ReactionRepository

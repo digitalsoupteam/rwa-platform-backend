@@ -6,21 +6,23 @@ import {
   registerReferralResponse,
 } from "../models/validation/loyalty.validation";
 
-export const registerReferralController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/registerReferral",
-    async ({ body, loyaltyService }) => {
-      logger.info(
-        `POST /registerReferral - Registering referral for user: ${body.userId}`
-      );
-      
-      const referral = await loyaltyService.registerReferral(body);
+export const registerReferralController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "RegisterReferralController" })
+    .use(servicesPlugin)
+    .post(
+      "/registerReferral",
+      async ({ body, loyaltyService }) => {
+        logger.info(
+          `POST /registerReferral - Registering referral for user: ${body.userId}`
+        );
 
-      return referral;
-    },
-    {
-      body: registerReferralRequest,
-      response: registerReferralResponse,
-    }
-  );
+        const referral = await loyaltyService.registerReferral(body);
+
+        return referral;
+      },
+      {
+        body: registerReferralRequest,
+        response: registerReferralResponse,
+      }
+    );
+};

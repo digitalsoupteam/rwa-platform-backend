@@ -6,19 +6,21 @@ import {
   getBusinessResponse,
 } from "../../models/validation/business.validation";
 
-export const getBusinessController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/getBusiness",
-    async ({ body, businessService }) => {
-      logger.info(
-        `POST /getBusiness - Getting business with ID: ${body.id}`
-      );
+export const getBusinessController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "GetBusinessController" })
+    .use(servicesPlugin)
+    .post(
+      "/getBusiness",
+      async ({ body, businessService }) => {
+        logger.info(
+          `POST /getBusiness - Getting business with ID: ${body.id}`
+        );
 
-      return await businessService.getBusiness(body.id);
-    },
-    {
-      body: getBusinessRequest,
-      response: getBusinessResponse,
-    }
-  );
+        return await businessService.getBusiness(body.id);
+      },
+      {
+        body: getBusinessRequest,
+        response: getBusinessResponse,
+      }
+    );
+};

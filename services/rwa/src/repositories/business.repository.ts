@@ -2,7 +2,9 @@ import { logger } from "@shared/monitoring/src/logger";
 import { NotFoundError } from "@shared/errors/app-errors";
 import { FilterQuery, SortOrder } from "mongoose";
 import { BusinessEntity, IBusinessEntity } from "../models/entity/business.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class BusinessRepository {
   constructor(private readonly model = BusinessEntity) { }
 

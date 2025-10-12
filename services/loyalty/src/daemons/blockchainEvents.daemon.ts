@@ -2,10 +2,12 @@ import { BaseBlockchainDaemon, BlockchainEvent, EventRouting } from "@shared/blo
 import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
 import { LoyaltyService } from "../services/loyalty.service";
 import { logger } from "@shared/monitoring/src/logger";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
 /**
  * Loyalty service implementation of blockchain events daemon
  */
+@TracingDecorator()
 export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
   constructor(
     rabbitClient: RabbitMQClient,

@@ -1,31 +1,47 @@
 import { Elysia } from "elysia";
 import mongoose from "mongoose";
-import { logger } from "@shared/monitoring/src/logger";
 import { GalleryRepository } from "../repositories/gallery.repository";
 import { ImageRepository } from "../repositories/image.repository";
-import { CONFIG } from "../config";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const RepositoriesPlugin = new Elysia({ name: "Repositories" })
-  .decorate("galleryRepository", {} as GalleryRepository)
-  .decorate("imageRepository", {} as ImageRepository)
-  .onStart(
-    async ({ decorator }) => {
-      logger.debug("Initializing repositories");
-      
-      decorator.galleryRepository = new GalleryRepository();
-      decorator.imageRepository = new ImageRepository();
+export const createRepositoriesPlugin = async (mongoUri: string) => {
+  const galleryRepository = withTraceSync(
+    'gallery.init.repositories.gallery',
+    () => new GalleryRepository()
+  );
 
-      logger.info("Connecting to MongoDB", {
-        uri: CONFIG.MONGODB.URI,
-      });
+  const imageRepository = withTraceSync(
+    'gallery.init.repositories.image',
+    () => new ImageRepository()
+  );
 
-      await mongoose.connect(CONFIG.MONGODB.URI);
-
-      logger.info("MongoDB connected successfully");
+  await withTraceAsync(
+    'gallery.init.repositories_plugin.mongoose',
+    async (ctx) => {
+      mongoose.connection.once('connected', () => {
+        console.log('gallery mongoose connected')
+        ctx.end();
+      })
+      await mongoose.connect(mongoUri);
     }
-  )
-  .onStop(async () => {
-    logger.info("Disconnecting from MongoDB");
-    await mongoose.disconnect();
-    logger.info("MongoDB disconnected successfully");
-  });
+  );
+
+  const plugin = withTraceSync(
+    'gallery.init.repositories.plugin',
+    () => new Elysia({ name: "Repositories" })
+      .decorate("galleryRepository", galleryRepository)
+      .decorate("imageRepository", imageRepository)
+      .onStop(async () => {
+        await withTraceAsync(
+          'gallery.stop.repositories_plugin',
+          async () => {
+            await mongoose.disconnect();
+          }
+        );
+      })
+  );
+
+  return plugin;
+}
+
+export type RepositoriesPlugin = Awaited<ReturnType<typeof createRepositoriesPlugin>>

@@ -1,7 +1,9 @@
 import { logger } from "@shared/monitoring/src/logger";
 import { AssistantRepository } from "../repositories/assistant.repository";
 import { AssistantContext } from "../models/shared/enums.model";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class AssistantService {
   constructor(private readonly assistantRepository: AssistantRepository) {}
 

@@ -5,27 +5,28 @@ import {ethers} from 'ethers'
 export const authenticate: MutationResolvers['authenticate'] = async (
   _parent,
   { input },
-  { clients }
+  { clients },
 ) => {
   logger.info('Authenticating user', { wallet: input.wallet });
 
-  const response = await clients.authClient.authenticate.post({
+  const authenticateResponse = await clients.authClient.authenticate.post({
     wallet: ethers.getAddress(input.wallet),
     signature: input.signature,
     timestamp: input.timestamp
   });
 
-  if (response.error) {
-    logger.error('Failed to authenticate:', response.error);
+  if (authenticateResponse.error) {
+    logger.error('Failed to authenticate:', authenticateResponse.error);
     throw new Error('Failed to authenticate');
   }
 
-  const { data } = response;
-
-  return {
+  const { data } = authenticateResponse;
+  const result = {
     userId: data.userId,
     wallet: data.wallet,
     accessToken: data.accessToken,
     refreshToken: data.refreshToken
   };
+
+  return result
 };

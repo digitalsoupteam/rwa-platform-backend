@@ -23,6 +23,5 @@ export const refreshToken: MutationResolvers['refreshToken'] = async (
   }
 
   const { data } = response;
-
   return data;
 };

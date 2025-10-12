@@ -1,6 +1,6 @@
-import { edenTreaty } from '@elysiajs/eden';
 import { Redis } from 'ioredis';
 import { CONFIG } from '../config';
+import { trace, propagation, context } from '@opentelemetry/api';
 import type { App as AuthApp } from '@services/auth/src';
 import type { App as AiAssistantApp } from '@services/ai-assistant/src';
 import type { App as TestnetFaucetApp } from '@services/testnet-faucet/src';
@@ -19,23 +19,27 @@ import type { App as ReactionsApp } from '@services/reactions/src';
 import type { App as LoyaltyApp } from '@services/loyalty/src';
 import type { App as DaoApp } from '@services/dao/src';
 
-export const authClient = edenTreaty<AuthApp>(CONFIG.SERVICES.AUTH.URL);
-export const aiAssistantClient = edenTreaty<AiAssistantApp>(CONFIG.SERVICES.ASSISTANT.URL);
-export const testnetFaucetClient = edenTreaty<TestnetFaucetApp>(CONFIG.SERVICES.TESTNET_FAUCET.URL);
-export const rwaClient = edenTreaty<RwaApp>(CONFIG.SERVICES.RWA.URL);
-export const filesClient = edenTreaty<FilesApp>(CONFIG.SERVICES.FILES.URL);
-export const signersManagerClient = edenTreaty<SignersManagerApp>(CONFIG.SERVICES.SIGNERS_MANAGER.URL);
-export const documentsClient = edenTreaty<DocumentsApp>(CONFIG.SERVICES.DOCUMENTS.URL);
-export const galleryClient = edenTreaty<GalleryApp>(CONFIG.SERVICES.GALLERY.URL);
-export const questionsClient = edenTreaty<QuestionsApp>(CONFIG.SERVICES.QUESTIONS.URL);
-export const faqClient = edenTreaty<FaqApp>(CONFIG.SERVICES.FAQ.URL);
-export const blogClient = edenTreaty<BlogApp>(CONFIG.SERVICES.BLOG.URL);
-export const portfolioClient = edenTreaty<PortfolioApp>(CONFIG.SERVICES.PORTFOLIO.URL);
-export const companyClient = edenTreaty<CompanyApp>(CONFIG.SERVICES.COMPANY.URL);
-export const chartsClient = edenTreaty<ChartsApp>(CONFIG.SERVICES.CHARTS.URL);
-export const reactionsClient = edenTreaty<ReactionsApp>(CONFIG.SERVICES.REACTIONS.URL);
-export const loyaltyClient = edenTreaty<LoyaltyApp>(CONFIG.SERVICES.LOYALTY.URL);
-export const daoClient = edenTreaty<DaoApp>(CONFIG.SERVICES.DAO.URL);
+import { logger } from "@shared/monitoring/src/logger";
+import { createEdenTreatyClient } from "@shared/monitoring/src/eden";
+
+
+export const authClient = createEdenTreatyClient<AuthApp>(CONFIG.SERVICES.AUTH.URL);
+export const aiAssistantClient = createEdenTreatyClient<AiAssistantApp>(CONFIG.SERVICES.ASSISTANT.URL);
+export const testnetFaucetClient = createEdenTreatyClient<TestnetFaucetApp>(CONFIG.SERVICES.TESTNET_FAUCET.URL);
+export const rwaClient = createEdenTreatyClient<RwaApp>(CONFIG.SERVICES.RWA.URL);
+export const filesClient = createEdenTreatyClient<FilesApp>(CONFIG.SERVICES.FILES.URL);
+export const signersManagerClient = createEdenTreatyClient<SignersManagerApp>(CONFIG.SERVICES.SIGNERS_MANAGER.URL);
+export const documentsClient = createEdenTreatyClient<DocumentsApp>(CONFIG.SERVICES.DOCUMENTS.URL);
+export const galleryClient = createEdenTreatyClient<GalleryApp>(CONFIG.SERVICES.GALLERY.URL);
+export const questionsClient = createEdenTreatyClient<QuestionsApp>(CONFIG.SERVICES.QUESTIONS.URL);
+export const faqClient = createEdenTreatyClient<FaqApp>(CONFIG.SERVICES.FAQ.URL);
+export const blogClient = createEdenTreatyClient<BlogApp>(CONFIG.SERVICES.BLOG.URL);
+export const portfolioClient = createEdenTreatyClient<PortfolioApp>(CONFIG.SERVICES.PORTFOLIO.URL);
+export const companyClient = createEdenTreatyClient<CompanyApp>(CONFIG.SERVICES.COMPANY.URL);
+export const chartsClient = createEdenTreatyClient<ChartsApp>(CONFIG.SERVICES.CHARTS.URL);
+export const reactionsClient = createEdenTreatyClient<ReactionsApp>(CONFIG.SERVICES.REACTIONS.URL);
+export const loyaltyClient = createEdenTreatyClient<LoyaltyApp>(CONFIG.SERVICES.LOYALTY.URL);
+export const daoClient = createEdenTreatyClient<DaoApp>(CONFIG.SERVICES.DAO.URL);
 
 export type AuthClient = typeof authClient;
 export type AiAssistantClient = typeof aiAssistantClient;

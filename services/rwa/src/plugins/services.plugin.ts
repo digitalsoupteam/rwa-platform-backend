@@ -2,40 +2,56 @@ import { Elysia } from "elysia";
 import { logger } from "@shared/monitoring/src/logger";
 import { BusinessService } from "../services/business.service";
 import { PoolService } from "../services/pool.service";
-import { RepositoriesPlugin } from "./repositories.plugin";
-import { ClientsPlugin } from "./clients.plugin";
-import { CONFIG } from "../config";
+import type { RepositoriesPlugin } from "./repositories.plugin";
+import type { ClientsPlugin } from "./clients.plugin";
 import { TokenService } from "../services/token.service";
+import { withTraceSync } from "@shared/monitoring/src/tracing";
 
-export const ServicesPlugin = new Elysia({ name: "Services" })
-  .use(RepositoriesPlugin)
-  .use(ClientsPlugin)
-  .decorate("businessService", {} as BusinessService)
-  .decorate("poolService", {} as PoolService)
-  .decorate("tokenService", {} as TokenService)
-  .onStart(
-    async ({ decorator }) => {
-      logger.debug("Initializing services");
-      await new Promise(r => setTimeout(r, 10000));
-
-      
-      decorator.businessService = new BusinessService(
-        decorator.businessRepository,
-        decorator.openRouterClient,
-        decorator.signersManagerClient,
-        CONFIG.SUPPORTED_NETWORKS
-      );
-      decorator.poolService = new PoolService(
-        decorator.poolRepository,
-        decorator.openRouterClient,
-        decorator.signersManagerClient,
-        decorator.poolEventsClient,
-        CONFIG.SUPPORTED_NETWORKS
-      );
-
-      decorator.tokenService = new TokenService(
-        decorator.poolRepository,
-        decorator.businessRepository,
-      );
-    }
+export const createServicesPlugin = (
+  repositoriesPlugin: RepositoriesPlugin,
+  clientsPlugin: ClientsPlugin,
+  supportedNetworks: any[]
+) => {
+  const businessService = withTraceSync(
+    'rwa.init.services.business',
+    () => new BusinessService(
+      repositoriesPlugin.decorator.businessRepository,
+      clientsPlugin.decorator.openRouterClient,
+      clientsPlugin.decorator.signersManagerClient,
+      supportedNetworks
+    )
   );
+
+  const poolService = withTraceSync(
+    'rwa.init.services.pool',
+    () => new PoolService(
+      repositoriesPlugin.decorator.poolRepository,
+      clientsPlugin.decorator.openRouterClient,
+      clientsPlugin.decorator.signersManagerClient,
+      clientsPlugin.decorator.poolEventsClient,
+      supportedNetworks
+    )
+  );
+
+  const tokenService = withTraceSync(
+    'rwa.init.services.token',
+    () => new TokenService(
+      repositoriesPlugin.decorator.poolRepository,
+      repositoriesPlugin.decorator.businessRepository,
+    )
+  );
+
+  const plugin = withTraceSync(
+    'rwa.init.services.plugin',
+    () => new Elysia({ name: "Services" })
+      .use(repositoriesPlugin)
+      .use(clientsPlugin)
+      .decorate("businessService", businessService)
+      .decorate("poolService", poolService)
+      .decorate("tokenService", tokenService)
+  );
+
+  return plugin;
+}
+
+export type ServicesPlugin = ReturnType<typeof createServicesPlugin>

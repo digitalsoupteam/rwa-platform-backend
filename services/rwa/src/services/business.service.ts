@@ -7,6 +7,7 @@ import { OpenRouterClient } from "@shared/openrouter/client";
 import { ethers } from "ethers";
 import { SortOrder } from "mongoose";
 import { SignersManagerClient } from "../clients/eden.clients";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
 interface NetworkConfig {
   chainId: string;
@@ -14,6 +15,7 @@ interface NetworkConfig {
   factoryAddress: string;
 }
 
+@TracingDecorator()
 export class BusinessService {
   constructor(
     private readonly businessRepository: BusinessRepository,

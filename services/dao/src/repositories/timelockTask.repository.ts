@@ -1,7 +1,9 @@
 import { logger } from "@shared/monitoring/src/logger";
 import { FilterQuery, SortOrder } from "mongoose";
 import { TimelockTaskEntity, ITimelockTaskEntity } from "../models/entity/timelockTask.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class TimelockTaskRepository {
   constructor(private readonly model = TimelockTaskEntity) {}
 

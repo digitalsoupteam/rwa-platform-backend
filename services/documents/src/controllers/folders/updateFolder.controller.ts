@@ -6,19 +6,21 @@ import {
   updateFolderResponse,
 } from "../../models/validation/documents.validation";
 
-export const updateFolderController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/updateFolder",
-    async ({ body, documentsService }) => {
-      logger.info(
-        `POST /updateFolder - Updating folder with ID: ${body.id}`
-      );
+export const updateFolderController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "UpdateFolderController" })
+    .use(servicesPlugin)
+    .post(
+      "/updateFolder",
+      async ({ body, documentsService }) => {
+        logger.info(
+          `POST /updateFolder - Updating folder with ID: ${body.id}`
+        );
 
-      return await documentsService.updateFolder(body);
-    },
-    {
-      body: updateFolderRequest,
-      response: updateFolderResponse,
-    }
-  );
+        return await documentsService.updateFolder(body);
+      },
+      {
+        body: updateFolderRequest,
+        response: updateFolderResponse,
+      }
+    );
+};

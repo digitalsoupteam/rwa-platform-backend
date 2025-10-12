@@ -6,19 +6,21 @@ import {
   updateBusinessRiskScoreResponse,
 } from "../../models/validation/business.validation";
 
-export const updateBusinessRiskScoreController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/updateBusinessRiskScore",
-    async ({ body, businessService }) => {
-      logger.info(
-        `POST /updateBusinessRiskScore - Updating risk score for business with ID: ${body.id}`
-      );
+export const updateBusinessRiskScoreController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "UpdateBusinessRiskScoreController" })
+    .use(servicesPlugin)
+    .post(
+      "/updateBusinessRiskScore",
+      async ({ body, businessService }) => {
+        logger.info(
+          `POST /updateBusinessRiskScore - Updating risk score for business with ID: ${body.id}`
+        );
 
-      return await businessService.updateRiskScore(body.id);
-    },
-    {
-      body: updateBusinessRiskScoreRequest,
-      response: updateBusinessRiskScoreResponse,
-    }
-  );
+        return await businessService.updateRiskScore(body.id);
+      },
+      {
+        body: updateBusinessRiskScoreRequest,
+        response: updateBusinessRiskScoreResponse,
+      }
+    );
+};

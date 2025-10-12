@@ -1,5 +1,4 @@
 import mongoose, { Schema, InferRawDocType } from "mongoose";
-// TODO только количество, ограничение на ввод и вывод
 const messageSchemaDefinition = {
   assistantId: {
     type: String,

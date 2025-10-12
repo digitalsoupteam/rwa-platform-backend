@@ -6,19 +6,21 @@ import {
   requestPoolApprovalSignaturesResponse,
 } from "../../models/validation/pool.validation";
 
-export const requestPoolApprovalSignaturesController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/requestPoolApprovalSignatures",
-    async ({ body, poolService }) => {
-      logger.info(
-        `POST /requestPoolApprovalSignatures - Requesting approval signatures for pool with ID: ${body.id}`
-      );
+export const requestPoolApprovalSignaturesController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "RequestPoolApprovalSignaturesController" })
+    .use(servicesPlugin)
+    .post(
+      "/requestPoolApprovalSignatures",
+      async ({ body, poolService }) => {
+        logger.info(
+          `POST /requestPoolApprovalSignatures - Requesting approval signatures for pool with ID: ${body.id}`
+        );
 
-      return await poolService.requestApprovalSignatures(body);
-    },
-    {
-      body: requestPoolApprovalSignaturesRequest,
-      response: requestPoolApprovalSignaturesResponse,
-    }
-  );
+        return await poolService.requestApprovalSignatures(body);
+      },
+      {
+        body: requestPoolApprovalSignaturesRequest,
+        response: requestPoolApprovalSignaturesResponse,
+      }
+    );
+};

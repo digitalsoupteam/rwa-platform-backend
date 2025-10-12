@@ -1,10 +1,14 @@
-import { edenTreaty } from "@elysiajs/eden";
-import { CONFIG } from "../config";
 import type { App as RwaApp } from "@services/rwa/src";
 import type { App as PortfolioApp } from "@services/portfolio/src";
+import { createEdenTreatyClient } from "@shared/monitoring/src/eden";
 
-export const rwaClient = edenTreaty<RwaApp>(CONFIG.OTHER_SERVICES.RWA.URL);
-export const portfolioClient = edenTreaty<PortfolioApp>(CONFIG.OTHER_SERVICES.PORTFOLIO.URL);
+export const createRwaClient = (url: string) => {
+    return createEdenTreatyClient<RwaApp>(url)
+}
 
-export type RwaClient = typeof rwaClient;
-export type PortfolioClient = typeof portfolioClient;
+export const createPortfolioClient = (url: string) => {
+    return createEdenTreatyClient<PortfolioApp>(url)
+}
+
+export type RwaClient = ReturnType<typeof createRwaClient>;
+export type PortfolioClient = ReturnType<typeof createPortfolioClient>;

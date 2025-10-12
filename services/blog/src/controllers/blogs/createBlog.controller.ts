@@ -6,19 +6,21 @@ import {
   createBlogResponse,
 } from "../../models/validation/blogs.validation";
 
-export const createBlogController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/createBlog",
-    async ({ body, blogsService }) => {
-      logger.info(
-        `POST /createBlog - Creating blog with name: ${body.name}`
-      );
+export const createBlogController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "CreateBlogController" })
+    .use(servicesPlugin)
+    .post(
+      "/createBlog",
+      async ({ body, blogsService }) => {
+        logger.info(
+          `POST /createBlog - Creating blog with name: ${body.name}`
+        );
 
-      return await blogsService.createBlog(body);
-    },
-    {
-      body: createBlogRequest,
-      response: createBlogResponse,
-    }
-  );
+        return await blogsService.createBlog(body);
+      },
+      {
+        body: createBlogRequest,
+        response: createBlogResponse,
+      }
+    );
+};

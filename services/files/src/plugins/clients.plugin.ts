@@ -1,10 +1,20 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
 import { StorageClient } from "../clients/storage.client";
+import { withTraceSync } from "@shared/monitoring/src/tracing";
 
-export const ClientsPlugin = new Elysia({ name: "Clients" })
-  .decorate("storageClient", {} as StorageClient)
-  .onStart(async ({ decorator }) => {
-    logger.debug("Initializing clients");
-    decorator.storageClient = new StorageClient();
-  });
+export const createClientsPlugin = (rootDir: string) => {
+  const storageClient = withTraceSync(
+    'files.init.clients.storage',
+    () => new StorageClient(rootDir)
+  );
+
+  const plugin = withTraceSync(
+    'files.init.clients.plugin',
+    () => new Elysia({ name: "Clients" })
+      .decorate("storageClient", storageClient)
+  );
+
+  return plugin;
+}
+
+export type ClientsPlugin = ReturnType<typeof createClientsPlugin>

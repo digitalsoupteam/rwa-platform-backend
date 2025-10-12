@@ -6,19 +6,21 @@ import {
   deleteAnswerResponse,
 } from "../../models/validation/faq.validation";
 
-export const deleteAnswerController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/deleteAnswer",
-    async ({ body, faqService }) => {
-      logger.info(
-        `POST /deleteAnswer - Deleting answer with ID: ${body.id}`
-      );
+export const deleteAnswerController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "DeleteAnswerController" })
+    .use(servicesPlugin)
+    .post(
+      "/deleteAnswer",
+      async ({ body, faqService }) => {
+        logger.info(
+          `POST /deleteAnswer - Deleting answer with ID: ${body.id}`
+        );
 
-      return await faqService.deleteAnswer(body.id);
-    },
-    {
-      body: deleteAnswerRequest,
-      response: deleteAnswerResponse,
-    }
-  );
+        return await faqService.deleteAnswer(body.id);
+      },
+      {
+        body: deleteAnswerRequest,
+        response: deleteAnswerResponse,
+      }
+    );
+};

@@ -1,7 +1,9 @@
 import { logger } from "@shared/monitoring/src/logger";
-import type { RwaClient, PortfolioClient } from "@services/gateway/src/clients/eden.clients";
+import type { RwaClient, PortfolioClient } from "../clients/eden.clients";
 import { AssistantContext } from "../models/shared/enums.model";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class ContextService {
   private readonly INVESTOR_BASE_PROMPT = 
     "You are an AI assistant helping investors understand and navigate RWA investment opportunities.\n" +
@@ -93,7 +95,7 @@ export class ContextService {
   private async getPopularPoolsContext(): Promise<string | null> {
     try {
       const now = Math.floor(Date.now() / 1000);
-      
+
       const response = await this.rwaClient.getPools.post({
         filter: {
           poolAddress: { $ne: null },
@@ -129,7 +131,6 @@ export class ContextService {
 
   private async getUserPortfolioContext(userId: string): Promise<string | null> {
     try {
-      // Получаем балансы > 0
       const balancesResponse = await this.portfolioClient.getBalances.post({ 
         filter: {
           owner: userId,
@@ -146,7 +147,6 @@ export class ContextService {
         return null;
       }
 
-      // Получаем информацию о пулах
       const poolIds = balancesResponse.data.map(b => b.poolAddress);
       const poolsResponse = await this.rwaClient.getPools.post({
         filter: {

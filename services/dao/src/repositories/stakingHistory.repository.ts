@@ -2,7 +2,9 @@ import { logger } from "@shared/monitoring/src/logger";
 import { FilterQuery, SortOrder } from "mongoose";
 import mongoose from "mongoose";
 import { StakingHistoryEntity, IStakingHistoryEntity } from "../models/entity/stakingHistory.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class StakingHistoryRepository {
   constructor(private readonly model = StakingHistoryEntity) {}
 

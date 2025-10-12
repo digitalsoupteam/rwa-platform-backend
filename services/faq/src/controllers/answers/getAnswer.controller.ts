@@ -6,19 +6,21 @@ import {
   getAnswerResponse,
 } from "../../models/validation/faq.validation";
 
-export const getAnswerController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/getAnswer",
-    async ({ body, faqService }) => {
-      logger.info(
-        `POST /getAnswer - Getting answer with ID: ${body.id}`
-      );
+export const getAnswerController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "GetAnswerController" })
+    .use(servicesPlugin)
+    .post(
+      "/getAnswer",
+      async ({ body, faqService }) => {
+        logger.info(
+          `POST /getAnswer - Getting answer with ID: ${body.id}`
+        );
 
-      return await faqService.getAnswer(body.id);
-    },
-    {
-      body: getAnswerRequest,
-      response: getAnswerResponse,
-    }
-  );
+        return await faqService.getAnswer(body.id);
+      },
+      {
+        body: getAnswerRequest,
+        response: getAnswerResponse,
+      }
+    );
+};

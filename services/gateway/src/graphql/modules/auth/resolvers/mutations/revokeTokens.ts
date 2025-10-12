@@ -7,21 +7,22 @@ export const revokeTokens: MutationResolvers['revokeTokens'] = async (
   { input },
   { clients, user }
 ) => {
-  if (!user) {
-    throw new AuthenticationError('Authentication required');
-  }
+   if (!user) {
+      throw new AuthenticationError('Authentication required');
+    }
 
-  logger.info('Revoking tokens', { userId: user.id, count: input.tokenHashes.length });
+    logger.info('Revoking tokens', { userId: user.id, count: input.tokenHashes.length });
 
-  const response = await clients.authClient.revokeTokens.post({
-    userId: user.id,
-    tokenHashes: input.tokenHashes
-  });
+    const response = await clients.authClient.revokeTokens.post({
+      userId: user.id,
+      tokenHashes: input.tokenHashes
+    });
 
-  if (response.error) {
-    logger.error('Failed to revoke tokens:', response.error);
-    throw new Error('Failed to revoke tokens');
-  }
+    if (response.error) {
+      logger.error('Failed to revoke tokens:', response.error);
+      throw new Error('Failed to revoke tokens');
+    }
 
-  return response.data;
+    const { data } = response;
+    return data;
 };

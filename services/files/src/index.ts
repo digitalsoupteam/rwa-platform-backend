@@ -1,30 +1,26 @@
-import { Elysia } from 'elysia';
-import { logger } from '@shared/monitoring/src/logger';
-import { CONFIG } from './config';
-import { RepositoriesPlugin } from './plugins/repositories.plugin';
-import { ClientsPlugin } from './plugins/clients.plugin';
-import { ServicesPlugin } from './plugins/services.plugin';
-import { ControllersPlugin } from './plugins/controllers.plugin';
+import { createApp } from './app';
+import { tracer } from '@shared/monitoring/src/tracing';
 
-const app = new Elysia()
-  .use(RepositoriesPlugin)
-  .use(ClientsPlugin)
-  .use(ServicesPlugin)
-  .use(ControllersPlugin)
-  
-  .listen(CONFIG.PORT, () => {
-    logger.info(`🚀 Files Service ready at http://127.0.0.1:${CONFIG.PORT}`);
-  });
+const app = await tracer.startActiveSpan(
+  'files.init.main',
+  async (span) => {
+    const appInstance = await createApp(
+      Number(process.env.PORT),
+      String(process.env.MONGODB_URI),
+      String(process.env.STORAGE_ROOT_DIR),
+      Number(process.env.MAX_FILE_SIZE)
+    );
+    
+    span.end();
+    return appInstance;
+  }
+);
 
 const shutdown = async () => {
-  logger.info('Shutting down Files Service...');
-  
   try {
     await app.stop();
-    logger.info('Server stopped');
     process.exit(0);
   } catch (error) {
-    logger.error('Error during shutdown:', error);
     process.exit(1);
   }
 };

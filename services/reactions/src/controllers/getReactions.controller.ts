@@ -6,19 +6,21 @@ import {
   getReactionsResponse,
 } from "../models/validation/reactions.validation";
 
-export const getReactionsController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/getReactions",
-    async ({ body, reactionsService }) => {
-      logger.info(
-        `POST /getReactions - Getting reactions with filter: ${JSON.stringify(body.filter)}`
-      );
+export const getReactionsController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "GetReactionsController" })
+    .use(servicesPlugin)
+    .post(
+      "/getReactions",
+      async ({ body, reactionsService }) => {
+        logger.info(
+          `POST /getReactions - Getting reactions with filter: ${JSON.stringify(body.filter)}`
+        );
 
-      return reactionsService.getReactions(body);
-    },
-    {
-      body: getReactionsRequest,
-      response: getReactionsResponse,
-    }
-  );
+        return reactionsService.getReactions(body);
+      },
+      {
+        body: getReactionsRequest,
+        response: getReactionsResponse,
+      }
+    );
+};

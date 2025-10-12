@@ -3,22 +3,38 @@ import { logger } from "@shared/monitoring/src/logger";
 import { ClientsPlugin } from "./clients.plugin";
 import { ServicesPlugin } from "./services.plugin";
 import { TaskResponsesDaemon } from "../daemons/taskResponses.daemon";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const DaemonsPlugin = new Elysia({ name: "Daemons" })
-  .use(ClientsPlugin)
-  .use(ServicesPlugin)
-  .decorate("taskResponsesDaemon", {} as TaskResponsesDaemon)
-  .onStart(
-    async ({ decorator }) => {
-      await new Promise(r => setTimeout(r, 10000));
+export const createDaemonsPlugin = async (
+  clientsPlugin: ClientsPlugin,
+  servicesPlugin: ServicesPlugin
+) => {
+  const taskResponsesDaemon = withTraceSync(
+    'signers-manager.init.daemons.task_responses',
+    () => new TaskResponsesDaemon(
+      clientsPlugin.decorator.signerClient,
+      servicesPlugin.decorator.signaturesService
+    )
+  );
+
+  await withTraceAsync(
+    'signers-manager.init.daemons.initialize',
+    async () => {
       logger.debug("Initializing daemons");
-
-      decorator.taskResponsesDaemon = new TaskResponsesDaemon(
-        decorator.signerClient,
-        decorator.signaturesService
-      );
-
-      await decorator.taskResponsesDaemon.initialize();
+      await taskResponsesDaemon.initialize();
       logger.info("Task responses daemon started successfully");
     }
   );
+
+  const plugin = withTraceSync(
+    'signers-manager.init.daemons.plugin',
+    () => new Elysia({ name: "Daemons" })
+      .use(clientsPlugin)
+      .use(servicesPlugin)
+      .decorate("taskResponsesDaemon", taskResponsesDaemon)
+  );
+
+  return plugin;
+}
+
+export type DaemonsPlugin = Awaited<ReturnType<typeof createDaemonsPlugin>>

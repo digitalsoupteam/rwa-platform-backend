@@ -5,7 +5,9 @@ import {
   ImageEntity,
   IImageEntity,
 } from "../models/entity/image.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class ImageRepository {
   constructor(private readonly model = ImageEntity) {}
 

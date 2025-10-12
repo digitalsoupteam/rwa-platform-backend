@@ -2,7 +2,9 @@ import { logger } from "@shared/monitoring/src/logger";
 import { NotFoundError } from "@shared/errors/app-errors";
 import { FilterQuery, SortOrder } from "mongoose";
 import { PoolEntity, IPoolEntity } from "../models/entity/pool.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class PoolRepository {
   constructor(private readonly model = PoolEntity) { }
 

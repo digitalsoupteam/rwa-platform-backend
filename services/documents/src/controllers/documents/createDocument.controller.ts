@@ -6,19 +6,21 @@ import {
   createDocumentResponse,
 } from "../../models/validation/documents.validation";
 
-export const createDocumentController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/createDocument",
-    async ({ body, documentsService }) => {
-      logger.info(
-        `POST /createDocument - Creating document with name: ${body.name}`
-      );
+export const createDocumentController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "CreateDocumentController" })
+    .use(servicesPlugin)
+    .post(
+      "/createDocument",
+      async ({ body, documentsService }) => {
+        logger.info(
+          `POST /createDocument - Creating document with name: ${body.name}`
+        );
 
-      return await documentsService.createDocument(body);
-    },
-    {
-      body: createDocumentRequest,
-      response: createDocumentResponse,
-    }
-  );
+        return await documentsService.createDocument(body);
+      },
+      {
+        body: createDocumentRequest,
+        response: createDocumentResponse,
+      }
+    );
+};

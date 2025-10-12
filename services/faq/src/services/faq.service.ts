@@ -2,7 +2,9 @@ import { logger } from "@shared/monitoring/src/logger";
 import { TopicRepository } from "../repositories/topic.repository";
 import { AnswerRepository } from "../repositories/answer.repository";
 import { FilterQuery, SortOrder, Types } from "mongoose";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class FaqService {
   constructor(
     private readonly topicRepository: TopicRepository,
@@ -65,7 +67,7 @@ export class FaqService {
     logger.debug("Deleting topic and its answers", { id });
     
     // First delete all answers in the topic
-    const answers = await this.answerRepository.findAll({ topicIds: [id] });
+    const answers = await this.answerRepository.findAll({ topicId: id });
     for (const answer of answers) {
       await this.answerRepository.delete(answer._id.toString());
     }

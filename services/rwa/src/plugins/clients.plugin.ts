@@ -1,50 +1,81 @@
 import { Elysia } from "elysia";
 import { OpenRouterClient } from "@shared/openrouter/client";
 import { logger } from "@shared/monitoring/src/logger";
-import { CONFIG } from "../config";
 import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
-import { SignersManagerClient, signersManagerClient } from "../clients/eden.clients";
+import { createSignersManagerClient } from "../clients/eden.clients";
 import { RedisEventsClient } from "@shared/redis-events/src/redis-events.client";
 import { PoolEventsClient } from "../clients/poolEvents.client";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const ClientsPlugin = new Elysia({ name: "Clients" })
-  .decorate("rabbitMQClient", {} as RabbitMQClient)
-  .decorate("openRouterClient", {} as OpenRouterClient)
-  .decorate("signersManagerClient", {} as SignersManagerClient)
-  .decorate("redisEventsClient", {} as RedisEventsClient)
-  .decorate("poolEventsClient", {} as PoolEventsClient)
-  .onStart(async ({ decorator }) => {
-    logger.debug("Initializing clients");
+export const createClientsPlugin = async (
+  redisUrl: string,
+  serviceName: string,
+  openRouterApiKey: string,
+  openRouterBaseUrl: string,
+  rabbitMqUri: string,
+  rabbitMqMaxReconnectAttempts: number,
+  rabbitMqReconnectInterval: number,
+  signersManagerUrl: string
+) => {
+  const signersManagerClient = withTraceSync(
+    'rwa.init.clients.signers_manager',
+    () => createSignersManagerClient(signersManagerUrl)
+  );
 
-    decorator.signersManagerClient = signersManagerClient;
+  const redisEventsClient = withTraceSync(
+    'rwa.init.clients.redis_events',
+    () => new RedisEventsClient(redisUrl, serviceName)
+  );
 
-    // Initialize Redis Events client
-    decorator.redisEventsClient = new RedisEventsClient(
-      CONFIG.REDIS.URL,
-      CONFIG.SERVICE_NAME
-    );
+  const poolEventsClient = withTraceSync(
+    'rwa.init.clients.pool_events',
+    () => new PoolEventsClient(redisEventsClient)
+  );
 
-    // Initialize Pool Events client
-    decorator.poolEventsClient = new PoolEventsClient(
-      decorator.redisEventsClient
-    );
+  const openRouterClient = withTraceSync(
+    'rwa.init.clients.openrouter',
+    () => new OpenRouterClient(openRouterApiKey, openRouterBaseUrl)
+  );
 
-    decorator.openRouterClient = new OpenRouterClient(
-      CONFIG.OPENROUTER.API_KEY,
-      CONFIG.OPENROUTER.BASE_URL
-    );
+  const rabbitMQClient = withTraceSync(
+    'rwa.init.clients.rabbitmq',
+    () => new RabbitMQClient({
+      uri: rabbitMqUri,
+      reconnectAttempts: rabbitMqMaxReconnectAttempts,
+      reconnectInterval: rabbitMqReconnectInterval,
+    })
+  );
 
-    // Initialize RabbitMQ client
-    decorator.rabbitMQClient = new RabbitMQClient({
-      uri: CONFIG.RABBITMQ.URI,
-      reconnectAttempts: CONFIG.RABBITMQ.MAX_RECONNECT_ATTEMPTS,
-      reconnectInterval: CONFIG.RABBITMQ.RECONNECT_INTERVAL,
-    });
+  await withTraceAsync(
+    'rwa.init.clients.rabbitmq_connect',
+    async () => {
+      logger.debug("Initializing clients");
+      await rabbitMQClient.connect();
+      logger.info("RabbitMQ client connected");
+    }
+  );
 
-    await decorator.rabbitMQClient.connect();
-    console.log("await decorator.rabbitMQClient.initialize()");
-  })
-  .onStop(async ({ decorator }) => {
-    await decorator.rabbitMQClient.disconnect();
-    await decorator.redisEventsClient.close();
-  });
+  const plugin = withTraceSync(
+    'rwa.init.clients.plugin',
+    () => new Elysia({ name: "Clients" })
+      .decorate("signersManagerClient", signersManagerClient)
+      .decorate("redisEventsClient", redisEventsClient)
+      .decorate("poolEventsClient", poolEventsClient)
+      .decorate("openRouterClient", openRouterClient)
+      .decorate("rabbitMQClient", rabbitMQClient)
+      .onStop(async () => {
+        await withTraceAsync(
+          'rwa.stop.clients',
+          async () => {
+            await rabbitMQClient.disconnect();
+            await redisEventsClient.close();
+            logger.info("Clients disconnected");
+          }
+        );
+      })
+  );
+
+  return plugin;
+}
+
+export type ClientsPlugin = Awaited<ReturnType<typeof createClientsPlugin>>

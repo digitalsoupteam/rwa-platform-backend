@@ -1,38 +1,34 @@
-import { Elysia } from 'elysia';
-import { logger } from '@shared/monitoring/src/logger';
-import { CONFIG } from './config';
-import { ErrorHandlerPlugin } from '@shared/errors/error-handler.plugin';
-import { RepositoriesPlugin } from './plugins/repositories.plugin';
-import { ClientsPlugin } from './plugins/clients.plugin';
-import { ServicesPlugin } from './plugins/services.plugin';
-import { ControllersPlugin } from './plugins/controllers.plugin';
-import { getHistoryController } from './controllers/getHistory.controller';
+import { createApp } from './app';
+import { tracer } from '@shared/monitoring/src/tracing';
 
+const app = await tracer.startActiveSpan(
+  'testnet-faucet.init.main',
+  async (span) => {
+    const appInstance = await createApp(
+      Number(process.env.PORT),
+      String(process.env.MONGODB_URI),
+      String(process.env.PROVIDER_URL),
+      String(process.env.WALLET_PRIVATE_KEY),
+      String(process.env.HOLD_TOKEN_ADDRESS),
+      String(process.env.PLATFORM_TOKEN_ADDRESS),
+      Number(process.env.GAS_TOKEN_AMOUNT),
+      Number(process.env.HOLD_TOKEN_AMOUNT),
+      Number(process.env.PLATFORM_TOKEN_AMOUNT),
+      Number(process.env.REQUEST_GAS_DELAY_MS),
+      Number(process.env.REQUEST_HOLD_DELAY_MS),
+      Number(process.env.REQUEST_PLATFORM_DELAY_MS)
+    );
 
-const app = new Elysia()
-  .onError(ErrorHandlerPlugin)
-  
-  .use(RepositoriesPlugin)
-  .use(ClientsPlugin)
-  .use(ServicesPlugin)
-  .use(ControllersPlugin)
-  
-  .listen(CONFIG.PORT, () => {
-    logger.info(`🚀 Testnet Faucet Service ready at http://127.0.0.1:${CONFIG.PORT}`);
-  });
-
+    span.end();
+    return appInstance;
+  }
+);
 
 const shutdown = async () => {
-  logger.info('Shutting down...');
-  
   try {
     await app.stop();
-    logger.info('Server stopped');
-    
-    logger.info('Shutdown completed');
     process.exit(0);
   } catch (error) {
-    logger.error('Error during shutdown:', error);
     process.exit(1);
   }
 };

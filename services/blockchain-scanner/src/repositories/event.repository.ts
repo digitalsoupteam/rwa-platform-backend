@@ -3,7 +3,9 @@ import { NotFoundError } from "@shared/errors/app-errors";
 import { EventEntity, IEventEntity } from "../models/entity/event.entity";
 import type { FilterQuery, SortOrder } from "mongoose";
 import { Types } from "mongoose";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class EventRepository {
   constructor(private readonly model = EventEntity) {}
 

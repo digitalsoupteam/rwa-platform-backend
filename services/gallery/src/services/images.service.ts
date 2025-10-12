@@ -2,7 +2,9 @@ import { logger } from "@shared/monitoring/src/logger";
 import { GalleryRepository } from "../repositories/gallery.repository";
 import { ImageRepository } from "../repositories/image.repository";
 import { FilterQuery, SortOrder, Types } from "mongoose";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class ImagesService {
   constructor(
     private readonly galleryRepository: GalleryRepository,

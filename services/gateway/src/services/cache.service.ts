@@ -1,7 +1,8 @@
 import { Redis } from 'ioredis';
 import { CompanyClient } from '../clients/eden.clients';
+import { TracingDecorator } from '@shared/monitoring/src/tracingDecorator';
 
-
+@TracingDecorator()
 export class CacheService {
   constructor(
     private redis: Redis,

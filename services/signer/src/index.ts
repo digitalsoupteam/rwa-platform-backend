@@ -1,51 +1,32 @@
-import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { CONFIG } from "./config";
-import { ErrorHandlerPlugin } from '@shared/errors/error-handler.plugin';
-import { DaemonsPlugin } from "./plugins/daemons.plugin";
-import { ClientsPlugin } from "./plugins/clients.plugin";
-import { ServicesPlugin } from "./plugins/services.plugin";
+import { createApp } from './app';
+import { tracer } from '@shared/monitoring/src/tracing';
 
-/**
- * Main application entry point
- */
-const app = new Elysia()
-  // Global error handler
-  .onError(ErrorHandlerPlugin)
-  
-  // Connect plugins
-  .use(ClientsPlugin)
-  .use(ServicesPlugin)
-  .use(DaemonsPlugin)
-  
-  // Start server
-  .listen(CONFIG.PORT, () => {
-    logger.info(
-      `🦘 Signer Service (${CONFIG.SIGNER.INSTANCE_ID}) ready at http://127.0.0.1:${CONFIG.PORT}`
+const app = await tracer.startActiveSpan(
+  'signer.init.main',
+  async (span) => {
+    const appInstance = await createApp(
+      Number(process.env.PORT),
+      String(process.env.RABBITMQ_URI),
+      Number(process.env.RABBITMQ_MAX_RECONNECT_ATTEMPTS),
+      Number(process.env.RABBITMQ_RECONNECT_INTERVAL),
+      String(process.env.SIGNER_PRIVATE_KEY)
     );
-  });
 
-/**
- * Graceful shutdown setup
- */
+    span.end();
+    return appInstance;
+  }
+);
+
 const shutdown = async () => {
-  logger.info("Shutting down...");
-
   try {
     await app.stop();
-    logger.info("Server stopped");
-
-    logger.info("Shutdown completed");
     process.exit(0);
   } catch (error) {
-    logger.error("Error during shutdown:", error);
     process.exit(1);
   }
 };
 
-// Handle termination signals
-process.on("SIGTERM", shutdown);
-process.on("SIGINT", shutdown);
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
 
-// Export app type for testing
 export type App = typeof app;

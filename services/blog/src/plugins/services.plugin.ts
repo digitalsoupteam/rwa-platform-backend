@@ -1,20 +1,27 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
 import { BlogsService } from "../services/blogs.service";
 import { RepositoriesPlugin } from "./repositories.plugin";
+import { withTraceSync } from "@shared/monitoring/src/tracing";
 
-export const ServicesPlugin = new Elysia({ name: "Services" })
-  .use(RepositoriesPlugin)
-  .decorate("blogsService", {} as BlogsService)
-  .onStart(
-    async ({
-      decorator
-    }) => {
-      logger.debug("Initializing services");
-
-      decorator.blogsService = new BlogsService(
-        decorator.blogRepository,
-        decorator.postRepository
-      );
-    }
+export const createServicesPlugin = (
+  repositoriesPlugin: RepositoriesPlugin
+) => {
+  const blogsService = withTraceSync(
+    'blog.init.services.blogs',
+    () => new BlogsService(
+      repositoriesPlugin.decorator.blogRepository,
+      repositoriesPlugin.decorator.postRepository
+    )
   );
+
+  const plugin = withTraceSync(
+    'blog.init.services.plugin',
+    () => new Elysia({ name: "Services" })
+      .use(repositoriesPlugin)
+      .decorate("blogsService", blogsService)
+  );
+
+  return plugin;
+}
+
+export type ServicesPlugin = ReturnType<typeof createServicesPlugin>

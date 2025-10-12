@@ -4,7 +4,9 @@ import { DocumentRepository } from "../repositories/document.repository";
 import { FilterQuery, SortOrder, Types } from "mongoose";
 import { IDocumentEntity } from "../models/entity/document.entity";
 import { DocumentEntity } from "../models/entity/document.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class DocumentsService {
   constructor(
     private readonly documentsFolderRepository: DocumentsFolderRepository,

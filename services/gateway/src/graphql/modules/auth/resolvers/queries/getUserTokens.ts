@@ -22,5 +22,7 @@ export const getUserTokens: QueryResolvers['getUserTokens'] = async (
     throw new Error('Failed to get user tokens');
   }
 
-  return response.data;
+
+  const { data } = response;
+  return data;
 };

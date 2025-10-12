@@ -6,19 +6,21 @@ import {
   editBusinessResponse,
 } from "../../models/validation/business.validation";
 
-export const editBusinessController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/editBusiness",
-    async ({ body, businessService }) => {
-      logger.info(
-        `POST /editBusiness - Updating business with ID: ${body.id}`
-      );
+export const editBusinessController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "EditBusinessController" })
+    .use(servicesPlugin)
+    .post(
+      "/editBusiness",
+      async ({ body, businessService }) => {
+        logger.info(
+          `POST /editBusiness - Updating business with ID: ${body.id}`
+        );
 
-      return await businessService.editBusiness(body);
-    },
-    {
-      body: editBusinessRequest,
-      response: editBusinessResponse,
-    }
-  );
+        return await businessService.editBusiness(body);
+      },
+      {
+        body: editBusinessRequest,
+        response: editBusinessResponse,
+      }
+    );
+};

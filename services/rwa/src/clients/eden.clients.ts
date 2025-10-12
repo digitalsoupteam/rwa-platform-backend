@@ -1,7 +1,8 @@
-import { edenTreaty } from "@elysiajs/eden"
-import { CONFIG } from "../config"
-import {App as SignersManagerApp} from '@services/signers-manager/src'
+import type { App as SignersManagerApp } from "@services/signers-manager/src";
+import { createEdenTreatyClient } from "@shared/monitoring/src/eden";
 
-export const signersManagerClient = edenTreaty<SignersManagerApp>(CONFIG.OTHER_SERVICES.SIGNATURES_MANAGER.URL)
+export const createSignersManagerClient = (url: string) => {
+    return createEdenTreatyClient<SignersManagerApp>(url)
+}
 
-export type SignersManagerClient = typeof signersManagerClient
+export type SignersManagerClient = ReturnType<typeof createSignersManagerClient>;

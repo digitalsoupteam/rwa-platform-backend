@@ -1,10 +1,12 @@
 import { logger } from "@shared/monitoring/src/logger";
 import { ethers, Wallet } from "ethers";
 import { SignersManagerClient } from "../clients/signersManager.client";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
 /**
  * Service for handling digital signatures
  */
+@TracingDecorator()
 export class SignatureService {
   private readonly wallet: Wallet;
 

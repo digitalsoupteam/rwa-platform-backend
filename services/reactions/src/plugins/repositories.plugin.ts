@@ -1,28 +1,40 @@
 import { Elysia } from "elysia";
 import mongoose from "mongoose";
-import { logger } from "@shared/monitoring/src/logger";
 import { ReactionRepository } from "../repositories/reaction.repository";
-import { CONFIG } from "../config";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const RepositoriesPlugin = new Elysia({ name: "Repositories" })
-  .decorate("reactionRepository", {} as ReactionRepository)
-  .onStart(
-    async ({ decorator }) => {
-      logger.debug("Initializing repositories");
-      
-      decorator.reactionRepository = new ReactionRepository();
+export const createRepositoriesPlugin = async (mongoUri: string) => {
+  const reactionRepository = withTraceSync(
+    'reactions.init.repositories.reaction',
+    () => new ReactionRepository()
+  );
 
-      logger.info("Connecting to MongoDB", {
-        uri: CONFIG.MONGODB.URI,
-      });
-
-      await mongoose.connect(CONFIG.MONGODB.URI);
-
-      logger.info("MongoDB connected successfully");
+  await withTraceAsync(
+    'reactions.init.repositories_plugin.mongoose',
+    async (ctx) => {
+      mongoose.connection.once('connected', () => {
+        console.log('reactions mongoose connected')
+        ctx.end();
+      })
+      await mongoose.connect(mongoUri);
     }
-  )
-  .onStop(async () => {
-    logger.info("Disconnecting from MongoDB");
-    await mongoose.disconnect();
-    logger.info("MongoDB disconnected successfully");
-  });
+  );
+
+  const plugin = withTraceSync(
+    'reactions.init.repositories.plugin',
+    () => new Elysia({ name: "Repositories" })
+      .decorate("reactionRepository", reactionRepository)
+      .onStop(async () => {
+        await withTraceAsync(
+          'reactions.stop.repositories_plugin',
+          async () => {
+            await mongoose.disconnect();
+          }
+        );
+      })
+  );
+
+  return plugin;
+}
+
+export type RepositoriesPlugin = Awaited<ReturnType<typeof createRepositoriesPlugin>>

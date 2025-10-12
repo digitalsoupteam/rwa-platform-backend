@@ -2,7 +2,9 @@ import { logger } from "@shared/monitoring/src/logger";
 import { PoolRepository } from "../repositories/pool.repository";
 import { BusinessRepository } from "../repositories/business.repository";
 import { NotFoundError } from "@shared/errors/app-errors";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class TokenService {
   constructor(
     private readonly poolRepository: PoolRepository,

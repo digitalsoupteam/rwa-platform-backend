@@ -2,6 +2,9 @@ import { logger } from '@shared/monitoring/src/logger';
 import { RwaClient } from '../clients/eden.clients';
 
 
+import { TracingDecorator } from '@shared/monitoring/src/tracingDecorator';
+
+@TracingDecorator()
 export class ParentService {
   constructor(private rwaClient: RwaClient) {}
 

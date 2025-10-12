@@ -14,6 +14,11 @@ services:
       - OPENROUTER_MODEL=${OPENROUTER_MODEL}
       - RWA_SERVICE_URL=${AI_ASSISTANT_RWA_SERVICE_URL}
       - PORTFOLIO_SERVICE_URL=${AI_ASSISTANT_PORTFOLIO_SERVICE_URL}
+      # OpenTelemetry configuration
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy:4320
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_SERVICE_NAME=${AI_ASSISTANT_SERVICE_NAME}
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=${AI_ASSISTANT_SERVICE_NAME},service.version=1.0.0,deployment.environment=production
     volumes:
       - service_logs:/var/log
     networks:
@@ -39,6 +44,11 @@ services:
       - REFRESH_TOKEN_EXPIRY=${AUTH_REFRESH_TOKEN_EXPIRY}
       - DOMAIN_NAME=${AUTH_DOMAIN_NAME}
       - DOMAIN_VERSION=${AUTH_DOMAIN_VERSION}
+      # OpenTelemetry configuration
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy:4320
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_SERVICE_NAME=${AUTH_SERVICE_NAME}
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=${AUTH_SERVICE_NAME},service.version=1.0.0,deployment.environment=production
     volumes:
       - service_logs:/var/log
     networks:
@@ -273,6 +283,11 @@ services:
       - PROMETHEUS_URL=${GATEWAY_PROMETHEUS_URL}
       - LOKI_URL=${GATEWAY_LOKI_URL}
       - REDIS_URL=${GATEWAY_REDIS_URL}
+      # OpenTelemetry configuration
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy:4320
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_SERVICE_NAME=${GATEWAY_SERVICE_NAME}
+      - OTEL_RESOURCE_ATTRIBUTES=service.name=${GATEWAY_SERVICE_NAME},service.version=1.0.0,deployment.environment=production
     volumes:
       - service_logs:/var/log
     networks:
@@ -526,6 +541,123 @@ services:
     networks:
       - app-network
 
+  # Monitoring Stack
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+      - '--web.enable-remote-write-receiver'
+      - '--web.external-url=https://localhost/administration/prometheus/'
+      - '--web.route-prefix=/'
+    networks:
+      - app-network
+
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/loki.yml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - app-network
+
+  tempo:
+    image: grafana/tempo:latest
+    ports:
+      - "3200:3200"
+      - "4317:4317"  # OTLP gRPC receiver
+      - "4318:4318"  # OTLP HTTP receiver
+    volumes:
+      - ./tempo/tempo.yml:/etc/tempo/tempo.yaml
+      - tempo_data:/var/tempo
+    command: -config.file=/etc/tempo/tempo.yaml
+    user: "0:0"  # Run as root to avoid permission issues
+    networks:
+      - app-network
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=https://localhost/administration/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/etc/grafana/dashboards
+    networks:
+      - app-network
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+
+  alloy:
+    image: grafana/alloy:latest
+    ports:
+      - "12345:12345"
+      - "4319:4319"  # OTLP gRPC receiver
+      - "4320:4320"  # OTLP HTTP receiver
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy
+      - /var/run/docker.sock:/var/run/docker.sock
+      - service_logs:/var/log
+    command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+    networks:
+      - app-network
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+
+  # System monitoring
+  node-exporter:
+    image: prom/node-exporter:latest
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - app-network
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    privileged: true
+    devices:
+      - /dev/kmsg
+    networks:
+      - app-network
+
 volumes:
   redis_data:
   docs_data:
@@ -533,6 +665,10 @@ volumes:
   rabbitmq_data:
   mongodb_data:
   nginx_logs:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  tempo_data:
 
 networks:
   app-network:

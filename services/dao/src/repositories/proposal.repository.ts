@@ -1,7 +1,9 @@
 import { logger } from "@shared/monitoring/src/logger";
 import { FilterQuery, SortOrder } from "mongoose";
 import { ProposalEntity, IProposalEntity } from "../models/entity/proposal.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class ProposalRepository {
   constructor(private readonly model = ProposalEntity) {}
 

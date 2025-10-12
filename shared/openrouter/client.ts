@@ -1,4 +1,5 @@
 import { logger } from "@shared/monitoring/src/logger";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 import type {
   OpenRouterCompletionRequest,
   OpenRouterChatCompletionRequest,
@@ -9,7 +10,10 @@ import type {
 } from "./types";
 import { camelToSnakeCase, snakeToCamelCase } from "./mappers";
 
-
+@TracingDecorator({
+  privateEnabled: true,
+  prefix: 'OpenRouter',
+})
 export class OpenRouterClient {
   constructor(
     private readonly apiKey: string,
@@ -28,7 +32,7 @@ export class OpenRouterClient {
         model: request.model,
       });
 
-      
+
       const snakeCaseRequest = camelToSnakeCase(request);
 
       const response = await fetch(`${this.baseUrl}/completions`, {
@@ -52,10 +56,10 @@ export class OpenRouterClient {
         );
       }
 
-      
+
       const snakeCaseData = await response.json();
 
-      
+
       const data =
         snakeToCamelCase<OpenRouterCompletionResponse>(snakeCaseData);
 
@@ -82,7 +86,7 @@ export class OpenRouterClient {
         messagesCount: request.messages.length,
       });
 
-      
+
       const snakeCaseRequest = camelToSnakeCase(request);
 
       const response = await fetch(`${this.baseUrl}/chat/completions`, {
@@ -106,10 +110,10 @@ export class OpenRouterClient {
         );
       }
 
-      
+
       const snakeCaseData = await response.json();
 
-      
+
       const data =
         snakeToCamelCase<OpenRouterChatCompletionResponse>(snakeCaseData);
 
@@ -135,7 +139,7 @@ export class OpenRouterClient {
         generationId,
       });
 
-      
+
       const url = new URL(`${this.baseUrl}/generation`);
       url.searchParams.append("id", generationId);
 
@@ -158,10 +162,10 @@ export class OpenRouterClient {
         );
       }
 
-      
+
       const snakeCaseData = await response.json();
 
-      
+
       const data =
         snakeToCamelCase<OpenRouterGenerationMetadata>(snakeCaseData);
 
@@ -202,10 +206,10 @@ export class OpenRouterClient {
         );
       }
 
-      
+
       const snakeCaseData = await response.json();
 
-      
+
       const data = snakeToCamelCase<OpenRouterModelsResponse>(snakeCaseData);
 
       logger.info("Received models list from OpenRouter", {

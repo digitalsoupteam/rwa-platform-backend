@@ -2,7 +2,9 @@ import { logger } from "@shared/monitoring/src/logger";
 import { NotFoundError } from "@shared/errors/app-errors";
 import { FilterQuery, SortOrder, Types } from "mongoose";
 import { MessageEntity, IMessageEntity } from "../models/entity/message.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class MessageRepository {
   constructor(private readonly model = MessageEntity) {}
 

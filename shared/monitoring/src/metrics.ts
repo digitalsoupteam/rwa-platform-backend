@@ -1,120 +1,65 @@
-import { Registry, Counter, Gauge, Histogram } from "prom-client";
-import { logger } from "./logger";
+import { metrics as metricsLib } from '@opentelemetry/api-metrics';
 
-export class Metrics {
-  private registry: Registry;
-  private counters: Map<string, Counter>;
-  private gauges: Map<string, Gauge>;
-  private histograms: Map<string, Histogram>;
+export class OTelMetrics {
+  private otelMeter: any;
+  private counters = new Map();
+  private gauges = new Map();
+  private histograms = new Map();
   private readonly serviceName: string;
 
   constructor(serviceName: string) {
     this.serviceName = serviceName;
-
-    // Initialize registry and metrics storage
-    this.registry = new Registry();
-    this.counters = new Map();
-    this.gauges = new Map();
-    this.histograms = new Map();
-
-    // Set default labels for all metrics
-    this.registry.setDefaultLabels({
-      service: this.serviceName,
-    });
+    this.otelMeter = metricsLib.getMeter(this.serviceName, '1.0.0');
   }
 
   counter(name: string, labels?: Record<string, string>): void {
     const metricName = `${this.serviceName}_${name}`;
-
+    
     if (!this.counters.has(metricName)) {
-      this.counters.set(
-        metricName,
-        new Counter({
-          name: metricName,
-          help: `Counter metric for ${name} in ${this.serviceName}`,
-          labelNames: labels ? Object.keys(labels) : [],
-          registers: [this.registry],
-        })
-      );
+      this.counters.set(metricName, this.otelMeter.createCounter(metricName, {
+        description: `Counter metric for ${name} in ${this.serviceName}`,
+      }));
     }
-
-    this.counters.get(metricName)?.inc(labels || {});
+    
+    this.counters.get(metricName).add(1, labels || {});
   }
 
   batchCounter(name: string, count: number, labels?: Record<string, string>): void {
     const metricName = `${this.serviceName}_${name}`;
-  
+    
     if (!this.counters.has(metricName)) {
-      this.counters.set(
-        metricName,
-        new Counter({
-          name: metricName,
-          help: `Counter metric for ${name} in ${this.serviceName}`,
-          labelNames: labels ? Object.keys(labels) : [],
-          registers: [this.registry],
-        })
-      );
+      this.counters.set(metricName, this.otelMeter.createCounter(metricName, {
+        description: `Counter metric for ${name} in ${this.serviceName}`,
+      }));
     }
-  
-    // Increment counter multiple times based on count
-    this.counters.get(metricName)?.inc(labels || {}, count);
+    
+    this.counters.get(metricName).add(count, labels || {});
   }
 
   gauge(name: string, value: number, labels?: Record<string, string>): void {
     const metricName = `${this.serviceName}_${name}`;
-
+    
     if (!this.gauges.has(metricName)) {
-      this.gauges.set(
-        metricName,
-        new Gauge({
-          name: metricName,
-          help: `Gauge metric for ${name} in ${this.serviceName}`,
-          labelNames: labels ? Object.keys(labels) : [],
-          registers: [this.registry],
-        })
-      );
+      this.gauges.set(metricName, this.otelMeter.createUpDownCounter(metricName, {
+        description: `Gauge metric for ${name} in ${this.serviceName}`,
+      }));
     }
-
-    this.gauges.get(metricName)?.set(labels || {}, value);
+    
+    this.gauges.get(metricName).add(value, labels || {});
   }
 
-  histogram(
-    name: string,
-    value: number,
-    labels?: Record<string, string>
-  ): void {
+  histogram(name: string, value: number, labels?: Record<string, string>): void {
     const metricName = `${this.serviceName}_${name}`;
-
+    
     if (!this.histograms.has(metricName)) {
-      this.histograms.set(
-        metricName,
-        new Histogram({
-          name: metricName,
-          help: `Histogram metric for ${name} in ${this.serviceName}`,
-          labelNames: labels ? Object.keys(labels) : [],
-          registers: [this.registry],
-          // Default buckets optimized for typical HTTP response times (in seconds)
-          // 0.1s (100ms) - Very fast responses
-          // 0.5s (500ms) - Normal responses
-          // 1s - Slower responses
-          // 2s - Very slow responses
-          // 5s - Potentially problematic responses
-          buckets: [0.1, 0.5, 1, 2, 5],
-        })
-      );
+      this.histograms.set(metricName, this.otelMeter.createHistogram(metricName, {
+        description: `Histogram metric for ${name} in ${this.serviceName}`,
+        boundaries: [0.1, 0.5, 1, 2, 5],
+      }));
     }
-
-    this.histograms.get(metricName)?.observe(labels || {}, value);
-  }
-
-  async getMetrics(): Promise<string> {
-    try {
-      return await this.registry.metrics();
-    } catch (error) {
-      logger.error("Error collecting metrics from registry:", error);
-      throw new Error("Failed to collect metrics from Prometheus registry");
-    }
+    
+    this.histograms.get(metricName).record(value, labels || {});
   }
 }
 
-export const metrics = new Metrics(process.env.SERVICE_NAME || "unknown-service");
+export const metrics = new OTelMetrics(process.env.SERVICE_NAME || "unknown-service2");

@@ -1,7 +1,9 @@
 import { logger } from "@shared/monitoring/src/logger";
 import { NotFoundError } from "@shared/errors/app-errors";
 import { FileEntity, IFileEntity } from "../models/entity/file.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class FileRepository {
   constructor(private readonly model = FileEntity) {}
 

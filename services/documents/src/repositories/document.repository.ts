@@ -5,7 +5,9 @@ import {
   DocumentEntity,
   IDocumentEntity,
 } from "../models/entity/document.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class DocumentRepository {
   constructor(private readonly model = DocumentEntity) {}
 

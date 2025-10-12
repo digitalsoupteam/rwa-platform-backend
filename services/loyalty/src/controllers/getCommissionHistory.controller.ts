@@ -6,19 +6,21 @@ import {
   getCommissionHistoryResponse,
 } from "../models/validation/loyalty.validation";
 
-export const getCommissionHistoryController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/getCommissionHistory",
-    async ({ body, loyaltyService }) => {
-      logger.info(
-        `POST /getCommissionHistory - Getting commission history`
-      );
-      
-      return await loyaltyService.getCommissionHistory(body);
-    },
-    {
-      body: getCommissionHistoryRequest,
-      response: getCommissionHistoryResponse,
-    }
-  );
+export const getCommissionHistoryController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "GetCommissionHistoryController" })
+    .use(servicesPlugin)
+    .post(
+      "/getCommissionHistory",
+      async ({ body, loyaltyService }) => {
+        logger.info(
+          `POST /getCommissionHistory - Getting commission history`
+        );
+
+        return await loyaltyService.getCommissionHistory(body);
+      },
+      {
+        body: getCommissionHistoryRequest,
+        response: getCommissionHistoryResponse,
+      }
+    );
+};

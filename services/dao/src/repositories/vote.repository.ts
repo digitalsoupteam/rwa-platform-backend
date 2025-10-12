@@ -2,7 +2,9 @@ import { logger } from "@shared/monitoring/src/logger";
 import { FilterQuery, SortOrder } from "mongoose";
 import mongoose from "mongoose";
 import { VoteEntity, IVoteEntity } from "../models/entity/vote.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class VoteRepository {
   constructor(private readonly model = VoteEntity) {}
 

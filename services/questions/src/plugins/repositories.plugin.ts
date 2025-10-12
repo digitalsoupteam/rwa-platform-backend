@@ -1,34 +1,54 @@
 import { Elysia } from "elysia";
 import mongoose from "mongoose";
-import { logger } from "@shared/monitoring/src/logger";
 import { TopicRepository } from "../repositories/topic.repository";
 import { QuestionRepository } from "../repositories/question.repository";
 import { QuestionLikesRepository } from "../repositories/questionLikes.repository";
-import { CONFIG } from "../config";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const RepositoriesPlugin = new Elysia({ name: "Repositories" })
-  .decorate("topicRepository", {} as TopicRepository)
-  .decorate("questionRepository", {} as QuestionRepository)
-  .decorate("questionLikesRepository", {} as QuestionLikesRepository)
-  .onStart(
-    async ({ decorator }) => {
-      logger.debug("Initializing repositories");
-      
-      decorator.topicRepository = new TopicRepository();
-      decorator.questionRepository = new QuestionRepository();
-      decorator.questionLikesRepository = new QuestionLikesRepository();
+export const createRepositoriesPlugin = async (mongoUri: string) => {
+  const topicRepository = withTraceSync(
+    'questions.init.repositories.topic',
+    () => new TopicRepository()
+  );
 
-      logger.info("Connecting to MongoDB", {
-        uri: CONFIG.MONGODB.URI,
-      });
+  const questionRepository = withTraceSync(
+    'questions.init.repositories.question',
+    () => new QuestionRepository()
+  );
 
-      await mongoose.connect(CONFIG.MONGODB.URI);
+  const questionLikesRepository = withTraceSync(
+    'questions.init.repositories.questionLikes',
+    () => new QuestionLikesRepository()
+  );
 
-      logger.info("MongoDB connected successfully");
+  await withTraceAsync(
+    'questions.init.repositories_plugin.mongoose',
+    async (ctx) => {
+      mongoose.connection.once('connected', () => {
+        console.log('questions mongoose connected')
+        ctx.end();
+      })
+      await mongoose.connect(mongoUri);
     }
-  )
-  .onStop(async () => {
-    logger.info("Disconnecting from MongoDB");
-    await mongoose.disconnect();
-    logger.info("MongoDB disconnected successfully");
-  });
+  );
+
+  const plugin = withTraceSync(
+    'questions.init.repositories.plugin',
+    () => new Elysia({ name: "Repositories" })
+      .decorate("topicRepository", topicRepository)
+      .decorate("questionRepository", questionRepository)
+      .decorate("questionLikesRepository", questionLikesRepository)
+      .onStop(async () => {
+        await withTraceAsync(
+          'questions.stop.repositories_plugin',
+          async () => {
+            await mongoose.disconnect();
+          }
+        );
+      })
+  );
+
+  return plugin;
+}
+
+export type RepositoriesPlugin = Awaited<ReturnType<typeof createRepositoriesPlugin>>

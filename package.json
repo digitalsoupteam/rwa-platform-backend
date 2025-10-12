@@ -6,7 +6,7 @@
     "services/*"
   ],
   "scripts": {
-    "infra:up": "docker compose -f infrastructure/docker/docker-compose.yml up -d mongodb rabbitmq redis",
+    "infra:up": "docker compose -f infrastructure/docker/docker-compose.yml up -d mongodb rabbitmq redis prometheus loki tempo grafana alloy node-exporter cadvisor",
     "services:up": "docker compose -f infrastructure/docker/docker-compose.yml up -d gateway auth blockchain-scanner rwa testnet-faucet signer-1 signer-2 signer-3 signers-manager documents gallery blog faq questions files company ai-assistant portfolio charts reactions loyalty dao",
     "nginx:up": "docker compose -f infrastructure/docker/docker-compose.yml up -d nginx"
   },

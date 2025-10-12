@@ -1,14 +1,12 @@
-import { logger } from "@shared/monitoring/src/logger";
 import { NotFoundError } from "@shared/errors/app-errors";
 import { UserEntity, IUserEntity } from "../models/entity/user.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
+@TracingDecorator()
 export class UserRepository {
   constructor(private readonly model = UserEntity) {}
 
-
-
   async delete(id: string) {
-    logger.debug(`Deleting user: ${id}`);
     const doc = await this.model.findByIdAndDelete(id).lean();
 
     if (!doc) {
@@ -19,7 +17,6 @@ export class UserRepository {
   }
 
   async findById(id: string) {
-    logger.debug(`Finding user by ID: ${id}`);
     const doc = await this.model.findById(id).lean();
 
     if (!doc) {
@@ -30,7 +27,6 @@ export class UserRepository {
   }
 
   async findByWallet(wallet: string) {
-    logger.debug(`Finding user by wallet: ${wallet}`);
     const doc = await this.model.findOne({ wallet: wallet.toLowerCase() }).lean();
 
     if (!doc) {
@@ -40,12 +36,7 @@ export class UserRepository {
     return doc;
   }
 
-  /**
-   * Find user by wallet or create new one
-   * Uses single MongoDB operation
-   */
   async findOrCreate(wallet: string) {
-    logger.debug(`Finding or creating user with wallet: ${wallet}`);
     const doc = await this.model.findOneAndUpdate(
       { wallet: wallet.toLowerCase() },
       {

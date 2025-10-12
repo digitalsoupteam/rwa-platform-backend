@@ -1,24 +1,22 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
 import {
   getUserAssistantsRequest,
   getUserAssistantsResponse,
 } from "../models/validation/assistant.validation";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 
-export const getUserAssistantsController = new Elysia().use(ServicesPlugin).post(
-  "/getUserAssistants",
-  async ({ body, assistantService }) => {
-    logger.info(
-      `POST /getUserAssistants - Getting assistants for user: ${body.userId}`
+export const getUserAssistantsController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "GetUserAssistantsController" })
+    .use(servicesPlugin)
+    .post(
+      "/getUserAssistants",
+      async ({ body, assistantService }) => {
+        const assistants = await assistantService.getUserAssistants(body.userId);
+        return assistants;
+      },
+      {
+        body: getUserAssistantsRequest,
+        response: getUserAssistantsResponse,
+      }
     );
-
-    const assistants = await assistantService.getUserAssistants(body.userId);
-
-    return assistants;
-  },
-  {
-    body: getUserAssistantsRequest,
-    response: getUserAssistantsResponse,
-  }
-);
+};

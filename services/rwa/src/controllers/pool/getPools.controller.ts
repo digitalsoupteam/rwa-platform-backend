@@ -6,19 +6,21 @@ import {
   getPoolsResponse,
 } from "../../models/validation/pool.validation";
 
-export const getPoolsController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/getPools",
-    async ({ body, poolService }) => {
-      logger.info(
-        `POST /getPools - Getting pools list`
-      );
+export const getPoolsController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "GetPoolsController" })
+    .use(servicesPlugin)
+    .post(
+      "/getPools",
+      async ({ body, poolService }) => {
+        logger.info(
+          `POST /getPools - Getting pools list`
+        );
 
-      return await poolService.getPools(body);
-    },
-    {
-      body: getPoolsRequest,
-      response: getPoolsResponse,
-    }
-  );
+        return await poolService.getPools(body);
+      },
+      {
+        body: getPoolsRequest,
+        response: getPoolsResponse,
+      }
+    );
+};

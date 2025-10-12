@@ -1,18 +1,27 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
 import { PortfolioService } from "../services/portfolio.service";
-import { RepositoriesPlugin } from "./repositories.plugin";
+import type { RepositoriesPlugin } from "./repositories.plugin";
+import { withTraceSync } from "@shared/monitoring/src/tracing";
 
-export const ServicesPlugin = new Elysia({ name: "Services" })
-  .use(RepositoriesPlugin)
-  .decorate("portfolioService", {} as PortfolioService)
-  .onStart(
-    async ({ decorator }) => {
-      logger.debug("Initializing services");
-
-      decorator.portfolioService = new PortfolioService(
-        decorator.tokenBalanceRepository,
-        decorator.transactionRepository
-      );
-    }
+export const createServicesPlugin = (
+  repositoriesPlugin: RepositoriesPlugin
+) => {
+  const portfolioService = withTraceSync(
+    'portfolio.init.services.portfolio',
+    () => new PortfolioService(
+      repositoriesPlugin.decorator.tokenBalanceRepository,
+      repositoriesPlugin.decorator.transactionRepository
+    )
   );
+
+  const plugin = withTraceSync(
+    'portfolio.init.services.plugin',
+    () => new Elysia({ name: "Services" })
+      .use(repositoriesPlugin)
+      .decorate("portfolioService", portfolioService)
+  );
+
+  return plugin;
+}
+
+export type ServicesPlugin = ReturnType<typeof createServicesPlugin>

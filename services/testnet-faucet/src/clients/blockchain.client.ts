@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
 import { logger } from '@shared/monitoring/src/logger';
 import { BlockchainError, AppError } from '@shared/errors/app-errors';
+import { TracingDecorator } from '@shared/monitoring/src/tracingDecorator';
 
 const ERC20_ABI = [
   "function balanceOf(address owner) view returns (uint256)",
@@ -14,6 +15,7 @@ const ERC20_ABI = [
 /**
  * Client for blockchain interaction
  */
+@TracingDecorator()
 export class BlockchainClient {
   private provider: ethers.JsonRpcProvider;
   private wallet: ethers.Wallet;

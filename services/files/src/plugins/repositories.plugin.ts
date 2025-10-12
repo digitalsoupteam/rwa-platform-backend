@@ -1,24 +1,40 @@
 import { Elysia } from "elysia";
 import mongoose from "mongoose";
-import { logger } from "@shared/monitoring/src/logger";
 import { FileRepository } from "../repositories/file.repository";
-import { CONFIG } from "../config";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const RepositoriesPlugin = new Elysia({ name: "Repositories" })
-  .decorate("fileRepository", {} as FileRepository)
-  .onStart(async ({ decorator }) => {
-    logger.debug("Initializing repositories");
-    decorator.fileRepository = new FileRepository();
+export const createRepositoriesPlugin = async (mongoUri: string) => {
+  const fileRepository = withTraceSync(
+    'files.init.repositories.file',
+    () => new FileRepository()
+  );
 
-    logger.info("Connecting to MongoDB", {
-      uri: CONFIG.MONGODB.URI,
-    });
+  await withTraceAsync(
+    'files.init.repositories_plugin.mongoose',
+    async (ctx) => {
+      mongoose.connection.once('connected', () => {
+        console.log('files mongoose connected')
+        ctx.end();
+      })
+      await mongoose.connect(mongoUri);
+    }
+  );
 
-    await mongoose.connect(CONFIG.MONGODB.URI);
-    logger.info("MongoDB connected successfully");
-  })
-  .onStop(async () => {
-    logger.info("Disconnecting from MongoDB");
-    await mongoose.disconnect();
-    logger.info("MongoDB disconnected successfully");
-  });
+  const plugin = withTraceSync(
+    'files.init.repositories.plugin',
+    () => new Elysia({ name: "Repositories" })
+      .decorate("fileRepository", fileRepository)
+      .onStop(async () => {
+        await withTraceAsync(
+          'files.stop.repositories_plugin',
+          async () => {
+            await mongoose.disconnect();
+          }
+        );
+      })
+  );
+
+  return plugin;
+}
+
+export type RepositoriesPlugin = Awaited<ReturnType<typeof createRepositoriesPlugin>>

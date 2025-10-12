@@ -6,8 +6,10 @@ import { SignersManagerClient } from "../clients/eden.clients";
 import { ethers } from "ethers";
 import { SortOrder } from "mongoose";
 import { PoolEventsClient } from "../clients/poolEvents.client";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
 
+@TracingDecorator()
 export class PoolService {
   constructor(
     private readonly poolRepository: PoolRepository,

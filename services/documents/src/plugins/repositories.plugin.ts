@@ -1,31 +1,47 @@
 import { Elysia } from "elysia";
 import mongoose from "mongoose";
-import { logger } from "@shared/monitoring/src/logger";
 import { DocumentsFolderRepository } from "../repositories/documentsFolder.repository";
 import { DocumentRepository } from "../repositories/document.repository";
-import { CONFIG } from "../config";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const RepositoriesPlugin = new Elysia({ name: "Repositories" })
-  .decorate("documentsFolderRepository", {} as DocumentsFolderRepository)
-  .decorate("documentRepository", {} as DocumentRepository)
-  .onStart(
-    async ({ decorator }) => {
-      logger.debug("Initializing repositories");
-      
-      decorator.documentsFolderRepository = new DocumentsFolderRepository();
-      decorator.documentRepository = new DocumentRepository();
+export const createRepositoriesPlugin = async (mongoUri: string) => {
+  const documentsFolderRepository = withTraceSync(
+    'documents.init.repositories.documentsFolder',
+    () => new DocumentsFolderRepository()
+  );
 
-      logger.info("Connecting to MongoDB", {
-        uri: CONFIG.MONGODB.URI,
-      });
+  const documentRepository = withTraceSync(
+    'documents.init.repositories.document',
+    () => new DocumentRepository()
+  );
 
-      await mongoose.connect(CONFIG.MONGODB.URI);
-
-      logger.info("MongoDB connected successfully");
+  await withTraceAsync(
+    'documents.init.repositories_plugin.mongoose',
+    async (ctx) => {
+      mongoose.connection.once('connected', () => {
+        console.log('documents mongoose connected')
+        ctx.end();
+      })
+      await mongoose.connect(mongoUri);
     }
-  )
-  .onStop(async () => {
-    logger.info("Disconnecting from MongoDB");
-    await mongoose.disconnect();
-    logger.info("MongoDB disconnected successfully");
-  });
+  );
+
+  const plugin = withTraceSync(
+    'documents.init.repositories.plugin',
+    () => new Elysia({ name: "Repositories" })
+      .decorate("documentsFolderRepository", documentsFolderRepository)
+      .decorate("documentRepository", documentRepository)
+      .onStop(async () => {
+        await withTraceAsync(
+          'documents.stop.repositories_plugin',
+          async () => {
+            await mongoose.disconnect();
+          }
+        );
+      })
+  );
+
+  return plugin;
+}
+
+export type RepositoriesPlugin = Awaited<ReturnType<typeof createRepositoriesPlugin>>

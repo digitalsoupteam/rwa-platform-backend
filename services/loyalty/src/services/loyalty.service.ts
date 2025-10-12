@@ -14,6 +14,7 @@ import { CommissionHistoryRepository } from "../repositories/commissionHistory.r
 import { IReferrerWithdrawEntity } from "../models/entity/referrerWithdraw.entity";
 import { IReferrerClaimHistoryEntity } from "../models/entity/referrerClaimHistory.entity";
 import { ICommissionHistoryEntity } from "../models/entity/commissionHistory.entity";
+import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
 
 interface NetworkConfig {
@@ -22,6 +23,7 @@ interface NetworkConfig {
     referralTreasuryAddress: string;
 }
 
+@TracingDecorator()
 export class LoyaltyService {
     constructor(
         private readonly feesRepository: FeesRepository,

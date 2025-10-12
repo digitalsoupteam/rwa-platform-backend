@@ -6,19 +6,21 @@ import {
   createBusinessWithAIResponse,
 } from "../../models/validation/business.validation";
 
-export const createBusinessWithAIController = new Elysia()
-  .use(ServicesPlugin)
-  .post(
-    "/createBusinessWithAI",
-    async ({ body, businessService }) => {
-      logger.info(
-        `POST /createBusinessWithAI - Creating business from description`
-      );
+export const createBusinessWithAIController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: "CreateBusinessWithAIController" })
+    .use(servicesPlugin)
+    .post(
+      "/createBusinessWithAI",
+      async ({ body, businessService }) => {
+        logger.info(
+          `POST /createBusinessWithAI - Creating business from description`
+        );
 
-      return await businessService.createBusinessWithAI(body);
-    },
-    {
-      body: createBusinessWithAIRequest,
-      response: createBusinessWithAIResponse,
-    }
-  );
+        return await businessService.createBusinessWithAI(body);
+      },
+      {
+        body: createBusinessWithAIRequest,
+        response: createBusinessWithAIResponse,
+      }
+    );
+};

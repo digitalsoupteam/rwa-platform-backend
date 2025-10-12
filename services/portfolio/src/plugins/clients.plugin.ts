@@ -1,22 +1,43 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
 import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
-import { CONFIG } from "../config";
+import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 
-export const ClientsPlugin = new Elysia({ name: "Clients" })
-  .decorate("rabbitMQClient", {} as RabbitMQClient)
-  .onStart(async ({ decorator }) => {
-    logger.debug("Initializing clients");
+export const createClientsPlugin = async (
+  rabbitMQUri: string,
+  reconnectAttempts: number,
+  reconnectInterval: number
+) => {
+  const rabbitMQClient = withTraceSync(
+    'portfolio.init.clients.rabbitmq',
+    () => new RabbitMQClient({
+      uri: rabbitMQUri,
+      reconnectAttempts,
+      reconnectInterval,
+    })
+  );
 
-    // Initialize RabbitMQ client
-    decorator.rabbitMQClient = new RabbitMQClient({
-      uri: CONFIG.RABBITMQ.URI,
-      reconnectAttempts: CONFIG.RABBITMQ.MAX_RECONNECT_ATTEMPTS,
-      reconnectInterval: CONFIG.RABBITMQ.RECONNECT_INTERVAL,
-    });
+  await withTraceAsync(
+    'portfolio.init.clients.rabbitmq_connect',
+    async () => {
+      await rabbitMQClient.connect();
+    }
+  );
 
-    await decorator.rabbitMQClient.connect();
-  })
-  .onStop(async ({ decorator }) => {
-    await decorator.rabbitMQClient.disconnect();
-  });
+  const plugin = withTraceSync(
+    'portfolio.init.clients.plugin',
+    () => new Elysia({ name: "Clients" })
+      .decorate("rabbitMQClient", rabbitMQClient)
+      .onStop(async () => {
+        await withTraceAsync(
+          'portfolio.stop.clients.rabbitmq_disconnect',
+          async () => {
+            await rabbitMQClient.disconnect();
+          }
+        );
+      })
+  );
+
+  return plugin;
+}
+
+export type ClientsPlugin = Awaited<ReturnType<typeof createClientsPlugin>>
