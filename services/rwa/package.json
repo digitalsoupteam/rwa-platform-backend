@@ -14,6 +14,7 @@
     "@shared/blockchain-daemon": "workspace:*",
     "@shared/redis-events": "workspace:*",
     "elysia": "1.3.5",
+    "ethers": "6.15.0",
     "mongoose": "8.16.4"
   },
   "devDependencies": {
