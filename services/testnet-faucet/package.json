@@ -13,6 +13,7 @@
     "@shared/monitoring": "workspace:*",
     "@shared/errors": "workspace:*",
     "elysia": "1.3.5",
+    "ethers": "6.15.0",
     "mongoose": "8.16.4"
   },
   "devDependencies": {

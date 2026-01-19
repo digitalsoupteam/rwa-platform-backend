@@ -17,8 +17,8 @@ const ERC20_ABI = [
  */
 @TracingDecorator()
 export class BlockchainClient {
-  private provider: ethers.JsonRpcProvider;
-  private wallet: ethers.Wallet;
+  #provider: ethers.JsonRpcProvider;
+  #wallet: ethers.Wallet;
   private initialized: boolean = false;
   private currentNonce: number = 0;
 
@@ -26,8 +26,8 @@ export class BlockchainClient {
     providerUrl: string,
     walletPrivateKey: string,
   ) {
-    this.provider = new ethers.JsonRpcProvider(providerUrl);
-    this.wallet = new ethers.Wallet(walletPrivateKey, this.provider);
+    this.#provider = new ethers.JsonRpcProvider(providerUrl);
+    this.#wallet = new ethers.Wallet(walletPrivateKey, this.#provider);
   }
 
   /**
@@ -35,16 +35,16 @@ export class BlockchainClient {
    */
   async initialize(): Promise<void> {
     try {
-      const network = await this.provider.getNetwork();
+      const network = await this.#provider.getNetwork();
       logger.info(`Connected to blockchain network: chainId ${network.chainId}`);
       
-      const balance = await this.provider.getBalance(this.wallet.address);
+      const balance = await this.#provider.getBalance(this.#wallet.address);
       const balanceEth = ethers.formatEther(balance);
       
-      logger.info(`Faucet wallet ${this.wallet.address} balance: ${balanceEth} ETH`);
+      logger.info(`Faucet wallet ${this.#wallet.address} balance: ${balanceEth} ETH`);
       
       
-      this.currentNonce = await this.provider.getTransactionCount(this.wallet.address);
+      this.currentNonce = await this.#provider.getTransactionCount(this.#wallet.address);
       logger.info(`Initial nonce: ${this.currentNonce}`);
       
       this.initialized = true;
@@ -73,7 +73,7 @@ export class BlockchainClient {
       
       const amountInWei = ethers.parseEther(amount);
       
-      const balance = await this.provider.getBalance(this.wallet.address);
+      const balance = await this.#provider.getBalance(this.#wallet.address);
       if (balance < amountInWei) {
         throw new BlockchainError('Insufficient funds in faucet wallet');
       }
@@ -81,7 +81,7 @@ export class BlockchainClient {
       
       const nonce = this.currentNonce++;
       
-      const tx = await this.wallet.sendTransaction({
+      const tx = await this.#wallet.sendTransaction({
         to: recipientAddress,
         value: amountInWei,
         nonce: nonce
@@ -129,13 +129,13 @@ export class BlockchainClient {
       const tokenContract = new ethers.Contract(
         tokenAddress,
         ERC20_ABI,
-        this.wallet
+        this.#wallet
       );
       
       const decimals = await tokenContract.decimals();
       const tokenAmount = ethers.parseUnits(amount, decimals);
       
-      const balance = await tokenContract.balanceOf(this.wallet.address);
+      const balance = await tokenContract.balanceOf(this.#wallet.address);
       if (balance < tokenAmount) {
         throw new BlockchainError('Insufficient token balance in faucet wallet');
       }

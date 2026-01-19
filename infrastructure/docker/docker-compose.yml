@@ -1,4 +1,27 @@
+
 version: "3.8"
+
+x-configs:
+  monitoring:
+    env: &monitoring-env
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL}
+    volumes: &monitoring-volumes
+      - service_logs:/var/log
+  
+  infra:
+    rabbit-env: &rabbit-env
+      RABBITMQ_URL: ${RABBITMQ_URL}
+      RABBITMQ_RECONNECT_INTERVAL: ${RABBITMQ_RECONNECT_INTERVAL}
+      RABBITMQ_MAX_RECONNECT_ATTEMPTS: ${RABBITMQ_MAX_RECONNECT_ATTEMPTS}
+    
+    mongo-env: &mongo-env
+      MONGODB_URI: ${MONGODB_BASE_URI}
+    
+    openrouter-env: &openrouter-env
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL}
 
 services:
   ai-assistant:
@@ -6,483 +29,397 @@ services:
       context: ../..
       dockerfile: services/ai-assistant/Dockerfile
     environment:
-      - SERVICE_NAME=${AI_ASSISTANT_SERVICE_NAME}
-      - PORT=${AI_ASSISTANT_PORT}
-      - MONGODB_URI=${AI_ASSISTANT_MONGODB_URI}
-      - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - OPENROUTER_MODEL=${OPENROUTER_MODEL}
-      - RWA_SERVICE_URL=${AI_ASSISTANT_RWA_SERVICE_URL}
-      - PORTFOLIO_SERVICE_URL=${AI_ASSISTANT_PORTFOLIO_SERVICE_URL}
-      # OpenTelemetry configuration
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy:4320
-      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-      - OTEL_SERVICE_NAME=${AI_ASSISTANT_SERVICE_NAME}
-      - OTEL_RESOURCE_ATTRIBUTES=service.name=${AI_ASSISTANT_SERVICE_NAME},service.version=1.0.0,deployment.environment=production
-    volumes:
-      - service_logs:/var/log
+      <<: [*mongo-env, *monitoring-env, *openrouter-env]
+      SERVICE_NAME: ${AI_ASSISTANT_SERVICE_NAME}
+      SERVICE_VERSION: ${AI_ASSISTANT_SERVICE_VERSION}
+      MONGODB_DBNAME: ${AI_ASSISTANT_MONGODB_DBNAME}
+      OTEL_SERVICE_NAME: ${AI_ASSISTANT_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${AI_ASSISTANT_SERVICE_NAME},service.version=${AI_ASSISTANT_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
+      PORT: ${AI_ASSISTANT_PORT}
+      RWA_SERVICE_URL: ${AI_ASSISTANT_RWA_SERVICE_URL}
+      PORTFOLIO_SERVICE_URL: ${AI_ASSISTANT_PORTFOLIO_SERVICE_URL}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      rwa:
-        condition: service_started
-      portfolio:
-        condition: service_started
 
   auth:
     build:
       context: ../..
       dockerfile: services/auth/Dockerfile
     environment:
-      - SERVICE_NAME=${AUTH_SERVICE_NAME}
-      - PORT=${AUTH_PORT}
-      - MONGODB_URI=${AUTH_MONGODB_URI}
-      - JWT_SECRET=${AUTH_JWT_SECRET}
-      - ACCESS_TOKEN_EXPIRY=${AUTH_ACCESS_TOKEN_EXPIRY}
-      - REFRESH_TOKEN_EXPIRY=${AUTH_REFRESH_TOKEN_EXPIRY}
-      - DOMAIN_NAME=${AUTH_DOMAIN_NAME}
-      - DOMAIN_VERSION=${AUTH_DOMAIN_VERSION}
-      # OpenTelemetry configuration
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy:4320
-      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-      - OTEL_SERVICE_NAME=${AUTH_SERVICE_NAME}
-      - OTEL_RESOURCE_ATTRIBUTES=service.name=${AUTH_SERVICE_NAME},service.version=1.0.0,deployment.environment=production
-    volumes:
-      - service_logs:/var/log
+      <<: [*mongo-env, *monitoring-env]
+      SERVICE_NAME: ${AUTH_SERVICE_NAME}
+      SERVICE_VERSION: ${AUTH_SERVICE_VERSION}
+      MONGODB_DBNAME: ${AUTH_MONGODB_DBNAME}
+      OTEL_SERVICE_NAME: ${AUTH_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${AUTH_SERVICE_NAME},service.version=${AUTH_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
+      PORT: ${AUTH_PORT}
+      JWT_SECRET: ${AUTH_JWT_SECRET}
+      ACCESS_TOKEN_EXPIRY: ${AUTH_ACCESS_TOKEN_EXPIRY}
+      REFRESH_TOKEN_EXPIRY: ${AUTH_REFRESH_TOKEN_EXPIRY}
+      DOMAIN_NAME: ${AUTH_DOMAIN_NAME}
+      DOMAIN_VERSION: ${AUTH_DOMAIN_VERSION}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
 
   blockchain-scanner:
     build:
       context: ../..
       dockerfile: services/blockchain-scanner/Dockerfile
     environment:
-      - SERVICE_NAME=${BLOCKCHAIN_SCANNER_SERVICE_NAME}
-      - PORT=${BLOCKCHAIN_SCANNER_PORT}
-      - MONGODB_URI=${BLOCKCHAIN_SCANNER_MONGODB_URI}
-      - RPC_URL=${BLOCKCHAIN_SCANNER_RPC_URL}
-      - CHAIN_ID=${BLOCKCHAIN_SCANNER_CHAIN_ID}
-      - EVENT_EMITTER_ADDRESS=${BLOCKCHAIN_SCANNER_EVENT_EMITTER_ADDRESS}
-      - BLOCK_CONFIRMATIONS=${BLOCKCHAIN_SCANNER_BLOCK_CONFIRMATIONS}
-      - RABBITMQ_URL=${BLOCKCHAIN_SCANNER_RABBITMQ_URL}
-      - RABBITMQ_EXCHANGE=${BLOCKCHAIN_SCANNER_RABBITMQ_EXCHANGE}
-      - RABBITMQ_RECONNECT_INTERVAL=${BLOCKCHAIN_SCANNER_RABBITMQ_RECONNECT_INTERVAL}
-      - RABBITMQ_MAX_RECONNECT_ATTEMPTS=${BLOCKCHAIN_SCANNER_RABBITMQ_MAX_RECONNECT_ATTEMPTS}
-      - SCAN_INTERVAL=${BLOCKCHAIN_SCANNER_SCAN_INTERVAL}
-      - BATCH_SIZE=${BLOCKCHAIN_SCANNER_BATCH_SIZE}
-    volumes:
-      - service_logs:/var/log
+      <<: [*mongo-env, *monitoring-env, *rabbit-env]
+      SERVICE_NAME: ${BLOCKCHAIN_SCANNER_SERVICE_NAME}
+      SERVICE_VERSION: ${BLOCKCHAIN_SCANNER_SERVICE_VERSION}
+      MONGODB_DBNAME: ${BLOCKCHAIN_SCANNER_MONGODB_DBNAME}
+      OTEL_SERVICE_NAME: ${BLOCKCHAIN_SCANNER_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${BLOCKCHAIN_SCANNER_SERVICE_NAME},service.version=${BLOCKCHAIN_SCANNER_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
+      PORT: ${BLOCKCHAIN_SCANNER_PORT}
+      RPC_URL: ${BLOCKCHAIN_SCANNER_RPC_URL}
+      CHAIN_ID: ${BLOCKCHAIN_SCANNER_CHAIN_ID}
+      EVENT_EMITTER_ADDRESS: ${BLOCKCHAIN_SCANNER_EVENT_EMITTER_ADDRESS}
+      BLOCK_CONFIRMATIONS: ${BLOCKCHAIN_SCANNER_BLOCK_CONFIRMATIONS}
+      RABBITMQ_EXCHANGE: ${BLOCKCHAIN_SCANNER_RABBITMQ_EXCHANGE}
+      SCAN_INTERVAL: ${BLOCKCHAIN_SCANNER_SCAN_INTERVAL}
+      BATCH_SIZE: ${BLOCKCHAIN_SCANNER_BATCH_SIZE}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
 
   blog:
     build:
       context: ../..
       dockerfile: services/blog/Dockerfile
     environment:
-      - SERVICE_NAME=${BLOG_SERVICE_NAME}
-      - PORT=${BLOG_PORT}
-      - MONGODB_URI=${BLOG_MONGODB_URI}
-    volumes:
-      - service_logs:/var/log
+      <<: [*mongo-env, *monitoring-env]
+      SERVICE_NAME: ${BLOG_SERVICE_NAME}
+      SERVICE_VERSION: ${BLOG_SERVICE_VERSION}
+      MONGODB_DBNAME: ${BLOG_MONGODB_DBNAME}
+      OTEL_SERVICE_NAME: ${BLOG_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${BLOG_SERVICE_NAME},service.version=${BLOG_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
+      PORT: ${BLOG_PORT}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
 
   charts:
     build:
       context: ../..
       dockerfile: services/charts/Dockerfile
     environment:
-      - SERVICE_NAME=${CHARTS_SERVICE_NAME}
-      - PORT=${CHARTS_PORT}
-      - MONGODB_URI=${CHARTS_MONGODB_URI}
-      - RABBITMQ_URL=${CHARTS_RABBITMQ_URL}
-      - RABBITMQ_EXCHANGE=${CHARTS_RABBITMQ_EXCHANGE}
-      - RABBITMQ_CHARTS_EXCHANGE=${CHARTS_RABBITMQ_CHARTS_EXCHANGE}
-      - RABBITMQ_RECONNECT_INTERVAL=${CHARTS_RABBITMQ_RECONNECT_INTERVAL}
-      - RABBITMQ_MAX_RECONNECT_ATTEMPTS=${CHARTS_RABBITMQ_MAX_RECONNECT_ATTEMPTS}
-      - REDIS_URL=${CHARTS_REDIS_URL}
-    volumes:
-      - service_logs:/var/log
+      <<: [*mongo-env, *monitoring-env, *rabbit-env]
+      SERVICE_NAME: ${CHARTS_SERVICE_NAME}
+      SERVICE_VERSION: ${CHARTS_SERVICE_VERSION}
+      MONGODB_DBNAME: ${CHARTS_MONGODB_DBNAME}
+      OTEL_SERVICE_NAME: ${CHARTS_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${CHARTS_SERVICE_NAME},service.version=${CHARTS_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
+      PORT: ${CHARTS_PORT}
+      RABBITMQ_EXCHANGE: ${CHARTS_RABBITMQ_EXCHANGE}
+      RABBITMQ_CHARTS_EXCHANGE: ${CHARTS_RABBITMQ_CHARTS_EXCHANGE}
+      REDIS_URL: ${CHARTS_REDIS_URL}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
 
   company:
     build:
       context: ../..
       dockerfile: services/company/Dockerfile
     environment:
-      - SERVICE_NAME=${COMPANY_SERVICE_NAME}
-      - PORT=${COMPANY_PORT}
-      - MONGODB_URI=${COMPANY_MONGODB_URI}
-    volumes:
-      - service_logs:/var/log
+      <<: [*mongo-env, *monitoring-env]
+      SERVICE_NAME: ${COMPANY_SERVICE_NAME}
+      SERVICE_VERSION: ${COMPANY_SERVICE_VERSION}
+      MONGODB_DBNAME: ${COMPANY_MONGODB_DBNAME}
+      OTEL_SERVICE_NAME: ${COMPANY_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${COMPANY_SERVICE_NAME},service.version=${COMPANY_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
+      PORT: ${COMPANY_PORT}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
 
   dao:
     build:
       context: ../..
       dockerfile: services/dao/Dockerfile
     environment:
-      - SERVICE_NAME=${DAO_SERVICE_NAME}
-      - PORT=${DAO_PORT}
-      - MONGODB_URI=${DAO_MONGODB_URI}
-      - RABBITMQ_URL=${DAO_RABBITMQ_URL}
-      - RABBITMQ_EXCHANGE=${DAO_RABBITMQ_EXCHANGE}
-      - RABBITMQ_RECONNECT_INTERVAL=${DAO_RABBITMQ_RECONNECT_INTERVAL}
-      - RABBITMQ_MAX_RECONNECT_ATTEMPTS=${DAO_RABBITMQ_MAX_RECONNECT_ATTEMPTS}
-    volumes:
-      - service_logs:/var/log
+      <<: [*mongo-env, *monitoring-env, *rabbit-env]
+      SERVICE_NAME: ${DAO_SERVICE_NAME}
+      SERVICE_VERSION: ${DAO_SERVICE_VERSION}
+      MONGODB_DBNAME: ${DAO_MONGODB_DBNAME}
+      OTEL_SERVICE_NAME: ${DAO_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${DAO_SERVICE_NAME},service.version=${DAO_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
+      PORT: ${DAO_PORT}
+      RABBITMQ_EXCHANGE: ${DAO_RABBITMQ_EXCHANGE}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
 
   documents:
     build:
       context: ../..
       dockerfile: services/documents/Dockerfile
     environment:
-      - SERVICE_NAME=${DOCUMENTS_SERVICE_NAME}
-      - PORT=${DOCUMENTS_PORT}
-      - MONGODB_URI=${DOCUMENTS_MONGODB_URI}
-    volumes:
-      - service_logs:/var/log
+      <<: [*mongo-env, *monitoring-env]
+      SERVICE_NAME: ${DOCUMENTS_SERVICE_NAME}
+      SERVICE_VERSION: ${DOCUMENTS_SERVICE_VERSION}
+      MONGODB_DBNAME: ${DOCUMENTS_MONGODB_DBNAME}
+      OTEL_SERVICE_NAME: ${DOCUMENTS_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${DOCUMENTS_SERVICE_NAME},service.version=${DOCUMENTS_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
+      PORT: ${DOCUMENTS_PORT}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
 
   faq:
     build:
       context: ../..
       dockerfile: services/faq/Dockerfile
     environment:
-      - SERVICE_NAME=${FAQ_SERVICE_NAME}
-      - PORT=${FAQ_PORT}
-      - MONGODB_URI=${FAQ_MONGODB_URI}
-    volumes:
-      - service_logs:/var/log
+      <<: [*mongo-env, *monitoring-env]
+      SERVICE_NAME: ${FAQ_SERVICE_NAME}
+      SERVICE_VERSION: ${FAQ_SERVICE_VERSION}
+      MONGODB_DBNAME: ${FAQ_MONGODB_DBNAME}
+      OTEL_SERVICE_NAME: ${FAQ_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${FAQ_SERVICE_NAME},service.version=${FAQ_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
+      PORT: ${FAQ_PORT}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
 
   files:
     build:
       context: ../..
       dockerfile: services/files/Dockerfile
     environment:
-      - SERVICE_NAME=${FILES_SERVICE_NAME}
-      - PORT=${FILES_PORT}
-      - MONGODB_URI=${FILES_MONGODB_URI}
-      - STORAGE_ROOT_DIR=${FILES_STORAGE_ROOT_DIR}
-      - MAX_FILE_SIZE=${FILES_MAX_FILE_SIZE}
+      <<: [*mongo-env, *monitoring-env]
+      SERVICE_NAME: ${FILES_SERVICE_NAME}
+      SERVICE_VERSION: ${FILES_SERVICE_VERSION}
+      MONGODB_DBNAME: ${FILES_MONGODB_DBNAME}
+      OTEL_SERVICE_NAME: ${FILES_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${FILES_SERVICE_NAME},service.version=${FILES_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
+      PORT: ${FILES_PORT}
+      STORAGE_ROOT_DIR: ${FILES_STORAGE_ROOT_DIR}
+      MAX_FILE_SIZE: ${FILES_MAX_FILE_SIZE}
     volumes:
       - service_logs:/var/log
-      - ./volumes/filesservice:/app/storage
+      - ${FILES_STORAGE_VOLUME}:/app/storage
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
 
   gallery:
     build:
       context: ../..
       dockerfile: services/gallery/Dockerfile
     environment:
-      - SERVICE_NAME=${GALLERY_SERVICE_NAME}
-      - PORT=${GALLERY_PORT}
-      - MONGODB_URI=${GALLERY_MONGODB_URI}
-    volumes:
-      - service_logs:/var/log
+      <<: [*mongo-env, *monitoring-env]
+      SERVICE_NAME: ${GALLERY_SERVICE_NAME}
+      SERVICE_VERSION: ${GALLERY_SERVICE_VERSION}
+      MONGODB_DBNAME: ${GALLERY_MONGODB_DBNAME}
+      OTEL_SERVICE_NAME: ${GALLERY_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${GALLERY_SERVICE_NAME},service.version=${GALLERY_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
+      PORT: ${GALLERY_PORT}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
 
   loyalty:
     build:
       context: ../..
       dockerfile: services/loyalty/Dockerfile
     environment:
-      - SERVICE_NAME=${LOYALTY_SERVICE_NAME}
-      - PORT=${LOYALTY_PORT}
-      - MONGODB_URI=${LOYALTY_MONGODB_URI}
-      - RABBITMQ_URL=${LOYALTY_RABBITMQ_URL}
-      - RABBITMQ_EXCHANGE=${LOYALTY_RABBITMQ_EXCHANGE}
-      - RABBITMQ_RECONNECT_INTERVAL=${LOYALTY_RABBITMQ_RECONNECT_INTERVAL}
-      - RABBITMQ_MAX_RECONNECT_ATTEMPTS=${LOYALTY_RABBITMQ_MAX_RECONNECT_ATTEMPTS}
-      - LOYALTY_REFERRAL_REWARD_PERCENTAGE=${LOYALTY_REFERRAL_REWARD_PERCENTAGE}
-      - SIGNERS_MANAGER_URL=${LOYALTY_SIGNERS_MANAGER_URL}
-    volumes:
-      - service_logs:/var/log
+      <<: [*mongo-env, *monitoring-env, *rabbit-env]
+      SERVICE_NAME: ${LOYALTY_SERVICE_NAME}
+      SERVICE_VERSION: ${LOYALTY_SERVICE_VERSION}
+      MONGODB_DBNAME: ${LOYALTY_MONGODB_DBNAME}
+      OTEL_SERVICE_NAME: ${LOYALTY_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${LOYALTY_SERVICE_NAME},service.version=${LOYALTY_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
+      PORT: ${LOYALTY_PORT}
+      RABBITMQ_EXCHANGE: ${LOYALTY_RABBITMQ_EXCHANGE}
+      LOYALTY_REFERRAL_REWARD_PERCENTAGE: ${LOYALTY_REFERRAL_REWARD_PERCENTAGE}
+      SIGNERS_MANAGER_URL: ${LOYALTY_SIGNERS_MANAGER_URL}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
 
   gateway:
     build:
       context: ../..
       dockerfile: services/gateway/Dockerfile
     environment:
-      - SERVICE_NAME=${GATEWAY_SERVICE_NAME}
-      - PORT=${GATEWAY_PORT}
-      - JWT_SECRET=${GATEWAY_JWT_SECRET}
-      - AUTH_SERVICE_URL=${GATEWAY_AUTH_SERVICE_URL}
-      - BLOCKCHAIN_SCANNER_SERVICE_URL=${GATEWAY_BLOCKCHAIN_SCANNER_SERVICE_URL}
-      - TESTNET_FAUCET_SERVICE_URL=${GATEWAY_TESTNET_FAUCET_SERVICE_URL}
-      - ASSISTANT_SERVICE_URL=${GATEWAY_ASSISTANT_SERVICE_URL}
-      - RWA_SERVICE_URL=${GATEWAY_RWA_SERVICE_URL}
-      - FILES_SERVICE_URL=${GATEWAY_FILES_SERVICE_URL}
-      - DOCUMENTS_SERVICE_URL=${GATEWAY_DOCUMENTS_SERVICE_URL}
-      - GALLERY_SERVICE_URL=${GATEWAY_GALLERY_SERVICE_URL}
-      - QUESTIONS_SERVICE_URL=${GATEWAY_QUESTIONS_SERVICE_URL}
-      - PORTFOLIO_SERVICE_URL=${GATEWAY_PORTFOLIO_SERVICE_URL}
-      - BLOG_SERVICE_URL=${GATEWAY_BLOG_SERVICE_URL}
-      - FAQ_SERVICE_URL=${GATEWAY_FAQ_SERVICE_URL}
-      - COMPANY_SERVICE_URL=${GATEWAY_COMPANY_SERVICE_URL}
-      - SIGNERS_MANAGER_SERVICE_URL=${GATEWAY_SIGNERS_MANAGER_SERVICE_URL}
-      - CHARTS_SERVICE_URL=${GATEWAY_CHARTS_SERVICE_URL}
-      - REACTIONS_SERVICE_URL=${GATEWAY_REACTIONS_SERVICE_URL}
-      - LOYALTY_SERVICE_URL=${GATEWAY_LOYALTY_SERVICE_URL}
-      - DAO_SERVICE_URL=${GATEWAY_DAO_SERVICE_URL}
-      - PROMETHEUS_URL=${GATEWAY_PROMETHEUS_URL}
-      - LOKI_URL=${GATEWAY_LOKI_URL}
-      - REDIS_URL=${GATEWAY_REDIS_URL}
-      # OpenTelemetry configuration
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy:4320
-      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-      - OTEL_SERVICE_NAME=${GATEWAY_SERVICE_NAME}
-      - OTEL_RESOURCE_ATTRIBUTES=service.name=${GATEWAY_SERVICE_NAME},service.version=1.0.0,deployment.environment=production
-    volumes:
-      - service_logs:/var/log
+      <<: [*mongo-env, *monitoring-env]
+      SERVICE_NAME: ${GATEWAY_SERVICE_NAME}
+      SERVICE_VERSION: ${GATEWAY_SERVICE_VERSION}
+      OTEL_SERVICE_NAME: ${GATEWAY_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${GATEWAY_SERVICE_NAME},service.version=${GATEWAY_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
+      PORT: ${GATEWAY_PORT}
+      JWT_SECRET: ${GATEWAY_JWT_SECRET}
+      AUTH_SERVICE_URL: ${GATEWAY_AUTH_SERVICE_URL}
+      BLOCKCHAIN_SCANNER_SERVICE_URL: ${GATEWAY_BLOCKCHAIN_SCANNER_SERVICE_URL}
+      TESTNET_FAUCET_SERVICE_URL: ${GATEWAY_TESTNET_FAUCET_SERVICE_URL}
+      ASSISTANT_SERVICE_URL: ${GATEWAY_ASSISTANT_SERVICE_URL}
+      RWA_SERVICE_URL: ${GATEWAY_RWA_SERVICE_URL}
+      FILES_SERVICE_URL: ${GATEWAY_FILES_SERVICE_URL}
+      DOCUMENTS_SERVICE_URL: ${GATEWAY_DOCUMENTS_SERVICE_URL}
+      GALLERY_SERVICE_URL: ${GATEWAY_GALLERY_SERVICE_URL}
+      QUESTIONS_SERVICE_URL: ${GATEWAY_QUESTIONS_SERVICE_URL}
+      PORTFOLIO_SERVICE_URL: ${GATEWAY_PORTFOLIO_SERVICE_URL}
+      BLOG_SERVICE_URL: ${GATEWAY_BLOG_SERVICE_URL}
+      FAQ_SERVICE_URL: ${GATEWAY_FAQ_SERVICE_URL}
+      COMPANY_SERVICE_URL: ${GATEWAY_COMPANY_SERVICE_URL}
+      SIGNERS_MANAGER_SERVICE_URL: ${GATEWAY_SIGNERS_MANAGER_SERVICE_URL}
+      CHARTS_SERVICE_URL: ${GATEWAY_CHARTS_SERVICE_URL}
+      REACTIONS_SERVICE_URL: ${GATEWAY_REACTIONS_SERVICE_URL}
+      LOYALTY_SERVICE_URL: ${GATEWAY_LOYALTY_SERVICE_URL}
+      DAO_SERVICE_URL: ${GATEWAY_DAO_SERVICE_URL}
+      PROMETHEUS_URL: ${GATEWAY_PROMETHEUS_URL}
+      LOKI_URL: ${GATEWAY_LOKI_URL}
+      REDIS_URL: ${GATEWAY_REDIS_URL}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      redis:
-        condition: service_healthy
 
   portfolio:
     build:
       context: ../..
       dockerfile: services/portfolio/Dockerfile
     environment:
-      - SERVICE_NAME=${PORTFOLIO_SERVICE_NAME}
-      - PORT=${PORTFOLIO_PORT}
-      - MONGODB_URI=${PORTFOLIO_MONGODB_URI}
-      - RABBITMQ_URL=${PORTFOLIO_RABBITMQ_URL}
-      - RABBITMQ_EXCHANGE=${PORTFOLIO_RABBITMQ_EXCHANGE}
-      - RABBITMQ_RECONNECT_INTERVAL=${PORTFOLIO_RABBITMQ_RECONNECT_INTERVAL}
-      - RABBITMQ_MAX_RECONNECT_ATTEMPTS=${PORTFOLIO_RABBITMQ_MAX_RECONNECT_ATTEMPTS}
-    volumes:
-      - service_logs:/var/log
+      <<: [*mongo-env, *monitoring-env, *rabbit-env]
+      SERVICE_NAME: ${PORTFOLIO_SERVICE_NAME}
+      SERVICE_VERSION: ${PORTFOLIO_SERVICE_VERSION}
+      MONGODB_DBNAME: ${PORTFOLIO_MONGODB_DBNAME}
+      OTEL_SERVICE_NAME: ${PORTFOLIO_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${PORTFOLIO_SERVICE_NAME},service.version=${PORTFOLIO_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
+      PORT: ${PORTFOLIO_PORT}
+      RABBITMQ_EXCHANGE: ${PORTFOLIO_RABBITMQ_EXCHANGE}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
 
   questions:
     build:
       context: ../..
       dockerfile: services/questions/Dockerfile
     environment:
-      - SERVICE_NAME=${QUESTIONS_SERVICE_NAME}
-      - PORT=${QUESTIONS_PORT}
-      - MONGODB_URI=${QUESTIONS_MONGODB_URI}
-    volumes:
-      - service_logs:/var/log
+      <<: [*monitoring-env, *mongo-env]
+      SERVICE_NAME: ${QUESTIONS_SERVICE_NAME}
+      SERVICE_VERSION: ${QUESTIONS_SERVICE_VERSION}
+      MONGODB_DBNAME: ${QUESTIONS_MONGODB_DBNAME}
+      PORT: ${QUESTIONS_PORT}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
 
   reactions:
     build:
       context: ../..
       dockerfile: services/reactions/Dockerfile
     environment:
-      - SERVICE_NAME=${REACTIONS_SERVICE_NAME}
-      - PORT=${REACTIONS_PORT}
-      - MONGODB_URI=${REACTIONS_MONGODB_URI}
-    volumes:
-      - service_logs:/var/log
+      <<: [*monitoring-env, *mongo-env]
+      SERVICE_NAME: ${REACTIONS_SERVICE_NAME}
+      SERVICE_VERSION: ${REACTIONS_SERVICE_VERSION}
+      MONGODB_DBNAME: ${REACTIONS_MONGODB_DBNAME}
+      PORT: ${REACTIONS_PORT}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
 
   rwa:
     build:
       context: ../..
       dockerfile: services/rwa/Dockerfile
     environment:
-      - SERVICE_NAME=${RWA_SERVICE_NAME}
-      - PORT=${RWA_PORT}
-      - MONGODB_URI=${RWA_MONGODB_URI}
-      - RABBITMQ_URL=${RWA_RABBITMQ_URL}
-      - RABBITMQ_EXCHANGE=${RWA_RABBITMQ_EXCHANGE}
-      - RABBITMQ_RECONNECT_INTERVAL=${RWA_RABBITMQ_RECONNECT_INTERVAL}
-      - RABBITMQ_MAX_RECONNECT_ATTEMPTS=${RWA_RABBITMQ_MAX_RECONNECT_ATTEMPTS}
-      - REDIS_URL=${RWA_REDIS_URL}
-      - SIGNERS_MANAGER_URL=${RWA_SIGNERS_MANAGER_URL}
-      - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - OPENROUTER_MODEL=${OPENROUTER_MODEL}
-    volumes:
-      - service_logs:/var/log
+      <<: [*monitoring-env, *mongo-env, *rabbit-env, *openrouter-env]
+      SERVICE_NAME: ${RWA_SERVICE_NAME}
+      SERVICE_VERSION: ${RWA_SERVICE_VERSION}
+      MONGODB_DBNAME: ${RWA_MONGODB_DBNAME}
+      PORT: ${RWA_PORT}
+      RABBITMQ_EXCHANGE: ${RWA_RABBITMQ_EXCHANGE}
+      REDIS_URL: ${RWA_REDIS_URL}
+      SIGNERS_MANAGER_URL: ${RWA_SIGNERS_MANAGER_URL}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
 
   signer-1:
     build:
       context: ../..
       dockerfile: services/signer/Dockerfile
     environment:
-      - SERVICE_NAME=${SIGNER_1_SERVICE_NAME}
-      - PORT=${SIGNER_1_PORT}
-      - RABBITMQ_URI=${SIGNER_1_RABBITMQ_URI}
-      - RABBITMQ_MAX_RECONNECT_ATTEMPTS=${SIGNER_1_RABBITMQ_MAX_RECONNECT_ATTEMPTS}
-      - RABBITMQ_RECONNECT_INTERVAL=${SIGNER_1_RABBITMQ_RECONNECT_INTERVAL}
-      - SIGNER_PRIVATE_KEY=${SIGNER_1_PRIVATE_KEY}
-    volumes:
-      - service_logs:/var/log
+      <<: [*monitoring-env, *rabbit-env]
+      SERVICE_NAME: ${SIGNER_1_SERVICE_NAME}
+      SERVICE_VERSION: ${SIGNER_1_SERVICE_VERSION}
+      PORT: ${SIGNER_1_PORT}
+      SIGNER_PRIVATE_KEY: ${SIGNER_1_PRIVATE_KEY}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
 
   signer-2:
     build:
       context: ../..
       dockerfile: services/signer/Dockerfile
     environment:
-      - SERVICE_NAME=${SIGNER_2_SERVICE_NAME}
-      - PORT=${SIGNER_2_PORT}
-      - RABBITMQ_URI=${SIGNER_2_RABBITMQ_URI}
-      - RABBITMQ_MAX_RECONNECT_ATTEMPTS=${SIGNER_2_RABBITMQ_MAX_RECONNECT_ATTEMPTS}
-      - RABBITMQ_RECONNECT_INTERVAL=${SIGNER_2_RABBITMQ_RECONNECT_INTERVAL}
-      - SIGNER_PRIVATE_KEY=${SIGNER_2_PRIVATE_KEY}
-    volumes:
-      - service_logs:/var/log
+      <<: [*monitoring-env, *rabbit-env]
+      SERVICE_NAME: ${SIGNER_2_SERVICE_NAME}
+      SERVICE_VERSION: ${SIGNER_2_SERVICE_VERSION}
+      PORT: ${SIGNER_2_PORT}
+      SIGNER_PRIVATE_KEY: ${SIGNER_2_PRIVATE_KEY}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
 
   signer-3:
     build:
       context: ../..
       dockerfile: services/signer/Dockerfile
     environment:
-      - SERVICE_NAME=${SIGNER_3_SERVICE_NAME}
-      - PORT=${SIGNER_3_PORT}
-      - RABBITMQ_URI=${SIGNER_3_RABBITMQ_URI}
-      - RABBITMQ_MAX_RECONNECT_ATTEMPTS=${SIGNER_3_RABBITMQ_MAX_RECONNECT_ATTEMPTS}
-      - RABBITMQ_RECONNECT_INTERVAL=${SIGNER_3_RABBITMQ_RECONNECT_INTERVAL}
-      - SIGNER_PRIVATE_KEY=${SIGNER_3_PRIVATE_KEY}
-    volumes:
-      - service_logs:/var/log
+      <<: [*monitoring-env, *rabbit-env]
+      SERVICE_NAME: ${SIGNER_3_SERVICE_NAME}
+      SERVICE_VERSION: ${SIGNER_3_SERVICE_VERSION}
+      PORT: ${SIGNER_3_PORT}
+      SIGNER_PRIVATE_KEY: ${SIGNER_3_PRIVATE_KEY}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
 
   signers-manager:
     build:
       context: ../..
       dockerfile: services/signers-manager/Dockerfile
     environment:
-      - SERVICE_NAME=${SIGNERS_MANAGER_SERVICE_NAME}
-      - PORT=${SIGNERS_MANAGER_PORT}
-      - MONGODB_URI=${SIGNERS_MANAGER_MONGODB_URI}
-      - RABBITMQ_URL=${SIGNERS_MANAGER_RABBITMQ_URL}
-      - RABBITMQ_EXCHANGE=${SIGNERS_MANAGER_RABBITMQ_EXCHANGE}
-      - RABBITMQ_RECONNECT_INTERVAL=${SIGNERS_MANAGER_RABBITMQ_RECONNECT_INTERVAL}
-      - RABBITMQ_MAX_RECONNECT_ATTEMPTS=${SIGNERS_MANAGER_RABBITMQ_MAX_RECONNECT_ATTEMPTS}
-    volumes:
-      - service_logs:/var/log
+      <<: [*monitoring-env, *mongo-env, *rabbit-env]
+      SERVICE_NAME: ${SIGNERS_MANAGER_SERVICE_NAME}
+      SERVICE_VERSION: ${SIGNERS_MANAGER_SERVICE_VERSION}
+      MONGODB_DBNAME: ${SIGNERS_MANAGER_MONGODB_DBNAME}
+      PORT: ${SIGNERS_MANAGER_PORT}
+      RABBITMQ_EXCHANGE: ${SIGNERS_MANAGER_RABBITMQ_EXCHANGE}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
 
   testnet-faucet:
     build:
       context: ../..
       dockerfile: services/testnet-faucet/Dockerfile
     environment:
-      - SERVICE_NAME=${TESTNET_FAUCET_SERVICE_NAME}
-      - PORT=${TESTNET_FAUCET_PORT}
-      - MONGODB_URI=${TESTNET_FAUCET_MONGODB_URI}
-      - PROVIDER_URL=${TESTNET_FAUCET_PROVIDER_URL}
-      - WALLET_PRIVATE_KEY=${TESTNET_FAUCET_WALLET_PRIVATE_KEY}
-      - GAS_TOKEN_AMOUNT=${TESTNET_FAUCET_GAS_TOKEN_AMOUNT}
-      - HOLD_TOKEN_AMOUNT=${TESTNET_FAUCET_HOLD_TOKEN_AMOUNT}
-      - PLATFORM_TOKEN_AMOUNT=${TESTNET_FAUCET_PLATFORM_TOKEN_AMOUNT}
-      - REQUEST_GAS_DELAY_MS=${TESTNET_FAUCET_REQUEST_GAS_DELAY_MS}
-      - REQUEST_HOLD_DELAY_MS=${TESTNET_FAUCET_REQUEST_HOLD_DELAY_MS}
-      - REQUEST_PLATFORM_DELAY_MS=${TESTNET_FAUCET_REQUEST_PLATFORM_DELAY_MS}
-      - HOLD_TOKEN_ADDRESS=${TESTNET_FAUCET_HOLD_TOKEN_ADDRESS}
-      - PLATFORM_TOKEN_ADDRESS=${TESTNET_FAUCET_PLATFORM_TOKEN_ADDRESS}
-    volumes:
-      - service_logs:/var/log
+      <<: [*monitoring-env, *mongo-env]
+      SERVICE_NAME: ${TESTNET_FAUCET_SERVICE_NAME}
+      SERVICE_VERSION: ${TESTNET_FAUCET_SERVICE_VERSION}
+      MONGODB_DBNAME: ${TESTNET_FAUCET_MONGODB_DBNAME}
+      PORT: ${TESTNET_FAUCET_PORT}
+      PROVIDER_URL: ${TESTNET_FAUCET_PROVIDER_URL}
+      WALLET_PRIVATE_KEY: ${TESTNET_FAUCET_WALLET_PRIVATE_KEY}
+      GAS_TOKEN_AMOUNT: ${TESTNET_FAUCET_GAS_TOKEN_AMOUNT}
+      HOLD_TOKEN_AMOUNT: ${TESTNET_FAUCET_HOLD_TOKEN_AMOUNT}
+      PLATFORM_TOKEN_AMOUNT: ${TESTNET_FAUCET_PLATFORM_TOKEN_AMOUNT}
+      REQUEST_GAS_DELAY_MS: ${TESTNET_FAUCET_REQUEST_GAS_DELAY_MS}
+      REQUEST_HOLD_DELAY_MS: ${TESTNET_FAUCET_REQUEST_HOLD_DELAY_MS}
+      REQUEST_PLATFORM_DELAY_MS: ${TESTNET_FAUCET_REQUEST_PLATFORM_DELAY_MS}
+      HOLD_TOKEN_ADDRESS: ${TESTNET_FAUCET_HOLD_TOKEN_ADDRESS}
+      PLATFORM_TOKEN_ADDRESS: ${TESTNET_FAUCET_PLATFORM_TOKEN_ADDRESS}
+    volumes: *monitoring-volumes
     networks:
       - app-network
-    depends_on:
-      mongodb:
-        condition: service_healthy
 
   nginx:
     build:
@@ -496,14 +433,14 @@ services:
       - ./nginx/.htpasswd:/etc/nginx/conf.d/.htpasswd
       - ./nginx/ssl:/etc/nginx/ssl
       - nginx_logs:/var/log/nginx
-      - ./volumes/filesservice:/app/storage
+      - ${FILES_STORAGE_VOLUME}:/app/storage
     networks:
       - app-network
 
   mongodb:
     image: mongo:latest
     volumes:
-      - mongodb_data:/data/db
+      - ${MONGODB_DATA_PATH}:/data/db
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -529,10 +466,10 @@ services:
   rabbitmq:
     image: rabbitmq:management
     environment:
-      - RABBITMQ_DEFAULT_USER=admin
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+      - ${RABBITMQ_DATA_PATH}:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
       interval: 30s
@@ -545,19 +482,19 @@ services:
   prometheus:
     image: prom/prometheus:latest
     ports:
-      - "9090:9090"
+      - "${PROMETHEUS_PORT}:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
+      - ${PROMETHEUS_DATA_PATH}:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/etc/prometheus/console_libraries'
       - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
+      - '--storage.tsdb.retention.time=${PROMETHEUS_RETENTION_TIME}'
       - '--web.enable-lifecycle'
       - '--web.enable-remote-write-receiver'
-      - '--web.external-url=https://localhost/administration/prometheus/'
+      - '--web.external-url=${PROMETHEUS_EXTERNAL_URL}'
       - '--web.route-prefix=/'
     networks:
       - app-network
@@ -565,10 +502,10 @@ services:
   loki:
     image: grafana/loki:latest
     ports:
-      - "3100:3100"
+      - "${LOKI_PORT}:3100"
     volumes:
       - ./loki/loki.yml:/etc/loki/local-config.yaml
-      - loki_data:/loki
+      - ${LOKI_DATA_PATH}:/loki
     command: -config.file=/etc/loki/local-config.yaml
     networks:
       - app-network
@@ -576,28 +513,28 @@ services:
   tempo:
     image: grafana/tempo:latest
     ports:
-      - "3200:3200"
-      - "4317:4317"  # OTLP gRPC receiver
-      - "4318:4318"  # OTLP HTTP receiver
+      - "${TEMPO_PORT}:3200"
+      - "${TEMPO_OTLP_GRPC_PORT}:4317"
+      - "${TEMPO_OTLP_HTTP_PORT}:4318"
     volumes:
       - ./tempo/tempo.yml:/etc/tempo/tempo.yaml
-      - tempo_data:/var/tempo
+      - ${TEMPO_DATA_PATH}:/var/tempo
     command: -config.file=/etc/tempo/tempo.yaml
-    user: "0:0"  # Run as root to avoid permission issues
+    user: "0:0"
     networks:
       - app-network
 
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "3001:3000"
+      - "${GRAFANA_WEB_PORT}:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=https://localhost/administration/grafana/
-      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "${GRAFANA_ALLOW_SIGN_UP}"
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL}
+      GF_SERVER_SERVE_FROM_SUB_PATH: "${GRAFANA_SERVE_FROM_SUB_PATH}"
     volumes:
-      - grafana_data:/var/lib/grafana
+      - ${GRAFANA_DATA_PATH}:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/dashboards:/etc/grafana/dashboards
     networks:
@@ -610,9 +547,9 @@ services:
   alloy:
     image: grafana/alloy:latest
     ports:
-      - "12345:12345"
-      - "4319:4319"  # OTLP gRPC receiver
-      - "4320:4320"  # OTLP HTTP receiver
+      - "${ALLOY_WEB_PORT}:12345"
+      - "${ALLOY_OTLP_GRPC_PORT}:4319"
+      - "${ALLOY_OTLP_HTTP_PORT}:4320"
     volumes:
       - ./alloy/config.alloy:/etc/alloy/config.alloy
       - /var/run/docker.sock:/var/run/docker.sock
@@ -629,7 +566,7 @@ services:
   node-exporter:
     image: prom/node-exporter:latest
     ports:
-      - "9100:9100"
+      - "${NODE_EXPORTER_PORT}:9100"
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -645,7 +582,7 @@ services:
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
     ports:
-      - "8080:8080"
+      - "${CADVISOR_PORT}:8080"
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro

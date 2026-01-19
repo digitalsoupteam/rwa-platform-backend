@@ -6,7 +6,7 @@ const app = await tracer.startActiveSpan(
   async (span) => {
     const appInstance = await createApp(
       Number(process.env.PORT),
-      String(process.env.MONGODB_URI),
+      String(process.env.MONGODB_URI) + '/' + String(process.env.MONGODB_DBNAME),
       String(process.env.OPENROUTER_API_KEY),
       String(process.env.OPENROUTER_BASE_URL),
       String(process.env.OPENROUTER_MODEL),
