@@ -1,5 +1,8 @@
 import mongoose, { Schema, InferRawDocType, Types } from "mongoose";
 
+
+// todo social
+// todo county 
 const companySchemaDefinition = {
     name: {
         type: String,

@@ -84,7 +84,7 @@ export const poolSchema = t.Object({
 });
 
 export type IPoolDTO = typeof poolSchema.static;
-
+// TODO ADD IMAGE
 export const createPoolRequest = t.Composite([
   t.Pick(poolSchema, [
     'ownerId',
