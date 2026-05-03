@@ -138,7 +138,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "time() - container_last_seen{container_label_com_docker_compose_service=~\".+\"}",
+          "expr": "min(time() - container_last_seen{container_label_com_docker_compose_service=~\".+\"}) by (container_label_com_docker_compose_service)",
           "instant": false,
           "legendFormat": "{{container_label_com_docker_compose_service}}",
           "range": true,
