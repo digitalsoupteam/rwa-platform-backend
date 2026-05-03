@@ -482,7 +482,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     ports:
-      - "${PROMETHEUS_PORT}:9090"
+      - "127.0.0.1:${PROMETHEUS_PORT}:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - ${PROMETHEUS_DATA_PATH}:/prometheus
@@ -502,7 +502,7 @@ services:
   loki:
     image: grafana/loki:latest
     ports:
-      - "${LOKI_PORT}:3100"
+      - "127.0.0.1:${LOKI_PORT}:3100"
     volumes:
       - ./loki/loki.yml:/etc/loki/local-config.yaml
       - ${LOKI_DATA_PATH}:/loki
@@ -513,9 +513,9 @@ services:
   tempo:
     image: grafana/tempo:2.8.1
     ports:
-      - "${TEMPO_PORT}:3200"
-      - "${TEMPO_OTLP_GRPC_PORT}:4317"
-      - "${TEMPO_OTLP_HTTP_PORT}:4318"
+      - "127.0.0.1:${TEMPO_PORT}:3200"
+      - "127.0.0.1:${TEMPO_OTLP_GRPC_PORT}:4317"
+      - "127.0.0.1:${TEMPO_OTLP_HTTP_PORT}:4318"
     volumes:
       - ./tempo/tempo.yml:/etc/tempo/tempo.yaml
       - ${TEMPO_DATA_PATH}:/var/tempo
@@ -527,7 +527,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "${GRAFANA_WEB_PORT}:3000"
+      - "127.0.0.1:${GRAFANA_WEB_PORT}:3000"
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
       GF_USERS_ALLOW_SIGN_UP: "${GRAFANA_ALLOW_SIGN_UP}"
@@ -547,9 +547,9 @@ services:
   alloy:
     image: grafana/alloy:latest
     ports:
-      - "${ALLOY_WEB_PORT}:12345"
-      - "${ALLOY_OTLP_GRPC_PORT}:4319"
-      - "${ALLOY_OTLP_HTTP_PORT}:4320"
+      - "127.0.0.1:${ALLOY_WEB_PORT}:12345"
+      - "127.0.0.1:${ALLOY_OTLP_GRPC_PORT}:4319"
+      - "127.0.0.1:${ALLOY_OTLP_HTTP_PORT}:4320"
     volumes:
       - ./alloy/config.alloy:/etc/alloy/config.alloy
       - /var/run/docker.sock:/var/run/docker.sock
@@ -566,7 +566,7 @@ services:
   node-exporter:
     image: prom/node-exporter:latest
     ports:
-      - "${NODE_EXPORTER_PORT}:9100"
+      - "127.0.0.1:${NODE_EXPORTER_PORT}:9100"
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -582,7 +582,7 @@ services:
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
     ports:
-      - "${CADVISOR_PORT}:8080"
+      - "127.0.0.1:${CADVISOR_PORT}:8080"
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
