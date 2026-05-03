@@ -511,7 +511,7 @@ services:
       - app-network
 
   tempo:
-    image: grafana/tempo:latest
+    image: grafana/tempo:2.8.1
     ports:
       - "${TEMPO_PORT}:3200"
       - "${TEMPO_OTLP_GRPC_PORT}:4317"
