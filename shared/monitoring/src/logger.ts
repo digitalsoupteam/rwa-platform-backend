@@ -60,5 +60,5 @@ export class OTelLogger {
     this.otelLogger.emit(logRecord);
   }
 }
-console.log(JSON.stringify(process.env, null, 4))
+// console.log(JSON.stringify(process.env, null, 4))
 export const logger = new OTelLogger(process.env.SERVICE_NAME || "unknown-service3");

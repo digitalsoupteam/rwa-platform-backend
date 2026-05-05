@@ -237,9 +237,6 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
     if (!aiResponse) {
       throw new Error("Failed to get AI response for risk assessment");
     }
-
-    console.log('aiResponseaw1')
-    console.log(aiResponse)
     
     const match = aiResponse.match(/RISK_SCORE:\s*(\d+)/);
     if (!match) {

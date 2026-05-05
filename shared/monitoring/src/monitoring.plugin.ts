@@ -17,7 +17,6 @@ import { metrics } from '@opentelemetry/api-metrics';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 
-console.log("PRELOADEDDDD")
 const baseUrl = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
 
 const resource = resourceFromAttributes({
@@ -56,10 +55,6 @@ const traceExporter = new OTLPTraceExporter({
   url: `${baseUrl}/v1/traces`,
   headers: {}
 });
-let a = 0
-setInterval(() => {
-  console.log(a)
-}, 1000)
 
 export const monitoringPlugin = opentelemetry({
   serviceName: process.env.SERVICE_NAME,
@@ -83,16 +78,16 @@ export const monitoringPlugin = opentelemetry({
     '@opentelemetry/instrumentation-redis': {
       enabled: true,
       responseHook: () => {
-        console.log('redisaw1requestHook')
+        // console.log('redisaw1requestHook')
       }
     },
     '@opentelemetry/instrumentation-ioredis': {
       enabled: true,
       requestHook: () => {
-        console.log('ioredisaw1requestHook')
+        // console.log('ioredisaw1requestHook')
       },
       responseHook: () => {
-        console.log('ioredisaw1responseHook')
+        // console.log('ioredisaw1responseHook')
       },
     },
     //   mergeItems: true,
