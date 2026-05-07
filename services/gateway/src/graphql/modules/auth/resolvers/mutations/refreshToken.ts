@@ -7,9 +7,9 @@ export const refreshToken: MutationResolvers['refreshToken'] = async (
   { input },
   { clients, user }
 ) => {
-  if (!user) {
-    throw new AuthenticationError('Authentication required');
-  }
+  // if (!user) {
+  //   throw new AuthenticationError('Authentication required');
+  // }
 
   logger.info('Refreshing token');
 
