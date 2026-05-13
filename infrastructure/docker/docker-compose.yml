@@ -430,6 +430,7 @@ services:
       - "${NGINX_SSL_PORT}:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/admin-gui:/usr/share/nginx/html/admin:ro
       - ./nginx/.htpasswd:/etc/nginx/conf.d/.htpasswd
       - ./nginx/ssl:/etc/nginx/ssl
       - nginx_logs:/var/log/nginx
