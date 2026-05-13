@@ -31,8 +31,10 @@ export const createDaemonsPlugin = async (
     async () => {
       logger.info("Initializing blockchain scanner");
       await blockchainScanner.initialize();
-      await blockchainScanner.start();
-      logger.info("Blockchain scanner started successfully");
+      blockchainScanner.start().catch(err => {
+        logger.error(`Failed to start blockchain scanner: ${err.message}`);
+      });
+      logger.info("Blockchain scanner startup initiated");
     }
   );
 

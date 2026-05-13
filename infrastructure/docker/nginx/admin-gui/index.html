@@ -26,8 +26,12 @@
             <a href="/administration/mongo-express/" class="card"><span>🍃 Mongo Express</span></a>
             <a href="/administration/redis-insight/" class="card"><span>🔴 Redis Insight</span></a>
             <a href="/administration/portainer/" class="card"><span>🐳 Portainer</span></a>
+            <a href="#" id="uptime-kuma-link" target="_blank" class="card"><span>⏱️ Uptime Kuma</span></a>
         </div>
         <div class="footer">RWA Platform Infrastructure</div>
     </div>
+    <script>
+        document.getElementById('uptime-kuma-link').href = window.location.protocol + '//' + window.location.hostname + ':3001';
+    </script>
 </body>
 </html>

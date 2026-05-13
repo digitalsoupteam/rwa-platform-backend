@@ -1,5 +1,6 @@
 import { Elysia } from 'elysia';
 import { monitoringPlugin } from '@shared/monitoring/src/monitoring.plugin';
+import { healthPlugin } from '@shared/monitoring/src/health.plugin';
 import { ErrorHandlerPlugin } from '@shared/errors/error-handler.plugin';
 import { createRepositoriesPlugin } from './plugins/repositories.plugin';
 import { createClientsPlugin } from './plugins/clients.plugin';
@@ -47,6 +48,7 @@ export async function createApp(
     (ctx) => {
       const result = new Elysia()
         .use(monitoringPlugin)
+        .use(healthPlugin)
         .onError(ErrorHandlerPlugin)
         .use(repositoriesPlugin)
         .use(clientsPlugin)

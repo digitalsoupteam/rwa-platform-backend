@@ -616,6 +616,17 @@ services:
     networks:
       - app-network
 
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    container_name: uptime-kuma
+    ports:
+      - "${UPTIME_KUMA_PORT:-3001}:3001"
+    volumes:
+      - uptime_kuma_data:/app/data
+    restart: always
+    networks:
+      - app-network
+
 
 volumes:
   redis_data:
@@ -630,6 +641,7 @@ volumes:
   loki_data:
   tempo_data:
   portainer_data:
+  uptime_kuma_data:
 
 networks:
   app-network:
