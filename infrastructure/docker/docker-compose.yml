@@ -450,6 +450,19 @@ services:
     networks:
       - app-network
 
+  mongo_express:
+    image: mongo-express:latest
+    environment:
+      ME_CONFIG_MONGODB_SERVER: "mongodb"
+      ME_CONFIG_BASICAUTH: "false"
+      ME_CONFIG_BASICAUTH_USERNAME: ""
+      ME_CONFIG_BASICAUTH_PASSWORD: ""
+      ME_CONFIG_SITE_BASEURL: "/administration/mongo-express/"
+    depends_on:
+      - mongodb
+    networks:
+      - app-network
+
   redis:
     image: redis:latest
     volumes:
