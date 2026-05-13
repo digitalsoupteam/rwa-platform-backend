@@ -428,6 +428,7 @@ services:
     ports:
       - "${NGINX_PORT}:80"
       - "${NGINX_SSL_PORT}:443"
+      - "3001:3001"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/admin-gui:/usr/share/nginx/html/admin:ro
@@ -619,13 +620,13 @@ services:
   uptime-kuma:
     image: louislam/uptime-kuma:latest
     container_name: uptime-kuma
-    ports:
-      - "${UPTIME_KUMA_PORT:-3001}:3001"
     volumes:
       - uptime_kuma_data:/app/data
     restart: always
     networks:
       - app-network
+
+
 
 
 volumes:
