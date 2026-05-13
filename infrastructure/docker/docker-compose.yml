@@ -477,6 +477,19 @@ services:
     networks:
       - app-network
 
+  redisinsight:
+    image: redis/redisinsight:latest
+    environment:
+      - REDISINSIGHT_HOST=0.0.0.0
+      - RI_APP_PORT=5540
+      - RI_PROXY_PATH=/administration/redis-insight
+    volumes:
+      - redisinsight_data:/data
+    networks:
+      - app-network
+    depends_on:
+      - redis
+
   rabbitmq:
     image: rabbitmq:management
     environment:
@@ -593,6 +606,7 @@ services:
 
 volumes:
   redis_data:
+  redisinsight_data:
   docs_data:
   service_logs:
   rabbitmq_data:
