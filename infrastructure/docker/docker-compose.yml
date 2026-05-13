@@ -604,6 +604,19 @@ services:
     networks:
       - app-network
 
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - app-network
+
+
 volumes:
   redis_data:
   redisinsight_data:
@@ -616,6 +629,7 @@ volumes:
   grafana_data:
   loki_data:
   tempo_data:
+  portainer_data:
 
 networks:
   app-network:
