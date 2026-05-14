@@ -53,7 +53,8 @@ export const yogaServer = createYoga({
   ],
   cors: false,
   graphiql: {
-    subscriptionsProtocol: 'SSE'
+    subscriptionsProtocol: 'SSE',
+    endpoint: '/gateway/graphql'
   },
   logging: true,
   maskedErrors: false,
@@ -121,7 +122,6 @@ export const yogaServer = createYoga({
         traceContext: parentContext,
       } as GraphQLContext;
   },
-  landingPage: false,
   batching: true,
 });
 
