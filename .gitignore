@@ -108,6 +108,11 @@ web_modules/
 .htpasswd
 infrastructure/docker/nginx/ssl/*.crt
 infrastructure/docker/nginx/ssl/*.key
+infrastructure/docker/authelia/secrets/*
+infrastructure/docker/authelia/config/*.sqlite3
+infrastructure/docker/lldap/data/*.db
+infrastructure/docker/nginx/.htpasswd
+!infrastructure/docker/authelia/secrets/.gitkeep
 
 # parcel-bundler cache (https://parceljs.org/)
 
@@ -178,4 +183,5 @@ dist
 .DS_Store
 
 infrastructure/docker/volumes
+infrastructure/backups
 typechain
