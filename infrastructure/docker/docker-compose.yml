@@ -520,6 +520,7 @@ services:
       - "${NGINX_SSL_PORT}:443"
       - "3001:3001"
       - "9091:9091"
+      - "17170:17170"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/admin-gui:/usr/share/nginx/html/admin:ro
@@ -729,9 +730,26 @@ services:
       - ./authelia/secrets:/secrets
     networks:
       - app-network
-    # restart: always
+    restart: always
     depends_on:
       - redis
+      - lldap
+
+  lldap:
+    image: lldap/lldap:latest
+    container_name: lldap
+    # Убираем прямой проброс порта, теперь доступ только через nginx
+    environment:
+      - LLDAP_JWT_SECRET_FILE=/secrets/LLDAP_JWT_SECRET
+      - LLDAP_LDAP_BASE_DN=dc=rwa,dc=local
+      - LLDAP_LDAP_USER_PASS=password123
+    volumes:
+      - ./lldap/data:/data
+      - ./authelia/secrets/LLDAP_JWT_SECRET:/secrets/LLDAP_JWT_SECRET
+    networks:
+      - app-network
+    restart: always
+
 
 
 

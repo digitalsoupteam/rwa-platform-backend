@@ -6,8 +6,18 @@ identity_validation:
     jwt_secret: <<FILE:/secrets/JWT_SECRET
 
 authentication_backend:
-  file:
-    path: /config/users_database.yml
+  ldap:
+    implementation: lldap
+    address: ldap://lldap:3890
+    timeout: 5s
+    start_tls: false
+    base_dn: dc=rwa,dc=local
+    additional_users_dn: ou=people
+    users_filter: "(&({username_attribute}={input})(objectClass=person))"
+    additional_groups_dn: ou=groups
+    groups_filter: "(member={dn})"
+    user: uid=admin,ou=people,dc=rwa,dc=local
+    password: password123
 
 session:
   secret: <<FILE:/secrets/SESSION_SECRET
@@ -36,5 +46,28 @@ notifier:
 access_control:
   default_policy: deny
   rules:
-    - domain: 127.0.0.1
+    # Разрешаем доступ к API проверки (нужно для Nginx)
+    - domain: "*"
+      resources: ["^/api/verify.*$"]
+      policy: bypass
+
+    # Доступ к RabbitMQ только для группы admin_rabbitmq
+    - domain: "*"
+      resources: ["^/administration/rabbitmq/.*$"]
+      subject: "group:admin_rabbitmq"
+      policy: one_factor
+
+    # Доступ к Mongo Express только для группы admin_mongodb
+    - domain: "*"
+      resources: ["^/administration/mongo-express/.*$"]
+      subject: "group:admin_mongodb"
+      policy: one_factor
+
+    # Все остальные разделы администрирования доступны любому вошедшему юзеру
+    - domain: "*"
+      resources: ["^/administration/.*$"]
+      policy: one_factor
+
+    # Доступ к основному домену (если нужно)
+    - domain: "*"
       policy: one_factor
