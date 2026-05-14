@@ -745,6 +745,16 @@ services:
       - app-network
     restart: always
 
+  homer:
+    image: b4bz/homer:latest
+    container_name: homer
+    volumes:
+      - ./homer:/www/assets
+    networks:
+      - app-network
+    user: "1000:1000"
+    restart: always
+
 
 
 

@@ -58,7 +58,11 @@ access_control:
     - domain: "auth.rwa.local"
       policy: bypass
     - domain: "*.rwa.local"
-      resources: ["^/api/verify.*$"]
+      resources: ["^/api/verify.*$", "^/api/health.*$", "^/-/healthy.*$"]
+      policy: bypass
+    - domain: ["grafana.rwa.local", "prometheus.rwa.local"]
+      resources: ["^/$"]
+      methods: ["GET", "OPTIONS", "HEAD"]
       policy: bypass
 
     # 1. Доступ к главной панели управления для всех авторизованных пользователей

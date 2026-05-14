@@ -1,0 +1,76 @@
+---
+title: "RWA Platform Admin"
+subtitle: "Infrastructure Dashboard"
+logo: "assets/logo.svg"
+
+# Верхние ссылки
+links:
+  - name: "GitHub"
+    icon: "fab fa-github"
+    url: "https://github.com/your-repo/rwa-backend"
+    target: "_blank"
+  - name: "Docs"
+    icon: "fas fa-book"
+    url: "https://docs.rwa.local"
+
+colors:
+  light:
+    highlight-primary: "#0366d6"
+    highlight-secondary: "#0366d6"
+    highlight-hover: "#024ea3"
+    background: "#f0f2f5"
+    card-background: "#ffffff"
+    text: "#24292e"
+    text-header: "#1c1e21"
+    text-subtitle: "#6a737d"
+    card-shadow: "rgba(0,0,0,0.1)"
+    link: "#0366d6"
+    link-hover: "#024ea3"
+
+services:
+  - name: "Access & Identity"
+    icon: "fas fa-shield-alt"
+    items:
+      - name: "Authelia"
+        icon: "fas fa-lock"
+        subtitle: "Single Sign-On"
+        url: "https://auth.rwa.local"
+      - name: "LLDAP"
+        icon: "fas fa-users"
+        subtitle: "User Management"
+        url: "https://lldap.rwa.local"
+
+  - name: "Monitoring"
+    icon: "fas fa-chart-line"
+    items:
+      - name: "Grafana"
+        icon: "fas fa-chart-area"
+        url: "https://grafana.rwa.local"
+      - name: "Prometheus"
+        icon: "fas fa-fire"
+        url: "https://prometheus.rwa.local"
+      - name: "Alloy"
+        icon: "fas fa-tools"
+        url: "https://alloy.rwa.local"
+      - name: "Uptime Kuma"
+        icon: "fas fa-clock"
+        url: "https://uptime.rwa.local"
+
+  - name: "Infrastructure"
+    icon: "fas fa-server"
+    items:
+      - name: "Portainer"
+        icon: "fab fa-docker"
+        url: "https://portainer.rwa.local"
+      - name: "RabbitMQ"
+        icon: "fas fa-project-diagram"
+        url: "https://rabbitmq.rwa.local"
+      - name: "Mongo Express"
+        icon: "fas fa-database"
+        url: "https://mongo.rwa.local"
+      - name: "Redis Insight"
+        icon: "fas fa-microchip"
+        url: "https://redis.rwa.local"
+      - name: "GraphiQL"
+        icon: "fas fa-network-wired"
+        url: "https://graphiql.rwa.local"
