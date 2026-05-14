@@ -519,9 +519,11 @@ services:
       - "${NGINX_PORT}:80"
       - "${NGINX_SSL_PORT}:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/snippets:/etc/nginx/snippets:ro
       - ./nginx/admin-gui:/usr/share/nginx/html/admin:ro
-      - ./nginx/.htpasswd:/etc/nginx/conf.d/.htpasswd
+      - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro
       - ./nginx/ssl:/etc/nginx/ssl
       - nginx_logs:/var/log/nginx
       - ${FILES_STORAGE_VOLUME}:/app/storage
