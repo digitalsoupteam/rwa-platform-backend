@@ -25,6 +25,7 @@ x-configs:
 
 services:
   ai-assistant:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/ai-assistant/Dockerfile
@@ -46,6 +47,7 @@ services:
         condition: service_healthy
 
   auth:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/auth/Dockerfile
@@ -70,6 +72,7 @@ services:
         condition: service_healthy
 
   blockchain-scanner:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/blockchain-scanner/Dockerfile
@@ -98,6 +101,7 @@ services:
         condition: service_healthy
 
   blog:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/blog/Dockerfile
@@ -117,6 +121,7 @@ services:
         condition: service_healthy
 
   charts:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/charts/Dockerfile
@@ -143,6 +148,7 @@ services:
         condition: service_healthy
 
   company:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/company/Dockerfile
@@ -162,6 +168,7 @@ services:
         condition: service_healthy
 
   dao:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/dao/Dockerfile
@@ -184,6 +191,7 @@ services:
         condition: service_healthy
 
   documents:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/documents/Dockerfile
@@ -203,6 +211,7 @@ services:
         condition: service_healthy
 
   faq:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/faq/Dockerfile
@@ -222,6 +231,7 @@ services:
         condition: service_healthy
 
   files:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/files/Dockerfile
@@ -245,6 +255,7 @@ services:
         condition: service_healthy
 
   gallery:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/gallery/Dockerfile
@@ -264,6 +275,7 @@ services:
         condition: service_healthy
 
   loyalty:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/loyalty/Dockerfile
@@ -288,6 +300,7 @@ services:
         condition: service_healthy
 
   gateway:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/gateway/Dockerfile
@@ -334,6 +347,7 @@ services:
         condition: service_started
 
   portfolio:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/portfolio/Dockerfile
@@ -356,6 +370,7 @@ services:
         condition: service_healthy
 
   questions:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/questions/Dockerfile
@@ -373,6 +388,7 @@ services:
         condition: service_healthy
 
   reactions:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/reactions/Dockerfile
@@ -390,6 +406,7 @@ services:
         condition: service_healthy
 
   rwa:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/rwa/Dockerfile
@@ -414,6 +431,7 @@ services:
         condition: service_healthy
 
   signer-1:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/signer/Dockerfile
@@ -431,6 +449,7 @@ services:
         condition: service_healthy
 
   signer-2:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/signer/Dockerfile
@@ -448,6 +467,7 @@ services:
         condition: service_healthy
 
   signer-3:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/signer/Dockerfile
@@ -465,6 +485,7 @@ services:
         condition: service_healthy
 
   signers-manager:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/signers-manager/Dockerfile
@@ -485,6 +506,7 @@ services:
         condition: service_healthy
 
   testnet-faucet:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/testnet-faucet/Dockerfile
@@ -512,6 +534,7 @@ services:
         condition: service_healthy
 
   nginx:
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: infrastructure/docker/nginx/Dockerfile
@@ -531,6 +554,7 @@ services:
       - app-network
 
   mongodb:
+    restart: unless-stopped
     image: mongo:latest
     volumes:
       - ${MONGODB_DATA_PATH}:/data/db
@@ -556,6 +580,7 @@ services:
       - app-network
 
   redis:
+    restart: unless-stopped
     image: redis:latest
     volumes:
       - redis_data:/data
@@ -581,6 +606,7 @@ services:
       - redis
 
   rabbitmq:
+    restart: unless-stopped
     image: rabbitmq:management
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
@@ -701,7 +727,7 @@ services:
   portainer:
     image: portainer/portainer-ce:latest
     container_name: portainer
-    restart: always
+    restart: unless-stopped
     security_opt:
       - no-new-privileges:true
     volumes:
@@ -715,7 +741,7 @@ services:
     container_name: uptime-kuma
     volumes:
       - uptime_kuma_data:/app/data
-    restart: always
+    restart: unless-stopped
     networks:
       - app-network
 
@@ -727,7 +753,7 @@ services:
       - ./authelia/secrets:/secrets
     networks:
       - app-network
-    restart: always
+    restart: unless-stopped
     depends_on:
       - redis
       - lldap
@@ -745,7 +771,7 @@ services:
       - ./authelia/secrets/LLDAP_JWT_SECRET:/secrets/LLDAP_JWT_SECRET
     networks:
       - app-network
-    restart: always
+    restart: unless-stopped
 
   homer:
     image: b4bz/homer:latest
@@ -755,7 +781,7 @@ services:
     networks:
       - app-network
     user: "1000:1000"
-    restart: always
+    restart: unless-stopped
 
 
 
