@@ -519,6 +519,7 @@ services:
       - "${NGINX_PORT}:80"
       - "${NGINX_SSL_PORT}:443"
       - "3001:3001"
+      - "9091:9091"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/admin-gui:/usr/share/nginx/html/admin:ro
@@ -641,6 +642,10 @@ services:
       GF_USERS_ALLOW_SIGN_UP: "${GRAFANA_ALLOW_SIGN_UP}"
       GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL}
       GF_SERVER_SERVE_FROM_SUB_PATH: "${GRAFANA_SERVE_FROM_SUB_PATH}"
+      GF_AUTH_PROXY_ENABLED: "true"
+      GF_AUTH_PROXY_HEADER_NAME: "Remote-User"
+      GF_AUTH_PROXY_HEADER_PROPERTY: "username"
+      GF_AUTH_PROXY_AUTO_SIGN_UP: "true"
     volumes:
       - ${GRAFANA_DATA_PATH}:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
@@ -715,6 +720,19 @@ services:
     restart: always
     networks:
       - app-network
+
+  authelia:
+    image: authelia/authelia:latest
+    container_name: authelia
+    volumes:
+      - ./authelia/config:/config
+      - ./authelia/secrets:/secrets
+    networks:
+      - app-network
+    # restart: always
+    depends_on:
+      - redis
+
 
 
 
