@@ -41,6 +41,9 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
 
   auth:
     build:
@@ -62,6 +65,9 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
 
   blockchain-scanner:
     build:
@@ -85,6 +91,11 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   blog:
     build:
@@ -101,6 +112,9 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
 
   charts:
     build:
@@ -120,6 +134,13 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   company:
     build:
@@ -136,6 +157,9 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
 
   dao:
     build:
@@ -153,6 +177,11 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   documents:
     build:
@@ -169,6 +198,9 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
 
   faq:
     build:
@@ -185,6 +217,9 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
 
   files:
     build:
@@ -205,6 +240,9 @@ services:
       - ${FILES_STORAGE_VOLUME}:/app/storage
     networks:
       - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
 
   gallery:
     build:
@@ -221,6 +259,9 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
 
   loyalty:
     build:
@@ -240,6 +281,11 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   gateway:
     build:
@@ -277,6 +323,15 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth:
+        condition: service_started
+      rwa:
+        condition: service_started
 
   portfolio:
     build:
@@ -294,6 +349,11 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   questions:
     build:
@@ -308,6 +368,9 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
 
   reactions:
     build:
@@ -322,6 +385,9 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
 
   rwa:
     build:
@@ -339,6 +405,13 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   signer-1:
     build:
@@ -353,6 +426,9 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   signer-2:
     build:
@@ -367,6 +443,9 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   signer-3:
     build:
@@ -381,6 +460,9 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
 
   signers-manager:
     build:
@@ -396,6 +478,11 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   testnet-faucet:
     build:
@@ -420,6 +507,9 @@ services:
     volumes: *monitoring-volumes
     networks:
       - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
 
   nginx:
     build:
