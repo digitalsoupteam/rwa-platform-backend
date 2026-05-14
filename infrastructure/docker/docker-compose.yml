@@ -247,7 +247,7 @@ services:
       MAX_FILE_SIZE: ${FILES_MAX_FILE_SIZE}
     volumes:
       - service_logs:/var/log
-      - ${FILES_STORAGE_VOLUME}:/app/storage
+      - files_storage:/app/storage
     networks:
       - app-network
     depends_on:
@@ -549,7 +549,7 @@ services:
       - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro
       - ./nginx/ssl:/etc/nginx/ssl
       - nginx_logs:/var/log/nginx
-      - ${FILES_STORAGE_VOLUME}:/app/storage
+      - files_storage:/app/storage
     networks:
       - app-network
 
@@ -557,7 +557,7 @@ services:
     restart: unless-stopped
     image: mongo:latest
     volumes:
-      - ${MONGODB_DATA_PATH}:/data/db
+      - mongodb_data:/data/db
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -612,7 +612,7 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     volumes:
-      - ${RABBITMQ_DATA_PATH}:/var/lib/rabbitmq
+      - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
       interval: 30s
@@ -626,7 +626,7 @@ services:
     image: prom/prometheus:latest
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ${PROMETHEUS_DATA_PATH}:/prometheus
+      - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
@@ -644,7 +644,7 @@ services:
     image: grafana/loki:latest
     volumes:
       - ./loki/loki.yml:/etc/loki/local-config.yaml
-      - ${LOKI_DATA_PATH}:/loki
+      - loki_data:/loki
     command: -config.file=/etc/loki/local-config.yaml
     networks:
       - app-network
@@ -653,7 +653,7 @@ services:
     image: grafana/tempo:2.8.1
     volumes:
       - ./tempo/tempo.yml:/etc/tempo/tempo.yaml
-      - ${TEMPO_DATA_PATH}:/var/tempo
+      - tempo_data:/var/tempo
     command: -config.file=/etc/tempo/tempo.yaml
     user: "0:0"
     networks:
@@ -671,7 +671,7 @@ services:
       GF_AUTH_PROXY_HEADER_PROPERTY: "username"
       GF_AUTH_PROXY_AUTO_SIGN_UP: "true"
     volumes:
-      - ${GRAFANA_DATA_PATH}:/var/lib/grafana
+      - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/dashboards:/etc/grafana/dashboards
     networks:
@@ -748,9 +748,12 @@ services:
   authelia:
     image: authelia/authelia:latest
     container_name: authelia
+    environment:
+      - LLDAP_USER_PASS=${RWA_LLDAP_ADMIN_PASSWORD}
     volumes:
       - ./authelia/config:/config
       - ./authelia/secrets:/secrets
+      - authelia_data:/data
     networks:
       - app-network
     restart: unless-stopped
@@ -761,14 +764,13 @@ services:
   lldap:
     image: lldap/lldap:latest
     container_name: lldap
-    # Убираем прямой проброс порта, теперь доступ только через nginx
     environment:
       - LLDAP_JWT_SECRET_FILE=/secrets/LLDAP_JWT_SECRET
       - LLDAP_LDAP_BASE_DN=dc=rwa,dc=local
-      - LLDAP_LDAP_USER_PASS=password123
+      - LLDAP_LDAP_USER_PASS=${RWA_LLDAP_ADMIN_PASSWORD}
     volumes:
-      - ./lldap/data:/data
-      - ./authelia/secrets/LLDAP_JWT_SECRET:/secrets/LLDAP_JWT_SECRET
+      - lldap_data:/data
+      - ./authelia/secrets:/secrets:ro
     networks:
       - app-network
     restart: unless-stopped
@@ -782,11 +784,6 @@ services:
       - app-network
     user: "1000:1000"
     restart: unless-stopped
-
-
-
-
-
 
 volumes:
   redis_data:
@@ -802,6 +799,9 @@ volumes:
   tempo_data:
   portainer_data:
   uptime_kuma_data:
+  authelia_data:
+  lldap_data:
+  files_storage:
 
 networks:
   app-network:
