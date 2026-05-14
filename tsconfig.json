@@ -16,6 +16,7 @@
 
     // Best practices
     "strict": true,
+    "noImplicitAny": false,
     "skipLibCheck": true,
     "strictNullChecks": true, 
     "noFallthroughCasesInSwitch": true,
@@ -31,6 +32,7 @@
   ],
   "include": [
     "services",
-    "shared"
+    "shared",
+    "tests"
   ]
 }

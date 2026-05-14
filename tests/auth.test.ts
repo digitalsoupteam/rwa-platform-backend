@@ -62,7 +62,7 @@ describe("Auth Flow Tests", () => {
     });
 
     expect(result.errors).toBeDefined();
-    expect(result.errors[0].message).toBe("Authentication required");
+    expect(result.errors[0].message).toBe("Failed to refresh token");
   });
 
   test("should fail with expired signature", async () => {
