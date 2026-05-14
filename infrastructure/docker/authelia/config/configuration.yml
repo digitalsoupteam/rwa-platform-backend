@@ -1,6 +1,9 @@
 server:
   address: "tcp://0.0.0.0:9091"
 
+log:
+  level: debug
+
 identity_validation:
   reset_password:
     jwt_secret: <<FILE:/secrets/JWT_SECRET
@@ -16,6 +19,11 @@ authentication_backend:
     users_filter: "(&({username_attribute}={input})(objectClass=person))"
     additional_groups_dn: ou=groups
     groups_filter: "(member={dn})"
+    attributes:
+      username: uid
+      display_name: displayName
+      mail: mail
+      group_name: cn
     user: uid=admin,ou=people,dc=rwa,dc=local
     password: password123
 
@@ -46,28 +54,30 @@ notifier:
 access_control:
   default_policy: deny
   rules:
-    # Разрешаем доступ к API проверки (нужно для Nginx)
-    - domain: "*"
-      resources: ["^/api/verify.*$"]
+    # 0. Разрешаем доступ к порталу и API проверки
+    - domain: "127.0.0.1"
+      resources: ["^/authelia/.*$", "^/api/verify.*$"]
       policy: bypass
 
-    # Доступ к RabbitMQ только для группы admin_rabbitmq
-    - domain: "*"
+    # 1. RabbitMQ - только для группы admin_rabbitmq
+    - domain: "127.0.0.1"
       resources: ["^/administration/rabbitmq/.*$"]
       subject: "group:admin_rabbitmq"
       policy: one_factor
 
-    # Доступ к Mongo Express только для группы admin_mongodb
-    - domain: "*"
+    # 2. MongoDB - только для группы admin_mongodb
+    - domain: "127.0.0.1"
       resources: ["^/administration/mongo-express/.*$"]
       subject: "group:admin_mongodb"
       policy: one_factor
 
-    # Все остальные разделы администрирования доступны любому вошедшему юзеру
-    - domain: "*"
-      resources: ["^/administration/.*$"]
+    # 3. Всё остальное в administration - только для админов (lldap_admin)
+    - domain: "127.0.0.1"
+      resources: ["^/administration/(grafana|prometheus|alloy|redis-insight|portainer|graphql)/.*$"]
+      subject: "group:lldap_admin"
       policy: one_factor
 
-    # Доступ к основному домену (если нужно)
-    - domain: "*"
+    # 4. Корень админки - доступен всем авторизованным пользователям
+    - domain: "127.0.0.1"
+      resources: ["^/administration/($|index.html)"]
       policy: one_factor
