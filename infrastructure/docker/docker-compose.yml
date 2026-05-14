@@ -518,9 +518,6 @@ services:
     ports:
       - "${NGINX_PORT}:80"
       - "${NGINX_SSL_PORT}:443"
-      - "3001:3001"
-      - "9091:9091"
-      - "17170:17170"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/admin-gui:/usr/share/nginx/html/admin:ro
@@ -551,7 +548,6 @@ services:
       ME_CONFIG_BASICAUTH: "false"
       ME_CONFIG_BASICAUTH_USERNAME: ""
       ME_CONFIG_BASICAUTH_PASSWORD: ""
-      ME_CONFIG_SITE_BASEURL: "/administration/mongo-express/"
     depends_on:
       - mongodb
     networks:
@@ -575,7 +571,6 @@ services:
     environment:
       - REDISINSIGHT_HOST=0.0.0.0
       - RI_APP_PORT=5540
-      - RI_PROXY_PATH=/administration/redis-insight
     volumes:
       - redisinsight_data:/data
     networks:
@@ -612,7 +607,7 @@ services:
       - '--storage.tsdb.retention.time=${PROMETHEUS_RETENTION_TIME}'
       - '--web.enable-lifecycle'
       - '--web.enable-remote-write-receiver'
-      - '--web.external-url=${PROMETHEUS_EXTERNAL_URL}'
+      - '--web.external-url=https://prometheus.rwa.local/'
       - '--web.route-prefix=/'
     networks:
       - app-network
@@ -641,8 +636,8 @@ services:
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
       GF_USERS_ALLOW_SIGN_UP: "${GRAFANA_ALLOW_SIGN_UP}"
-      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL}
-      GF_SERVER_SERVE_FROM_SUB_PATH: "${GRAFANA_SERVE_FROM_SUB_PATH}"
+      GF_SERVER_ROOT_URL: "https://grafana.rwa.local"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "false"
       GF_AUTH_PROXY_ENABLED: "true"
       GF_AUTH_PROXY_HEADER_NAME: "Remote-User"
       GF_AUTH_PROXY_HEADER_PROPERTY: "username"
