@@ -4,8 +4,8 @@ server {
     server_name ${BASE_DOMAIN};
     error_page 497 https://$host$request_uri;
 
-    ssl_certificate /etc/nginx/ssl/nginx.crt;
-    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_certificate ${NGINX_SSL_CERT_PATH};
+    ssl_certificate_key ${NGINX_SSL_KEY_PATH};
     ssl_protocols TLSv1.2 TLSv1.3;
 
     include /etc/nginx/snippets/authelia-verify.conf;
@@ -60,8 +60,8 @@ server {
 server {
     listen 443 ssl;
     server_name auth.${BASE_DOMAIN};
-    ssl_certificate /etc/nginx/ssl/nginx.crt;
-    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_certificate ${NGINX_SSL_CERT_PATH};
+    ssl_certificate_key ${NGINX_SSL_KEY_PATH};
     ssl_protocols TLSv1.2 TLSv1.3;
 
     location / {
@@ -78,8 +78,8 @@ server {
 server {
     listen 443 ssl;
     server_name lldap.${BASE_DOMAIN};
-    ssl_certificate /etc/nginx/ssl/nginx.crt;
-    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_certificate ${NGINX_SSL_CERT_PATH};
+    ssl_certificate_key ${NGINX_SSL_KEY_PATH};
     ssl_protocols TLSv1.2 TLSv1.3;
 
     location / {
@@ -104,8 +104,8 @@ server {
 server {
     listen 443 ssl;
     server_name admin.${BASE_DOMAIN};
-    ssl_certificate /etc/nginx/ssl/nginx.crt;
-    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_certificate ${NGINX_SSL_CERT_PATH};
+    ssl_certificate_key ${NGINX_SSL_KEY_PATH};
     ssl_protocols TLSv1.2 TLSv1.3;
 
     location / {
@@ -127,8 +127,8 @@ server {
 server {
     listen 443 ssl;
     server_name rabbitmq.${BASE_DOMAIN};
-    ssl_certificate /etc/nginx/ssl/nginx.crt;
-    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_certificate ${NGINX_SSL_CERT_PATH};
+    ssl_certificate_key ${NGINX_SSL_KEY_PATH};
     ssl_protocols TLSv1.2 TLSv1.3;
 
     location / {
@@ -152,8 +152,8 @@ server {
 server {
     listen 443 ssl;
     server_name mongo.${BASE_DOMAIN};
-    ssl_certificate /etc/nginx/ssl/nginx.crt;
-    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_certificate ${NGINX_SSL_CERT_PATH};
+    ssl_certificate_key ${NGINX_SSL_KEY_PATH};
     ssl_protocols TLSv1.2 TLSv1.3;
 
     location / {
@@ -177,8 +177,8 @@ server {
 server {
     listen 443 ssl;
     server_name redis.${BASE_DOMAIN};
-    ssl_certificate /etc/nginx/ssl/nginx.crt;
-    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_certificate ${NGINX_SSL_CERT_PATH};
+    ssl_certificate_key ${NGINX_SSL_KEY_PATH};
     ssl_protocols TLSv1.2 TLSv1.3;
 
     location / {
@@ -204,8 +204,8 @@ server {
 server {
     listen 443 ssl;
     server_name portainer.${BASE_DOMAIN};
-    ssl_certificate /etc/nginx/ssl/nginx.crt;
-    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_certificate ${NGINX_SSL_CERT_PATH};
+    ssl_certificate_key ${NGINX_SSL_KEY_PATH};
     ssl_protocols TLSv1.2 TLSv1.3;
 
     location / {
@@ -230,8 +230,8 @@ server {
 server {
     listen 443 ssl;
     server_name graphiql.${BASE_DOMAIN};
-    ssl_certificate /etc/nginx/ssl/nginx.crt;
-    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_certificate ${NGINX_SSL_CERT_PATH};
+    ssl_certificate_key ${NGINX_SSL_KEY_PATH};
     ssl_protocols TLSv1.2 TLSv1.3;
 
     location / {
@@ -257,8 +257,8 @@ server {
 server {
     listen 443 ssl;
     server_name grafana.${BASE_DOMAIN};
-    ssl_certificate /etc/nginx/ssl/nginx.crt;
-    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_certificate ${NGINX_SSL_CERT_PATH};
+    ssl_certificate_key ${NGINX_SSL_KEY_PATH};
     ssl_protocols TLSv1.2 TLSv1.3;
 
     location / {
@@ -285,8 +285,8 @@ server {
 server {
     listen 443 ssl;
     server_name prometheus.${BASE_DOMAIN};
-    ssl_certificate /etc/nginx/ssl/nginx.crt;
-    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_certificate ${NGINX_SSL_CERT_PATH};
+    ssl_certificate_key ${NGINX_SSL_KEY_PATH};
     ssl_protocols TLSv1.2 TLSv1.3;
 
     location / {
@@ -309,8 +309,8 @@ server {
 server {
     listen 443 ssl;
     server_name uptime.${BASE_DOMAIN};
-    ssl_certificate /etc/nginx/ssl/nginx.crt;
-    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_certificate ${NGINX_SSL_CERT_PATH};
+    ssl_certificate_key ${NGINX_SSL_KEY_PATH};
     ssl_protocols TLSv1.2 TLSv1.3;
 
     location / {
@@ -336,8 +336,8 @@ server {
 server {
     listen 443 ssl;
     server_name alloy.${BASE_DOMAIN};
-    ssl_certificate /etc/nginx/ssl/nginx.crt;
-    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_certificate ${NGINX_SSL_CERT_PATH};
+    ssl_certificate_key ${NGINX_SSL_KEY_PATH};
     ssl_protocols TLSv1.2 TLSv1.3;
 
     location / {
