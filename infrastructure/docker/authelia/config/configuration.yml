@@ -55,7 +55,6 @@ notifier:
 access_control:
   default_policy: deny
   rules:
-    # 0. Разрешаем доступ к порталу и API проверки
     - domain: "auth.rwa.local"
       policy: bypass
     - domain: "*.rwa.local"
@@ -66,25 +65,20 @@ access_control:
       methods: ["GET", "OPTIONS", "HEAD"]
       policy: bypass
 
-    # 1. Доступ к главной панели управления для всех авторизованных пользователей
     - domain: "admin.rwa.local"
       policy: one_factor
 
-    # 2. Полный доступ ко всем остальным поддоменам только для администраторов
     - domain: ["auth.rwa.local", "lldap.rwa.local", "grafana.rwa.local", "prometheus.rwa.local", "alloy.rwa.local", "redis.rwa.local", "portainer.rwa.local", "uptime.rwa.local", "graphiql.rwa.local"]
       subject: "group:lldap_admin"
       policy: one_factor
 
-    # 3. RabbitMQ - для группы admin_rabbitmq или lldap_admin
     - domain: "rabbitmq.rwa.local"
       subject: ["group:admin_rabbitmq", "group:lldap_admin"]
       policy: one_factor
 
-    # 4. MongoDB - для группы admin_mongodb или lldap_admin
     - domain: "mongo.rwa.local"
       subject: ["group:admin_mongodb", "group:lldap_admin"]
       policy: one_factor
 
-    # 5. Основной фронтенд
     - domain: "rwa.local"
       policy: bypass

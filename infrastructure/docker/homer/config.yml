@@ -3,7 +3,6 @@ title: "RWA Platform Admin"
 subtitle: "Infrastructure Dashboard"
 logo: "assets/logo.svg"
 
-# Верхние ссылки
 links:
   - name: "GitHub"
     icon: "fab fa-github"
