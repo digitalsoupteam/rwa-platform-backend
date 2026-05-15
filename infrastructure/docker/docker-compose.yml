@@ -755,10 +755,12 @@ services:
     container_name: authelia
     environment:
       - LLDAP_USER_PASS=${RWA_LLDAP_ADMIN_PASSWORD}
+      - BASE_DOMAIN=${BASE_DOMAIN}
     volumes:
       - ./authelia/config:/config
       - ./authelia/secrets:/secrets
       - authelia_data:/data
+    entrypoint: /bin/sh -c "sed \"s/\\$${BASE_DOMAIN}/$BASE_DOMAIN/g\" /config/configuration.yml.template > /config/configuration.yml && authelia --config /config/configuration.yml"
     networks:
       - app-network
     restart: unless-stopped
@@ -783,8 +785,11 @@ services:
   homer:
     image: b4bz/homer:latest
     container_name: homer
+    environment:
+      - BASE_DOMAIN=${BASE_DOMAIN}
     volumes:
       - ./homer:/www/assets
+    entrypoint: /bin/sh -c "sed \"s/\\$${BASE_DOMAIN}/$BASE_DOMAIN/g\" /www/assets/config.yml.template > /www/assets/config.yml && sh /entrypoint.sh"
     networks:
       - app-network
     user: "1000:1000"
