@@ -1,0 +1,357 @@
+# Main Frontend & Gateway
+server {
+    listen 443 ssl;
+    server_name ${BASE_DOMAIN};
+    error_page 497 https://$host$request_uri;
+
+    ssl_certificate /etc/nginx/ssl/nginx.crt;
+    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    include /etc/nginx/snippets/authelia-verify.conf;
+
+    location / {  
+        set $frontend_upstream "http://frontend:3000";
+        proxy_pass $frontend_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    location /gateway/graphql/stream {
+        set $gateway_stream_upstream "http://gateway:3000/graphql/stream";
+        proxy_pass $gateway_stream_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 24h;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /files/ {
+        alias /app/storage/;
+        add_header X-Content-Type-Options nosniff;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    location /gateway/graphql {
+        otel_trace on;
+        otel_trace_context propagate;
+        set $gateway_upstream "http://gateway:3000/graphql";
+        proxy_pass $gateway_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+# Authelia Portal
+server {
+    listen 443 ssl;
+    server_name auth.${BASE_DOMAIN};
+    ssl_certificate /etc/nginx/ssl/nginx.crt;
+    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        set $authelia_upstream "http://authelia:9091";
+        proxy_pass $authelia_upstream;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+# LLDAP Admin UI
+server {
+    listen 443 ssl;
+    server_name lldap.${BASE_DOMAIN};
+    ssl_certificate /etc/nginx/ssl/nginx.crt;
+    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        auth_request /authelia/api/verify;
+        error_page 401 =302 https://auth.${BASE_DOMAIN}/;
+        
+        set $lldap_upstream "http://lldap:17170";
+        proxy_pass $lldap_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    include /etc/nginx/snippets/authelia-verify.conf;
+}
+
+# Administration Panel (Homer)
+server {
+    listen 443 ssl;
+    server_name admin.${BASE_DOMAIN};
+    ssl_certificate /etc/nginx/ssl/nginx.crt;
+    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        auth_request /authelia/api/verify;
+        error_page 401 =302 https://auth.${BASE_DOMAIN}/;
+        
+        set $homer_upstream "http://homer:8080";
+        proxy_pass $homer_upstream;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    include /etc/nginx/snippets/authelia-verify.conf;
+}
+
+# RabbitMQ
+server {
+    listen 443 ssl;
+    server_name rabbitmq.${BASE_DOMAIN};
+    ssl_certificate /etc/nginx/ssl/nginx.crt;
+    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        auth_request /authelia/api/verify;
+        error_page 401 =302 https://auth.${BASE_DOMAIN}/;
+        
+        set $rabbitmq_upstream "http://rabbitmq:15672";
+        proxy_pass $rabbitmq_upstream;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+        proxy_http_version 1.1;
+    }
+
+    include /etc/nginx/snippets/authelia-verify.conf;
+}
+
+# Mongo Express
+server {
+    listen 443 ssl;
+    server_name mongo.${BASE_DOMAIN};
+    ssl_certificate /etc/nginx/ssl/nginx.crt;
+    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        auth_request /authelia/api/verify;
+        error_page 401 =302 https://auth.${BASE_DOMAIN}/;
+        
+        set $mongo_express_upstream "http://mongo_express:8081";
+        proxy_pass $mongo_express_upstream;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+        proxy_http_version 1.1;
+    }
+
+    include /etc/nginx/snippets/authelia-verify.conf;
+}
+
+# Redis Insight
+server {
+    listen 443 ssl;
+    server_name redis.${BASE_DOMAIN};
+    ssl_certificate /etc/nginx/ssl/nginx.crt;
+    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        auth_request /authelia/api/verify;
+        error_page 401 =302 https://auth.${BASE_DOMAIN}/;
+        
+        set $redisinsight_upstream "http://redisinsight:5540";
+        proxy_pass $redisinsight_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+    }
+
+    include /etc/nginx/snippets/authelia-verify.conf;
+}
+
+# Portainer
+server {
+    listen 443 ssl;
+    server_name portainer.${BASE_DOMAIN};
+    ssl_certificate /etc/nginx/ssl/nginx.crt;
+    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        auth_request /authelia/api/verify;
+        error_page 401 =302 https://auth.${BASE_DOMAIN}/;
+        
+        set $portainer_upstream "http://portainer:9000";
+        proxy_pass $portainer_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    include /etc/nginx/snippets/authelia-verify.conf;
+}
+
+# GraphiQL IDE
+server {
+    listen 443 ssl;
+    server_name graphiql.${BASE_DOMAIN};
+    ssl_certificate /etc/nginx/ssl/nginx.crt;
+    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        auth_request /authelia/api/verify;
+        error_page 401 =302 https://auth.${BASE_DOMAIN}/;
+        
+        set $gateway_graphql_ui "http://gateway:3000/graphql/";
+        proxy_pass $gateway_graphql_ui;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_buffering off;
+    }
+
+    include /etc/nginx/snippets/authelia-verify.conf;
+}
+
+# Grafana
+server {
+    listen 443 ssl;
+    server_name grafana.${BASE_DOMAIN};
+    ssl_certificate /etc/nginx/ssl/nginx.crt;
+    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        auth_request /authelia/api/verify;
+        error_page 401 =302 https://auth.${BASE_DOMAIN}/;
+        auth_request_set $user $upstream_http_remote_user;
+        proxy_set_header Remote-User $user;
+        
+        set $grafana_upstream "http://grafana:3000";
+        proxy_pass $grafana_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    include /etc/nginx/snippets/authelia-verify.conf;
+}
+
+# Prometheus
+server {
+    listen 443 ssl;
+    server_name prometheus.${BASE_DOMAIN};
+    ssl_certificate /etc/nginx/ssl/nginx.crt;
+    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        auth_request /authelia/api/verify;
+        error_page 401 =302 https://auth.${BASE_DOMAIN}/;
+        
+        set $prometheus_upstream "http://prometheus:9090";
+        proxy_pass $prometheus_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    include /etc/nginx/snippets/authelia-verify.conf;
+}
+
+# Uptime Kuma
+server {
+    listen 443 ssl;
+    server_name uptime.${BASE_DOMAIN};
+    ssl_certificate /etc/nginx/ssl/nginx.crt;
+    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        auth_request /authelia/api/verify;
+        error_page 401 =302 https://auth.${BASE_DOMAIN}/;
+        
+        set $uptime_kuma_upstream "http://uptime-kuma:3001";
+        proxy_pass $uptime_kuma_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+    }
+
+    include /etc/nginx/snippets/authelia-verify.conf;
+}
+
+# Alloy
+server {
+    listen 443 ssl;
+    server_name alloy.${BASE_DOMAIN};
+    ssl_certificate /etc/nginx/ssl/nginx.crt;
+    ssl_certificate_key /etc/nginx/ssl/nginx.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        auth_request /authelia/api/verify;
+        error_page 401 =302 https://auth.${BASE_DOMAIN}/;
+        
+        set $alloy_upstream "http://alloy:12345";
+        proxy_pass $alloy_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    include /etc/nginx/snippets/authelia-verify.conf;
+}
