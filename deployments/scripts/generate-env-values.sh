@@ -1,0 +1,15 @@
+#!/bin/bash
+
+echo "--------------------------------------------------"
+echo "🔑 Generated Secrets for your .env file"
+echo "--------------------------------------------------"
+echo "Copy and replace these values in infrastructure/docker/.env:"
+echo ""
+echo "APP_JWT_SECRET=$(openssl rand -base64 32)"
+echo "RABBITMQ_PASSWORD=$(openssl rand -hex 12)"
+echo "GRAFANA_PASSWORD=$(openssl rand -hex 12)"
+echo "RWA_LLDAP_ADMIN_PASSWORD=$(openssl rand -hex 16)"
+echo ""
+echo "--------------------------------------------------"
+echo "⚠️  Remember to keep your .env file secure!"
+echo "--------------------------------------------------"
