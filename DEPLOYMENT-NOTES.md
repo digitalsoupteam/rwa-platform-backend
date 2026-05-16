@@ -63,6 +63,13 @@ Edit `infrastructure/docker/.env` and update the following mandatory fields:
 npm run app:up
 ```
 
+## Step 6: Import Uptime Kuma Configuration
+Upon first run, you must manually import the monitoring configuration:
+1.  Open **Uptime Kuma** in your browser: `http://uptime.rwa.local` (local) or `https://uptime.yourdomain.com` (server).
+2.  Create your admin account.
+3.  Go to **Settings** > **Backup** > **Import Backup**.
+4.  Select and upload the file: `infrastructure/docker/uptime-kuma/uptime-kuma-import.json`.
+
 ---
 
 ## 🛠 Maintenance Commands
