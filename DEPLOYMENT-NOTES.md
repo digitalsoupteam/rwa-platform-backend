@@ -1,8 +1,9 @@
 ## 💻 Local Development Setup
 
-Before starting the stack locally, you need to map the local domains to your loopback address.
+Before starting the stack locally, you need to map the local domains to your loopback address and generate self-signed SSL certificates.
 
-**Action:** Add the following lines to your `hosts` file:
+### Step 1: Update Hosts File
+Add the following lines to your `hosts` file:
 - **Windows:** `C:\Windows\System32\drivers\etc\hosts` (Run Notepad as Administrator)
 - **Linux/macOS:** `/etc/hosts` (Use `sudo`)
 
@@ -20,6 +21,17 @@ Before starting the stack locally, you need to map the local domains to your loo
 127.0.0.1 portainer.rwa.local
 127.0.0.1 uptime.rwa.local
 127.0.0.1 graphiql.rwa.local
+```
+
+### Step 2: Generate Self-Signed Certificates
+For local development, generate SSL certificates for `*.rwa.local`:
+
+```bash
+mkdir -p infrastructure/docker/nginx/ssl
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout infrastructure/docker/nginx/ssl/privkey.pem \
+  -out infrastructure/docker/nginx/ssl/fullchain.pem \
+  -subj "/C=US/ST=Dev/L=Dev/O=RWA/OU=Dev/CN=*.rwa.local"
 ```
 
 ---
@@ -50,17 +62,45 @@ Edit `infrastructure/docker/.env` and update the following mandatory fields:
     - `APP_JWT_SECRET`
     - `RABBITMQ_PASSWORD`
     - `GRAFANA_PASSWORD`
-    - `RWA_LLDAP_ADMIN_PASSWORD`
+    - `LLDAP_ADMIN_PASSWORD`
 2.  **Set your domain:**
     - `BASE_DOMAIN=yourdomain.com`
     - `LLDAP_BASE_DN=dc=yourdomain,dc=com`
 3.  **Check Blockchain Keys** (if deploying to production/mainnet):
     - Update `SIGNER_X_PRIVATE_KEY` and `TESTNET_FAUCET_WALLET_PRIVATE_KEY`.
+4.  **SSL Configuration:**
+    - **Production (Certbot):**
+      - `NGINX_SSL_PATH=/etc/letsencrypt/live/${BASE_DOMAIN}`
+      - `NGINX_CHALLENGE_PATH=/var/www/certbot`
+    - **Development (Self-signed):**
+      - `NGINX_SSL_PATH=./nginx/ssl`
+      - `NGINX_CHALLENGE_PATH=./nginx/challenge`
 
+## Step 4: Setup SSL (Production Only - Host Machine Certbot)
+If you are deploying to production and want to use Certbot on the host machine:
+
+1.  **Install Certbot:**
+    ```bash
+    sudo apt update
+    sudo apt install certbot
+    ```
+
+2.  **Obtain Certificates:**
+    ```bash
+    sudo certbot certonly --standalone -d yourdomain.com -d "*.yourdomain.com" --email admin@yourdomain.com --agree-tos
+    ```
+
+3.  **Auto-renewal Hook:**
+    Ensure Nginx reloads after renewal by adding a deploy hook:
+    ```bash
+    # Create /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh
+    #!/bin/bash
+    cd /path/to/project && bun run nginx:reload
+    ```
 
 ## Step 5: Start the Infrastructure
 ```bash
-npm run app:up
+bun run app:up
 ```
 
 ## Step 6: Import Uptime Kuma Configuration
@@ -77,7 +117,7 @@ Upon first run, you must manually import the monitoring configuration:
 ### Nginx Domain/SSL Update
 If you change `BASE_DOMAIN` or update certificates:
 ```bash
-npm run nginx:reload
+bun run nginx:reload
 ```
 
 ### Full Backup

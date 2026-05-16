@@ -113,7 +113,9 @@ infrastructure/docker/authelia/config/*.sqlite3
 infrastructure/docker/lldap/data/*.db
 infrastructure/docker/nginx/.htpasswd
 !infrastructure/docker/authelia/secrets/.gitkeep
+infrastructure\docker\authelia\config\notification.txt
 
+infrastructure/docker/authelia/config/notification.txt
 # parcel-bundler cache (https://parceljs.org/)
 
 .parcel-cache

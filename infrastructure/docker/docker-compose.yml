@@ -754,13 +754,14 @@ services:
     image: authelia/authelia:latest
     container_name: authelia
     environment:
-      - LLDAP_USER_PASS=${RWA_LLDAP_ADMIN_PASSWORD}
+      - LLDAP_USER_PASS=${LLDAP_ADMIN_PASSWORD}
       - BASE_DOMAIN=${BASE_DOMAIN}
     volumes:
-      - ./authelia/config:/config
+      - ./authelia/config/configuration.yml.template:/config/configuration.yml.template:ro
+      - ./authelia/config/notification.txt:/config/notification.txt
       - ./authelia/secrets:/secrets
       - authelia_data:/data
-    entrypoint: /bin/sh -c "sed \"s/\\$${BASE_DOMAIN}/$BASE_DOMAIN/g\" /config/configuration.yml.template > /config/configuration.yml && authelia --config /config/configuration.yml"
+    entrypoint: /bin/sh -c "sed \"s|\\$$BASE_DOMAIN|$$BASE_DOMAIN|g; s|\\$$LLDAP_USER_PASS|$$LLDAP_USER_PASS|g\" /config/configuration.yml.template > /config/configuration.yml && authelia --config /config/configuration.yml"
     networks:
       - app-network
     restart: unless-stopped
@@ -774,7 +775,7 @@ services:
     environment:
       - LLDAP_JWT_SECRET_FILE=/secrets/LLDAP_JWT_SECRET
       - LLDAP_LDAP_BASE_DN=${LLDAP_BASE_DN}
-      - LLDAP_LDAP_USER_PASS=${RWA_LLDAP_ADMIN_PASSWORD}
+      - LLDAP_LDAP_USER_PASS=${LLDAP_ADMIN_PASSWORD}
     volumes:
       - lldap_data:/data
       - ./authelia/secrets:/secrets:ro
@@ -788,7 +789,8 @@ services:
     environment:
       - BASE_DOMAIN=${BASE_DOMAIN}
     volumes:
-      - ./homer:/www/assets
+      - ./homer/config.yml.template:/www/assets/config.yml.template:ro
+      - ./homer/logo.svg:/www/assets/logo.svg:ro
     entrypoint: /bin/sh -c "sed \"s/\\$${BASE_DOMAIN}/$BASE_DOMAIN/g\" /www/assets/config.yml.template > /www/assets/config.yml && sh /entrypoint.sh"
     networks:
       - app-network

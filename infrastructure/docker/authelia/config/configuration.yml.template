@@ -25,7 +25,7 @@ authentication_backend:
       mail: mail
       group_name: cn
     user: uid=admin,ou=people,dc=rwa,dc=local
-    password: password123
+    password: $LLDAP_USER_PASS
 
 
 session:
@@ -36,9 +36,9 @@ session:
   inactivity: 5m
   remember_me: 1M
   cookies:
-    - domain: "${BASE_DOMAIN}"
-      authelia_url: "https://auth.${BASE_DOMAIN}"
-      default_redirection_url: "https://admin.${BASE_DOMAIN}"
+    - domain: "$BASE_DOMAIN"
+      authelia_url: "https://auth.$BASE_DOMAIN"
+      default_redirection_url: "https://admin.$BASE_DOMAIN"
   redis:
     host: redis
     port: 6379
@@ -55,9 +55,9 @@ notifier:
 access_control:
   default_policy: deny
   rules:
-    - domain: "auth.${BASE_DOMAIN}"
+    - domain: "auth.$BASE_DOMAIN"
       policy: bypass
-    - domain: "*.${BASE_DOMAIN}"
+    - domain: "*.$BASE_DOMAIN"
       resources: ["^/api/verify.*$", "^/api/health.*$", "^/-/healthy.*$"]
       policy: bypass
     - domain:
@@ -67,29 +67,29 @@ access_control:
       methods: ["GET", "OPTIONS", "HEAD"]
       policy: bypass
 
-    - domain: "admin.${BASE_DOMAIN}"
+    - domain: "admin.$BASE_DOMAIN"
       policy: one_factor
 
     - domain:
-        - "auth.${BASE_DOMAIN}"
-        - "lldap.${BASE_DOMAIN}"
-        - "grafana.${BASE_DOMAIN}"
-        - "prometheus.${BASE_DOMAIN}"
-        - "alloy.${BASE_DOMAIN}"
-        - "redis.${BASE_DOMAIN}"
-        - "portainer.${BASE_DOMAIN}"
-        - "uptime.${BASE_DOMAIN}"
-        - "graphiql.${BASE_DOMAIN}"
+        - "auth.$BASE_DOMAIN"
+        - "lldap.$BASE_DOMAIN"
+        - "grafana.$BASE_DOMAIN"
+        - "prometheus.$BASE_DOMAIN"
+        - "alloy.$BASE_DOMAIN"
+        - "redis.$BASE_DOMAIN"
+        - "portainer.$BASE_DOMAIN"
+        - "uptime.$BASE_DOMAIN"
+        - "graphiql.$BASE_DOMAIN"
       subject: "group:lldap_admin"
       policy: one_factor
 
-    - domain: "rabbitmq.${BASE_DOMAIN}"
+    - domain: "rabbitmq.$BASE_DOMAIN"
       subject: ["group:admin_rabbitmq", "group:lldap_admin"]
       policy: one_factor
 
-    - domain: "mongo.${BASE_DOMAIN}"
+    - domain: "mongo.$BASE_DOMAIN"
       subject: ["group:admin_mongodb", "group:lldap_admin"]
       policy: one_factor
 
-    - domain: "${BASE_DOMAIN}"
+    - domain: "$BASE_DOMAIN"
       policy: bypass
