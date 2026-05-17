@@ -570,8 +570,8 @@ services:
       - ./nginx/snippets:/etc/nginx/snippets:ro
       - ./nginx/admin-gui:/usr/share/nginx/html/admin:ro
       - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro
-      - ${NGINX_SSL_CERT_PATH}:${NGINX_SSL_CERT_PATH}:ro
-      - ${NGINX_SSL_KEY_PATH}:${NGINX_SSL_KEY_PATH}:ro
+      - ${NGINX_HOST_SSL_CERT_PATH}:${NGINX_SSL_CERT_PATH}:ro
+      - ${NGINX_HOST_SSL_KEY_PATH}:${NGINX_SSL_KEY_PATH}:ro
       - ${NGINX_CHALLENGE_PATH}:/var/www/certbot:ro
       - nginx_logs:/var/log/nginx
       - files_storage:/app/storage
