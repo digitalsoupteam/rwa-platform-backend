@@ -337,6 +337,9 @@ export class BlockchainScannerDaemon {
           await this.scannerService.applyBlockEvents(blockNumber, blockEvents);
         }
 
+        // Always update last processed block in database to save progress even if no events were found
+        await this.scannerService.updateLastProcessedBlock(toBlock);
+
         fromBlock = toBlock + 1;
         this.lastProcessedBlock = toBlock;
       }
