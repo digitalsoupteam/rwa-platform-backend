@@ -25,6 +25,7 @@ x-configs:
 
 services:
   ai-assistant:
+    container_name: ai-assistant
     restart: unless-stopped
     build:
       context: ../..
@@ -47,6 +48,7 @@ services:
         condition: service_healthy
 
   auth:
+    container_name: auth
     restart: unless-stopped
     build:
       context: ../..
@@ -72,6 +74,7 @@ services:
         condition: service_healthy
 
   blockchain-scanner:
+    container_name: blockchain-scanner
     restart: unless-stopped
     build:
       context: ../..
@@ -101,6 +104,7 @@ services:
         condition: service_healthy
 
   blog:
+    container_name: blog
     restart: unless-stopped
     build:
       context: ../..
@@ -121,6 +125,7 @@ services:
         condition: service_healthy
 
   charts:
+    container_name: charts
     restart: unless-stopped
     build:
       context: ../..
@@ -148,6 +153,7 @@ services:
         condition: service_healthy
 
   company:
+    container_name: company
     restart: unless-stopped
     build:
       context: ../..
@@ -168,6 +174,7 @@ services:
         condition: service_healthy
 
   dao:
+    container_name: dao
     restart: unless-stopped
     build:
       context: ../..
@@ -191,6 +198,7 @@ services:
         condition: service_healthy
 
   documents:
+    container_name: documents
     restart: unless-stopped
     build:
       context: ../..
@@ -211,6 +219,7 @@ services:
         condition: service_healthy
 
   faq:
+    container_name: faq
     restart: unless-stopped
     build:
       context: ../..
@@ -231,6 +240,7 @@ services:
         condition: service_healthy
 
   files:
+    container_name: files
     restart: unless-stopped
     build:
       context: ../..
@@ -255,6 +265,7 @@ services:
         condition: service_healthy
 
   gallery:
+    container_name: gallery
     restart: unless-stopped
     build:
       context: ../..
@@ -275,6 +286,7 @@ services:
         condition: service_healthy
 
   loyalty:
+    container_name: loyalty
     restart: unless-stopped
     build:
       context: ../..
@@ -300,6 +312,7 @@ services:
         condition: service_healthy
 
   gateway:
+    container_name: gateway
     restart: unless-stopped
     build:
       context: ../..
@@ -347,6 +360,7 @@ services:
         condition: service_started
 
   portfolio:
+    container_name: portfolio
     restart: unless-stopped
     build:
       context: ../..
@@ -370,6 +384,7 @@ services:
         condition: service_healthy
 
   questions:
+    container_name: questions
     restart: unless-stopped
     build:
       context: ../..
@@ -388,6 +403,7 @@ services:
         condition: service_healthy
 
   reactions:
+    container_name: reactions
     restart: unless-stopped
     build:
       context: ../..
@@ -406,6 +422,7 @@ services:
         condition: service_healthy
 
   rwa:
+    container_name: rwa
     restart: unless-stopped
     build:
       context: ../..
@@ -485,6 +502,7 @@ services:
         condition: service_healthy
 
   signers-manager:
+    container_name: signers-manager
     restart: unless-stopped
     build:
       context: ../..
@@ -506,6 +524,7 @@ services:
         condition: service_healthy
 
   testnet-faucet:
+    container_name: testnet-faucet
     restart: unless-stopped
     build:
       context: ../..
