@@ -543,15 +543,16 @@ services:
       - "${NGINX_SSL_PORT}:443"
     environment:
       - BASE_DOMAIN=${BASE_DOMAIN}
-      - NGINX_SSL_CERT_PATH=/etc/nginx/ssl/fullchain.pem
-      - NGINX_SSL_KEY_PATH=/etc/nginx/ssl/privkey.pem
+      - NGINX_SSL_CERT_PATH=${NGINX_SSL_CERT_PATH}
+      - NGINX_SSL_KEY_PATH=${NGINX_SSL_KEY_PATH}
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/templates:/etc/nginx/templates:ro
       - ./nginx/snippets:/etc/nginx/snippets:ro
       - ./nginx/admin-gui:/usr/share/nginx/html/admin:ro
       - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro
-      - ${NGINX_SSL_PATH}:/etc/nginx/ssl:ro
+      - ${NGINX_SSL_CERT_PATH}:${NGINX_SSL_CERT_PATH}:ro
+      - ${NGINX_SSL_KEY_PATH}:${NGINX_SSL_KEY_PATH}:ro
       - ${NGINX_CHALLENGE_PATH}:/var/www/certbot:ro
       - nginx_logs:/var/log/nginx
       - files_storage:/app/storage
@@ -755,13 +756,14 @@ services:
     container_name: authelia
     environment:
       - LLDAP_USER_PASS=${LLDAP_ADMIN_PASSWORD}
+      - LLDAP_BASE_DN=${LLDAP_BASE_DN}
       - BASE_DOMAIN=${BASE_DOMAIN}
     volumes:
       - ./authelia/config/configuration.yml.template:/config/configuration.yml.template:ro
       - ./authelia/config/notification.txt:/config/notification.txt
       - ./authelia/secrets:/secrets
       - authelia_data:/data
-    entrypoint: /bin/sh -c "sed \"s|\\$$BASE_DOMAIN|$$BASE_DOMAIN|g; s|\\$$LLDAP_USER_PASS|$$LLDAP_USER_PASS|g\" /config/configuration.yml.template > /config/configuration.yml && authelia --config /config/configuration.yml"
+    entrypoint: /bin/sh -c "sed \"s|\\$$BASE_DOMAIN|$$BASE_DOMAIN|g; s|\\$$LLDAP_USER_PASS|$$LLDAP_USER_PASS|g; s|\\$$LLDAP_BASE_DN|$$LLDAP_BASE_DN|g\" /config/configuration.yml.template > /config/configuration.yml && authelia --config /config/configuration.yml"
     networks:
       - app-network
     restart: unless-stopped
