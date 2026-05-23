@@ -19,7 +19,7 @@ const app = await tracer.startActiveSpan(
         {
           chainId: '97',
           name: "BSC Testnet",
-          factoryAddress: "0xD1b0e186A2B0d602f27cE2e046Fa95BBe9FE6d84",
+          factoryAddress: "0xF46A71cac8B1A8F734559Cc4367CD1546A1A29bF",
         }
       ]
     );

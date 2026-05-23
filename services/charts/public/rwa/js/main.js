@@ -757,8 +757,8 @@ async function handleDeploy() {
         const web3 = new Web3(window.ethereum);
 
         // Contract addresses
-        const HOLD_TOKEN_ADDRESS = '0x66670d16331dc923Ff095f5B0A658F01e6794216';
-        const FACTORY_ADDRESS = '0xD1b0e186A2B0d602f27cE2e046Fa95BBe9FE6d84';
+        const HOLD_TOKEN_ADDRESS = '0x1c0e214bB702572E5582085d6E25c39A2B13510d';
+        const FACTORY_ADDRESS = '0xF46A71cac8B1A8F734559Cc4367CD1546A1A29bF';
 
         // Contract ABIs
         const holdTokenABI = [{

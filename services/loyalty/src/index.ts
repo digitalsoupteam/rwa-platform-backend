@@ -16,7 +16,7 @@ const app = await tracer.startActiveSpan(
         {
           chainId: '97',
           name: "BSC Testnet",
-          referralTreasuryAddress: "0x5Be8ef43955d48357080334DAa7DC68cDcc7a6c6",
+          referralTreasuryAddress: "0xcf56E77069cC2aBfA6c1Df9bfD4155F782697B9D",
         }
       ]
     );
