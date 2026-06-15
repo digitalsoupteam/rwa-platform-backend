@@ -112,7 +112,7 @@ describe("RWA Flow", () => {
       );
 
       expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toContain('does not exist in "BusinessType" enum');
+      expect(result.errors[0].message).toContain("Invalid business type");
     });
 
     test("should reject invalid country code on business", async () => {
@@ -328,683 +328,683 @@ describe("RWA Flow", () => {
     //   expect(result.data.updateBusinessRiskScore.riskScore).toBeDefined();
     // });
 
-    // test("should deploy business contract", async () => {
-    //   // Request signatures
-    //   const sigResult = await makeGraphQLRequest(
-    //     REQUEST_BUSINESS_APPROVAL_SIGNATURES,
-    //     {
-    //       input: {
-    //         id: businessId,
-    //         ownerWallet: wallet.address,
-    //         deployerWallet: wallet.address,
-    //         createRWAFee: "100"
-    //       },
-    //     },
-    //     accessToken
-    //   );
+    test("should deploy business contract", async () => {
+      // Request signatures
+      const sigResult = await makeGraphQLRequest(
+        REQUEST_BUSINESS_APPROVAL_SIGNATURES,
+        {
+          input: {
+            id: businessId,
+            ownerWallet: wallet.address,
+            deployerWallet: wallet.address,
+            createRWAFee: "100"
+          },
+        },
+        accessToken
+      );
 
-    //   expect(sigResult.errors).toBeUndefined();
-    //   expect(sigResult.data.requestBusinessApprovalSignatures).toBeDefined();
-    //   expect(sigResult.data.requestBusinessApprovalSignatures.taskId).toBeDefined();
+      expect(sigResult.errors).toBeUndefined();
+      expect(sigResult.data.requestBusinessApprovalSignatures).toBeDefined();
+      expect(sigResult.data.requestBusinessApprovalSignatures.taskId).toBeDefined();
 
-    //   businessApprovalSignaturesTaskId = sigResult.data.requestBusinessApprovalSignatures.taskId;
+      businessApprovalSignaturesTaskId = sigResult.data.requestBusinessApprovalSignatures.taskId;
 
-    //   // Wait for signatures to be processed
-    //   await new Promise(resolve => setTimeout(resolve, 10000));
-    //     const updatedBusiness2 = await makeGraphQLRequest(
-    //     GET_BUSINESS,
-    //     {
-    //       id: businessId,
-    //     },
-    //     accessToken
-    //   );
+      // Wait for signatures to be processed
+      await new Promise(resolve => setTimeout(resolve, 10000));
+        const updatedBusiness2 = await makeGraphQLRequest(
+        GET_BUSINESS,
+        {
+          id: businessId,
+        },
+        accessToken
+      );
 
-    //   // Get and verify signatures
-    //   const taskResult = await makeGraphQLRequest(
-    //     GET_SIGNATURE_TASK,
-    //     {
-    //       input: {
-    //         taskId: businessApprovalSignaturesTaskId,
-    //       },
-    //     },
-    //     accessToken
-    //   );
+      // Get and verify signatures
+      const taskResult = await makeGraphQLRequest(
+        GET_SIGNATURE_TASK,
+        {
+          input: {
+            taskId: businessApprovalSignaturesTaskId,
+          },
+        },
+        accessToken
+      );
 
-    //   expect(taskResult.errors).toBeUndefined();
-    //   expect(taskResult.data.getSignatureTask).toBeDefined();
-    //   expect(taskResult.data.getSignatureTask.completed).toBe(true);
-    //   expect(taskResult.data.getSignatureTask.signatures).toBeArray();
-    //   expect(taskResult.data.getSignatureTask.signatures.length).toBeGreaterThan(0);
+      expect(taskResult.errors).toBeUndefined();
+      expect(taskResult.data.getSignatureTask).toBeDefined();
+      expect(taskResult.data.getSignatureTask.completed).toBe(true);
+      expect(taskResult.data.getSignatureTask.signatures).toBeArray();
+      expect(taskResult.data.getSignatureTask.signatures.length).toBeGreaterThan(0);
 
-    //   // Request HOLD tokens and gas
-    //   await requestHold(accessToken, 500);
-    //   await requestGas(accessToken, 0.0035);
+      // Request HOLD tokens and gas
+      await requestHold(accessToken, 500);
+      await requestGas(accessToken, 0.0035);
 
-    //   // Wait for transactions to be mined
-    //   await new Promise(resolve => setTimeout(resolve, 10000));
+      // Wait for transactions to be mined
+      await new Promise(resolve => setTimeout(resolve, 10000));
 
-    //   // Approve HOLD tokens
-    //   const holdToken = new ethers.Contract(
-    //     HOLD_TOKEN_ADDRESS,
-    //     ["function approve(address spender, uint256 amount) public returns (bool)"],
-    //     wallet
-    //   );
+      // Approve HOLD tokens
+      const holdToken = new ethers.Contract(
+        HOLD_TOKEN_ADDRESS,
+        ["function approve(address spender, uint256 amount) public returns (bool)"],
+        wallet
+      );
 
-    //   const approveTx = await holdToken.approve(
-    //     FACTORY_ADDRESS,
-    //     ethers.MaxUint256
-    //   );
-    //   await approveTx.wait();
+      const approveTx = await holdToken.approve(
+        FACTORY_ADDRESS,
+        ethers.MaxUint256
+      );
+      await approveTx.wait();
 
-    //   const signatures = taskResult.data.getSignatureTask.signatures;
-    //   const signers = signatures.map((sig: any) => ethers.getAddress(sig.signer));
-    //   const signatureValues = signatures.map((sig: any) => sig.signature);
-    //   const expired = taskResult.data.getSignatureTask.expired;
+      const signatures = taskResult.data.getSignatureTask.signatures;
+      const signers = signatures.map((sig: any) => ethers.getAddress(sig.signer));
+      const signatureValues = signatures.map((sig: any) => sig.signature);
+      const expired = taskResult.data.getSignatureTask.expired;
 
-    //   // Deploy RWA contract
-    //   const factory = new ethers.Contract(
-    //     FACTORY_ADDRESS,
-    //     [
-    //       "function deployRWA(uint256 createRWAFee, string calldata entityId, string calldata entityOwnerId, string calldata entityOwnerType, address owner, address[] calldata signers, bytes[] calldata signatures, uint256 expired)",
-    //     ],
-    //     wallet
-    //   );
+      // Deploy RWA contract
+      const factory = new ethers.Contract(
+        FACTORY_ADDRESS,
+        [
+          "function deployRWA(uint256 createRWAFee, string calldata entityId, string calldata entityOwnerId, string calldata entityOwnerType, address owner, address[] calldata signers, bytes[] calldata signatures, uint256 expired)",
+        ],
+        wallet
+      );
 
-    //   const deployTx = await factory.deployRWA(
-    //     '100',
-    //     businessId,
-    //     companyId,
-    //     "company",
-    //     wallet.address,
-    //     signers,
-    //     signatureValues,
-    //     expired,
-    //     {
-    //       gasLimit: 1200000,
-    //       gasPrice: 1000000000,
-    //     }
-    //   );
-    //   await deployTx.wait(20);
+      const deployTx = await factory.deployRWA(
+        '100',
+        businessId,
+        companyId,
+        "company",
+        wallet.address,
+        signers,
+        signatureValues,
+        expired,
+        {
+          gasLimit: 1200000,
+          gasPrice: 1000000000,
+        }
+      );
+      await deployTx.wait(20);
 
-    //   // Wait for backend to process the event
-    //   await new Promise(resolve => setTimeout(resolve, 10000));
+      // Wait for backend to process the event
+      await new Promise(resolve => setTimeout(resolve, 10000));
 
-    //   // Check if contract address was updated in backend
-    //   const updatedBusiness = await makeGraphQLRequest(
-    //     GET_BUSINESS,
-    //     {
-    //       id: businessId,
-    //     },
-    //     accessToken
-    //   );
+      // Check if contract address was updated in backend
+      const updatedBusiness = await makeGraphQLRequest(
+        GET_BUSINESS,
+        {
+          id: businessId,
+        },
+        accessToken
+      );
 
-    //   expect(updatedBusiness.errors).toBeUndefined();
-    //   expect(updatedBusiness.data.getBusiness.tokenAddress).toBeDefined();
-    //   expect(updatedBusiness.data.getBusiness.tokenAddress).not.toBeNull();
-    //   expect(updatedBusiness.data.getBusiness.tokenAddress).not.toBe("");
+      expect(updatedBusiness.errors).toBeUndefined();
+      expect(updatedBusiness.data.getBusiness.tokenAddress).toBeDefined();
+      expect(updatedBusiness.data.getBusiness.tokenAddress).not.toBeNull();
+      expect(updatedBusiness.data.getBusiness.tokenAddress).not.toBe("");
 
-    //   tokenAddress = updatedBusiness.data.getBusiness.tokenAddress
-    // });
+      tokenAddress = updatedBusiness.data.getBusiness.tokenAddress
+    });
   });
 
-  // describe("Pool Operations", () => {
-  //   test("should require authentication for creating pool", async () => {
-  //     const result = await makeGraphQLRequest(
-  //       CREATE_POOL,
-  //       {
-  //         input: {
-  //           name: "Test Pool",
-  //           businessId
-  //         },
-  //       }
-  //     );
+  describe("Pool Operations", () => {
+    test("should require authentication for creating pool", async () => {
+      const result = await makeGraphQLRequest(
+        CREATE_POOL,
+        {
+          input: {
+            name: "Test Pool",
+            businessId
+          },
+        }
+      );
 
-  //     expect(result.errors).toBeDefined();
-  //     expect(result.errors[0].message).toBe("Authentication required");
-  //   });
+      expect(result.errors).toBeDefined();
+      expect(result.errors[0].message).toBe("Authentication required");
+    });
 
-  //   test("should create a pool under business", async () => {
-  //     const result = await makeGraphQLRequest(
-  //       CREATE_POOL,
-  //       {
-  //         input: {
-  //           name: "Test Pool",
-  //           businessId
-  //         },
-  //       },
-  //       accessToken
-  //     );
+    test("should create a pool under business", async () => {
+      const result = await makeGraphQLRequest(
+        CREATE_POOL,
+        {
+          input: {
+            name: "Test Pool",
+            businessId
+          },
+        },
+        accessToken
+      );
 
-  //     expect(result.errors).toBeUndefined();
-  //     expect(result.data.createPool).toBeDefined();
-  //     expect(result.data.createPool.name).toBe("Test Pool");
-  //     expect(result.data.createPool.ownerId).toBe(companyId);
-  //     expect(result.data.createPool.ownerType).toBe("company");
-  //     expect(result.data.createPool.businessId).toBe(businessId);
-  //     expect(result.data.createPool.chainId).toBe(chainId);
-  //     expect(result.data.createPool.rwaAddress).toBe(tokenAddress);
+      expect(result.errors).toBeUndefined();
+      expect(result.data.createPool).toBeDefined();
+      expect(result.data.createPool.name).toBe("Test Pool");
+      expect(result.data.createPool.ownerId).toBe(companyId);
+      expect(result.data.createPool.ownerType).toBe("company");
+      expect(result.data.createPool.businessId).toBe(businessId);
+      expect(result.data.createPool.chainId).toBe(chainId);
+      expect(result.data.createPool.rwaAddress).toBe(tokenAddress);
 
-  //     poolId = result.data.createPool.id;
-  //   });
+      poolId = result.data.createPool.id;
+    });
 
-  //   test("should get pool by id", async () => {
-  //     const result = await makeGraphQLRequest(
-  //       GET_POOL,
-  //       {
-  //         id: poolId,
-  //       },
-  //       accessToken
-  //     );
+    test("should get pool by id", async () => {
+      const result = await makeGraphQLRequest(
+        GET_POOL,
+        {
+          id: poolId,
+        },
+        accessToken
+      );
 
-  //     expect(result.errors).toBeUndefined();
-  //     expect(result.data.getPool).toBeDefined();
-  //     expect(result.data.getPool.id).toBe(poolId);
-  //     expect(result.data.getPool.name).toBe("Test Pool");
-  //     expect(result.data.getPool.businessId).toBe(businessId);
-  //   });
+      expect(result.errors).toBeUndefined();
+      expect(result.data.getPool).toBeDefined();
+      expect(result.data.getPool.id).toBe(poolId);
+      expect(result.data.getPool.name).toBe("Test Pool");
+      expect(result.data.getPool.businessId).toBe(businessId);
+    });
 
-  //   test("should get pools with filter", async () => {
-  //     const result = await makeGraphQLRequest(
-  //       GET_POOLS,
-  //       {
-  //         input: {
-  //           filter: {
-  //             businessId: { $eq: businessId }
-  //           },
-  //         }
-  //       },
-  //       accessToken
-  //     );
+    test("should get pools with filter", async () => {
+      const result = await makeGraphQLRequest(
+        GET_POOLS,
+        {
+          input: {
+            filter: {
+              businessId: { $eq: businessId }
+            },
+          }
+        },
+        accessToken
+      );
 
-  //     expect(result.errors).toBeUndefined();
-  //     expect(result.data.getPools).toBeDefined();
-  //     expect(result.data.getPools).toBeArray();
-  //     expect(result.data.getPools.length).toBeGreaterThan(0);
-  //     expect(result.data.getPools[0].businessId).toBe(businessId);
-  //   });
+      expect(result.errors).toBeUndefined();
+      expect(result.data.getPools).toBeDefined();
+      expect(result.data.getPools).toBeArray();
+      expect(result.data.getPools.length).toBeGreaterThan(0);
+      expect(result.data.getPools[0].businessId).toBe(businessId);
+    });
 
-  //   test("should edit pool", async () => {
-  //     const now = Math.floor(Date.now() / 1000);
-  //     const expectedHoldAmount = "10000000000000000000000"; // 10,000 USDT
-  //     const expectedRwaAmount = "100000"; // 100,000 RWA units
+    test("should edit pool", async () => {
+      const now = Math.floor(Date.now() / 1000);
+      const expectedHoldAmount = "10000000000000000000000"; // 10,000 USDT
+      const expectedRwaAmount = "100000"; // 100,000 RWA units
 
-  //     // Entry period: 30 days
-  //     const entryPeriodStart = now - 100; 
-  //     const entryPeriodExpired = entryPeriodStart + (30 * 86400); // 30 days duration
+      // Entry period: 30 days
+      const entryPeriodStart = now - 100; 
+      const entryPeriodExpired = entryPeriodStart + (30 * 86400); // 30 days duration
 
-  //     // Completion period: 60 days
-  //     const completionPeriodExpired = entryPeriodExpired + (60 * 86400); // 60 days after entry period
+      // Completion period: 60 days
+      const completionPeriodExpired = entryPeriodExpired + (60 * 86400); // 60 days after entry period
 
-  //     // 4 outgoing tranches, each 25% of expectedHoldAmount
-  //     const outgoingTranchAmount = BigInt(expectedHoldAmount) / BigInt(4);
-  //     const outgoingTranches = [
-  //       {
-  //         amount: outgoingTranchAmount.toString(),
-  //         timestamp: entryPeriodExpired + (7 * 86400), // 7 days after entry period
-  //         executedAmount: "0"
-  //       },
-  //       {
-  //         amount: outgoingTranchAmount.toString(),
-  //         timestamp: entryPeriodExpired + (14 * 86400), // 14 days after entry period
-  //         executedAmount: "0"
-  //       },
-  //       {
-  //         amount: outgoingTranchAmount.toString(),
-  //         timestamp: entryPeriodExpired + (21 * 86400), // 21 days after entry period
-  //         executedAmount: "0"
-  //       },
-  //       {
-  //         amount: outgoingTranchAmount.toString(),
-  //         timestamp: entryPeriodExpired + (28 * 86400), // 28 days after entry period
-  //         executedAmount: "0"
-  //       }
-  //     ];
+      // 4 outgoing tranches, each 25% of expectedHoldAmount
+      const outgoingTranchAmount = BigInt(expectedHoldAmount) / BigInt(4);
+      const outgoingTranches = [
+        {
+          amount: outgoingTranchAmount.toString(),
+          timestamp: entryPeriodExpired + (7 * 86400), // 7 days after entry period
+          executedAmount: "0"
+        },
+        {
+          amount: outgoingTranchAmount.toString(),
+          timestamp: entryPeriodExpired + (14 * 86400), // 14 days after entry period
+          executedAmount: "0"
+        },
+        {
+          amount: outgoingTranchAmount.toString(),
+          timestamp: entryPeriodExpired + (21 * 86400), // 21 days after entry period
+          executedAmount: "0"
+        },
+        {
+          amount: outgoingTranchAmount.toString(),
+          timestamp: entryPeriodExpired + (28 * 86400), // 28 days after entry period
+          executedAmount: "0"
+        }
+      ];
 
-  //     // 20% reward
-  //     const rewardPercent = "2000"; // 20%
-  //     const totalExpectedIncoming = BigInt(expectedHoldAmount) + (BigInt(expectedHoldAmount) * BigInt(rewardPercent) / BigInt(10000));
+      // 20% reward
+      const rewardPercent = "2000"; // 20%
+      const totalExpectedIncoming = BigInt(expectedHoldAmount) + (BigInt(expectedHoldAmount) * BigInt(rewardPercent) / BigInt(10000));
 
-  //     // 4 incoming tranches, each 25% of totalExpectedIncoming
-  //     const incomingTranchAmount = totalExpectedIncoming / BigInt(4);
-  //     const incomingTranches = [
-  //       {
-  //         amount: incomingTranchAmount.toString(),
-  //         expiredAt: entryPeriodExpired + (30 * 86400), // 30 days after entry period
-  //         returnedAmount: "0"
-  //       },
-  //       {
-  //         amount: incomingTranchAmount.toString(),
-  //         expiredAt: entryPeriodExpired + (40 * 86400), // 40 days after entry period
-  //         returnedAmount: "0"
-  //       },
-  //       {
-  //         amount: incomingTranchAmount.toString(),
-  //         expiredAt: entryPeriodExpired + (50 * 86400), // 50 days after entry period
-  //         returnedAmount: "0"
-  //       },
-  //       {
-  //         amount: incomingTranchAmount.toString(),
-  //         expiredAt: completionPeriodExpired, // At completion period end
-  //         returnedAmount: "0"
-  //       }
-  //     ];
+      // 4 incoming tranches, each 25% of totalExpectedIncoming
+      const incomingTranchAmount = totalExpectedIncoming / BigInt(4);
+      const incomingTranches = [
+        {
+          amount: incomingTranchAmount.toString(),
+          expiredAt: entryPeriodExpired + (30 * 86400), // 30 days after entry period
+          returnedAmount: "0"
+        },
+        {
+          amount: incomingTranchAmount.toString(),
+          expiredAt: entryPeriodExpired + (40 * 86400), // 40 days after entry period
+          returnedAmount: "0"
+        },
+        {
+          amount: incomingTranchAmount.toString(),
+          expiredAt: entryPeriodExpired + (50 * 86400), // 50 days after entry period
+          returnedAmount: "0"
+        },
+        {
+          amount: incomingTranchAmount.toString(),
+          expiredAt: completionPeriodExpired, // At completion period end
+          returnedAmount: "0"
+        }
+      ];
 
-  //     const result = await makeGraphQLRequest(
-  //       EDIT_POOL,
-  //       {
-  //         input: {
-  //           id: poolId,
-  //           updateData: {
-  //             name: "Coffee Shop Pool Name",
-  //             description: "New Coffee Pool Description",
-  //             tags: ["coffee"],
-  //             expectedHoldAmount,
-  //             expectedRwaAmount,
-  //             rewardPercent,
-  //             priceImpactPercent: "101", 
-  //             entryFeePercent: "100", 
-  //             exitFeePercent: "100", 
-  //             entryPeriodStart,
-  //             entryPeriodExpired,
-  //             completionPeriodExpired,
-  //             outgoingTranches,
-  //             incomingTranches,
-  //             awaitCompletionExpired: true,
-  //             floatingOutTranchesTimestamps: true,
-  //             fixedSell: false,
-  //             allowEntryBurn: true
-  //           }
-  //         },
-  //       },
-  //       accessToken
-  //     );
+      const result = await makeGraphQLRequest(
+        EDIT_POOL,
+        {
+          input: {
+            id: poolId,
+            updateData: {
+              name: "Coffee Shop Pool Name",
+              description: "New Coffee Pool Description",
+              tags: ["coffee"],
+              expectedHoldAmount,
+              expectedRwaAmount,
+              rewardPercent,
+              priceImpactPercent: "101", 
+              entryFeePercent: "100", 
+              exitFeePercent: "100", 
+              entryPeriodStart,
+              entryPeriodExpired,
+              completionPeriodExpired,
+              outgoingTranches,
+              incomingTranches,
+              awaitCompletionExpired: true,
+              floatingOutTranchesTimestamps: true,
+              fixedSell: false,
+              allowEntryBurn: true
+            }
+          },
+        },
+        accessToken
+      );
 
-  //     expect(result.errors).toBeUndefined();
-  //     expect(result.data.editPool).toBeDefined();
-  //     expect(result.data.editPool.id).toBe(poolId);
-  //     expect(result.data.editPool.name).toBe("Coffee Shop Pool Name");
-  //     expect(result.data.editPool.description).toBe("New Coffee Pool Description");
-  //     expect(result.data.editPool.tags).toEqual(["coffee"]);
-  //     expect(result.data.editPool.expectedHoldAmount).toBe(expectedHoldAmount);
-  //     expect(result.data.editPool.expectedRwaAmount).toBe(expectedRwaAmount);
-  //     expect(result.data.editPool.rewardPercent).toBe(rewardPercent);
-  //     expect(result.data.editPool.priceImpactPercent).toBe("101");
-  //     expect(result.data.editPool.entryFeePercent).toBe("100");
-  //     expect(result.data.editPool.exitFeePercent).toBe("100");
-  //     expect(result.data.editPool.entryPeriodStart).toBe(entryPeriodStart);
-  //     expect(result.data.editPool.entryPeriodExpired).toBe(entryPeriodExpired);
-  //     expect(result.data.editPool.completionPeriodExpired).toBe(completionPeriodExpired);
-  //     expect(result.data.editPool.outgoingTranches).toBeArray();
-  //     expect(result.data.editPool.outgoingTranches.length).toBe(4);
-  //     expect(result.data.editPool.outgoingTranches[0].amount).toBe(outgoingTranches[0].amount);
-  //     expect(result.data.editPool.outgoingTranches[0].timestamp).toBe(outgoingTranches[0].timestamp);
-  //     expect(result.data.editPool.outgoingTranches[1].amount).toBe(outgoingTranches[1].amount);
-  //     expect(result.data.editPool.outgoingTranches[1].timestamp).toBe(outgoingTranches[1].timestamp);
-  //     expect(result.data.editPool.outgoingTranches[2].amount).toBe(outgoingTranches[2].amount);
-  //     expect(result.data.editPool.outgoingTranches[2].timestamp).toBe(outgoingTranches[2].timestamp);
-  //     expect(result.data.editPool.outgoingTranches[3].amount).toBe(outgoingTranches[3].amount);
-  //     expect(result.data.editPool.outgoingTranches[3].timestamp).toBe(outgoingTranches[3].timestamp);
-  //     expect(result.data.editPool.incomingTranches).toBeArray();
-  //     expect(result.data.editPool.incomingTranches.length).toBe(4);
-  //     expect(result.data.editPool.incomingTranches[0].amount).toBe(incomingTranches[0].amount);
-  //     expect(result.data.editPool.incomingTranches[0].expiredAt).toBe(incomingTranches[0].expiredAt);
-  //     expect(result.data.editPool.incomingTranches[1].amount).toBe(incomingTranches[1].amount);
-  //     expect(result.data.editPool.incomingTranches[1].expiredAt).toBe(incomingTranches[1].expiredAt);
-  //     expect(result.data.editPool.incomingTranches[2].amount).toBe(incomingTranches[2].amount);
-  //     expect(result.data.editPool.incomingTranches[2].expiredAt).toBe(incomingTranches[2].expiredAt);
-  //     expect(result.data.editPool.incomingTranches[3].amount).toBe(incomingTranches[3].amount);
-  //     expect(result.data.editPool.incomingTranches[3].expiredAt).toBe(incomingTranches[3].expiredAt);
-  //     expect(result.data.editPool.awaitCompletionExpired).toBe(true);
-  //     expect(result.data.editPool.floatingOutTranchesTimestamps).toBe(true);
-  //     expect(result.data.editPool.fixedSell).toBe(false);
-  //     expect(result.data.editPool.allowEntryBurn).toBe(true);
-  //   });
+      expect(result.errors).toBeUndefined();
+      expect(result.data.editPool).toBeDefined();
+      expect(result.data.editPool.id).toBe(poolId);
+      expect(result.data.editPool.name).toBe("Coffee Shop Pool Name");
+      expect(result.data.editPool.description).toBe("New Coffee Pool Description");
+      expect(result.data.editPool.tags).toEqual(["coffee"]);
+      expect(result.data.editPool.expectedHoldAmount).toBe(expectedHoldAmount);
+      expect(result.data.editPool.expectedRwaAmount).toBe(expectedRwaAmount);
+      expect(result.data.editPool.rewardPercent).toBe(rewardPercent);
+      expect(result.data.editPool.priceImpactPercent).toBe("101");
+      expect(result.data.editPool.entryFeePercent).toBe("100");
+      expect(result.data.editPool.exitFeePercent).toBe("100");
+      expect(result.data.editPool.entryPeriodStart).toBe(entryPeriodStart);
+      expect(result.data.editPool.entryPeriodExpired).toBe(entryPeriodExpired);
+      expect(result.data.editPool.completionPeriodExpired).toBe(completionPeriodExpired);
+      expect(result.data.editPool.outgoingTranches).toBeArray();
+      expect(result.data.editPool.outgoingTranches.length).toBe(4);
+      expect(result.data.editPool.outgoingTranches[0].amount).toBe(outgoingTranches[0].amount);
+      expect(result.data.editPool.outgoingTranches[0].timestamp).toBe(outgoingTranches[0].timestamp);
+      expect(result.data.editPool.outgoingTranches[1].amount).toBe(outgoingTranches[1].amount);
+      expect(result.data.editPool.outgoingTranches[1].timestamp).toBe(outgoingTranches[1].timestamp);
+      expect(result.data.editPool.outgoingTranches[2].amount).toBe(outgoingTranches[2].amount);
+      expect(result.data.editPool.outgoingTranches[2].timestamp).toBe(outgoingTranches[2].timestamp);
+      expect(result.data.editPool.outgoingTranches[3].amount).toBe(outgoingTranches[3].amount);
+      expect(result.data.editPool.outgoingTranches[3].timestamp).toBe(outgoingTranches[3].timestamp);
+      expect(result.data.editPool.incomingTranches).toBeArray();
+      expect(result.data.editPool.incomingTranches.length).toBe(4);
+      expect(result.data.editPool.incomingTranches[0].amount).toBe(incomingTranches[0].amount);
+      expect(result.data.editPool.incomingTranches[0].expiredAt).toBe(incomingTranches[0].expiredAt);
+      expect(result.data.editPool.incomingTranches[1].amount).toBe(incomingTranches[1].amount);
+      expect(result.data.editPool.incomingTranches[1].expiredAt).toBe(incomingTranches[1].expiredAt);
+      expect(result.data.editPool.incomingTranches[2].amount).toBe(incomingTranches[2].amount);
+      expect(result.data.editPool.incomingTranches[2].expiredAt).toBe(incomingTranches[2].expiredAt);
+      expect(result.data.editPool.incomingTranches[3].amount).toBe(incomingTranches[3].amount);
+      expect(result.data.editPool.incomingTranches[3].expiredAt).toBe(incomingTranches[3].expiredAt);
+      expect(result.data.editPool.awaitCompletionExpired).toBe(true);
+      expect(result.data.editPool.floatingOutTranchesTimestamps).toBe(true);
+      expect(result.data.editPool.fixedSell).toBe(false);
+      expect(result.data.editPool.allowEntryBurn).toBe(true);
+    });
 
-  //   test("should update pool risk score", async () => {
-  //     const result = await makeGraphQLRequest(
-  //       UPDATE_POOL_RISK_SCORE,
-  //       {
-  //         id: poolId,
-  //       },
-  //       accessToken
-  //     );
+    test("should update pool risk score", async () => {
+      const result = await makeGraphQLRequest(
+        UPDATE_POOL_RISK_SCORE,
+        {
+          id: poolId,
+        },
+        accessToken
+      );
 
-  //     expect(result.errors).toBeUndefined();
-  //     expect(result.data.updatePoolRiskScore).toBeDefined();
-  //     expect(result.data.updatePoolRiskScore.id).toBe(poolId);
-  //     expect(result.data.updatePoolRiskScore.riskScore).toBeDefined();
-  //   });
+      expect(result.errors).toBeUndefined();
+      expect(result.data.updatePoolRiskScore).toBeDefined();
+      expect(result.data.updatePoolRiskScore.id).toBe(poolId);
+      expect(result.data.updatePoolRiskScore.riskScore).toBeDefined();
+    });
 
-  //   test("should deploy pool contract", async () => {
-  //     // Request signatures
-  //     const sigResult = await makeGraphQLRequest(
-  //       REQUEST_POOL_APPROVAL_SIGNATURES,
-  //       {
-  //         input: {
-  //           id: poolId,
-  //           ownerWallet: wallet.address,
-  //           deployerWallet: wallet.address,
-  //           createPoolFeeRatio: "100"
-  //         },
-  //       },
-  //       accessToken
-  //     );
+    test("should deploy pool contract", async () => {
+      // Request signatures
+      const sigResult = await makeGraphQLRequest(
+        REQUEST_POOL_APPROVAL_SIGNATURES,
+        {
+          input: {
+            id: poolId,
+            ownerWallet: wallet.address,
+            deployerWallet: wallet.address,
+            createPoolFeeRatio: "100"
+          },
+        },
+        accessToken
+      );
 
-  //     expect(sigResult.errors).toBeUndefined();
-  //     expect(sigResult.data.requestPoolApprovalSignatures).toBeDefined();
-  //     expect(sigResult.data.requestPoolApprovalSignatures.taskId).toBeDefined();
+      expect(sigResult.errors).toBeUndefined();
+      expect(sigResult.data.requestPoolApprovalSignatures).toBeDefined();
+      expect(sigResult.data.requestPoolApprovalSignatures.taskId).toBeDefined();
 
-  //     poolApprovalSignaturesTaskId = sigResult.data.requestPoolApprovalSignatures.taskId;
+      poolApprovalSignaturesTaskId = sigResult.data.requestPoolApprovalSignatures.taskId;
 
-  //     // Wait for signatures to be processed
-  //     await new Promise(resolve => setTimeout(resolve, 10000));
+      // Wait for signatures to be processed
+      await new Promise(resolve => setTimeout(resolve, 10000));
 
-  //     // Get pool data and signatures from task
-  //     const poolData = await makeGraphQLRequest(
-  //       GET_POOL,
-  //       {
-  //         id: poolId,
-  //       },
-  //       accessToken
-  //     );
+      // Get pool data and signatures from task
+      const poolData = await makeGraphQLRequest(
+        GET_POOL,
+        {
+          id: poolId,
+        },
+        accessToken
+      );
 
-  //     expect(poolData.errors).toBeUndefined();
-  //     expect(poolData.data.getPool).toBeDefined();
+      expect(poolData.errors).toBeUndefined();
+      expect(poolData.data.getPool).toBeDefined();
 
-  //     // Get signatures from task result
-  //     const taskResult = await makeGraphQLRequest(
-  //       GET_SIGNATURE_TASK,
-  //       {
-  //         input: {
-  //           taskId: poolApprovalSignaturesTaskId,
-  //         },
-  //       },
-  //       accessToken
-  //     );
+      // Get signatures from task result
+      const taskResult = await makeGraphQLRequest(
+        GET_SIGNATURE_TASK,
+        {
+          input: {
+            taskId: poolApprovalSignaturesTaskId,
+          },
+        },
+        accessToken
+      );
 
-  //     expect(taskResult.errors).toBeUndefined();
-  //     expect(taskResult.data.getSignatureTask).toBeDefined();
-  //     expect(taskResult.data.getSignatureTask.completed).toBe(true);
+      expect(taskResult.errors).toBeUndefined();
+      expect(taskResult.data.getSignatureTask).toBeDefined();
+      expect(taskResult.data.getSignatureTask.completed).toBe(true);
 
-  //     const signatures = taskResult.data.getSignatureTask.signatures;
-  //     const signers = signatures.map((sig: any) => ethers.getAddress(sig.signer));
-  //     const signatureValues = signatures.map((sig: any) => sig.signature);
-  //     const approvalSignaturesExpired = taskResult.data.getSignatureTask.expired;
+      const signatures = taskResult.data.getSignatureTask.signatures;
+      const signers = signatures.map((sig: any) => ethers.getAddress(sig.signer));
+      const signatureValues = signatures.map((sig: any) => sig.signature);
+      const approvalSignaturesExpired = taskResult.data.getSignatureTask.expired;
 
-  //     // Deploy pool contract
-  //     const factory = new ethers.Contract(
-  //       FACTORY_ADDRESS,
-  //       [
-  //         "function deployPool(uint256 createPoolFeeRatio, string calldata entityId, address rwa, uint256 expectedHoldAmount, uint256 expectedRwaAmount, uint256 priceImpactPercent, uint256 rewardPercent, uint256 entryPeriodStart, uint256 entryPeriodExpired, uint256 completionPeriodExpired, uint256 entryFeePercent, uint256 exitFeePercent, bool fixedSell, bool allowEntryBurn, bool awaitCompletionExpired, bool floatingOutTranchesTimestamps, uint256[] calldata outgoingTranches, uint256[] calldata outgoingTranchTimestamps, uint256[] calldata incomingTranches, uint256[] calldata incomingTrancheExpired, address[] calldata signers, bytes[] calldata signatures, uint256 expired)"
-  //       ],
-  //       wallet
-  //     );
+      // Deploy pool contract
+      const factory = new ethers.Contract(
+        FACTORY_ADDRESS,
+        [
+          "function deployPool(uint256 createPoolFeeRatio, string calldata entityId, address rwa, uint256 expectedHoldAmount, uint256 expectedRwaAmount, uint256 priceImpactPercent, uint256 rewardPercent, uint256 entryPeriodStart, uint256 entryPeriodExpired, uint256 completionPeriodExpired, uint256 entryFeePercent, uint256 exitFeePercent, bool fixedSell, bool allowEntryBurn, bool awaitCompletionExpired, bool floatingOutTranchesTimestamps, uint256[] calldata outgoingTranches, uint256[] calldata outgoingTranchTimestamps, uint256[] calldata incomingTranches, uint256[] calldata incomingTrancheExpired, address[] calldata signers, bytes[] calldata signatures, uint256 expired)"
+        ],
+        wallet
+      );
 
-  //     const pool = poolData.data.getPool;
-  //     const deployTx = await factory.deployPool(
-  //       '100', // createPoolFeeRatio
-  //       poolId,
-  //       pool.rwaAddress,
-  //       BigInt(pool.expectedHoldAmount),
-  //       BigInt(pool.expectedRwaAmount),
-  //       BigInt(pool.priceImpactPercent),
-  //       BigInt(pool.rewardPercent),
-  //       BigInt(pool.entryPeriodStart),
-  //       BigInt(pool.entryPeriodExpired),
-  //       BigInt(pool.completionPeriodExpired),
-  //       BigInt(pool.entryFeePercent),
-  //       BigInt(pool.exitFeePercent),
-  //       pool.fixedSell,
-  //       pool.allowEntryBurn,
-  //       pool.awaitCompletionExpired,
-  //       pool.floatingOutTranchesTimestamps,
-  //       pool.outgoingTranches.map(t => BigInt(t.amount)),
-  //       pool.outgoingTranches.map(t => BigInt(t.timestamp)),
-  //       pool.incomingTranches.map(t => BigInt(t.amount)),
-  //       pool.incomingTranches.map(t => BigInt(t.expiredAt)),
-  //       signers,
-  //       signatureValues,
-  //       approvalSignaturesExpired,
-  //       {
-  //         gasLimit: 2000000,
-  //         gasPrice: 1000000000,
-  //       }
-  //     );
-  //     await deployTx.wait(20);
+      const pool = poolData.data.getPool;
+      const deployTx = await factory.deployPool(
+        '100', // createPoolFeeRatio
+        poolId,
+        pool.rwaAddress,
+        BigInt(pool.expectedHoldAmount),
+        BigInt(pool.expectedRwaAmount),
+        BigInt(pool.priceImpactPercent),
+        BigInt(pool.rewardPercent),
+        BigInt(pool.entryPeriodStart),
+        BigInt(pool.entryPeriodExpired),
+        BigInt(pool.completionPeriodExpired),
+        BigInt(pool.entryFeePercent),
+        BigInt(pool.exitFeePercent),
+        pool.fixedSell,
+        pool.allowEntryBurn,
+        pool.awaitCompletionExpired,
+        pool.floatingOutTranchesTimestamps,
+        pool.outgoingTranches.map(t => BigInt(t.amount)),
+        pool.outgoingTranches.map(t => BigInt(t.timestamp)),
+        pool.incomingTranches.map(t => BigInt(t.amount)),
+        pool.incomingTranches.map(t => BigInt(t.expiredAt)),
+        signers,
+        signatureValues,
+        approvalSignaturesExpired,
+        {
+          gasLimit: 2000000,
+          gasPrice: 1000000000,
+        }
+      );
+      await deployTx.wait(20);
 
-  //     // Wait for backend to process the event
-  //     await new Promise(resolve => setTimeout(resolve, 10000));
+      // Wait for backend to process the event
+      await new Promise(resolve => setTimeout(resolve, 10000));
 
-  //     // Verify pool was deployed
-  //     const updatedPool = await makeGraphQLRequest(
-  //       GET_POOL,
-  //       {
-  //         id: poolId,
-  //       },
-  //       accessToken
-  //     );
+      // Verify pool was deployed
+      const updatedPool = await makeGraphQLRequest(
+        GET_POOL,
+        {
+          id: poolId,
+        },
+        accessToken
+      );
 
-  //     expect(updatedPool.errors).toBeUndefined();
-  //     expect(updatedPool.data.getPool.poolAddress).toBeDefined();
-  //     expect(updatedPool.data.getPool.poolAddress).not.toBeNull();
-  //     expect(updatedPool.data.getPool.poolAddress).not.toBe("");
-  //   });
-  // });
+      expect(updatedPool.errors).toBeUndefined();
+      expect(updatedPool.data.getPool.poolAddress).toBeDefined();
+      expect(updatedPool.data.getPool.poolAddress).not.toBeNull();
+      expect(updatedPool.data.getPool.poolAddress).not.toBe("");
+    });
+  });
 
-  // describe("Pool Trading Tests", () => {
-  //   test("should mint and burn RWA tokens", async () => {
-  //     // Request HOLD tokens and gas for second wallet
-  //     await requestHold(accessToken2, 500);
-  //     await requestGas(accessToken2, 0.0035);
+  describe("Pool Trading Tests", () => {
+    test("should mint and burn RWA tokens", async () => {
+      // Request HOLD tokens and gas for second wallet
+      await requestHold(accessToken2, 500);
+      await requestGas(accessToken2, 0.0035);
 
-  //     // Wait for transactions to be mined
-  //     await new Promise(resolve => setTimeout(resolve, 10000));
+      // Wait for transactions to be mined
+      await new Promise(resolve => setTimeout(resolve, 10000));
 
-  //     // Get pool data
-  //     const poolData = await makeGraphQLRequest(
-  //       GET_POOL,
-  //       {
-  //         id: poolId,
-  //       },
-  //       accessToken
-  //     );
+      // Get pool data
+      const poolData = await makeGraphQLRequest(
+        GET_POOL,
+        {
+          id: poolId,
+        },
+        accessToken
+      );
 
-  //     expect(poolData.errors).toBeUndefined();
-  //     const pool = poolData.data.getPool;
-  //     const poolContract = new ethers.Contract(
-  //       pool.poolAddress,
-  //       [
-  //         "function estimateMint(uint256 rwaAmount, bool allowPartial) public view returns (uint256 holdAmountWithFee, uint256 fee, uint256 actualRwaAmount)",
-  //         "function mint(uint256 rwaAmount, uint256 maxHoldAmount, uint256 validUntil, bool allowPartial) external",
-  //         "function estimateBurn(uint256 rwaAmount) public view returns (uint256 holdAmountWithoutFee, uint256 holdFee, uint256 bonusAmountWithoutFee, uint256 bonusFee)",
-  //         "function burn(uint256 rwaAmount, uint256 minHoldAmount, uint256 minBonusAmount, uint256 validUntil) external",
-  //         "function holdToken() public view returns (address)",
-  //       ],
-  //       wallet2
-  //     );
+      expect(poolData.errors).toBeUndefined();
+      const pool = poolData.data.getPool;
+      const poolContract = new ethers.Contract(
+        pool.poolAddress,
+        [
+          "function estimateMint(uint256 rwaAmount, bool allowPartial) public view returns (uint256 holdAmountWithFee, uint256 fee, uint256 actualRwaAmount)",
+          "function mint(uint256 rwaAmount, uint256 maxHoldAmount, uint256 validUntil, bool allowPartial) external",
+          "function estimateBurn(uint256 rwaAmount) public view returns (uint256 holdAmountWithoutFee, uint256 holdFee, uint256 bonusAmountWithoutFee, uint256 bonusFee)",
+          "function burn(uint256 rwaAmount, uint256 minHoldAmount, uint256 minBonusAmount, uint256 validUntil) external",
+          "function holdToken() public view returns (address)",
+        ],
+        wallet2
+      );
 
-  //     // Get HOLD token address from pool
-  //     const holdTokenAddress = await poolContract.holdToken();
-  //     const holdToken = new ethers.Contract(
-  //       holdTokenAddress,
-  //       ["function approve(address spender, uint256 amount) public returns (bool)"],
-  //       wallet2
-  //     );
+      // Get HOLD token address from pool
+      const holdTokenAddress = await poolContract.holdToken();
+      const holdToken = new ethers.Contract(
+        holdTokenAddress,
+        ["function approve(address spender, uint256 amount) public returns (bool)"],
+        wallet2
+      );
 
-  //     // Approve HOLD tokens for pool
-  //     const approveTx = await holdToken.approve(
-  //       pool.poolAddress,
-  //       ethers.MaxUint256
-  //     );
-  //     await approveTx.wait();
+      // Approve HOLD tokens for pool
+      const approveTx = await holdToken.approve(
+        pool.poolAddress,
+        ethers.MaxUint256
+      );
+      await approveTx.wait();
 
-  //     // Estimate mint
-  //     const rwaAmount = "1000";
-  //     const [holdAmountWithFee] = await poolContract.estimateMint(rwaAmount, true);
+      // Estimate mint
+      const rwaAmount = "1000";
+      const [holdAmountWithFee] = await poolContract.estimateMint(rwaAmount, true);
 
-  //     // Mint RWA tokens
-  //     const validUntil = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
-  //     const mintTx = await poolContract.mint(
-  //       rwaAmount,
-  //       holdAmountWithFee,
-  //       validUntil,
-  //       true,
-  //       {
-  //         gasLimit: 1000000,
-  //         gasPrice: 1000000000,
-  //       }
-  //     );
-  //     await mintTx.wait();
+      // Mint RWA tokens
+      const validUntil = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
+      const mintTx = await poolContract.mint(
+        rwaAmount,
+        holdAmountWithFee,
+        validUntil,
+        true,
+        {
+          gasLimit: 1000000,
+          gasPrice: 1000000000,
+        }
+      );
+      await mintTx.wait();
 
-  //     // Wait for backend to process events
-  //     await new Promise(resolve => setTimeout(resolve, 10000));
+      // Wait for backend to process events
+      await new Promise(resolve => setTimeout(resolve, 10000));
 
-  //     // Check pool state after mint
-  //     const poolAfterMint = await makeGraphQLRequest(
-  //       GET_POOL,
-  //       {
-  //         id: poolId,
-  //       },
-  //       accessToken
-  //     );
+      // Check pool state after mint
+      const poolAfterMint = await makeGraphQLRequest(
+        GET_POOL,
+        {
+          id: poolId,
+        },
+        accessToken
+      );
 
-  //     expect(poolAfterMint.errors).toBeUndefined();
-  //     expect(poolAfterMint.data.getPool.awaitingRwaAmount).toBe(rwaAmount);
-  //     expect(BigInt(poolAfterMint.data.getPool.realHoldReserve)).toBeGreaterThan(0n);
+      expect(poolAfterMint.errors).toBeUndefined();
+      expect(poolAfterMint.data.getPool.awaitingRwaAmount).toBe(rwaAmount);
+      expect(BigInt(poolAfterMint.data.getPool.realHoldReserve)).toBeGreaterThan(0n);
 
-  //     // Estimate burn
-  //     const [holdAmountWithoutFee] = await poolContract.estimateBurn(rwaAmount);
+      // Estimate burn
+      const [holdAmountWithoutFee] = await poolContract.estimateBurn(rwaAmount);
 
-  //     // Burn RWA tokens
-  //     const burnTx = await poolContract.burn(
-  //       rwaAmount,
-  //       holdAmountWithoutFee,
-  //       0,
-  //       validUntil,
-  //       {
-  //         gasLimit: 1000000,
-  //         gasPrice: 1000000000,
-  //       }
-  //     );
-  //     await burnTx.wait();
+      // Burn RWA tokens
+      const burnTx = await poolContract.burn(
+        rwaAmount,
+        holdAmountWithoutFee,
+        0,
+        validUntil,
+        {
+          gasLimit: 1000000,
+          gasPrice: 1000000000,
+        }
+      );
+      await burnTx.wait();
 
-  //     // Wait for backend to process events
-  //     await new Promise(resolve => setTimeout(resolve, 10000));
+      // Wait for backend to process events
+      await new Promise(resolve => setTimeout(resolve, 10000));
 
-  //     // Check pool state after burn
-  //     const poolAfterBurn = await makeGraphQLRequest(
-  //       GET_POOL,
-  //       {
-  //         id: poolId,
-  //       },
-  //       accessToken
-  //     );
+      // Check pool state after burn
+      const poolAfterBurn = await makeGraphQLRequest(
+        GET_POOL,
+        {
+          id: poolId,
+        },
+        accessToken
+      );
 
-  //     expect(poolAfterBurn.errors).toBeUndefined();
-  //     expect(poolAfterBurn.data.getPool.awaitingRwaAmount).toBe("0");
-  //     expect(BigInt(poolAfterBurn.data.getPool.realHoldReserve)).toBeLessThan(BigInt(poolAfterMint.data.getPool.realHoldReserve));
-  //   });
-  // });
+      expect(poolAfterBurn.errors).toBeUndefined();
+      expect(poolAfterBurn.data.getPool.awaitingRwaAmount).toBe("0");
+      expect(BigInt(poolAfterBurn.data.getPool.realHoldReserve)).toBeLessThan(BigInt(poolAfterMint.data.getPool.realHoldReserve));
+    });
+  });
 
-  // describe("Access Control Tests", () => {
-  //   test("should not allow non-owner to create business under company", async () => {
-  //     const result = await makeGraphQLRequest(
-  //       CREATE_BUSINESS,
-  //       {
-  //         input: {
-  //           name: "Unauthorized Business",
-  //           ownerId: companyId,
-  //           ownerType: "company",
-  //           chainId,
-  //           description: "Test Description",
-  //           tags: ["test"]
-  //         },
-  //       },
-  //       accessToken2
-  //     );
+  describe("Access Control Tests", () => {
+    test("should not allow non-owner to create business under company", async () => {
+      const result = await makeGraphQLRequest(
+        CREATE_BUSINESS,
+        {
+          input: {
+            name: "Unauthorized Business",
+            ownerId: companyId,
+            ownerType: "company",
+            chainId,
+            description: "Test Description",
+            tags: ["test"]
+          },
+        },
+        accessToken2
+      );
 
-  //     expect(result.errors).toBeDefined();
-  //     expect(result.errors[0].message).toBe("User does not have required company permissions");
-  //   });
+      expect(result.errors).toBeDefined();
+      expect(result.errors[0].message).toBe("User does not have required company permissions");
+    });
 
-  //   test("should not allow non-owner to edit business", async () => {
-  //     const result = await makeGraphQLRequest(
-  //       EDIT_BUSINESS,
-  //       {
-  //         input: {
-  //           id: businessId,
-  //           updateData: {
-  //             name: "Unauthorized Update",
-  //           }
-  //         },
-  //       },
-  //       accessToken2
-  //     );
+    test("should not allow non-owner to edit business", async () => {
+      const result = await makeGraphQLRequest(
+        EDIT_BUSINESS,
+        {
+          input: {
+            id: businessId,
+            updateData: {
+              name: "Unauthorized Update",
+            }
+          },
+        },
+        accessToken2
+      );
 
-  //     expect(result.errors).toBeDefined();
-  //     expect(result.errors[0].message).toBe("User does not have required company permissions");
-  //   });
+      expect(result.errors).toBeDefined();
+      expect(result.errors[0].message).toBe("User does not have required company permissions");
+    });
 
-  //   test("should not allow non-owner to create pool under business", async () => {
-  //     const result = await makeGraphQLRequest(
-  //       CREATE_POOL,
-  //       {
-  //         input: {
-  //           name: "Unauthorized Pool",
-  //           businessId
-  //         },
-  //       },
-  //       accessToken2
-  //     );
+    test("should not allow non-owner to create pool under business", async () => {
+      const result = await makeGraphQLRequest(
+        CREATE_POOL,
+        {
+          input: {
+            name: "Unauthorized Pool",
+            businessId
+          },
+        },
+        accessToken2
+      );
 
-  //     expect(result.errors).toBeDefined();
-  //     expect(result.errors[0].message).toBe("User does not have required company permissions");
-  //   });
+      expect(result.errors).toBeDefined();
+      expect(result.errors[0].message).toBe("User does not have required company permissions");
+    });
 
-  //   test("should not allow non-owner to edit pool", async () => {
-  //     const result = await makeGraphQLRequest(
-  //       EDIT_POOL,
-  //       {
-  //         input: {
-  //           id: poolId,
-  //           updateData: {
-  //             name: "Unauthorized Update",
-  //           }
-  //         },
-  //       },
-  //       accessToken2
-  //     );
+    test("should not allow non-owner to edit pool", async () => {
+      const result = await makeGraphQLRequest(
+        EDIT_POOL,
+        {
+          input: {
+            id: poolId,
+            updateData: {
+              name: "Unauthorized Update",
+            }
+          },
+        },
+        accessToken2
+      );
 
-  //     expect(result.errors).toBeDefined();
-  //     expect(result.errors[0].message).toBe("User does not have required company permissions");
-  //   });
-  // });
+      expect(result.errors).toBeDefined();
+      expect(result.errors[0].message).toBe("User does not have required company permissions");
+    });
+  });
 
-  // describe("Cleanup", () => {
-  //   test("should reject pool approval signatures", async () => {
-  //     const result = await makeGraphQLRequest(
-  //       REJECT_POOL_APPROVAL_SIGNATURES,
-  //       {
-  //         id: poolId,
-  //       },
-  //       accessToken
-  //     );
+  describe("Cleanup", () => {
+    test("should reject pool approval signatures", async () => {
+      const result = await makeGraphQLRequest(
+        REJECT_POOL_APPROVAL_SIGNATURES,
+        {
+          id: poolId,
+        },
+        accessToken
+      );
 
-  //     expect(result.errors).toBeUndefined();
-  //     expect(result.data.rejectPoolApprovalSignatures).toBe(true);
-  //   });
+      expect(result.errors).toBeUndefined();
+      expect(result.data.rejectPoolApprovalSignatures).toBe(true);
+    });
 
-  //   test("should reject business approval signatures", async () => {
-  //     const result = await makeGraphQLRequest(
-  //       REJECT_BUSINESS_APPROVAL_SIGNATURES,
-  //       {
-  //         id: businessId,
-  //       },
-  //       accessToken
-  //     );
+    test("should reject business approval signatures", async () => {
+      const result = await makeGraphQLRequest(
+        REJECT_BUSINESS_APPROVAL_SIGNATURES,
+        {
+          id: businessId,
+        },
+        accessToken
+      );
 
-  //     expect(result.errors).toBeUndefined();
-  //     expect(result.data.rejectBusinessApprovalSignatures).toBe(true);
-  //   });
-  // });
+      expect(result.errors).toBeUndefined();
+      expect(result.data.rejectBusinessApprovalSignatures).toBe(true);
+    });
+  });
 });
