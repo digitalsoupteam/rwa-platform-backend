@@ -78,6 +78,31 @@
         {
           "indexed": true,
           "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "unlockTimestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "DaoStaking_TokensLocked",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "emittedFrom",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
           "name": "staker",
           "type": "address"
         },
@@ -116,6 +141,12 @@
           "indexed": false,
           "internalType": "uint256",
           "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "rewardsReceived",
           "type": "uint256"
         },
         {
@@ -257,7 +288,19 @@
         {
           "indexed": false,
           "internalType": "uint256",
-          "name": "startTime",
+          "name": "votesFor",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "votesAgainst",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "creationTime",
           "type": "uint256"
         },
         {
@@ -265,6 +308,18 @@
           "internalType": "uint256",
           "name": "endTime",
           "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "executed",
+          "type": "bool"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "cancelled",
+          "type": "bool"
         }
       ],
       "name": "Governance_ProposalCreated",
@@ -349,6 +404,37 @@
         }
       ],
       "name": "Initialized",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "emittedFrom",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "PlatformToken_Transfer",
       "type": "event"
     },
     {
@@ -1328,6 +1414,24 @@
       "inputs": [
         {
           "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "unlockTimestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "emitDaoStaking_TokensLocked",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
           "name": "staker",
           "type": "address"
         },
@@ -1357,6 +1461,11 @@
         {
           "internalType": "uint256",
           "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "rewardsReceived",
           "type": "uint256"
         },
         {
@@ -1463,13 +1572,33 @@
         },
         {
           "internalType": "uint256",
-          "name": "startTime",
+          "name": "votesFor",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "votesAgainst",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "creationTime",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
           "name": "endTime",
           "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "executed",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "cancelled",
+          "type": "bool"
         }
       ],
       "name": "emitGovernance_ProposalCreated",
@@ -1524,6 +1653,29 @@
         }
       ],
       "name": "emitGovernance_VoteCast",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "emitPlatformToken_Transfer",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
