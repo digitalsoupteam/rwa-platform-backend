@@ -13,6 +13,9 @@ export const updateCompany: MutationResolvers['updateCompany'] = async (
     throw new AuthenticationError("Authentication required");
   }
 
+  services.validation.validateCountry(input.updateData.country);
+  services.validation.validateSocials(input.updateData.socials as any);
+
   const companyResponse = await services.cache.getCompany({
     id: input.id
   });
@@ -30,7 +33,12 @@ export const updateCompany: MutationResolvers['updateCompany'] = async (
 
   const response = await clients.companyClient.updateCompany.post({
     id: input.id,
-    updateData: input.updateData,
+    updateData: {
+      name: input.updateData.name,
+      description: input.updateData.description,
+      country: input.updateData.country,
+      socials: input.updateData.socials,
+    },
   });
 
   if (response.error) {
@@ -47,6 +55,8 @@ export const updateCompany: MutationResolvers['updateCompany'] = async (
     name: data.name,
     description: data.description,
     ownerId: data.ownerId,
+    country: data.country ?? null,
+    socials: data.socials ?? [],
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
   };

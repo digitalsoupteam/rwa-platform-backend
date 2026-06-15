@@ -6,6 +6,8 @@ type Company {
   name: String!
   description: String!
   ownerId: String!
+  country: String
+  socials: [SocialLink!]!
   createdAt: Int!
   updatedAt: Int!
 }
@@ -45,6 +47,8 @@ type CompanyWithDetails {
   name: String!
   description: String!
   ownerId: String!
+  country: String
+  socials: [SocialLink!]!
   users: [UserWithPermissions!]!
   createdAt: Int!
   updatedAt: Int!
@@ -54,6 +58,8 @@ type CompanyWithDetails {
 input CreateCompanyInput {
   name: String!
   description: String!
+  country: String
+  socials: [SocialLinkInput!]
 }
 
 input UpdateCompanyInput {
@@ -64,6 +70,8 @@ input UpdateCompanyInput {
 input UpdateCompanyDataInput {
   name: String
   description: String
+  country: String
+  socials: [SocialLinkInput!]
 }
 
 input AddMemberInput {

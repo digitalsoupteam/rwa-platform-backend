@@ -151,6 +151,74 @@ describe("Company Flow", () => {
   });
 
   describe("Company Operations", () => {
+    test("should reject invalid country code", async () => {
+      const result = await makeGraphQLRequest(
+        CREATE_COMPANY,
+        {
+          input: {
+            name: "Bad Country Company",
+            description: "Test",
+            country: "INVALID"
+          },
+        },
+        accessToken
+      );
+
+      expect(result.errors).toBeDefined();
+      expect(result.errors[0].message).toContain("Invalid country code");
+    });
+
+    test("should reject unknown social type", async () => {
+      const result = await makeGraphQLRequest(
+        CREATE_COMPANY,
+        {
+          input: {
+            name: "Bad Social Company",
+            description: "Test",
+            socials: [{ type: "tiktok", url: "https://tiktok.com/@test" }]
+          },
+        },
+        accessToken
+      );
+
+      expect(result.errors).toBeDefined();
+      expect(result.errors[0].message).toContain("Unknown social type");
+    });
+
+    test("should reject invalid twitter URL", async () => {
+      const result = await makeGraphQLRequest(
+        CREATE_COMPANY,
+        {
+          input: {
+            name: "Bad URL Company",
+            description: "Test",
+            socials: [{ type: "twitter", url: "https://instagram.com/test" }]
+          },
+        },
+        accessToken
+      );
+
+      expect(result.errors).toBeDefined();
+      expect(result.errors[0].message).toContain("Invalid URL for twitter");
+    });
+
+    test("should accept valid webpage URL", async () => {
+      const result = await makeGraphQLRequest(
+        CREATE_COMPANY,
+        {
+          input: {
+            name: "Webpage Company",
+            description: "Test",
+            socials: [{ type: "webpage", url: "https://my-custom-site.io/page" }]
+          },
+        },
+        accessToken
+      );
+
+      expect(result.errors).toBeUndefined();
+      expect(result.data.createCompany.socials[0].type).toBe("webpage");
+    });
+
     test("should create a company", async () => {
       const result = await makeGraphQLRequest(
         CREATE_COMPANY,
@@ -170,6 +238,34 @@ describe("Company Flow", () => {
       expect(result.data.createCompany.ownerId).toBe(userId);
 
       companyId = result.data.createCompany.id;
+    });
+
+    test("should create company with country and socials", async () => {
+      const result = await makeGraphQLRequest(
+        CREATE_COMPANY,
+        {
+          input: {
+            name: "Social Company",
+            description: "Company with socials",
+            country: "AE",
+            socials: [
+              { type: "twitter", url: "https://x.com/testcompany" },
+              { type: "webpage", url: "https://testcompany.com" }
+            ]
+          },
+        },
+        accessToken
+      );
+
+      expect(result.errors).toBeUndefined();
+      expect(result.data.createCompany).toBeDefined();
+      expect(result.data.createCompany.country).toBe("AE");
+      expect(result.data.createCompany.socials).toBeArray();
+      expect(result.data.createCompany.socials.length).toBe(2);
+      expect(result.data.createCompany.socials[0].type).toBe("twitter");
+      expect(result.data.createCompany.socials[0].url).toBe("https://x.com/testcompany");
+      expect(result.data.createCompany.socials[1].type).toBe("webpage");
+      expect(result.data.createCompany.socials[1].url).toBe("https://testcompany.com");
     });
 
     test("should get company by id", async () => {
@@ -230,6 +326,34 @@ describe("Company Flow", () => {
       expect(result.data.updateCompany.id).toBe(companyId);
       expect(result.data.updateCompany.name).toBe("Updated Company Name");
       expect(result.data.updateCompany.description).toBe("Updated Description");
+    });
+
+    test("should update company socials", async () => {
+      const result = await makeGraphQLRequest(
+        UPDATE_COMPANY,
+        {
+          input: {
+            id: companyId,
+            updateData: {
+              country: "US",
+              socials: [
+                { type: "instagram", url: "https://instagram.com/testcompany" },
+                { type: "youtube", url: "https://youtube.com/@testcompany" }
+              ]
+            }
+          },
+        },
+        accessToken
+      );
+
+      expect(result.errors).toBeUndefined();
+      expect(result.data.updateCompany).toBeDefined();
+      expect(result.data.updateCompany.id).toBe(companyId);
+      expect(result.data.updateCompany.country).toBe("US");
+      expect(result.data.updateCompany.socials).toBeArray();
+      expect(result.data.updateCompany.socials.length).toBe(2);
+      expect(result.data.updateCompany.socials[0].type).toBe("instagram");
+      expect(result.data.updateCompany.socials[1].type).toBe("youtube");
     });
   });
 

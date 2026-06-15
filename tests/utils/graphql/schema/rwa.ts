@@ -17,6 +17,12 @@ export const GET_BUSINESS = gql`
       image
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
+      country
+      businessType
+      socials {
+        type
+        url
+      }
       paused
       createdAt
       updatedAt
@@ -40,6 +46,12 @@ export const GET_BUSINESSES = gql`
       image
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
+      country
+      businessType
+      socials {
+        type
+        url
+      }
       paused
       createdAt
       updatedAt
@@ -64,6 +76,12 @@ export const CREATE_BUSINESS_WITH_AI = gql`
       image
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
+      country
+      businessType
+      socials {
+        type
+        url
+      }
       paused
       createdAt
       updatedAt
@@ -87,6 +105,12 @@ export const CREATE_BUSINESS = gql`
       image
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
+      country
+      businessType
+      socials {
+        type
+        url
+      }
       paused
       createdAt
       updatedAt
@@ -110,6 +134,12 @@ export const EDIT_BUSINESS = gql`
       image
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
+      country
+      businessType
+      socials {
+        type
+        url
+      }
       paused
       createdAt
       updatedAt

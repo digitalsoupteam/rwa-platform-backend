@@ -5,6 +5,11 @@ export const CREATE_COMPANY = `
       name
       description
       ownerId
+      country
+      socials {
+        type
+        url
+      }
       createdAt
       updatedAt
     }
@@ -18,6 +23,11 @@ export const UPDATE_COMPANY = `
       name
       description
       ownerId
+      country
+      socials {
+        type
+        url
+      }
       createdAt
       updatedAt
     }
@@ -37,6 +47,11 @@ export const GET_COMPANY = `
       name
       description
       ownerId
+      country
+      socials {
+        type
+        url
+      }
       users {
         id
         userId
@@ -60,6 +75,11 @@ export const GET_COMPANIES = `
       name
       description
       ownerId
+      country
+      socials {
+        type
+        url
+      }
       createdAt
       updatedAt
     }

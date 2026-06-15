@@ -16,6 +16,16 @@ input PaginationInput {
   sort: SortFieldInput
 }
 
+type SocialLink {
+  type: String!
+  url: String!
+}
+
+input SocialLinkInput {
+  type: String!
+  url: String!
+}
+
 type Query {
   _: Boolean
 }

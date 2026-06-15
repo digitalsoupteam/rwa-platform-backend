@@ -21,6 +21,7 @@ import type { createPubSub } from 'graphql-yoga';
 import { CacheService } from '../../services/cache.service';
 import { OwnershipService } from '../../services/ownership.service';
 import { ParentService } from '../../services/parent.service';
+import { ValidationService } from '../../services/validation.service';
 import type { Context } from '@opentelemetry/api';
 
 export interface User {
@@ -52,6 +53,7 @@ export interface Services {
   cache: CacheService;
   ownership: OwnershipService;
   parent: ParentService;
+  validation: ValidationService;
 }
 
 

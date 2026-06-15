@@ -13,6 +13,9 @@ export const editBusiness: MutationResolvers['editBusiness'] = async (
     throw new AuthenticationError('Authentication required');
   }
 
+  services.validation.validateCountry(input.updateData.country);
+  services.validation.validateSocials(input.updateData.socials as any);
+
   // Get business first to check permissions
   const businessResponse = await clients.rwaClient.getBusiness.post({
     id: input.id
@@ -39,7 +42,10 @@ export const editBusiness: MutationResolvers['editBusiness'] = async (
       name: input.updateData.name,
       description: input.updateData.description,
       tags: input.updateData.tags,
-      image: input.updateData.image
+      image: input.updateData.image,
+      country: input.updateData.country,
+      businessType: input.updateData.businessType,
+      socials: input.updateData.socials,
     }
   });
 

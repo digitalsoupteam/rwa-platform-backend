@@ -19,6 +19,8 @@ export class CompanyService {
       name: company.name,
       description: company.description,
       ownerId: company.ownerId,
+      country: company.country ?? undefined,
+      socials: company.socials ?? [],
       createdAt: company.createdAt,
       updatedAt: company.updatedAt
     };
@@ -65,6 +67,8 @@ export class CompanyService {
       name: company.name,
       description: company.description,
       ownerId: company.ownerId,
+      country: company.country ?? undefined,
+      socials: company.socials ?? [],
       users,
       createdAt: company.createdAt,
       updatedAt: company.updatedAt
@@ -101,6 +105,8 @@ export class CompanyService {
     name: string;
     description: string;
     ownerId: string;
+    country?: string;
+    socials?: { type: string; url: string }[];
   }) {
     logger.debug("Creating new company", { name: data.name });
 
@@ -117,6 +123,8 @@ export class CompanyService {
     updateData: {
       name?: string;
       description?: string;
+      country?: string;
+      socials?: { type: string; url: string }[];
     }
   }) {
     logger.debug("Updating company", params);

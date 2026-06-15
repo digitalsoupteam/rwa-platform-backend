@@ -87,7 +87,9 @@ export type Business = {
   __typename?: 'Business';
   approvalSignaturesTaskExpired?: Maybe<Scalars['Float']['output']>;
   approvalSignaturesTaskId?: Maybe<Scalars['String']['output']>;
+  businessType?: Maybe<Scalars['String']['output']>;
   chainId: Scalars['String']['output'];
+  country?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['Float']['output'];
   description?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
@@ -98,6 +100,7 @@ export type Business = {
   ownerWallet?: Maybe<Scalars['String']['output']>;
   paused: Scalars['Boolean']['output'];
   riskScore: Scalars['Float']['output'];
+  socials: Array<SocialLink>;
   tags?: Maybe<Array<Scalars['String']['output']>>;
   tokenAddress?: Maybe<Scalars['String']['output']>;
   updatedAt: Scalars['Float']['output'];
@@ -108,21 +111,25 @@ export type BusinessOwnerType =
 
 export type Company = {
   __typename?: 'Company';
+  country?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['Int']['output'];
   description: Scalars['String']['output'];
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
   ownerId: Scalars['String']['output'];
+  socials: Array<SocialLink>;
   updatedAt: Scalars['Int']['output'];
 };
 
 export type CompanyWithDetails = {
   __typename?: 'CompanyWithDetails';
+  country?: Maybe<Scalars['String']['output']>;
   createdAt: Scalars['Int']['output'];
   description: Scalars['String']['output'];
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
   ownerId: Scalars['String']['output'];
+  socials: Array<SocialLink>;
   updatedAt: Scalars['Int']['output'];
   users: Array<UserWithPermissions>;
 };
@@ -139,11 +146,15 @@ export type CreateBlogInput = {
 };
 
 export type CreateBusinessInput = {
+  businessType?: InputMaybe<Scalars['String']['input']>;
   chainId: Scalars['String']['input'];
+  country?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
+  image?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
   ownerId: Scalars['String']['input'];
   ownerType: BusinessOwnerType;
+  socials?: InputMaybe<Array<SocialLinkInput>>;
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
@@ -155,8 +166,10 @@ export type CreateBusinessWithAiInput = {
 };
 
 export type CreateCompanyInput = {
+  country?: InputMaybe<Scalars['String']['input']>;
   description: Scalars['String']['input'];
   name: Scalars['String']['input'];
+  socials?: InputMaybe<Array<SocialLinkInput>>;
 };
 
 export type CreateDocumentInput = {
@@ -276,10 +289,13 @@ export type Document = {
 };
 
 export type EditBusinessDataInput = {
+  businessType?: InputMaybe<Scalars['String']['input']>;
   chainId?: InputMaybe<Scalars['String']['input']>;
+  country?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   image?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
+  socials?: InputMaybe<Array<SocialLinkInput>>;
   tags?: InputMaybe<Array<Scalars['String']['input']>>;
 };
 
@@ -1752,6 +1768,17 @@ export type SignatureTask = {
   signatures?: Maybe<Array<Signature>>;
 };
 
+export type SocialLink = {
+  __typename?: 'SocialLink';
+  type: Scalars['String']['output'];
+  url: Scalars['String']['output'];
+};
+
+export type SocialLinkInput = {
+  type: Scalars['String']['input'];
+  url: Scalars['String']['input'];
+};
+
 export type SortDirection =
   | 'asc'
   | 'desc';
@@ -1914,8 +1941,10 @@ export type UpdateBlogInput = {
 };
 
 export type UpdateCompanyDataInput = {
+  country?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
+  socials?: InputMaybe<Array<SocialLinkInput>>;
 };
 
 export type UpdateCompanyInput = {
@@ -2268,6 +2297,8 @@ export type ResolversTypes = ResolversObject<{
   SetReactionInput: SetReactionInput;
   Signature: ResolverTypeWrapper<Signature>;
   SignatureTask: ResolverTypeWrapper<SignatureTask>;
+  SocialLink: ResolverTypeWrapper<SocialLink>;
+  SocialLinkInput: SocialLinkInput;
   SortDirection: SortDirection;
   SortFieldInput: SortFieldInput;
   Staking: ResolverTypeWrapper<Staking>;
@@ -2431,6 +2462,8 @@ export type ResolversParentTypes = ResolversObject<{
   SetReactionInput: SetReactionInput;
   Signature: Signature;
   SignatureTask: SignatureTask;
+  SocialLink: SocialLink;
+  SocialLinkInput: SocialLinkInput;
   SortFieldInput: SortFieldInput;
   Staking: Staking;
   StakingHistory: StakingHistory;
@@ -2522,7 +2555,9 @@ export type BlogResolvers<ContextType = GraphQLContext, ParentType extends Resol
 export type BusinessResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Business'] = ResolversParentTypes['Business']> = ResolversObject<{
   approvalSignaturesTaskExpired?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   approvalSignaturesTaskId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  businessType?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   chainId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  country?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
@@ -2533,6 +2568,7 @@ export type BusinessResolvers<ContextType = GraphQLContext, ParentType extends R
   ownerWallet?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   paused?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   riskScore?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  socials?: Resolver<Array<ResolversTypes['SocialLink']>, ParentType, ContextType>;
   tags?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
   tokenAddress?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
@@ -2540,21 +2576,25 @@ export type BusinessResolvers<ContextType = GraphQLContext, ParentType extends R
 }>;
 
 export type CompanyResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Company'] = ResolversParentTypes['Company']> = ResolversObject<{
+  country?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   ownerId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  socials?: Resolver<Array<ResolversTypes['SocialLink']>, ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
 export type CompanyWithDetailsResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['CompanyWithDetails'] = ResolversParentTypes['CompanyWithDetails']> = ResolversObject<{
+  country?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   ownerId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  socials?: Resolver<Array<ResolversTypes['SocialLink']>, ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   users?: Resolver<Array<ResolversTypes['UserWithPermissions']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -3102,6 +3142,12 @@ export type SignatureTaskResolvers<ContextType = GraphQLContext, ParentType exte
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export type SocialLinkResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['SocialLink'] = ResolversParentTypes['SocialLink']> = ResolversObject<{
+  type?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  url?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+}>;
+
 export type StakingResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Staking'] = ResolversParentTypes['Staking']> = ResolversObject<{
   amount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   chainId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -3317,6 +3363,7 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   RevokeTokensResult?: RevokeTokensResultResolvers<ContextType>;
   Signature?: SignatureResolvers<ContextType>;
   SignatureTask?: SignatureTaskResolvers<ContextType>;
+  SocialLink?: SocialLinkResolvers<ContextType>;
   Staking?: StakingResolvers<ContextType>;
   StakingHistory?: StakingHistoryResolvers<ContextType>;
   Subscription?: SubscriptionResolvers<ContextType>;

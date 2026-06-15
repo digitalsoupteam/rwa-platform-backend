@@ -5,7 +5,7 @@ import { logger } from '@shared/monitoring/src/logger';
 export const createCompany: MutationResolvers['createCompany'] = async (
   _parent,
   { input },
-  { clients, user }
+  { services, clients, user }
 ) => {
   logger.info('Creating new company', { input });
 
@@ -13,10 +13,15 @@ export const createCompany: MutationResolvers['createCompany'] = async (
     throw new AuthenticationError("Authentication required");
   }
 
+  services.validation.validateCountry(input.country);
+  services.validation.validateSocials(input.socials as any);
+
   const response = await clients.companyClient.createCompany.post({
     name: input.name,
     description: input.description,
     ownerId: user.id,
+    country: input.country ?? undefined,
+    socials: input.socials ?? undefined,
   });
 
   if (response.error) {
@@ -31,6 +36,8 @@ export const createCompany: MutationResolvers['createCompany'] = async (
     name: data.name,
     description: data.description,
     ownerId: data.ownerId,
+    country: data.country ?? null,
+    socials: data.socials ?? [],
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
   };

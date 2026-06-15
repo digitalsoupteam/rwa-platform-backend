@@ -11,13 +11,13 @@ import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 export class CompanyRepository {
   constructor(private readonly model = CompanyEntity) {}
 
-  async create(data: Pick<ICompanyEntity, "name" | "description" | "ownerId">) {
+  async create(data: Pick<ICompanyEntity, "name" | "description" | "ownerId"> & Partial<Pick<ICompanyEntity, "country" | "socials">>) {
     logger.debug(`Creating company: ${data.name}`);
     const doc = await this.model.create(data);
     return doc.toObject();
   }
 
-  async update(id: string, data: Partial<Pick<ICompanyEntity, "name" | "description">>) {
+  async update(id: string, data: Partial<Pick<ICompanyEntity, "name" | "description" | "country" | "socials">>) {
     logger.debug(`Updating company: ${id}`);
     const doc = await this.model.findByIdAndUpdate(id, data, { new: true }).lean();
 

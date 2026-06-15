@@ -16,7 +16,10 @@ export class BusinessRepository {
   > & Partial<Pick<IBusinessEntity,
     "description" |
     "tags" |
-    "image"
+    "image" |
+    "country" |
+    "businessType" |
+    "socials"
   >>) {
     logger.debug(`Creating business: ${JSON.stringify(data)}`);
     const doc = await this.model.create(data);
@@ -30,9 +33,13 @@ export class BusinessRepository {
     "tokenAddress" |
     "description" |
     "tags" |
+    "image" |
     "riskScore" |
     "approvalSignaturesTaskId" |
     "approvalSignaturesTaskExpired" |
+    "country" |
+    "businessType" |
+    "socials" |
     "paused"
   >>) {
     logger.debug(`Updating business fields: ${JSON.stringify(data)}`);

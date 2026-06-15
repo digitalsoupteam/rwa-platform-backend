@@ -2,6 +2,14 @@ import { t } from "elysia";
 import { paginationSchema } from "./shared.validation";
 
 /*
+ * Shared schemas
+ */
+export const socialLinkSchema = t.Object({
+  type: t.String(),
+  url: t.String(),
+});
+
+/*
  * Entity schemas
  */
 export const companySchema = t.Object({
@@ -9,6 +17,8 @@ export const companySchema = t.Object({
   name: t.String(),
   description: t.String(),
   ownerId: t.String(),
+  country: t.Optional(t.String()),
+  socials: t.Optional(t.Array(socialLinkSchema)),
   createdAt: t.Number(),
   updatedAt: t.Number(),
 });
@@ -38,6 +48,8 @@ export const companyWithDetailsSchema = t.Object({
   name: t.String(),
   description: t.String(),
   ownerId: t.String(),
+  country: t.Optional(t.String()),
+  socials: t.Optional(t.Array(socialLinkSchema)),
   users: t.Array(t.Object({
     id: t.String(),
     userId: t.String(),
@@ -55,10 +67,9 @@ export const companyWithDetailsSchema = t.Object({
 /*
  * Create company
  */
-export const createCompanyRequest = t.Pick(companySchema, [
-  "name",
-  "description",
-  "ownerId",
+export const createCompanyRequest = t.Composite([
+  t.Pick(companySchema, ["name", "description", "ownerId"]),
+  t.Partial(t.Pick(companySchema, ["country", "socials"])),
 ]);
 export const createCompanyResponse = companySchema;
 
@@ -69,7 +80,9 @@ export const updateCompanyRequest = t.Object({
   id: t.String(),
   updateData: t.Object({
     name: t.Optional(t.String()),
-    description: t.Optional(t.String())
+    description: t.Optional(t.String()),
+    country: t.Optional(t.String()),
+    socials: t.Optional(t.Array(socialLinkSchema)),
   })
 });
 export const updateCompanyResponse = companySchema;

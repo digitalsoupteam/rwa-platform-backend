@@ -147,6 +147,9 @@ Response format:
     description?: string;
     tags?: string[];
     image?: string;
+    country?: string;
+    businessType?: string;
+    socials?: { type: string; url: string }[];
   }) {
     logger.debug("Creating new business", { data });
 
@@ -168,6 +171,9 @@ Response format:
         description?: string;
         tags?: string[];
         image?: string;
+        country?: string;
+        businessType?: string;
+        socials?: { type: string; url: string }[];
       }
     }
   ) {
@@ -372,6 +378,9 @@ REASONING: Moderate risk due to competitive market, but strong business model an
       image: business.image ?? undefined,
       approvalSignaturesTaskId: business.approvalSignaturesTaskId ?? undefined,
       approvalSignaturesTaskExpired: business.approvalSignaturesTaskExpired ?? undefined,
+      country: business.country ?? undefined,
+      businessType: business.businessType ?? undefined,
+      socials: business.socials ?? [],
       paused: business.paused,
       createdAt: business.createdAt,
       updatedAt: business.updatedAt,

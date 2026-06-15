@@ -2,6 +2,14 @@ import { t } from "elysia";
 import { paginationSchema } from "./shared.validation";
 
 /*
+ * Shared schemas
+ */
+export const socialLinkSchema = t.Object({
+  type: t.String(),
+  url: t.String(),
+});
+
+/*
  * Entity schema
  */
 export const businessSchema = t.Object({
@@ -18,6 +26,9 @@ export const businessSchema = t.Object({
   image: t.Optional(t.String()),
   approvalSignaturesTaskId: t.Optional(t.String()),
   approvalSignaturesTaskExpired: t.Optional(t.Number()),
+  country: t.Optional(t.String()),
+  businessType: t.Optional(t.String()),
+  socials: t.Optional(t.Array(socialLinkSchema)),
   paused: t.Boolean(),
   createdAt: t.Number(),
   updatedAt: t.Number(),
@@ -28,7 +39,7 @@ export const businessSchema = t.Object({
  */
 export const createBusinessRequest = t.Composite([
   t.Pick(businessSchema, ["name", "ownerId", "ownerType", "chainId"]),
-  t.Partial(t.Pick(businessSchema, ["description", "tags", "image"])),
+  t.Partial(t.Pick(businessSchema, ["description", "tags", "image", "country", "businessType", "socials"])),
 ]);
 export const createBusinessResponse = businessSchema;
 
@@ -53,7 +64,10 @@ export const editBusinessRequest = t.Object({
     "name", 
     "description", 
     "tags", 
-    "image"
+    "image",
+    "country",
+    "businessType",
+    "socials"
   ])),
 });
 export const editBusinessResponse = businessSchema;

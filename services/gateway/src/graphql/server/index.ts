@@ -25,7 +25,7 @@ import {
   daoClient
 } from '../../clients/eden.clients';
 import type { GraphQLContext, User } from '../context/types';
-import { cacheService, ownershipService, parentService } from '../../services/services.init';
+import { cacheService, ownershipService, parentService, validationService } from '../../services/services.init';
 import { pubSub } from '../../clients/events.client';
 
 import { useGraphQLSSE } from '@graphql-yoga/plugin-graphql-sse';
@@ -113,7 +113,8 @@ export const yogaServer = createYoga({
         services: {
           cache: cacheService,
           ownership: ownershipService,
-          parent: parentService
+          parent: parentService,
+          validation: validationService
         },
         user,
         token,

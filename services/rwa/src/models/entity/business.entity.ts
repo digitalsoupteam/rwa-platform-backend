@@ -53,6 +53,22 @@ const businessSchemaDefinition = {
   approvalSignaturesTaskExpired: {
       type: Number,
   },
+  country: {
+    type: String,
+    trim: true,
+  },
+  businessType: {
+    type: String,
+    enum: ['growth', 'startup', 'franchise'],
+    trim: true,
+  },
+  socials: {
+    type: [{
+      type: { type: String, required: true, trim: true },
+      url: { type: String, required: true, trim: true },
+    }],
+    default: [],
+  },
   paused: {
     type: Boolean,
     default: false

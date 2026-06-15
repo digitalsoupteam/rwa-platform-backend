@@ -5,6 +5,12 @@ enum BusinessOwnerType {
   # user
 }
 
+enum BusinessType {
+  growth
+  startup
+  franchise
+}
+
 type Business {
   id: ID!
   chainId: String!
@@ -19,6 +25,9 @@ type Business {
   image: String
   approvalSignaturesTaskId: String
   approvalSignaturesTaskExpired: Float
+  country: String
+  businessType: String
+  socials: [SocialLink!]!
   paused: Boolean!
   createdAt: Float!
   updatedAt: Float!
@@ -122,6 +131,10 @@ input CreateBusinessInput {
   chainId: String!
   description: String
   tags: [String!]
+  image: String
+  country: String
+  businessType: BusinessType
+  socials: [SocialLinkInput!]
 }
 
 input EditBusinessInput {
@@ -135,6 +148,9 @@ input EditBusinessDataInput {
   tags: [String!]
   image: String
   chainId: String
+  country: String
+  businessType: BusinessType
+  socials: [SocialLinkInput!]
 }
 
 input CreatePoolWithAIInput {

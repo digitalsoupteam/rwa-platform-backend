@@ -1,8 +1,6 @@
 import mongoose, { Schema, InferRawDocType, Types } from "mongoose";
 
 
-// todo social
-// todo county 
 const companySchemaDefinition = {
     name: {
         type: String,
@@ -17,6 +15,17 @@ const companySchemaDefinition = {
     ownerId: {
         type: String,
         required: true,
+    },
+    country: {
+        type: String,
+        trim: true,
+    },
+    socials: {
+        type: [{
+            type: { type: String, required: true, trim: true },
+            url: { type: String, required: true, trim: true },
+        }],
+        default: [],
     },
     createdAt: {
         type: Number,

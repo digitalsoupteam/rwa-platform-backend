@@ -13,6 +13,9 @@ export const createBusiness: MutationResolvers['createBusiness'] = async (
     throw new AuthenticationError('Authentication required');
   }
 
+  services.validation.validateCountry(input.country);
+  services.validation.validateSocials(input.socials as any);
+
   await services.ownership.checkOwnership({
     userId: user.id,
     ownerId: input.ownerId,
@@ -27,6 +30,10 @@ export const createBusiness: MutationResolvers['createBusiness'] = async (
     chainId: input.chainId,
     description: input.description,
     tags: input.tags,
+    image: input.image ?? undefined,
+    country: input.country ?? undefined,
+    businessType: input.businessType ?? undefined,
+    socials: input.socials ?? undefined,
   });
 
   if (response.error) {
