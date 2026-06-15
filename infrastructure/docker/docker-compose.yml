@@ -593,6 +593,7 @@ services:
       - app-network
 
   mongo_express:
+    restart: unless-stopped
     image: mongo-express:latest
     environment:
       ME_CONFIG_MONGODB_SERVER: "mongodb"
@@ -619,6 +620,7 @@ services:
       - app-network
 
   redisinsight:
+    restart: unless-stopped
     image: redis/redisinsight:latest
     environment:
       - REDISINSIGHT_HOST=0.0.0.0
@@ -648,6 +650,7 @@ services:
 
   # Monitoring Stack
   prometheus:
+    restart: unless-stopped
     image: prom/prometheus:latest
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
@@ -666,6 +669,7 @@ services:
       - app-network
 
   loki:
+    restart: unless-stopped
     image: grafana/loki:latest
     volumes:
       - ./loki/loki.yml:/etc/loki/local-config.yaml
@@ -675,6 +679,7 @@ services:
       - app-network
 
   tempo:
+    restart: unless-stopped
     image: grafana/tempo:2.8.1
     volumes:
       - ./tempo/tempo.yml:/etc/tempo/tempo.yaml
@@ -685,6 +690,7 @@ services:
       - app-network
 
   grafana:
+    restart: unless-stopped
     image: grafana/grafana:latest
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
@@ -707,6 +713,7 @@ services:
       - tempo
 
   alloy:
+    restart: unless-stopped
     image: grafana/alloy:latest
     volumes:
       - ./alloy/config.alloy:/etc/alloy/config.alloy
@@ -722,6 +729,7 @@ services:
 
   # System monitoring
   node-exporter:
+    restart: unless-stopped
     image: prom/node-exporter:latest
     volumes:
       - /proc:/host/proc:ro
@@ -736,6 +744,7 @@ services:
       - app-network
 
   cadvisor:
+    restart: unless-stopped
     image: gcr.io/cadvisor/cadvisor:latest
     volumes:
       - /:/rootfs:ro
