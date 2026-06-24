@@ -1,12 +1,15 @@
 import { ethers } from "ethers";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { InvalidTokenError } from "@shared/errors/app-errors";
+import { AppError } from "@shared/errors/app-errors";
 import { UserRepository } from "../repositories/user.repository";
 import { RefreshTokenRepository } from "../repositories/refreshToken.repository";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
+import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
+import { LogDecorator } from "@shared/monitoring/src/logDecorator";
+import { setSpanAttributes } from "@shared/monitoring/src/tracing";
+import { metrics } from "@shared/monitoring/src/metrics";
 
-@TracingDecorator()
 export class AuthService {
   constructor(
     private readonly userRepository: UserRepository,
@@ -18,37 +21,46 @@ export class AuthService {
     private readonly domainVersion: string
   ) {}
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['wallet', 'timestamp'] })
   async authenticate(data: {
     wallet: string;
     signature: string;
     timestamp: number;
   }) {
+    setSpanAttributes({ wallet: data.wallet });
+
     // Check timestamp is within 1 minute of server time
     const now = Math.floor(Date.now() / 1000);
     const timeDiff = Math.abs(now - data.timestamp);
 
     if (timeDiff > 60) {
-      throw new Error("Timestamp is too far from server time");
+      throw new AppError({ message: "Timestamp is too far from server time", statusCode: 401, code: "AUTHENTICATION_ERROR" });
     }
 
     // Build EIP-712 message object
     const message = {
       wallet: data.wallet,
       timestamp: data.timestamp,
-      message: `Welcome to RWA Platform!
-
-We prioritize the security of your assets and personal data. To ensure secure access to your account, we kindly request you to verify ownership of your wallet by signing this message.`
+      message: `Welcome to RWA Platform!\n\nWe prioritize the security of your assets and personal data. To ensure secure access to your account, we kindly request you to verify ownership of your wallet by signing this message.`
     };
 
     // Verify signature using EIP-712
     const isValid = this.verifySignature(message, data.signature, data.wallet);
 
     if (!isValid) {
-      throw new Error("Invalid signature");
+      throw new AppError({ message: "Invalid signature", statusCode: 401, code: "AUTHENTICATION_ERROR" });
     }
+
+    const isNewUser = !(await this.userRepository.exists(data.wallet));
 
     // Find or create user
     const user = await this.userRepository.findOrCreate(data.wallet);
+
+    if (isNewUser) {
+      metrics.counter('auth_users_created_total');
+    }
 
     // Generate tokens
     const tokens = await this.generateTokens(data.wallet, user._id.toString());
@@ -61,13 +73,17 @@ We prioritize the security of your assets and personal data. To ensure secure ac
     };
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator()
   async refreshToken(data: {
     refreshToken: string;
   }) {
     // Verify JWT token payload (this checks expiration automatically)
     const payload = this.verifyToken(data.refreshToken);
+    setSpanAttributes({ wallet: payload.wallet });
     if (payload.type !== "refresh") {
-      throw new InvalidTokenError("Invalid token type");
+      throw new AppError({ message: "Invalid token type", statusCode: 401, code: "AUTHENTICATION_ERROR" });
     }
 
     // Create token hash for database lookup
@@ -77,7 +93,7 @@ We prioritize the security of your assets and personal data. To ensure secure ac
     const tokenRecord = await this.refreshTokenRepository.findByTokenHash(tokenHash);
 
     if (!tokenRecord) {
-      throw new InvalidTokenError("Invalid refresh token");
+      throw new AppError({ message: "Invalid refresh token", statusCode: 401, code: "AUTHENTICATION_ERROR" });
     }
 
     // Delete the used refresh token (one-time use)
@@ -97,6 +113,7 @@ We prioritize the security of your assets and personal data. To ensure secure ac
     };
   }
 
+  @TraceDecorator()
   private verifySignature(
     message: { wallet: string; timestamp: number; message: string },
     signature: string,
@@ -136,6 +153,7 @@ We prioritize the security of your assets and personal data. To ensure secure ac
     }
   }
 
+  @TraceDecorator()
   private async generateTokens(wallet: string, userId: string) {
     const accessTokenJti = crypto.randomBytes(16).toString('hex');
     const refreshTokenJti = crypto.randomBytes(16).toString('hex');
@@ -172,6 +190,7 @@ We prioritize the security of your assets and personal data. To ensure secure ac
     return { wallet, accessToken, refreshToken };
   }
 
+  @TraceDecorator()
   private verifyToken(token: string) {
     const payload = jwt.verify(token, this.jwtSecret) as {
       userId: string;
@@ -183,7 +202,11 @@ We prioritize the security of your assets and personal data. To ensure secure ac
     return payload;
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['userId'] })
   async getUser(userId: string) {
+    setSpanAttributes({ userId });
     const user = await this.userRepository.findById(userId);
 
     return {
@@ -194,7 +217,11 @@ We prioritize the security of your assets and personal data. To ensure secure ac
     };
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['userId'] })
   async getUserTokens(userId: string) {
+    setSpanAttributes({ userId });
     const tokens = await this.refreshTokenRepository.findByUserId(userId);
 
     return tokens.map(token => ({
@@ -207,7 +234,11 @@ We prioritize the security of your assets and personal data. To ensure secure ac
     }));
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['userId'] })
   async revokeTokens(userId: string, tokenHashes: string[]) {
+    setSpanAttributes({ userId });
     const revokedCount = await this.refreshTokenRepository.deleteTokens(userId, tokenHashes);
 
     return {

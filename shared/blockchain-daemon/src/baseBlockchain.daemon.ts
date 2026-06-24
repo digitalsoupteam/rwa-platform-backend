@@ -1,6 +1,7 @@
 import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
-import { logger } from "@shared/monitoring/src/logger";
+import { logger } from "@shared/monitoring/src/monitoring.plugin";
 import type { ConsumeMessage } from "amqplib";
+import { AppError } from "@shared/errors/app-errors";
 
 export interface BlockchainEvent {
   chainId: number;
@@ -46,7 +47,7 @@ export abstract class BaseBlockchainDaemon {
 
       const channel = this.rabbitClient.getChannel();
       if (!channel) {
-        throw new Error("RabbitMQ channel not initialized");
+        throw new AppError({ message: "RabbitMQ channel not initialized", statusCode: 503, code: "SERVICE_UNAVAILABLE" });
       }
 
       const routing = this.getEventRouting();

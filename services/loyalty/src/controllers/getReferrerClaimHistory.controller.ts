@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 import {
   getReferrerClaimHistoryRequest,
   getReferrerClaimHistoryResponse,
@@ -12,9 +11,6 @@ export const getReferrerClaimHistoryController = (servicesPlugin: ServicesPlugin
     .post(
       "/getReferrerClaimHistory",
       async ({ body, loyaltyService }) => {
-        logger.info(
-          `POST /getReferrerClaimHistory - Getting referrer claim history`
-        );
 
         return await loyaltyService.getReferrerClaimHistory(body);
       },

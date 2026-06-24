@@ -4,7 +4,7 @@ import { resetReactionController } from "../controllers/resetReaction.controller
 import { getEntityReactionsController } from "../controllers/getEntityReactions.controller";
 import { getReactionsController } from "../controllers/getReactions.controller";
 import { withTraceSync } from "@shared/monitoring/src/tracing";
-import { ServicesPlugin } from "./services.plugin";
+import type { ServicesPlugin } from "./services.plugin";
 
 export const createControllersPlugin = (servicesPlugin: ServicesPlugin) => {
   const setReactionCtrl = withTraceSync(

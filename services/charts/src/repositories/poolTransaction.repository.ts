@@ -1,16 +1,15 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { FilterQuery, SortOrder } from "mongoose";
+import type { FilterQuery, SortOrder } from "mongoose";
 import {
   PoolTransactionEntity,
-  IPoolTransactionEntity,
-  PoolTransactionType
 } from "../models/entity/poolTransaction.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import type { IPoolTransactionEntity } from "../models/entity/poolTransaction.entity";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 
-@TracingDecorator()
+
 export class PoolTransactionRepository {
   constructor(private readonly model = PoolTransactionEntity) {}
 
+  @TraceDecorator()
   async create(data: Pick<IPoolTransactionEntity, 
     'poolAddress' | 
     'transactionType' | 
@@ -22,19 +21,17 @@ export class PoolTransactionRepository {
     'holdFee' | 
     'bonusFee'
   >) {
-    logger.debug(`Creating pool transaction: ${data.transactionType} for pool ${data.poolAddress}`);
     const doc = await this.model.create(data);
     return doc.toObject();
   }
 
+  @TraceDecorator()
   async findAll(
     filter: FilterQuery<typeof this.model> = {},
     sort: { [key: string]: SortOrder } = { timestamp: "desc" },
     limit: number = 100,
     offset: number = 0
   ) {
-    logger.debug(`Finding transactions with query: ${JSON.stringify(filter)}`);
-
     return await this.model
       .find(filter)
       .sort(sort)
@@ -43,6 +40,7 @@ export class PoolTransactionRepository {
       .lean();
   }
 
+  @TraceDecorator()
   async aggregateVolumeData(
     poolAddress: string,
     intervalSeconds: number,
@@ -54,10 +52,6 @@ export class PoolTransactionRepository {
     mintVolume: string;
     burnVolume: string;
   }[]> {
-    logger.debug(
-      `Aggregating volume data for pool: ${poolAddress}, intervalSeconds: ${intervalSeconds}, startTime: ${startTime}, endTime: ${endTime}`
-    );
-
     const aggregationPipeline: any[] = [
       {
         $match: {

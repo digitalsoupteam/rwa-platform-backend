@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../../plugins/services.plugin";
+import type { ServicesPlugin } from "../../plugins/services.plugin";
 import {
   getTopicRequest,
   getTopicResponse,
@@ -12,9 +11,6 @@ export const getTopicController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/getTopic",
       async ({ body, faqService }) => {
-        logger.info(
-          `POST /getTopic - Getting topic with ID: ${body.id}`
-        );
 
         return await faqService.getTopic(body.id);
       },

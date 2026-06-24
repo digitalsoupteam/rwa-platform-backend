@@ -187,3 +187,4 @@ dist
 infrastructure/docker/volumes
 infrastructure/backups
 typechain
+.kilo

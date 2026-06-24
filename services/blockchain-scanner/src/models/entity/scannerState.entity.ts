@@ -1,4 +1,5 @@
-import mongoose, { Schema, InferRawDocType } from "mongoose";
+import mongoose, { Schema } from "mongoose";
+import type { InferRawDocType } from "mongoose";
 
 const scannerStateSchemaDefinition = {
   chainId: {

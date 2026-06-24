@@ -1,16 +1,16 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from "@shared/errors/app-errors";
+import type { MutationResolvers } from '../../../../../generated/types';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const updateBusinessRiskScore: MutationResolvers['updateBusinessRiskScore'] = async (
   _parent,
   { id },
   { services, clients, user }
 ) => {
-  logger.info('Updating business risk score', { id });
+  logger.debug('Updating business risk score', { id });
 
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
   }
 
   // Get business first to check permissions

@@ -1,8 +1,17 @@
-import { trace, context, SpanStatusCode, SpanKind, ROOT_CONTEXT } from '@opentelemetry/api';
+import { trace, SpanStatusCode } from '@opentelemetry/api';
 import type { Span } from '@opentelemetry/api';
+import { AppError } from '@shared/errors/app-errors';
 
 
 export const tracer = trace.getTracer(String(process.env.SERVICE_NAME), '1.0.0');
+
+/** Находит активный span (если есть) и устанавливает на него атрибуты. Ничего не делает если span нет. */
+export function setSpanAttributes(attributes: Record<string, string | number | boolean>): void {
+  const span = trace.getActiveSpan();
+  if (span) {
+    span.setAttributes(attributes);
+  }
+}
 
 export interface SpanContext {
   span: Span;
@@ -39,7 +48,7 @@ export function withTraceSync<T>(
           spanEnded = true;
           span.end();
         } else {
-          throw new Error('Span already ended');
+          throw new AppError({ message: 'Span already ended', statusCode: 500, code: 'INTERNAL_ERROR' });
         }
       }
     };
@@ -56,6 +65,9 @@ export function withTraceSync<T>(
           code: SpanStatusCode.ERROR,
           message: error instanceof Error ? error.message : String(error)
         });
+        if (error instanceof AppError) {
+          span.setAttribute('error.code', error.code);
+        }
       }
       throw error;
     } finally {
@@ -93,7 +105,7 @@ export async function withTraceAsync<T>(
           spanEnded = true;
           span.end();
         } else {
-          throw new Error('Span already ended');
+          throw new AppError({ message: 'Span already ended', statusCode: 500, code: 'INTERNAL_ERROR' });
         }
       }
     };
@@ -110,6 +122,9 @@ export async function withTraceAsync<T>(
           code: SpanStatusCode.ERROR,
           message: error instanceof Error ? error.message : String(error)
         });
+        if (error instanceof AppError) {
+          span.setAttribute('error.code', error.code);
+        }
       }
       throw error;
     } finally {

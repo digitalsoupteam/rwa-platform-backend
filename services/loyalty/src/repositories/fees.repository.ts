@@ -1,17 +1,15 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { NotFoundError } from "@shared/errors/app-errors";
-import { FilterQuery, SortOrder } from "mongoose";
+import type { FilterQuery, SortOrder } from "mongoose";
 import mongoose from "mongoose";
-import { FeesEntity, IFeesEntity } from "../models/entity/fees.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { FeesEntity } from "../models/entity/fees.entity";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 
-@TracingDecorator()
+
 export class FeesRepository {
   constructor(private readonly model = FeesEntity) {}
 
 
+  @TraceDecorator()
   async addBuyCommission(userWallet: string, userId: string, chainId: string, tokenAddress: string, amount: string) {
-    logger.debug(`Adding buy commission: ${amount} for wallet: ${userWallet}`);
     
     const doc = await this.model.findOneAndUpdate(
       { userWallet, userId, chainId, tokenAddress },
@@ -32,8 +30,8 @@ export class FeesRepository {
     return doc;
   }
 
+  @TraceDecorator()
   async addSellCommission(userWallet: string, userId: string, chainId: string, tokenAddress: string, amount: string) {
-    logger.debug(`Adding sell commission: ${amount} for wallet: ${userWallet}`);
     
     const doc = await this.model.findOneAndUpdate(
       { userWallet, userId, chainId, tokenAddress },
@@ -54,8 +52,8 @@ export class FeesRepository {
     return doc;
   }
 
+  @TraceDecorator()
   async addTokenCreationCommission(userWallet: string, userId: string, chainId: string, tokenAddress: string, amount: string) {
-    logger.debug(`Adding token creation commission: ${amount} for wallet: ${userWallet}`);
     
     const doc = await this.model.findOneAndUpdate(
       { userWallet, userId, chainId, tokenAddress },
@@ -76,8 +74,8 @@ export class FeesRepository {
     return doc;
   }
 
+  @TraceDecorator()
   async addPoolCreationCommission(userWallet: string, userId: string, chainId: string, tokenAddress: string, amount: string) {
-    logger.debug(`Adding pool creation commission: ${amount} for wallet: ${userWallet}`);
     
     const doc = await this.model.findOneAndUpdate(
       { userWallet, userId, chainId, tokenAddress },
@@ -98,8 +96,8 @@ export class FeesRepository {
     return doc;
   }
 
+  @TraceDecorator()
   async addReferralReward(userWallet: string, userId: string, chainId: string, tokenAddress: string, amount: string) {
-    logger.debug(`Adding referral reward: ${amount} for wallet: ${userWallet}`);
     
     const doc = await this.model.findOneAndUpdate(
       { userWallet, userId, chainId, tokenAddress },
@@ -120,14 +118,13 @@ export class FeesRepository {
     return doc;
   }
 
+  @TraceDecorator()
   async findAll(
     filter: FilterQuery<typeof this.model> = {},
     sort: { [key: string]: SortOrder } = { createdAt: "desc" },
     limit: number = 100,
     offset: number = 0
   ) {
-    logger.debug(`Finding fees with query: ${JSON.stringify(filter)}`);
-
     return await this.model
       .find(filter)
       .sort(sort)

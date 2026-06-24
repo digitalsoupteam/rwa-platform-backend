@@ -1,11 +1,13 @@
-import { logger } from "@shared/monitoring/src/logger";
 import { MessageRepository } from "../repositories/message.repository";
 import { OpenRouterClient } from "@shared/openrouter/client";
 import { AssistantRepository } from "../repositories/assistant.repository";
 import { ContextService } from "./context.service";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
+import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
+import { LogDecorator } from "@shared/monitoring/src/logDecorator";
+import { setSpanAttributes } from "@shared/monitoring/src/tracing";
 
-@TracingDecorator()
+
 export class MessageService {
   constructor(
     private readonly messageRepository: MessageRepository,
@@ -18,13 +20,15 @@ export class MessageService {
   /**
    * Sends a message to the assistant and gets AI response
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['data'] })
   async createMessage(data: {
     assistantId: string;
     text: string;
     model?: string;
   }) {
-    logger.debug("Processing new message", { assistantId: data.assistantId });
-
+    setSpanAttributes({ assistantId: data.assistantId, model: data.model ?? this.openRouterModel });
     // Verify assistant exists
     const assistant = await this.assistantRepository.findById(data.assistantId);
 
@@ -87,7 +91,6 @@ export class MessageService {
         }
       ];
     } catch (error) {
-      logger.error("Error getting AI response", { error });
       throw error;
     }
   }
@@ -95,13 +98,15 @@ export class MessageService {
   /**
    * Gets message history for an assistant
    */
-  async getMessageHistory(
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['assistantId', 'limit', 'offset'] })
+    async getMessageHistory(
     assistantId: string,
     limit: number = 100,
     offset: number = 0
   ) {
-    logger.debug("Getting message history", { assistantId });
-
+    setSpanAttributes({ assistantId });
     // Verify assistant exists
     await this.assistantRepository.findById(assistantId);
 
@@ -122,8 +127,11 @@ export class MessageService {
   /**
    * Gets a specific message by ID
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['id'] })
   async getMessage(id: string) {
-    logger.debug("Getting message", { id });
+    setSpanAttributes({ messageId: id });
     const message = await this.messageRepository.findById(id);
     return {
       id: message._id.toString(),
@@ -135,16 +143,22 @@ export class MessageService {
   /**
    * Deletes a message
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['id'] })
   async deleteMessage(id: string) {
-    logger.debug("Deleting message", { id });
+    setSpanAttributes({ messageId: id });
     return this.messageRepository.delete(id);
   }
 
   /**
    * Updates a message
    */
-  async updateMessage(id: string, data: { text: string }) {
-    logger.debug("Updating message", { id });
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['id', 'data'] })
+    async updateMessage(id: string, data: { text: string }) {
+    setSpanAttributes({ messageId: id });
     const message = await this.messageRepository.update(id, data);
     return {
       id: message._id.toString(),

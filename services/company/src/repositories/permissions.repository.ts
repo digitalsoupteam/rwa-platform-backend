@@ -1,47 +1,43 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { NotFoundError } from "@shared/errors/app-errors";
-import { FilterQuery, SortOrder, Types } from "mongoose";
-import {
-  PermissionEntity,
-  IPermissionEntity,
-} from "../models/entity/permissions.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { AppError } from "@shared/errors/app-errors";
+import type { FilterQuery, SortOrder, Types } from "mongoose";
+import { PermissionEntity } from "../models/entity/permissions.entity";
+import type { IPermissionEntity } from "../models/entity/permissions.entity";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 
-@TracingDecorator()
+
 export class PermissionRepository {
   constructor(private readonly model = PermissionEntity) { }
 
+  @TraceDecorator()
   async create(data: { companyId: Types.ObjectId | string, memberId: Types.ObjectId | string } & Pick<IPermissionEntity, "userId" | "permission" | "entity">) {
-    logger.debug(`Creating permission: ${data.permission} for user ${data.userId} in company ${data.companyId}`);
     const doc = await this.model.create(data);
     return doc.toObject();
   }
 
+  @TraceDecorator()
   async delete(id: string) {
-    logger.debug(`Deleting permission: ${id}`);
     const doc = await this.model.findByIdAndDelete(id).lean();
 
     if (!doc) {
-      throw new NotFoundError("Permission", id);
+      throw new AppError({ message: `Permission ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
     }
 
     return id;
   }
 
+  @TraceDecorator()
   async deleteMany(filter: FilterQuery<typeof this.model>) {
-    logger.debug(`Deleting permissions with filter: ${JSON.stringify(filter)}`);
     const result = await this.model.deleteMany(filter);
     return result.deletedCount;
   }
 
+  @TraceDecorator()
   async findAll(
     filter: FilterQuery<typeof this.model> = {},
     sort: { [key: string]: SortOrder } = { createdAt: 'asc' },
     limit?: number,
     offset?: number
   ) {
-    logger.debug(`Finding permissions with filter: ${JSON.stringify(filter)}`);
-
     let query = this.model.find(filter).sort(sort);
 
     if (typeof offset === 'number') {

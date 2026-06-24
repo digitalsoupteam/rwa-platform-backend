@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../../plugins/services.plugin";
+import type { ServicesPlugin } from "../../plugins/services.plugin";
 import {
   deleteCompanyRequest,
   deleteCompanyResponse,
@@ -12,9 +11,6 @@ export const deleteCompanyController = (servicesPlugin: ServicesPlugin) => {
   .post(
     "/deleteCompany",
     async ({ body, companyService }) => {
-      logger.info(
-        `POST /deleteCompany - Deleting company with ID: ${body.id}`
-      );
 
       return await companyService.deleteCompany(body.id);
     },

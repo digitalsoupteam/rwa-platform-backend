@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 import {
   getReferralsRequest,
   getReferralsResponse,
@@ -12,9 +11,6 @@ export const getReferralsController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/getReferrals",
       async ({ body, loyaltyService }) => {
-        logger.info(
-          `POST /getReferrals - Getting referrals`
-        );
 
         return await loyaltyService.getReferrals(body);
       },

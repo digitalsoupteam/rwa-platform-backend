@@ -3,7 +3,7 @@ import {
   getUserRequest,
   getUserResponse,
 } from "../models/validation/user.validation";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 
 export const createGetUserController = (servicesPlugin: ServicesPlugin) => {
   return new Elysia({ name: "GetUserController" })

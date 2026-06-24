@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 import {
   getTreasuryWithdrawalsRequest,
   getTreasuryWithdrawalsResponse,
@@ -12,9 +11,6 @@ export const getTreasuryWithdrawalsController = (servicesPlugin: ServicesPlugin)
     .post(
       "/getTreasuryWithdrawals",
       async ({ body, daoService }) => {
-        logger.info(
-          `POST /getTreasuryWithdrawals - Getting treasury withdrawals`
-        );
 
         return await daoService.getTreasuryWithdrawals(body);
       },

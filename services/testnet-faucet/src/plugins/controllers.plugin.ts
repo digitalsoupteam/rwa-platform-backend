@@ -4,7 +4,7 @@ import { getUnlockTimeController } from "../controllers/getUnlockTime.controller
 import { requestGasController } from "../controllers/requestGas.controller";
 import { requestHoldController } from "../controllers/requestHold.controller";
 import { requestPlatformController } from "../controllers/requestPlatform.controller";
-import { ServicesPlugin } from "./services.plugin";
+import type { ServicesPlugin } from "./services.plugin";
 import { withTraceSync } from "@shared/monitoring/src/tracing";
 
 export const createControllersPlugin = (servicesPlugin: ServicesPlugin) => {

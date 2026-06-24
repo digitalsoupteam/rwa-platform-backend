@@ -1,12 +1,11 @@
-import { NotFoundError } from "@shared/errors/app-errors";
-import { RefreshTokenEntity, IRefreshTokenEntity } from "../models/entity/refreshToken.entity";
-import { Types } from "mongoose";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { RefreshTokenEntity } from "../models/entity/refreshToken.entity";
+import type { Types } from "mongoose";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 
-@TracingDecorator()
 export class RefreshTokenRepository {
   constructor(private readonly model = RefreshTokenEntity) {}
 
+  @TraceDecorator()
   async create(userId: string, tokenHash: string, expiresAt: number) {
     const doc = await this.model.create({
       userId,
@@ -17,16 +16,19 @@ export class RefreshTokenRepository {
     return doc;
   }
 
+  @TraceDecorator()
   async findByTokenHash(tokenHash: string) {
     const doc = await this.model.findOne({ tokenHash }).lean();
     return doc;
   }
 
+  @TraceDecorator()
   async findByUserId(userId: string | Types.ObjectId) {
     const docs = await this.model.find({ userId }).lean();
     return docs;
   }
 
+  @TraceDecorator()
   async deleteTokens(userId: string | Types.ObjectId, tokenHashes: string[]) {
     const result = await this.model.deleteMany({
       userId,

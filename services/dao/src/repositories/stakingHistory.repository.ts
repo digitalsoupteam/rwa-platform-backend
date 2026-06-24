@@ -1,13 +1,14 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { FilterQuery, SortOrder } from "mongoose";
+import type { FilterQuery, SortOrder } from "mongoose";
 import mongoose from "mongoose";
-import { StakingHistoryEntity, IStakingHistoryEntity } from "../models/entity/stakingHistory.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { StakingHistoryEntity } from "../models/entity/stakingHistory.entity";
+import type { IStakingHistoryEntity } from "../models/entity/stakingHistory.entity";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 
-@TracingDecorator()
+
 export class StakingHistoryRepository {
   constructor(private readonly model = StakingHistoryEntity) {}
 
+  @TraceDecorator()
   async create(data: Pick<IStakingHistoryEntity,
     "staker" |
     "operation" |
@@ -15,8 +16,6 @@ export class StakingHistoryRepository {
     "transactionHash" |
     "logIndex"
   > & {amount: string}) {
-    logger.debug(`Creating staking history: ${data.operation} ${data.amount} for staker: ${data.staker}`);
-
     const doc = await this.model.create({
       ...data,
       amount: mongoose.Types.Decimal128.fromString(data.amount)
@@ -24,14 +23,13 @@ export class StakingHistoryRepository {
     return doc.toObject();
   }
 
+  @TraceDecorator()
   async findAll(
     filter: FilterQuery<typeof this.model> = {},
     sort: { [key: string]: SortOrder } = { createdAt: "desc" },
     limit: number = 100,
     offset: number = 0
   ) {
-    logger.debug(`Finding staking history with query: ${JSON.stringify(filter)}`);
-
     return await this.model
       .find(filter)
       .sort(sort)

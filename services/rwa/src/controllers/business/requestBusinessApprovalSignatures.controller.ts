@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../../plugins/services.plugin";
+import type { ServicesPlugin } from "../../plugins/services.plugin";
 import {
   requestBusinessApprovalSignaturesRequest,
   requestBusinessApprovalSignaturesResponse,
@@ -12,9 +11,6 @@ export const requestBusinessApprovalSignaturesController = (servicesPlugin: Serv
     .post(
       "/requestBusinessApprovalSignatures",
       async ({ body, businessService }) => {
-        logger.info(
-          `POST /requestBusinessApprovalSignatures - Requesting approval signatures for business with ID: ${body.id}`
-        );
 
         return await businessService.requestApprovalSignatures(body);
       },

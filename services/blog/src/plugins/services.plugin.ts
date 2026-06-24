@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import { BlogsService } from "../services/blogs.service";
-import { RepositoriesPlugin } from "./repositories.plugin";
+import type { RepositoriesPlugin } from "./repositories.plugin";
 import { withTraceSync } from "@shared/monitoring/src/tracing";
 
 export const createServicesPlugin = (

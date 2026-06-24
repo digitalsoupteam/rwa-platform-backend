@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 import {
   getTimelockTasksRequest,
   getTimelockTasksResponse,
@@ -12,9 +11,6 @@ export const getTimelockTasksController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/getTimelockTasks",
       async ({ body, daoService }) => {
-        logger.info(
-          `POST /getTimelockTasks - Getting timelock tasks`
-        );
 
         return await daoService.getTimelockTasks(body);
       },

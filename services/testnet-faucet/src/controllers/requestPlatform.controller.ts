@@ -1,7 +1,6 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
 
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 import { requestPlatformResponse, requestPlatformSchema } from "../models/validation/faucet.validation";
 
 export const requestPlatformController = (servicesPlugin: ServicesPlugin) => {
@@ -10,7 +9,7 @@ export const requestPlatformController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/requestPlatform",
       async ({ body, faucetService }) => {
-        logger.info(`POST /requestPlatform - Requesting PLATFORM for wallet: ${body.wallet}`);
+
 
         const request = await faucetService.requestPlatformToken({
           userId: body.userId,

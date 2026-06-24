@@ -1,10 +1,12 @@
-import { logger } from "@shared/monitoring/src/logger";
 import { BlogRepository } from "../repositories/blog.repository";
 import { PostRepository } from "../repositories/post.repository";
-import { FilterQuery, SortOrder, Types } from "mongoose";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import type { SortOrder } from "mongoose";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
+import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
+import { LogDecorator } from "@shared/monitoring/src/logDecorator";
+import { setSpanAttributes } from "@shared/monitoring/src/tracing";
 
-@TracingDecorator()
+
 export class BlogsService {
   constructor(
     private readonly blogRepository: BlogRepository,
@@ -14,6 +16,9 @@ export class BlogsService {
   /**
    * Creates a new blog
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['data'] })
   async createBlog(data: {
     name: string;
     ownerId: string;
@@ -22,8 +27,13 @@ export class BlogsService {
     parentId: string;
     grandParentId: string;
   }) {
-    logger.debug("Creating new blog", { name: data.name });
-    
+    setSpanAttributes({
+      ownerId: data.ownerId,
+      ownerType: data.ownerType,
+      creator: data.creator,
+      parentId: data.parentId,
+      grandParentId: data.grandParentId,
+    });
     const blog = await this.blogRepository.create(data);
 
     return {
@@ -42,9 +52,11 @@ export class BlogsService {
   /**
    * Updates blog name
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['params'] })
   async updateBlog(params: { id: string, updateData: { name: string } }) {
-    logger.debug("Updating blog", params);
-    
+    setSpanAttributes({ id: params.id });
     const blog = await this.blogRepository.update(params.id, params.updateData);
 
     return {
@@ -63,9 +75,11 @@ export class BlogsService {
   /**
    * Deletes a blog and all its posts
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['id'] })
   async deleteBlog(id: string) {
-    logger.debug("Deleting blog and its posts", { id });
-    
+    setSpanAttributes({ id });
     // First delete all posts in the blog
     const posts = await this.postRepository.findAll({ blogIds: [id] });
     for (const post of posts) {
@@ -81,9 +95,11 @@ export class BlogsService {
   /**
    * Gets blog by ID
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['id'] })
   async getBlog(id: string) {
-    logger.debug("Getting blog", { id });
-    
+    setSpanAttributes({ id });
     const blog = await this.blogRepository.findById(id);
 
     return {
@@ -102,14 +118,20 @@ export class BlogsService {
   /**
    * Gets blogs list with filters, pagination and sorting
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['params'] })
   async getBlogs(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
     limit?: number;
     offset?: number;
   }) {
-    logger.debug("Getting blogs list", params);
-    
+    setSpanAttributes({
+      filterKeys: Object.keys(params.filter).join(','),
+      limit: params.limit ?? 100,
+      offset: params.offset ?? 0,
+    });
     const blogs = await this.blogRepository.findAll(
       params.filter,
       params.sort,
@@ -133,6 +155,9 @@ export class BlogsService {
   /**
    * Creates a new post in a blog
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['data'] })
   async createPost(data: {
     blogId: string;
     title: string;
@@ -145,8 +170,13 @@ export class BlogsService {
     images?: string[];
     documents?: string[];
   }) {
-    logger.debug("Creating new post", { title: data.title });
-    
+    setSpanAttributes({
+      blogId: data.blogId,
+      ownerId: data.ownerId,
+      ownerType: data.ownerType,
+      creator: data.creator,
+      parentId: data.parentId,
+    });
     const post = await this.postRepository.create(data);
 
     return {
@@ -169,6 +199,9 @@ export class BlogsService {
   /**
    * Updates post
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['params'] })
   async updatePost(params: {
     id: string;
     updateData: {
@@ -178,8 +211,7 @@ export class BlogsService {
       documents?: string[];
     }
   }) {
-    logger.debug("Updating post", params);
-    
+    setSpanAttributes({ id: params.id });
     const post = await this.postRepository.update(params.id, params.updateData);
 
     return {
@@ -202,8 +234,11 @@ export class BlogsService {
   /**
    * Deletes post
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['id'] })
   async deletePost(id: string) {
-    logger.debug("Deleting post", { id });
+    setSpanAttributes({ id });
     await this.postRepository.delete(id);
     return { id };
   }
@@ -211,9 +246,11 @@ export class BlogsService {
   /**
    * Gets post by ID
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['id'] })
   async getPost(id: string) {
-    logger.debug("Getting post", { id });
-    
+    setSpanAttributes({ id });
     const post = await this.postRepository.findById(id);
 
     return {
@@ -236,14 +273,20 @@ export class BlogsService {
   /**
    * Gets posts list with filters, pagination and sorting
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['params'] })
   async getPosts(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
     limit?: number;
     offset?: number;
   }) {
-    logger.debug("Getting posts list", params);
-    
+    setSpanAttributes({
+      filterKeys: Object.keys(params.filter).join(','),
+      limit: params.limit ?? 100,
+      offset: params.offset ?? 0,
+    });
     const posts = await this.postRepository.findAll(
       params.filter,
       params.sort,

@@ -1,6 +1,6 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from "@shared/errors/app-errors";
+import type { MutationResolvers } from '../../../../generated/types';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const revokeTokens: MutationResolvers['revokeTokens'] = async (
   _parent,
@@ -8,10 +8,10 @@ export const revokeTokens: MutationResolvers['revokeTokens'] = async (
   { clients, user }
 ) => {
    if (!user) {
-      throw new AuthenticationError('Authentication required');
+      throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
     }
 
-    logger.info('Revoking tokens', { userId: user.id, count: input.tokenHashes.length });
+    logger.debug('Revoking tokens', { userId: user.id, count: input.tokenHashes.length });
 
     const response = await clients.authClient.revokeTokens.post({
       userId: user.id,

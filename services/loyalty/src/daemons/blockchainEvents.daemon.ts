@@ -1,13 +1,13 @@
-import { BaseBlockchainDaemon, BlockchainEvent, EventRouting } from "@shared/blockchain-daemon/src/baseBlockchain.daemon";
+import { BaseBlockchainDaemon } from "@shared/blockchain-daemon/src/baseBlockchain.daemon";
+import type { BlockchainEvent, EventRouting } from "@shared/blockchain-daemon/src/baseBlockchain.daemon";
 import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
 import { LoyaltyService } from "../services/loyalty.service";
-import { logger } from "@shared/monitoring/src/logger";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 
 /**
  * Loyalty service implementation of blockchain events daemon
  */
-@TracingDecorator()
+
 export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
   constructor(
     rabbitClient: RabbitMQClient,
@@ -16,6 +16,7 @@ export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
     super(rabbitClient, "blockchain.events.loyalty");
   }
 
+  @TraceDecorator()
   protected getEventRouting(): EventRouting {
     return {
       "Factory_CreateRWAFeeCollected": async (event: BlockchainEvent) => {

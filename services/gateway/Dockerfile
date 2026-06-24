@@ -25,6 +25,7 @@ COPY services/gateway ./services/gateway
 
 EXPOSE ${PORT}
 
-ENTRYPOINT cd services/gateway && NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register" OTEL_TRACES_EXPORTER="otlp" OTEL_LOG_LEVEL="info" OTEL_NODE_ENABLED_INSTRUMENTATIONS="http,graphql,ioredis,redis" bun ./src/index.ts
 
-# CMD ["bun", "services/gateway/src/index.ts"]
+WORKDIR /app/services/gateway
+ENTRYPOINT ["bun"]
+CMD ["src/index.ts"]

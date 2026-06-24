@@ -1,6 +1,6 @@
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
-import { AuthenticationError } from '@shared/errors/app-errors';
+import type { MutationResolvers } from '../../../../generated/types';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
+import { AppError } from "@shared/errors/app-errors";
 
 export const createMessage: MutationResolvers['createMessage'] = async (
   _parent,
@@ -8,7 +8,7 @@ export const createMessage: MutationResolvers['createMessage'] = async (
   { clients, user }
 ) => {
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
   }
 
   // Verify assistant ownership first
@@ -20,7 +20,7 @@ export const createMessage: MutationResolvers['createMessage'] = async (
     throw new Error('Access denied: Assistant does not belong to the current user');
   }
 
-  logger.info('Creating message', { input, userId: user.id });
+  logger.debug('Creating message', { input, userId: user.id });
 
   const response = await clients.aiAssistantClient.createMessage.post({
     assistantId: input.assistantId,

@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 import {
   getRawPriceDataRequest,
   getRawPriceDataResponse,
@@ -12,9 +11,6 @@ export const getRawPriceDataController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/getRawPriceData",
       async ({ body, chartsService }) => {
-        logger.info(
-          `POST /getRawPriceData - Getting raw price data for pool: ${body.poolAddress}`
-        );
 
         return await chartsService.getRawPriceData(body);
       },

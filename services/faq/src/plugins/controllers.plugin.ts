@@ -10,7 +10,7 @@ import { deleteAnswerController } from "../controllers/answers/deleteAnswer.cont
 import { getAnswerController } from "../controllers/answers/getAnswer.controller";
 import { getAnswersController } from "../controllers/answers/getAnswers.controller";
 import { withTraceSync } from "@shared/monitoring/src/tracing";
-import { ServicesPlugin } from "./services.plugin";
+import type { ServicesPlugin } from "./services.plugin";
 
 export const createControllersPlugin = (servicesPlugin: ServicesPlugin) => {
   const createTopicCtrl = withTraceSync(

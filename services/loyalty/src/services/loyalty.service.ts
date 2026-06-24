@@ -1,20 +1,22 @@
-import { logger } from "@shared/monitoring/src/logger";
+import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
+import { LogDecorator } from "@shared/monitoring/src/logDecorator";
 import { FeesRepository } from "../repositories/fees.repository";
 import { ReferralRepository } from "../repositories/referral.repository";
-import { SortOrder, Types } from "mongoose";
+import type { SortOrder } from "mongoose";
 import mongoose from "mongoose";
-import { IReferralEntity } from "../models/entity/referral.entity";
-import { IFeesEntity } from "../models/entity/fees.entity";
-import { SignersManagerClient } from "../clients/eden.clients";
-import { NotAllowedError } from "@shared/errors/app-errors";
+import type { IReferralEntity } from "../models/entity/referral.entity";
+import type { IFeesEntity } from "../models/entity/fees.entity";
+import type { SignersManagerClient } from "../clients/eden.clients";
+import { AppError } from "@shared/errors/app-errors";
 import { ethers } from "ethers";
 import { ReferrerWithdrawRepository } from "../repositories/referrerWithdraw.repository";
 import { ReferrerClaimHistoryRepository } from "../repositories/referrerClaimHistory.repository";
 import { CommissionHistoryRepository } from "../repositories/commissionHistory.repository";
-import { IReferrerWithdrawEntity } from "../models/entity/referrerWithdraw.entity";
-import { IReferrerClaimHistoryEntity } from "../models/entity/referrerClaimHistory.entity";
-import { ICommissionHistoryEntity } from "../models/entity/commissionHistory.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import type { IReferrerWithdrawEntity } from "../models/entity/referrerWithdraw.entity";
+import type { IReferrerClaimHistoryEntity } from "../models/entity/referrerClaimHistory.entity";
+import type { ICommissionHistoryEntity } from "../models/entity/commissionHistory.entity";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
+import { setSpanAttributes } from "@shared/monitoring/src/tracing";
 
 
 interface NetworkConfig {
@@ -23,7 +25,7 @@ interface NetworkConfig {
     referralTreasuryAddress: string;
 }
 
-@TracingDecorator()
+
 export class LoyaltyService {
     constructor(
         private readonly feesRepository: FeesRepository,
@@ -43,7 +45,7 @@ export class LoyaltyService {
     private getNetworkConfig(chainId: string): NetworkConfig {
         const network = this.supportedNetworks.find((network) => network.chainId === chainId);
         if (!network) {
-            throw new NotAllowedError(`Chain ID ${chainId} is not supported`);
+            throw new AppError({ message: `Chain ID ${chainId} is not supported`, statusCode: 403, code: 'NOT_ALLOWED' });
         }
         return network;
     }
@@ -51,6 +53,9 @@ export class LoyaltyService {
     /**
      * Process Factory_CreateRWAFeeCollected event
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['event'] })
     async processCreateRWAFeeCollected(event: {
         data: {
             sender: string;
@@ -60,12 +65,15 @@ export class LoyaltyService {
         chainId: number;
         transactionHash: string;
     }) {
+        setSpanAttributes({
+            wallet: event.data.sender,
+            transactionHash: event.transactionHash,
+            chainId: String(event.chainId)
+        });
         const { sender, amount, token } = event.data;
-        logger.info(`Processing RWA creation fee collected: ${amount} for ${sender}`);
         
         const userReferral = await this.referralRepository.findByUserWallet(sender.toLowerCase());
         if (!userReferral) {
-            logger.warn(`User with wallet ${sender} not found. Skipping fee processing.`);
             return;
         }
 
@@ -97,6 +105,9 @@ export class LoyaltyService {
     /**
      * Process Factory_CreatePoolFeeCollected event
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['event'] })
     async processCreatePoolFeeCollected(event: {
         data: {
             sender: string;
@@ -106,12 +117,15 @@ export class LoyaltyService {
         chainId: number;
         transactionHash: string;
     }) {
+        setSpanAttributes({
+            wallet: event.data.sender,
+            transactionHash: event.transactionHash,
+            chainId: String(event.chainId)
+        });
         const { sender, amount, token } = event.data;
-        logger.info(`Processing pool creation fee collected: ${amount} for ${sender}`);
         
         const userReferral = await this.referralRepository.findByUserWallet(sender.toLowerCase());
         if (!userReferral) {
-            logger.warn(`User with wallet ${sender} not found. Skipping fee processing.`);
             return;
         }
 
@@ -143,6 +157,9 @@ export class LoyaltyService {
     /**
      * Process Pool_RwaMinted event (buy commission)
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['event'] })
     async processRwaMinted(event: {
         data: {
             minter: string;
@@ -159,12 +176,15 @@ export class LoyaltyService {
         chainId: number;
         transactionHash: string;
     }) {
+        setSpanAttributes({
+            wallet: event.data.minter,
+            transactionHash: event.transactionHash,
+            chainId: String(event.chainId)
+        });
         const { minter, feePaid, holdToken } = event.data;
-        logger.info(`Processing RWA minted: ${feePaid} fee for ${minter}`);
         
         const userReferral = await this.referralRepository.findByUserWallet(minter.toLowerCase());
         if (!userReferral) {
-            logger.warn(`User with wallet ${minter} not found. Skipping fee processing.`);
             return;
         }
 
@@ -196,6 +216,9 @@ export class LoyaltyService {
     /**
      * Process Pool_RwaBurned event (sell commission)
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['event'] })
     async processRwaBurned(event: {
         data: {
             burner: string;
@@ -214,12 +237,15 @@ export class LoyaltyService {
         chainId: number;
         transactionHash: string;
     }) {
+        setSpanAttributes({
+            wallet: event.data.burner,
+            transactionHash: event.transactionHash,
+            chainId: String(event.chainId)
+        });
         const { burner, holdFeePaid, bonusFeePaid, holdToken } = event.data;
-        logger.info(`Processing RWA burned: ${holdFeePaid} + ${bonusFeePaid} fees for ${burner}`);
 
         const userReferral = await this.referralRepository.findByUserWallet(burner.toLowerCase());
         if (!userReferral) {
-            logger.warn(`User with wallet ${burner} not found. Skipping fee processing.`);
             return;
         }
 
@@ -256,6 +282,9 @@ export class LoyaltyService {
     /**
      * Process ReferralTreasury_Withdrawn event
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['event'] })
     async processReferralTreasuryWithdrawn(event: {
         data: {
             user: string;
@@ -264,18 +293,17 @@ export class LoyaltyService {
         },
         chainId: number;
     }) {
+        setSpanAttributes({
+            wallet: event.data.user,
+            chainId: String(event.chainId)
+        });
         const { user, token, amount } = event.data;
-        logger.info(`Processing referral treasury withdrawn: ${amount} for user: ${user}`);
-console.log('aw1')
         const referrerUser = await this.referralRepository.findByReferrerWallet(user.toLowerCase());
         
-console.log('aw121', JSON.stringify(referrerUser, null, 4))
-if (!referrerUser) {
-            logger.warn(`Referrer with wallet ${user} not found. Skipping withdraw processing.`);
+        if (!referrerUser) {
             return;
         }
-console.log('aw12')
-console.log(user, referrerUser.userId, String(event.chainId), token, amount)
+
         // Add withdrawn amount to referrer's withdraw record
         await this.referrerWithdrawRepository.addWithdrawnAmount(
             user,
@@ -284,29 +312,32 @@ console.log(user, referrerUser.userId, String(event.chainId), token, amount)
             token,
             amount
         );
-
-console.log('aw13')
-        logger.debug(`Referrer ${user} withdrew ${amount} of token ${token} on chain ${event.chainId}`);
     }
 
     /**
      * Register referral relationship
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['params'] })
     async registerReferral(params: { userWallet: string, userId: string, referrerWallet?: string, referrerId?: string }) {
-        logger.info(`Registering referral for user: ${params.userId}`);
+        setSpanAttributes({
+            wallet: params.userWallet,
+            userId: params.userId
+        });
 
         // Check if user already has a referrer
         const existingReferral = await this.referralRepository.findByUserId(params.userId);
         if (existingReferral) {
-            throw new Error("User already has a referrer");
+            throw new AppError({ message: "User already has a referrer", statusCode: 409, code: 'NOT_ALLOWED' });
         }
 
         // Validate that user is not trying to refer themselves
         if (params.referrerId && params.userId === params.referrerId) {
-            throw new Error("User cannot refer themselves");
+            throw new AppError({ message: "User cannot refer themselves", statusCode: 409, code: 'NOT_ALLOWED' });
         }
         if (params.referrerWallet && params.userWallet.toLowerCase() === params.referrerWallet.toLowerCase()) {
-            throw new Error("User cannot refer themselves");
+            throw new AppError({ message: "User cannot refer themselves", statusCode: 409, code: 'NOT_ALLOWED' });
         }
 
         const referral = await this.referralRepository.create({
@@ -325,7 +356,6 @@ console.log('aw13')
         const referral = await this.referralRepository.findByUserId(userId);
        
         if (!referral || !referral.referrerWallet || !referral.referrerId) {
-            logger.debug(`No active referrer found for user: ${userId}`);
             return;
         }
 
@@ -333,8 +363,6 @@ console.log('aw13')
         const commission = BigInt(commissionAmount);
         const rewardBasisPoints = BigInt(Math.floor(this.referralRewardPercentage * 10000));
         const rewardAmount = (commission * rewardBasisPoints / BigInt(10000)).toString();
-
-        logger.info(`Processing referral reward: ${rewardAmount} for referrer: ${referral.referrerWallet}`);
 
         await this.feesRepository.addReferralReward(
             referral.referrerWallet,
@@ -391,8 +419,8 @@ console.log('aw13')
             id: referral._id.toString(),
             userWallet: referral.userWallet,
             userId: referral.userId,
-            referrerWallet: referral.referrerWallet,
-            referrerId: referral.referrerId,
+            referrerWallet: referral.referrerWallet ?? undefined,
+            referrerId: referral.referrerId ?? undefined,
             createdAt: referral.createdAt,
             updatedAt: referral.updatedAt
         };
@@ -401,14 +429,17 @@ console.log('aw13')
     /**
      * Gets fees list with filters, pagination and sorting
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['params'] })
     async getFees(params: {
         filter?: Record<string, any>,
         sort?: { [key: string]: SortOrder },
         limit?: number,
         offset?: number
     }) {
-        logger.debug("Getting fees list", params);
-        
+        setSpanAttributes({});
+
         const fees = await this.feesRepository.findAll(
             params.filter,
             params.sort,
@@ -422,14 +453,17 @@ console.log('aw13')
     /**
      * Gets referrals list with filters, pagination and sorting
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['params'] })
     async getReferrals(params: {
         filter?: Record<string, any>,
         sort?: { [key: string]: SortOrder },
         limit?: number,
         offset?: number
     }) {
-        logger.debug("Getting referrals list", params);
-        
+        setSpanAttributes({});
+
         const referrals = await this.referralRepository.findAll(
             params.filter,
             params.sort,
@@ -443,6 +477,9 @@ console.log('aw13')
     /**
      * Request signatures for claiming referral rewards
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['params'] })
     async createReferrerWithdrawTask(params: {
         referrerWallet: string;
         referrerId: string;
@@ -450,10 +487,14 @@ console.log('aw13')
         tokenAddress: string;
         amount: string;
     }) {
-        logger.debug("Requesting claim signatures", params);
+        setSpanAttributes({
+            wallet: params.referrerWallet,
+            userId: params.referrerId,
+            chainId: params.chainId
+        });
 
         if (!this.isChainIdSupported(params.chainId)) {
-            throw new NotAllowedError(`Chain ID ${params.chainId} is not supported`);
+            throw new AppError({ message: `Chain ID ${params.chainId} is not supported`, statusCode: 403, code: 'NOT_ALLOWED' });
         }
 
         const now = Math.floor(Date.now() / 1000);
@@ -467,7 +508,7 @@ console.log('aw13')
         });
 
         if (!fees.length) {
-            throw new NotAllowedError("No referral rewards found for this token");
+            throw new AppError({ message: "No referral rewards found for this token", statusCode: 403, code: 'NOT_ALLOWED' });
         }
 
         const totalReferralReward = fees[0].referralRewardAmount?.toString() || "0";
@@ -486,18 +527,18 @@ console.log('aw13')
         const availableAmount = (BigInt(totalReferralReward) - BigInt(totalWithdrawn)).toString();
 
         if (BigInt(availableAmount) <= 0) {
-            throw new NotAllowedError("No rewards available for withdrawal");
+            throw new AppError({ message: "No rewards available for withdrawal", statusCode: 403, code: 'NOT_ALLOWED' });
         }
 
         // Check if requested amount exceeds available
         if (BigInt(params.amount) > BigInt(availableAmount)) {
-            throw new NotAllowedError(`Requested amount exceeds available rewards. Available: ${availableAmount}`);
+            throw new AppError({ message: `Requested amount exceeds available rewards. Available: ${availableAmount}`, statusCode: 403, code: 'NOT_ALLOWED' });
         }
 
         // Check cooldown period
         if (withdrawRecord?.taskCooldown && now < withdrawRecord.taskCooldown) {
             const remainingCooldown = withdrawRecord.taskCooldown - now;
-            throw new NotAllowedError(`Cooldown period active. Try again in ${remainingCooldown} seconds`);
+            throw new AppError({ message: `Cooldown period active. Try again in ${remainingCooldown} seconds`, statusCode: 403, code: 'NOT_ALLOWED' });
         }
 
         const expired = now + 60 * 10; // 10 minutes
@@ -573,14 +614,17 @@ console.log('aw13')
     /**
      * Gets referrer withdraws list with filters, pagination and sorting
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['params'] })
     async getReferrerWithdraws(params: {
         filter?: Record<string, any>,
         sort?: { [key: string]: SortOrder },
         limit?: number,
         offset?: number
     }) {
-        logger.debug("Getting referrer withdraws list", params);
-        
+        setSpanAttributes({});
+
         const withdraws = await this.referrerWithdrawRepository.findAll(
             params.filter,
             params.sort,
@@ -594,14 +638,17 @@ console.log('aw13')
     /**
      * Gets referrer claim history list with filters, pagination and sorting
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['params'] })
     async getReferrerClaimHistory(params: {
         filter?: Record<string, any>,
         sort?: { [key: string]: SortOrder },
         limit?: number,
         offset?: number
     }) {
-        logger.debug("Getting referrer claim history list", params);
-        
+        setSpanAttributes({});
+
         const claims = await this.referrerClaimHistoryRepository.findAll(
             params.filter,
             params.sort,
@@ -674,14 +721,17 @@ console.log('aw13')
     /**
      * Gets commission history list with filters, pagination and sorting
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['params'] })
     async getCommissionHistory(params: {
         filter?: Record<string, any>,
         sort?: { [key: string]: SortOrder },
         limit?: number,
         offset?: number
     }) {
-        logger.debug("Getting commission history list", params);
-        
+        setSpanAttributes({});
+
         const history = await this.commissionHistoryRepository.findAll(
             params.filter,
             params.sort,

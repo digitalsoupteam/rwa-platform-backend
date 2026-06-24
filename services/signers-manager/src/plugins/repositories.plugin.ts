@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import mongoose from "mongoose";
-import { logger } from "@shared/monitoring/src/logger";
+import { logger } from "@shared/monitoring/src/monitoring.plugin";
 import { SignatureRepository } from "../repositories/signature.repository";
 import { SignatureTaskRepository } from "../repositories/signatureTask.repository";
 import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";

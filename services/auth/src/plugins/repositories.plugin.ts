@@ -20,7 +20,6 @@ export const createRepositoriesPlugin = async (mongoUri: string) => {
     'auth.init.repositories_plugin.mongoose',
     async (ctx) => {
       mongoose.connection.once('connected', () => {
-        console.log('aw1 mongoose cpnnected')
         ctx.end();
       })
       await mongoose.connect(mongoUri);

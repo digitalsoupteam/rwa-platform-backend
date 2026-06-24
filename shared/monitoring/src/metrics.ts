@@ -54,7 +54,7 @@ export class OTelMetrics {
     if (!this.histograms.has(metricName)) {
       this.histograms.set(metricName, this.otelMeter.createHistogram(metricName, {
         description: `Histogram metric for ${name} in ${this.serviceName}`,
-        boundaries: [0.1, 0.5, 1, 2, 5],
+        boundaries: [5, 10, 25, 50, 100, 250, 500, 1000, 5000],
       }));
     }
     

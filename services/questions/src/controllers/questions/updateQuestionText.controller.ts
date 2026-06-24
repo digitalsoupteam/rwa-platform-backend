@@ -1,5 +1,4 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
 import type { ServicesPlugin } from "../../plugins/services.plugin";
 import {
   updateQuestionTextRequest,
@@ -12,9 +11,6 @@ export const updateQuestionTextController = (servicesPlugin: ServicesPlugin) => 
     .post(
       "/updateQuestionText",
       async ({ body, questionsService }) => {
-        logger.info(
-          `POST /updateQuestionText - Updating question with ID: ${body.id}`
-        );
 
         return await questionsService.updateQuestionText(body);
       },

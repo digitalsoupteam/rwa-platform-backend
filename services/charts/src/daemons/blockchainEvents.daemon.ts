@@ -1,12 +1,11 @@
-import { BaseBlockchainDaemon, BlockchainEvent, EventRouting } from "@shared/blockchain-daemon/src/baseBlockchain.daemon";
+import { BaseBlockchainDaemon } from "@shared/blockchain-daemon/src/baseBlockchain.daemon";
+import type { BlockchainEvent, EventRouting } from "@shared/blockchain-daemon/src/baseBlockchain.daemon";
 import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
 import { ChartsService } from "../services/charts.service";
 import { TransactionsService } from "../services/transactions.service";
-import { logger } from "@shared/monitoring/src/logger";
 import { PoolTransactionType } from "../models/entity/poolTransaction.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
 
-@TracingDecorator()
+
 export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
   constructor(
     rabbitClient: RabbitMQClient,

@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 import {
   getVolumeDataRequest,
   getVolumeDataResponse,
@@ -12,9 +11,6 @@ export const getVolumeDataController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/getVolumeData",
       async ({ body, transactionsService }) => {
-        logger.info(
-          `POST /getVolumeData - Getting volume data for pool: ${body.poolAddress}, interval: ${body.interval}`
-        );
 
         return await transactionsService.getVolumeData(body);
       },

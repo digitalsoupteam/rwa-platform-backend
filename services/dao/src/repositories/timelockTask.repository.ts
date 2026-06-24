@@ -1,12 +1,13 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { FilterQuery, SortOrder } from "mongoose";
-import { TimelockTaskEntity, ITimelockTaskEntity } from "../models/entity/timelockTask.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import type { FilterQuery, SortOrder } from "mongoose";
+import { TimelockTaskEntity } from "../models/entity/timelockTask.entity";
+import type { ITimelockTaskEntity } from "../models/entity/timelockTask.entity";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 
-@TracingDecorator()
+
 export class TimelockTaskRepository {
   constructor(private readonly model = TimelockTaskEntity) {}
 
+  @TraceDecorator()
   async create(data: Pick<ITimelockTaskEntity,
     "txHash" |
     "target" |
@@ -14,15 +15,12 @@ export class TimelockTaskRepository {
     "eta" |
     "chainId"
   >) {
-    logger.debug(`Creating timelock task: ${data.txHash} with eta: ${data.eta}`);
-
     const doc = await this.model.create(data);
     return doc.toObject();
   }
 
+  @TraceDecorator()
   async updateExecuted(txHash: string, executed: boolean = true) {
-    logger.debug(`Updating timelock task execution status: ${txHash} to ${executed}`);
-
     const doc = await this.model.findOneAndUpdate(
       { txHash },
       { 
@@ -35,14 +33,13 @@ export class TimelockTaskRepository {
     return doc;
   }
 
+  @TraceDecorator()
   async findAll(
     filter: FilterQuery<typeof this.model> = {},
     sort: { [key: string]: SortOrder } = { createdAt: "desc" },
     limit: number = 100,
     offset: number = 0
   ) {
-    logger.debug(`Finding timelock tasks with query: ${JSON.stringify(filter)}`);
-
     return await this.model
       .find(filter)
       .sort(sort)

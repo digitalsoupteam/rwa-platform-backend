@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 import {
   getReactionsRequest,
   getReactionsResponse,
@@ -12,9 +11,6 @@ export const getReactionsController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/getReactions",
       async ({ body, reactionsService }) => {
-        logger.info(
-          `POST /getReactions - Getting reactions with filter: ${JSON.stringify(body.filter)}`
-        );
 
         return reactionsService.getReactions(body);
       },

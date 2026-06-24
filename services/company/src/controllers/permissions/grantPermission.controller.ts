@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../../plugins/services.plugin";
+import type { ServicesPlugin } from "../../plugins/services.plugin";
 import {
   grantPermissionRequest,
   grantPermissionResponse,
@@ -12,9 +11,6 @@ export const grantPermissionController = (servicesPlugin: ServicesPlugin) => {
   .post(
     "/grantPermission",
     async ({ body, companyService }) => {
-      logger.info(
-        `POST /grantPermission - Granting permission ${body.permission} to user ${body.userId} in company ${body.companyId}`
-      );
 
       return await companyService.grantPermission(body);
     },

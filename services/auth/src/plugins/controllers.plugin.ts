@@ -5,7 +5,7 @@ import { createGetUserController } from "../controllers/getUser.controller";
 import { createGetUserTokensController } from "../controllers/getUserTokens.controller";
 import { createRevokeTokensController } from "../controllers/revokeTokens.controller";
 import {  withTraceSync } from "@shared/monitoring/src/tracing";
-import { ServicesPlugin } from "./services.plugin";
+import type { ServicesPlugin } from "./services.plugin";
 
 
 export const createControllersPlugin = (servicesPlugin: ServicesPlugin) => {

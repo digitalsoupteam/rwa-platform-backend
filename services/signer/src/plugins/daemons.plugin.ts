@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
+import { logger } from "@shared/monitoring/src/monitoring.plugin";
 import { SignatureDaemon } from "../daemons/signature.daemon";
-import { ServicesPlugin } from "./services.plugin";
+import type { ServicesPlugin } from "./services.plugin";
 import { withTraceAsync, withTraceSync } from "@shared/monitoring/src/tracing";
 
 export const createDaemonsPlugin = async (servicesPlugin: ServicesPlugin) => {

@@ -1,9 +1,8 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
 import { ChartsService } from "../services/charts.service";
 import { TransactionsService } from "../services/transactions.service";
-import { RepositoriesPlugin } from "./repositories.plugin";
-import { ClientsPlugin } from "./clients.plugin";
+import type { RepositoriesPlugin } from "./repositories.plugin";
+import type { ClientsPlugin } from "./clients.plugin";
 import { withTraceSync } from "@shared/monitoring/src/tracing";
 
 export const createServicesPlugin = (

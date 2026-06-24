@@ -1,5 +1,7 @@
-import { Channel, connect, ConsumeMessage, ChannelModel } from "amqplib";
-import { logger } from "@shared/monitoring/src/logger";
+import { connect } from "amqplib";
+import type { Channel, ConsumeMessage, ChannelModel } from "amqplib";
+import { logger } from "@shared/monitoring/src/monitoring.plugin";
+import { AppError } from "@shared/errors/app-errors";
 
 export interface RabbitMQConfig {
   uri: string;
@@ -50,7 +52,7 @@ export class RabbitMQClient {
 
   getChannel(): Channel {
     if (!this.channel) {
-      throw new Error('RabbitMQ channel not initialized');
+      throw new AppError({ message: 'RabbitMQ channel not initialized', statusCode: 503, code: 'SERVICE_UNAVAILABLE' });
     }
     return this.channel;
   }

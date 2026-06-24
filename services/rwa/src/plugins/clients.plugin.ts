@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import { OpenRouterClient } from "@shared/openrouter/client";
-import { logger } from "@shared/monitoring/src/logger";
+import { logger } from "@shared/monitoring/src/monitoring.plugin";
 import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
 import { createSignersManagerClient } from "../clients/eden.clients";
 import { RedisEventsClient } from "@shared/redis-events/src/redis-events.client";

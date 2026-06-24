@@ -1,5 +1,4 @@
 import { t } from "elysia";
-import { paginationSchema } from "./shared.validation";
 
 /*
  * Shared schemas
@@ -18,7 +17,7 @@ export const companySchema = t.Object({
   description: t.String(),
   ownerId: t.String(),
   country: t.Optional(t.String()),
-  socials: t.Optional(t.Array(socialLinkSchema)),
+  socials: t.Array(socialLinkSchema),
   createdAt: t.Number(),
   updatedAt: t.Number(),
 });
@@ -49,7 +48,7 @@ export const companyWithDetailsSchema = t.Object({
   description: t.String(),
   ownerId: t.String(),
   country: t.Optional(t.String()),
-  socials: t.Optional(t.Array(socialLinkSchema)),
+  socials: t.Array(socialLinkSchema),
   users: t.Array(t.Object({
     id: t.String(),
     userId: t.String(),

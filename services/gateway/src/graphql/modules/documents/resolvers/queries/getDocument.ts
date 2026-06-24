@@ -1,6 +1,6 @@
 import { AuthenticationError, ForbiddenError } from '@shared/errors/app-errors';
-import { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import type { QueryResolvers } from '../../../../generated/types';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const getDocument: QueryResolvers['getDocument'] = async (
   _parent,

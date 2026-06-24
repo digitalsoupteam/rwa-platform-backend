@@ -10,7 +10,7 @@ import { deletePostController } from "../controllers/posts/deletePost.controller
 import { getPostController } from "../controllers/posts/getPost.controller";
 import { getPostsController } from "../controllers/posts/getPosts.controller";
 import { withTraceSync } from "@shared/monitoring/src/tracing";
-import { ServicesPlugin } from "./services.plugin";
+import type { ServicesPlugin } from "./services.plugin";
 
 export const createControllersPlugin = (servicesPlugin: ServicesPlugin) => {
   const createBlogCtrl = withTraceSync(

@@ -32,4 +32,6 @@ COPY services/blockchain-scanner ./services/blockchain-scanner
 EXPOSE ${PORT}
 
 
-CMD ["bun", "services/blockchain-scanner/src/index.ts"]
+WORKDIR /app/services/blockchain-scanner
+ENTRYPOINT ["bun"]
+CMD ["src/index.ts"]

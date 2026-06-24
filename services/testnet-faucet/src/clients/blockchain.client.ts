@@ -1,7 +1,8 @@
 import { ethers } from 'ethers';
-import { logger } from '@shared/monitoring/src/logger';
-import { BlockchainError, AppError } from '@shared/errors/app-errors';
-import { TracingDecorator } from '@shared/monitoring/src/tracingDecorator';
+import { AppError } from '@shared/errors/app-errors';
+import { TracingDecoratorClass } from '@shared/monitoring/src/tracingDecoratorClass';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 const ERC20_ABI = [
   "function balanceOf(address owner) view returns (uint256)",
@@ -15,7 +16,7 @@ const ERC20_ABI = [
 /**
  * Client for blockchain interaction
  */
-@TracingDecorator()
+@TracingDecoratorClass()
 export class BlockchainClient {
   #provider: ethers.JsonRpcProvider;
   #wallet: ethers.Wallet;
@@ -51,31 +52,29 @@ export class BlockchainClient {
     } catch (error) {
       logger.error('Failed to initialize blockchain client', error);
       this.initialized = false;
-      throw new BlockchainError(
-        'Failed to initialize blockchain client',
-        { error: error instanceof Error ? error.message : String(error) }
-      );
+      throw new AppError({ message: 'Failed to initialize blockchain client', statusCode: 502, code: 'BLOCKCHAIN_ERROR', cause: error });
     }
   }
 
   /**
    * Send native tokens (ETH/MATIC) to recipient
    */
+  @LogDecorator({ args: ['recipientAddress', 'amount'] })
   async transferToken(recipientAddress: string, amount: string): Promise<string> {
     if (!this.initialized) {
-      throw new BlockchainError('Blockchain client is not initialized');
+      throw new AppError({ message: 'Blockchain client is not initialized', statusCode: 502, code: 'BLOCKCHAIN_ERROR' });
     }
     
     try {
       if (!ethers.isAddress(recipientAddress)) {
-        throw new AppError(`Invalid recipient address: ${recipientAddress}`);
+        throw new AppError({ message: `Invalid recipient address: ${recipientAddress}`, statusCode: 400, code: 'VALIDATION_ERROR' });
       }
       
       const amountInWei = ethers.parseEther(amount);
       
       const balance = await this.#provider.getBalance(this.#wallet.address);
       if (balance < amountInWei) {
-        throw new BlockchainError('Insufficient funds in faucet wallet');
+        throw new AppError({ message: 'Insufficient funds in faucet wallet', statusCode: 502, code: 'BLOCKCHAIN_ERROR' });
       }
       
       
@@ -87,43 +86,40 @@ export class BlockchainClient {
         nonce: nonce
       });
       
-      logger.info(`Sent ${amount} native tokens to ${recipientAddress}, txHash: ${tx.hash}`);
-      
       const receipt = await tx.wait();
       
       if (receipt && receipt.status === 0) {
-        throw new BlockchainError('Transaction failed');
+        throw new AppError({ message: 'Transaction failed', statusCode: 502, code: 'BLOCKCHAIN_ERROR' });
       }
       
       return tx.hash;
     } catch (error) {
       logger.error(`Error sending native tokens to ${recipientAddress}:`, error);
       
-      if (error instanceof AppError || error instanceof BlockchainError) {
+      if (error instanceof AppError) {
         throw error;
       }
       
-      throw new BlockchainError(
-        `Error sending native tokens: ${error instanceof Error ? error.message : String(error)}`
-      );
+      throw new AppError({ message: "Error sending native tokens", statusCode: 502, code: 'BLOCKCHAIN_ERROR', cause: error });
     }
   }
 
   /**
    * Send ERC20 tokens to recipient
    */
+  @LogDecorator({ args: ['tokenAddress', 'recipientAddress', 'amount'] })
   async transferERC20Token(tokenAddress: string, recipientAddress: string, amount: string): Promise<string> {
     if (!this.initialized) {
-      throw new BlockchainError('Blockchain client is not initialized');
+      throw new AppError({ message: 'Blockchain client is not initialized', statusCode: 502, code: 'BLOCKCHAIN_ERROR' });
     }
     
     try {
       if (!ethers.isAddress(recipientAddress)) {
-        throw new AppError(`Invalid recipient address: ${recipientAddress}`);
+        throw new AppError({ message: `Invalid recipient address: ${recipientAddress}`, statusCode: 400, code: 'VALIDATION_ERROR' });
       }
       
       if (!ethers.isAddress(tokenAddress)) {
-        throw new AppError(`Invalid token address: ${tokenAddress}`);
+        throw new AppError({ message: `Invalid token address: ${tokenAddress}`, statusCode: 400, code: 'VALIDATION_ERROR' });
       }
       
       const tokenContract = new ethers.Contract(
@@ -137,7 +133,7 @@ export class BlockchainClient {
       
       const balance = await tokenContract.balanceOf(this.#wallet.address);
       if (balance < tokenAmount) {
-        throw new BlockchainError('Insufficient token balance in faucet wallet');
+        throw new AppError({ message: 'Insufficient token balance in faucet wallet', statusCode: 502, code: 'BLOCKCHAIN_ERROR' });
       }
       
       
@@ -148,25 +144,21 @@ export class BlockchainClient {
         nonce: nonce
       });
       
-      logger.info(`Sent ${amount} tokens to ${recipientAddress}, txHash: ${tx.hash}`);
-      
       const receipt = await tx.wait();
       
       if (receipt && receipt.status === 0) {
-        throw new BlockchainError('Transaction failed');
+        throw new AppError({ message: 'Transaction failed', statusCode: 502, code: 'BLOCKCHAIN_ERROR' });
       }
       
       return tx.hash;
     } catch (error) {
       logger.error(`Error sending tokens to ${recipientAddress}:`, error);
       
-      if (error instanceof AppError || error instanceof BlockchainError) {
+      if (error instanceof AppError) {
         throw error;
       }
       
-      throw new BlockchainError(
-        `Error sending tokens: ${error instanceof Error ? error.message : String(error)}`
-      );
+      throw new AppError({ message: "Error sending tokens", statusCode: 502, code: 'BLOCKCHAIN_ERROR', cause: error });
     }
   }
 

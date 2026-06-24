@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../../plugins/services.plugin";
+import type { ServicesPlugin } from "../../plugins/services.plugin";
 import {
   getFolderRequest,
   getFolderResponse,
@@ -12,9 +11,6 @@ export const getFolderController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/getFolder",
       async ({ body, documentsService }) => {
-        logger.info(
-          `POST /getFolder - Getting folder with ID: ${body.id}`
-        );
 
         return await documentsService.getFolder(body.id);
       },

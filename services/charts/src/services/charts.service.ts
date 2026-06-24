@@ -1,14 +1,16 @@
-import { logger } from "@shared/monitoring/src/logger";
 import { PriceDataRepository } from "../repositories/priceData.repository";
-import { IPriceDataEntity } from "../models/entity/priceData.entity";
-import { FilterQuery, SortOrder } from "mongoose";
-import { ValidationError } from "@shared/errors/app-errors";
+import type { IPriceDataEntity } from "../models/entity/priceData.entity";
+import type { SortOrder } from "mongoose";
+import { AppError } from "@shared/errors/app-errors";
 import { ChartEventsClient } from "../clients/redis.client";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
+import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
+import { setSpanAttributes } from "@shared/monitoring/src/tracing";
+import { LogDecorator } from "@shared/monitoring/src/logDecorator";
 
 export type OhlcInterval = '1m' | '5m' | '15m' | '30m' | '1h' | '2h' | '4h' | '6h' | '12h' | '1d' | '1w';
 
-@TracingDecorator()
+
 export class ChartsService {
   constructor(
     private readonly priceDataRepository: PriceDataRepository,
@@ -30,6 +32,9 @@ export class ChartsService {
     };
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['data.poolAddress', 'data.timestamp', 'data.blockNumber'] })
   async recordPriceData(data: {
     poolAddress: string;
     timestamp: number;
@@ -38,11 +43,13 @@ export class ChartsService {
     virtualHoldReserve: string;
     virtualRwaReserve: string;
   }): Promise<Omit<IPriceDataEntity, '_id'> & { id: string }> {
-    logger.info(`Recording price data for pool: ${data.poolAddress} at ${data.timestamp}`);
-
+    setSpanAttributes({
+      poolAddress: data.poolAddress,
+      blockNumber: data.blockNumber,
+    });
     const virtualRwaReserveBigInt = BigInt(data.virtualRwaReserve);
     if (virtualRwaReserveBigInt === 0n) {
-      throw new ValidationError("virtualRwaReserve cannot be zero for price calculation.");
+      throw new AppError({ message: "virtualRwaReserve cannot be zero for price calculation.", statusCode: 400, code: 'VALIDATION_ERROR' });
     }
 
     const virtualHoldReserveBigInt = BigInt(data.virtualHoldReserve);
@@ -77,6 +84,9 @@ export class ChartsService {
     return output;
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['poolAddress', 'startTime', 'endTime'] })
   async getRawPriceData(params: {
     poolAddress: string;
     startTime: number;
@@ -85,7 +95,9 @@ export class ChartsService {
     offset?: number;
     sort?: { [key: string]: SortOrder };
   }): Promise<(Omit<IPriceDataEntity, '_id'> & { id: string })[]> {
-    logger.debug(`Getting raw price data for pool: ${params.poolAddress}`, params);
+    setSpanAttributes({
+      poolAddress: params.poolAddress,
+    });
     const { poolAddress, startTime, endTime, limit, offset, sort } = params;
 
     const docs = await this.priceDataRepository.findByPoolAndTimeRange(
@@ -112,10 +124,13 @@ export class ChartsService {
       case '12h': return 12 * 60 * 60 * 1000;
       case '1d': return 24 * 60 * 60 * 1000;
       case '1w': return 7 * 24 * 60 * 60 * 1000;
-      default: throw new ValidationError(`Unsupported interval: ${interval}`);
+      default: throw new AppError({ message: `Unsupported interval: ${interval}`, statusCode: 400, code: 'VALIDATION_ERROR' });
     }
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['poolAddress', 'interval', 'startTime', 'endTime'] })
   async getOhlcPriceData(params: {
     poolAddress: string;
     interval: OhlcInterval;
@@ -129,8 +144,11 @@ export class ChartsService {
     low: string;
     close: string;
   }[]> {
+    setSpanAttributes({
+      poolAddress: params.poolAddress,
+      interval: params.interval,
+    });
     const { poolAddress, interval, startTime, endTime, limit } = params;
-    logger.debug(`Getting OHLC data for pool: ${poolAddress}, interval: ${interval}`, params);
 
     const intervalMs = this.getMillisecondsForInterval(interval);
     const intervalSeconds = intervalMs / 1000;

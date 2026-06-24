@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../../plugins/services.plugin";
+import type { ServicesPlugin } from "../../plugins/services.plugin";
 import {
   createAnswerRequest,
   createAnswerResponse,
@@ -12,9 +11,6 @@ export const createAnswerController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/createAnswer",
       async ({ body, faqService }) => {
-        logger.info(
-          `POST /createAnswer - Creating answer for question: ${body.question}`
-        );
 
         return await faqService.createAnswer(body);
       },

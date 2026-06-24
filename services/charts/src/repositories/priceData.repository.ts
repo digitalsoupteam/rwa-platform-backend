@@ -1,33 +1,31 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { NotFoundError } from "@shared/errors/app-errors";
-import { FilterQuery, SortOrder, Types } from "mongoose";
+import type { FilterQuery, SortOrder } from "mongoose";
 import {
   PriceDataEntity,
-  IPriceDataEntity,
 } from "../models/entity/priceData.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import type { IPriceDataEntity } from "../models/entity/priceData.entity";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 
 // Define the type for the data needed to create a PriceData entry
 // Excludes _id, createdAt, and updatedAt as they are auto-managed or set by default
 type CreatePriceData = Omit<IPriceDataEntity, '_id' | 'createdAt' | 'updatedAt'>;
 
-@TracingDecorator()
+
 export class PriceDataRepository {
   constructor(private readonly model = PriceDataEntity) {}
 
+  @TraceDecorator()
   async create(data: CreatePriceData): Promise<IPriceDataEntity> {
-    logger.debug(`Creating price data for pool: ${data.poolAddress} at timestamp: ${data.timestamp}`);
     const doc = await this.model.create(data);
     return doc.toObject() as IPriceDataEntity;
   }
 
+  @TraceDecorator()
   async findAll(
     filter: FilterQuery<IPriceDataEntity> = {},
     sort: { [key: string]: SortOrder | { $meta: "textScore" } } = { timestamp: "asc" },
     limit: number = 100,
     offset: number = 0
   ): Promise<IPriceDataEntity[]> {
-    logger.debug(`Finding price data with query: ${JSON.stringify(filter)}, sort: ${JSON.stringify(sort)}, limit: ${limit}, offset: ${offset}`);
     return await this.model
       .find(filter)
       .sort(sort)
@@ -37,8 +35,8 @@ export class PriceDataRepository {
       .exec();
   }
 
+  @TraceDecorator()
   async findLatestByPoolAddress(poolAddress: string): Promise<IPriceDataEntity | null> {
-    logger.debug(`Finding latest price data by poolAddress: ${poolAddress}`);
     const doc = await this.model
       .findOne({ poolAddress })
       .sort({ timestamp: -1 }) // Get the most recent entry
@@ -46,27 +44,21 @@ export class PriceDataRepository {
       .exec();
 
     if (!doc) {
-      // It's okay for this to return null if no data exists, not necessarily a NotFoundError
-      // unless specific business logic requires an entry to always exist.
-      logger.warn(`No price data found for poolAddress: ${poolAddress}`);
       return null;
     }
 
     return doc;
   }
 
-  // Potentially add more specific query methods if needed, e.g., for aggregation for OHLC data,
-  // though often aggregation is handled in a service layer or directly via MongoDB's aggregation framework.
-  // For example, to get data for a specific pool within a time range:
+  @TraceDecorator()
   async findByPoolAndTimeRange(
     poolAddress: string,
-    startTime: number, // Unix timestamp
-    endTime: number,   // Unix timestamp
+    startTime: number,
+    endTime: number,
     sort: { [key: string]: SortOrder } = { timestamp: "asc" },
-    limit: number = 1000, // Default to a higher limit for chart data
+    limit: number = 1000,
     offset: number = 0
   ): Promise<IPriceDataEntity[]> {
-    logger.debug(`Finding price data for pool ${poolAddress} between ${startTime} and ${endTime}`);
     const filter: FilterQuery<IPriceDataEntity> = {
       poolAddress,
       timestamp: {
@@ -77,6 +69,7 @@ export class PriceDataRepository {
     return this.findAll(filter, sort, limit, offset);
   }
 
+  @TraceDecorator()
   async aggregateOhlcData(
     poolAddress: string,
     intervalSeconds: number,
@@ -90,10 +83,6 @@ export class PriceDataRepository {
     low: string;
     close: string;
   }[]> {
-    logger.debug(
-      `Aggregating OHLC data for pool: ${poolAddress}, intervalSeconds: ${intervalSeconds}, startTime: ${startTime}, endTime: ${endTime}`
-    );
-
     const aggregationPipeline: any[] = [
       {
         $match: {

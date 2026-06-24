@@ -1,5 +1,5 @@
-import { tracer } from "@shared/monitoring/src/tracing";
-import mongoose, { Schema, InferRawDocType } from "mongoose";
+import mongoose, { Schema } from "mongoose";
+import type { InferRawDocType } from "mongoose";
 
 
 const refreshTokenSchemaDefinition = {
@@ -34,7 +34,7 @@ const refreshTokenSchema = new Schema(refreshTokenSchemaDefinition, {
 // Indexes for performance
 refreshTokenSchema.index({ userId: 1 });
 refreshTokenSchema.index({ tokenHash: 1 }, { unique: true });
-refreshTokenSchema.index({ expiresAt: 1 }); // For cleanup of expired tokens
+refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // For cleanup of expired tokens
 
 export type IRefreshTokenEntity = InferRawDocType<typeof refreshTokenSchemaDefinition>;
 export const RefreshTokenEntity = mongoose.model("RefreshToken", refreshTokenSchema);

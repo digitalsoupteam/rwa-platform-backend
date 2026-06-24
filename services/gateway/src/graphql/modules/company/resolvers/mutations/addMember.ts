@@ -1,16 +1,16 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from "@shared/errors/app-errors";
+import type { MutationResolvers } from '../../../../generated/types';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const addMember: MutationResolvers['addMember'] = async (
   _parent,
   { input },
   { services, clients, user }
 ) => {
-  logger.info('Adding member to company', { input });
+  logger.debug('Adding member to company', { input });
 
   if (!user) {
-    throw new AuthenticationError("Authentication required");
+    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
   }
 
   const companyResponse = await services.cache.getCompany({
@@ -19,13 +19,13 @@ export const addMember: MutationResolvers['addMember'] = async (
 
   if (companyResponse.error) {
     logger.error('Failed to get company details:', companyResponse.error);
-    throw new Error('Failed to get company details');
+    throw new AppError({ message: 'Failed to get company details', statusCode: 502, code: 'UPSTREAM_ERROR' });
   }
 
   // Check if current user is the ownerId
   if (companyResponse.data.ownerId !== user.id) {
     logger.error('User is not the company ownerId', { userId: user.id, companyId: input.companyId });
-    throw new Error('Only company owner can add members');
+    throw new AppError({ message: 'Only company owner can add members', statusCode: 502, code: 'UPSTREAM_ERROR' });
   }
 
   const response = await clients.companyClient.addMember.post({
@@ -36,7 +36,7 @@ export const addMember: MutationResolvers['addMember'] = async (
 
   if (response.error) {
     logger.error('Failed to add member:', response.error);
-    throw new Error('Failed to add member');
+    throw new AppError({ message: 'Failed to add member', statusCode: 502, code: 'UPSTREAM_ERROR' });
   }
 
   await services.cache.resetCompanyCache(input.companyId)

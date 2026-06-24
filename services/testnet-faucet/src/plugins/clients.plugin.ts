@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
+import { logger } from "@shared/monitoring/src/monitoring.plugin";
 import { BlockchainClient } from "../clients/blockchain.client";
 import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 

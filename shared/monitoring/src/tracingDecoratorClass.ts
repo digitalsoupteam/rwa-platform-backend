@@ -1,4 +1,6 @@
+import { getAllMethods } from "./decorator-utils";
 import { tracer } from "./tracing";
+import { AppError } from "@shared/errors/app-errors";
 
 
 function camelToSnakeCase(str: string): string {
@@ -15,37 +17,8 @@ interface TracingDecoratorOptions {
   exclude?: string[];
 }
 
-function getAllMethods(prototype: any, deep: number = 0, privateEnabled: boolean = false, exclude: string[] = []): string[] {
-  const methods = new Set<string>();
-  let currentPrototype = prototype;
-  let currentDepth = 0;
 
-  while (currentPrototype && currentPrototype !== Object.prototype) {
-    if (deep !== -1 && currentDepth > deep) {
-      break;
-    }
-
-    Object.getOwnPropertyNames(currentPrototype).forEach(name => {
-      if (name === 'constructor') return;
-      
-      if (!privateEnabled && name.startsWith('_')) return;
-      
-      if (exclude.includes(name)) return;
-      
-      const descriptor = Object.getOwnPropertyDescriptor(currentPrototype, name);
-      if (descriptor && typeof descriptor.value === 'function') {
-        methods.add(name);
-      }
-    });
-
-    currentPrototype = Object.getPrototypeOf(currentPrototype);
-    currentDepth++;
-  }
-
-  return Array.from(methods);
-}
-
-export function TracingDecorator(options?: string | TracingDecoratorOptions) {
+export function TracingDecoratorClass(options?: string | TracingDecoratorOptions) {
   return function <T extends { new (...args: any[]): {} }>(constructor: T) {
     return class extends constructor {
       constructor(...args: any[]) {
@@ -90,6 +63,9 @@ export function TracingDecorator(options?: string | TracingDecoratorOptions) {
                       .catch((error: any) => {
                         span.recordException(error);
                         span.setStatus({ code: 2, message: error.message });
+                        if (error instanceof AppError) {
+                          span.setAttribute('error.code', error.code);
+                        }
                         span.end();
                         throw error;
                       });
@@ -100,6 +76,9 @@ export function TracingDecorator(options?: string | TracingDecoratorOptions) {
                 } catch (error: any) {
                   span.recordException(error);
                   span.setStatus({ code: 2, message: error.message });
+                  if (error instanceof AppError) {
+                    span.setAttribute('error.code', error.code);
+                  }
                   span.end();
                   throw error;
                 }

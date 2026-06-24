@@ -10,7 +10,7 @@ import { deleteDocumentController } from "../controllers/documents/deleteDocumen
 import { getDocumentController } from "../controllers/documents/getDocument.controller";
 import { getDocumentsController } from "../controllers/documents/getDocuments.controller";
 import { withTraceSync } from "@shared/monitoring/src/tracing";
-import { ServicesPlugin } from "./services.plugin";
+import type { ServicesPlugin } from "./services.plugin";
 
 export const createControllersPlugin = (servicesPlugin: ServicesPlugin) => {
   const createFolderCtrl = withTraceSync(

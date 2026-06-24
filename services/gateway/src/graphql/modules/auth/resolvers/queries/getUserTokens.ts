@@ -1,6 +1,6 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from "@shared/errors/app-errors";
+import type { QueryResolvers } from '../../../../generated/types';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const getUserTokens: QueryResolvers['getUserTokens'] = async (
   _parent,
@@ -8,10 +8,10 @@ export const getUserTokens: QueryResolvers['getUserTokens'] = async (
   { clients, user }
 ) => {
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
   }
 
-  logger.info('Getting user tokens', { userId: user.id });
+  logger.debug('Getting user tokens', { userId: user.id });
 
   const response = await clients.authClient.getUserTokens.post({
     userId: user.id

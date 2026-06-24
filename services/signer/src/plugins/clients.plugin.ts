@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
+import { logger } from "@shared/monitoring/src/monitoring.plugin";
 import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
 import { SignersManagerClient } from "../clients/signersManager.client";
 import { withTraceAsync, withTraceSync } from "@shared/monitoring/src/tracing";

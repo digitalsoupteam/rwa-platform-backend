@@ -1,16 +1,16 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from "@shared/errors/app-errors";
+import type { MutationResolvers } from '../../../../generated/types';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const updatePost: MutationResolvers['updatePost'] = async (
   _parent,
   { input },
   { services, clients, user }
 ) => {
-  logger.info('Updating post', { input });
+  logger.debug('Updating post', { input });
 
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
   }
 
   // Get post first to check permissions

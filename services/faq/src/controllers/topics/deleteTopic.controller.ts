@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../../plugins/services.plugin";
+import type { ServicesPlugin } from "../../plugins/services.plugin";
 import {
   deleteTopicRequest,
   deleteTopicResponse,
@@ -12,9 +11,6 @@ export const deleteTopicController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/deleteTopic",
       async ({ body, faqService }) => {
-        logger.info(
-          `POST /deleteTopic - Deleting topic with ID: ${body.id}`
-        );
 
         return await faqService.deleteTopic(body.id);
       },

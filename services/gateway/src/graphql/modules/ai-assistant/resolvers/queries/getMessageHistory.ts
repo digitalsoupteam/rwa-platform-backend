@@ -1,6 +1,6 @@
-import { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
-import { AuthenticationError } from '@shared/errors/app-errors';
+import type { QueryResolvers } from '../../../../generated/types';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
+import { AppError } from "@shared/errors/app-errors";
 
 export const getMessageHistory: QueryResolvers['getMessageHistory'] = async (
   _parent,
@@ -8,10 +8,10 @@ export const getMessageHistory: QueryResolvers['getMessageHistory'] = async (
   { clients, user }
 ) => {
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
   }
 
-  logger.info('Getting message history', { assistantId, userId: user.id, pagination });
+  logger.debug('Getting message history', { assistantId, userId: user.id, pagination });
 
   // Verify assistant ownership first
   const assistantResponse = await clients.aiAssistantClient.getAssistant.post({

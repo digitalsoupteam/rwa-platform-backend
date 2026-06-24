@@ -5,7 +5,7 @@ import { getStakingController } from "../controllers/getStaking.controller";
 import { getTreasuryWithdrawalsController } from "../controllers/getTreasuryWithdrawals.controller";
 import { getStakingHistoryController } from "../controllers/getStakingHistory.controller";
 import { getVotesController } from "../controllers/getVotes.controller";
-import { ServicesPlugin } from "./services.plugin";
+import type { ServicesPlugin } from "./services.plugin";
 import { withTraceSync } from "@shared/monitoring/src/tracing";
 
 export const createControllersPlugin = (servicesPlugin: ServicesPlugin) => {

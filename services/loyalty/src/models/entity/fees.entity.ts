@@ -1,4 +1,4 @@
-import mongoose, { Schema, InferRawDocType, Types } from "mongoose";
+import mongoose, { Schema, Types, type InferRawDocType } from "mongoose";
 
 const feesSchemaDefinition = {
   userWallet: {

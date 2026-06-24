@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 import {
   setReactionRequest,
   setReactionResponse,
@@ -12,9 +11,6 @@ export const setReactionController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/setReaction",
       async ({ body, reactionsService }) => {
-        logger.info(
-          `POST /setReaction - Setting reaction for parent: ${body.parentId} by user: ${body.userId}`
-        );
 
         return reactionsService.setReaction(body);
       },

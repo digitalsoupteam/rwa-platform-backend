@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../../plugins/services.plugin";
+import type { ServicesPlugin } from "../../plugins/services.plugin";
 import {
   getBusinessesRequest,
   getBusinessesResponse,
@@ -12,9 +11,6 @@ export const getBusinessesController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/getBusinesses",
       async ({ body, businessService }) => {
-        logger.info(
-          `POST /getBusinesses - Getting businesses list`
-        );
 
         return await businessService.getBusinesses(body);
       },

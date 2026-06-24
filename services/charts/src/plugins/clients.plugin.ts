@@ -1,5 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
+import { logger } from "@shared/monitoring/src/monitoring.plugin";
 import { RedisEventsClient } from "@shared/redis-events/src/redis-events.client";
 import { ChartEventsClient } from "../clients/redis.client";
 import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";

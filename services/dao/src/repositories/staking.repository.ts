@@ -1,16 +1,14 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { FilterQuery, SortOrder } from "mongoose";
+import type { FilterQuery, SortOrder } from "mongoose";
 import mongoose from "mongoose";
-import { StakingEntity, IStakingEntity } from "../models/entity/staking.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { StakingEntity } from "../models/entity/staking.entity";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 
-@TracingDecorator()
+
 export class StakingRepository {
   constructor(private readonly model = StakingEntity) {}
 
+  @TraceDecorator()
   async addStake(staker: string, chainId: string, amount: string, lastStakeTimestamp: number) {
-    logger.debug(`Adding stake: ${amount} for staker: ${staker} on chain: ${chainId}`);
-    
     const doc = await this.model.findOneAndUpdate(
       { staker, chainId },
       {
@@ -32,9 +30,8 @@ export class StakingRepository {
     return doc;
   }
 
+  @TraceDecorator()
   async subStake(staker: string, chainId: string, amount: string) {
-    logger.debug(`Subtracting stake: ${amount} for staker: ${staker} on chain: ${chainId}`);
-    
     const doc = await this.model.findOneAndUpdate(
       { staker, chainId },
       {
@@ -55,14 +52,13 @@ export class StakingRepository {
     return doc;
   }
 
+  @TraceDecorator()
   async findAll(
     filter: FilterQuery<typeof this.model> = {},
     sort: { [key: string]: SortOrder } = { createdAt: "desc" },
     limit: number = 100,
     offset: number = 0
   ) {
-    logger.debug(`Finding staking records with query: ${JSON.stringify(filter)}`);
-
     return await this.model
       .find(filter)
       .sort(sort)

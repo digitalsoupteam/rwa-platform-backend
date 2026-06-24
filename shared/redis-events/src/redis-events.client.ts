@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { logger } from '@shared/monitoring/src/logger';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export interface EventMetadata {
   timestamp: number;
@@ -63,7 +63,7 @@ export class RedisEventsClient {
         logger.error('Failed to subscribe:', err);
         throw err;
       }
-      logger.debug('Subscribed to channel:', channel);
+      logger.debug('Subscribed to channel: ' + channel);
     });
 
     const messageHandler = (_channel: string, message: string) => {

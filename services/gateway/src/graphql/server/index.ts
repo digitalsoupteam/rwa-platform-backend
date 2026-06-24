@@ -1,5 +1,5 @@
-import { createSchema, createYoga } from 'graphql-yoga';
 import { makeExecutableSchema } from '@graphql-tools/schema';
+import { createYoga } from 'graphql-yoga';
 import { loadFilesSync } from '@graphql-tools/load-files';
 import { mergeTypeDefs } from '@graphql-tools/merge';
 import { join } from 'path';
@@ -32,7 +32,6 @@ import { useGraphQLSSE } from '@graphql-yoga/plugin-graphql-sse';
 import { propagation, context, trace } from '@opentelemetry/api';
 import { useOpenTelemetry } from '@envelop/opentelemetry';
 
-import { tracer } from '@shared/monitoring/src/tracing';
 
 const typesArray = loadFilesSync(join(__dirname, '../modules/**/*.graphql'));
 const typeDefs = mergeTypeDefs(typesArray);
@@ -61,11 +60,6 @@ export const yogaServer = createYoga({
   context({ request }) {
     const traceparent = request.headers.get("traceparent");
       const tracestate = request.headers.get("tracestate");
-      console.log('[GATEWAY TRACING] Headers from nginx:', {
-        traceparent,
-        tracestate,
-        allHeaders: Object.fromEntries(request.headers.entries())
-      });
 
       // Extract trace context from headers
       const headers: Record<string, string> = {};
@@ -74,7 +68,6 @@ export const yogaServer = createYoga({
 
       // Extract the parent context from headers
       const parentContext = propagation.extract(context.active(), headers);
-      console.log('[GATEWAY TRACING] Extracted parent context:', parentContext);
 
       const authHeader = request.headers.get("Authorization");
       const token = authHeader?.split(" ")[1] ?? null;
@@ -125,4 +118,3 @@ export const yogaServer = createYoga({
   },
   batching: true,
 });
-

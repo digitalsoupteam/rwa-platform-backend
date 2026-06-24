@@ -1,6 +1,4 @@
-import { Redis } from 'ioredis';
 import { CONFIG } from '../config';
-import { trace, propagation, context } from '@opentelemetry/api';
 import type { App as AuthApp } from '@services/auth/src';
 import type { App as AiAssistantApp } from '@services/ai-assistant/src';
 import type { App as TestnetFaucetApp } from '@services/testnet-faucet/src';
@@ -19,7 +17,6 @@ import type { App as ReactionsApp } from '@services/reactions/src';
 import type { App as LoyaltyApp } from '@services/loyalty/src';
 import type { App as DaoApp } from '@services/dao/src';
 
-import { logger } from "@shared/monitoring/src/logger";
 import { createEdenTreatyClient } from "@shared/monitoring/src/eden";
 
 

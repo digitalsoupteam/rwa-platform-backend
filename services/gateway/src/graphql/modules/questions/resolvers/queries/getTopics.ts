@@ -1,5 +1,5 @@
-import { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import type { QueryResolvers } from '../../../../generated/types';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const getTopics: QueryResolvers['getTopics'] = async (
   _parent,

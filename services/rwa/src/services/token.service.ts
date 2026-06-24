@@ -1,30 +1,34 @@
-import { logger } from "@shared/monitoring/src/logger";
+import { AppError } from "@shared/errors/app-errors";
 import { PoolRepository } from "../repositories/pool.repository";
 import { BusinessRepository } from "../repositories/business.repository";
-import { NotFoundError } from "@shared/errors/app-errors";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
+import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
+import { LogDecorator } from "@shared/monitoring/src/logDecorator";
+import { setSpanAttributes } from "@shared/monitoring/src/tracing";
 
-@TracingDecorator()
+
 export class TokenService {
   constructor(
     private readonly poolRepository: PoolRepository,
     private readonly businessRepository: BusinessRepository
   ) {}
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["tokenId"] })
   async getTokenMetadata(tokenId: string) {
-    logger.debug("Getting token metadata", { tokenId });
-
+    setSpanAttributes({ tokenId });
     // Find pool by tokenId
     const pools = await this.poolRepository.findAll({ tokenId }, { createdAt: "asc" }, 1);
     if (!pools.length) {
-      throw new NotFoundError("Pool not found");
+      throw new AppError({ message: "Pool not found", statusCode: 404, code: "NOT_FOUND" });
     }
     const pool = pools[0];
 
     // Find associated business
     const business = await this.businessRepository.findById(pool.businessId);
     if (!business) {
-      throw new NotFoundError("Business not found");
+      throw new AppError({ message: "Business not found", statusCode: 404, code: "NOT_FOUND" });
     }
 
     // Combine descriptions
@@ -32,12 +36,6 @@ export class TokenService {
       business.description,
       pool.description
     ].filter(Boolean).join("\n\n");
-
-    // Combine and deduplicate tags
-    const tags = Array.from(new Set([
-      ...(business.tags || []),
-      ...(pool.tags || [])
-    ]));
 
     // Get image with fallback logic
     const image = pool.image || business.image || `https://example.com/images/${tokenId}.png`;

@@ -1,14 +1,16 @@
-import { logger } from "@shared/monitoring/src/logger";
 import { TokenBalanceRepository } from "../repositories/tokenBalance.repository";
 import { TransactionRepository } from "../repositories/transaction.repository";
-import { ITokenBalanceEntity } from "../models/entity/tokenBalance.entity";
-import { ITransactionEntity } from "../models/entity/transaction.entity";
-import { SortOrder } from "mongoose";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import type { ITokenBalanceEntity } from "../models/entity/tokenBalance.entity";
+import type { ITransactionEntity } from "../models/entity/transaction.entity";
+import type { SortOrder } from "mongoose";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
+import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
+import { LogDecorator } from "@shared/monitoring/src/logDecorator";
+import { setSpanAttributes } from "@shared/monitoring/src/tracing";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-@TracingDecorator()
+
 export class PortfolioService {
   constructor(
     private readonly tokenBalanceRepository: TokenBalanceRepository,
@@ -18,14 +20,25 @@ export class PortfolioService {
   /**
    * Gets token balances list with filters, pagination and sorting
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['params'] })
   async getBalances(params: {
     filter?: Record<string, any>,
     sort?: { [key: string]: SortOrder },
     limit?: number,
     offset?: number
   }) {
-    logger.debug("Getting token balances list", params);
-    
+    const filter = params.filter ?? {};
+    setSpanAttributes({
+      wallet: filter.wallet,
+      userId: filter.userId,
+      chainId: filter.chainId,
+      blockNumber: filter.blockNumber,
+      transactionHash: filter.transactionHash,
+      poolAddress: filter.poolAddress,
+    });
+
     const balances = await this.tokenBalanceRepository.findAll(
       params.filter,
       params.sort,
@@ -39,14 +52,25 @@ export class PortfolioService {
   /**
    * Gets transactions list with filters, pagination and sorting
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['params'] })
   async getTransactions(params: {
     filter?: Record<string, any>,
     sort?: { [key: string]: SortOrder },
     limit?: number,
     offset?: number
   }) {
-    logger.debug("Getting transactions list", params);
-    
+    const filter = params.filter ?? {};
+    setSpanAttributes({
+      wallet: filter.wallet ?? filter.from ?? filter.to,
+      userId: filter.userId,
+      chainId: filter.chainId,
+      blockNumber: filter.blockNumber,
+      transactionHash: filter.transactionHash,
+      poolAddress: filter.poolAddress,
+    });
+
     const transactions = await this.transactionRepository.findAll(
       params.filter,
       params.sort,
@@ -60,6 +84,9 @@ export class PortfolioService {
   /**
    * Process RWA transfer event
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['data'] })
   async processTransfer(data: {
     from: string;
     to: string;
@@ -71,11 +98,15 @@ export class PortfolioService {
     blockNumber: number;
     amount: number;
   }) {
-    logger.debug("Processing transfer", data);
+    setSpanAttributes({
+      chainId: data.chainId,
+      blockNumber: data.blockNumber,
+      transactionHash: data.transactionHash,
+      poolAddress: data.poolAddress,
+    });
 
     // Skip if both addresses are zero (shouldn't happen)
     if (data.from === ZERO_ADDRESS && data.to === ZERO_ADDRESS) {
-      logger.warn("Invalid transfer: both addresses are zero", data);
       return;
     }
 

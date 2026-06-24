@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 import {
   getPoolTransactionsRequest,
   getPoolTransactionsResponse,
@@ -12,7 +11,6 @@ export const getPoolTransactionsController = (servicesPlugin: ServicesPlugin) =>
     .post(
       "/getPoolTransactions",
       async ({ body, transactionsService }) => {
-        logger.info(`POST /getPoolTransactions - Getting transactions with filter: ${JSON.stringify(body.filter)}`);
         return await transactionsService.getTransactions(body);
       },
       {

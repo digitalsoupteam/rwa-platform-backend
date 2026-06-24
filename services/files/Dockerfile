@@ -27,4 +27,6 @@ COPY services/files ./services/files
 EXPOSE ${PORT}
 
 
-CMD ["bun", "services/files/src/index.ts"]
+WORKDIR /app/services/files
+ENTRYPOINT ["bun"]
+CMD ["src/index.ts"]

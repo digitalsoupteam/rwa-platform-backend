@@ -1,5 +1,4 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
 import { type ServicesPlugin } from "../../plugins/services.plugin";
 import {
   deleteImageRequest,
@@ -12,9 +11,6 @@ export const deleteImageController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/deleteImage",
       async ({ body, imagesService }) => {
-        logger.info(
-          `POST /deleteImage - Deleting image with ID: ${body.id}`
-        );
 
         return await imagesService.deleteImage(body.id);
       },

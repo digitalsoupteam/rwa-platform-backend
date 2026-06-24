@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import mongoose from "mongoose";
-import { logger } from "@shared/monitoring/src/logger";
+import { logger } from "@shared/monitoring/src/monitoring.plugin";
 import { FeesRepository } from "../repositories/fees.repository";
 import { ReferralRepository } from "../repositories/referral.repository";
 import { ReferrerClaimHistoryRepository } from "../repositories/referrerClaimHistory.repository";

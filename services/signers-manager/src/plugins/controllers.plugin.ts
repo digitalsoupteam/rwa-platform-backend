@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
 import { createSignatureTaskController } from "../controllers/createSignatureTask.controller";
 import { getSignatureTaskController } from "../controllers/getSignatureTask.controller";
-import { ServicesPlugin } from "./services.plugin";
+import type { ServicesPlugin } from "./services.plugin";
 import { withTraceSync } from "@shared/monitoring/src/tracing";
 
 export const createControllersPlugin = (servicesPlugin: ServicesPlugin) => {

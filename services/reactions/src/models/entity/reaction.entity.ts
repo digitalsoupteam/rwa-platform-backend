@@ -1,4 +1,4 @@
-import mongoose, { Schema, InferRawDocType, Types } from "mongoose";
+import mongoose, { Schema, type InferRawDocType, Types } from "mongoose";
 
 const reactionSchemaDefinition = {
     parentId: {

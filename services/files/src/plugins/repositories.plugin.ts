@@ -13,7 +13,6 @@ export const createRepositoriesPlugin = async (mongoUri: string) => {
     'files.init.repositories_plugin.mongoose',
     async (ctx) => {
       mongoose.connection.once('connected', () => {
-        console.log('files mongoose connected')
         ctx.end();
       })
       await mongoose.connect(mongoUri);

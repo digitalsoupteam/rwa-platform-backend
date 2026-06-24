@@ -1,6 +1,6 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { QueryResolvers } from '../../../../generated/types';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const getEntityReactions: QueryResolvers['getEntityReactions'] = async (
   _parent,

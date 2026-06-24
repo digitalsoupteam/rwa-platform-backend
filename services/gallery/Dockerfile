@@ -25,4 +25,6 @@ COPY services/gallery ./services/gallery
 EXPOSE ${PORT}
 
 
-CMD ["bun", "services/gallery/src/index.ts"]
+WORKDIR /app/services/gallery
+ENTRYPOINT ["bun"]
+CMD ["src/index.ts"]

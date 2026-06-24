@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ClientsPlugin } from "./clients.plugin";
-import { ServicesPlugin } from "./services.plugin";
+import { logger } from "@shared/monitoring/src/monitoring.plugin";
+import type { ClientsPlugin } from "./clients.plugin";
+import type { ServicesPlugin } from "./services.plugin";
 import { TaskResponsesDaemon } from "../daemons/taskResponses.daemon";
 import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
 

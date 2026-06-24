@@ -1,10 +1,12 @@
-import { logger } from "@shared/monitoring/src/logger";
 import { AppError } from "@shared/errors/app-errors";
 import { FaucetRequestRepository } from "../repositories/faucetRequest.repository";
 import { BlockchainClient } from "../clients/blockchain.client";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
+import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
+import { LogDecorator } from "@shared/monitoring/src/logDecorator";
+import { setSpanAttributes } from "@shared/monitoring/src/tracing";
 
-@TracingDecorator()
+
 export class FaucetService {
   constructor(
     private readonly faucetRequestRepository: FaucetRequestRepository,
@@ -22,13 +24,15 @@ export class FaucetService {
   /**
    * Gets request history for a user with pagination
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['data'] })
   async getRequestHistory(data: {
     userId: string;
     limit?: number;
     offset?: number;
   }) {
-    logger.debug("Getting request history", { userId: data.userId });
-
+    setSpanAttributes({ userId: data.userId });
     const { userId, limit = 50, offset = 0 } = data;
 
     if (limit > 100) {
@@ -58,9 +62,11 @@ export class FaucetService {
   /**
    * Gets unlock time for next token requests
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['data'] })
   async getTokenUnlockTime(data: { userId: string }) {
-    logger.debug("Getting token unlock time", { userId: data.userId });
-
+    setSpanAttributes({ userId: data.userId });
     const [lastGasRequest, lastHoldRequest, lastPlatformRequest] = await Promise.all([
       this.faucetRequestRepository.findAll(
         { userId: data.userId, tokenType: "gas" },
@@ -92,13 +98,20 @@ export class FaucetService {
   /**
    * Requests gas tokens to be sent to a wallet
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['data'] })
   async requestGasToken(data: {
     userId: string;
     wallet: string;
     amount: number;
   }) {
-    logger.debug("Processing gas request", data);
-
+    setSpanAttributes({
+      userId: data.userId,
+      wallet: data.wallet,
+      tokenType: "gas",
+      amount: data.amount,
+    });
     const transferAmount =
       data.amount > this.gasTokenAmount ? this.gasTokenAmount : data.amount;
 
@@ -130,13 +143,20 @@ export class FaucetService {
   /**
    * Requests HOLD tokens to be sent to a wallet
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['data'] })
   async requestHoldToken(data: {
     userId: string;
     wallet: string;
     amount: number;
   }) {
-    logger.debug("Processing HOLD token request", data);
-
+    setSpanAttributes({
+      userId: data.userId,
+      wallet: data.wallet,
+      tokenType: "hold",
+      amount: data.amount,
+    });
     const transferAmount =
       data.amount > this.holdTokenAmount ? this.holdTokenAmount : data.amount;
 
@@ -169,13 +189,20 @@ export class FaucetService {
   /**
    * Requests PLATFORM tokens to be sent to a wallet
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['data'] })
   async requestPlatformToken(data: {
     userId: string;
     wallet: string;
     amount: number;
   }) {
-    logger.debug("Processing PLATFORM token request", data);
-
+    setSpanAttributes({
+      userId: data.userId,
+      wallet: data.wallet,
+      tokenType: "platform",
+      amount: data.amount,
+    });
     const transferAmount =
       data.amount > this.platformTokenAmount ? this.platformTokenAmount : data.amount;
 

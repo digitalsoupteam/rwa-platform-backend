@@ -1,4 +1,5 @@
-import mongoose, { Schema, InferRawDocType, Types } from "mongoose";
+import mongoose, { Schema, Types } from "mongoose";
+import type { InferRawDocType } from "mongoose";
 
 const permissionSchemaDefinition = {
     companyId: {

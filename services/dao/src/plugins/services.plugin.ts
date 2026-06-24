@@ -1,8 +1,7 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
 import { DaoService } from "../services/dao.service";
-import { RepositoriesPlugin } from "./repositories.plugin";
-import { ClientsPlugin } from "./clients.plugin";
+import type { RepositoriesPlugin } from "./repositories.plugin";
+import type { ClientsPlugin } from "./clients.plugin";
 import { withTraceSync } from "@shared/monitoring/src/tracing";
 
 export const createServicesPlugin = (

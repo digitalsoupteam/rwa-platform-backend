@@ -1,4 +1,5 @@
-import mongoose, { Schema, InferRawDocType, model } from "mongoose";
+import mongoose, { Schema } from "mongoose";
+import type { InferRawDocType } from "mongoose";
 import { AssistantContextList } from "../shared/enums.model";
 
 

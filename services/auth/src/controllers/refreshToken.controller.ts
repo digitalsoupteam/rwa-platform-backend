@@ -3,7 +3,7 @@ import {
   refreshTokenRequest,
   refreshTokenResponse,
 } from "../models/validation/user.validation";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 
 export const createRefreshTokenController = (servicesPlugin: ServicesPlugin) => {
   return new Elysia({ name: "RefreshTokenController" })

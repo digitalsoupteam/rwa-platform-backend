@@ -1,11 +1,11 @@
 import { RedisEventsClient } from "@shared/redis-events/src/redis-events.client";
-import { logger } from "@shared/monitoring/src/logger";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 
-@TracingDecorator()
+
 export class ChartEventsClient {
   constructor(private readonly redisClient: RedisEventsClient) { }
 
+  @TraceDecorator()
   async publishPriceUpdate(data: {
     poolAddress: string;
     timestamp: number;
@@ -14,19 +14,14 @@ export class ChartEventsClient {
     virtualHoldReserve: string;
     virtualRwaReserve: string;
   }) {
-    try {
-      await this.redisClient.publish(
-        `charts:price:${data.poolAddress}`,
-        "PRICE_UPDATE",
-        data
-      );
-      logger.debug(`Published price update for pool ${data.poolAddress}`);
-    } catch (error) {
-      logger.error(`Failed to publish price update for pool ${data.poolAddress}:`, error);
-      throw error;
-    }
+    await this.redisClient.publish(
+      `charts:price:${data.poolAddress}`,
+      "PRICE_UPDATE",
+      data
+    );
   }
 
+  @TraceDecorator()
   async publishTransactionUpdate(data: {
     poolAddress: string;
     timestamp: number;
@@ -38,16 +33,10 @@ export class ChartEventsClient {
     holdFee: string;
     bonusFee: string;
   }) {
-    try {
-      await this.redisClient.publish(
-        `charts:transactions:${data.poolAddress}`,
-        "TRANSACTION_UPDATE",
-        data
-      );
-      logger.debug(`Published transaction update for pool ${data.poolAddress}`);
-    } catch (error) {
-      logger.error(`Failed to publish transaction update for pool ${data.poolAddress}:`, error);
-      throw error;
-    }
+    await this.redisClient.publish(
+      `charts:transactions:${data.poolAddress}`,
+      "TRANSACTION_UPDATE",
+      data
+    );
   }
 }

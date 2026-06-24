@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 import {
   getCommissionHistoryRequest,
   getCommissionHistoryResponse,
@@ -12,9 +11,6 @@ export const getCommissionHistoryController = (servicesPlugin: ServicesPlugin) =
     .post(
       "/getCommissionHistory",
       async ({ body, loyaltyService }) => {
-        logger.info(
-          `POST /getCommissionHistory - Getting commission history`
-        );
 
         return await loyaltyService.getCommissionHistory(body);
       },

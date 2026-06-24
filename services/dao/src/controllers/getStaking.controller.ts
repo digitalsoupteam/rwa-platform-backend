@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 import {
   getStakingRequest,
   getStakingResponse,
@@ -12,9 +11,6 @@ export const getStakingController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/getStaking",
       async ({ body, daoService }) => {
-        logger.info(
-          `POST /getStaking - Getting staking records`
-        );
 
         return await daoService.getStaking(body);
       },

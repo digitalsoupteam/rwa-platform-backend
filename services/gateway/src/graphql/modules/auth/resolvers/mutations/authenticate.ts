@@ -1,5 +1,5 @@
 import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 import {ethers} from 'ethers'
 
 export const authenticate: MutationResolvers['authenticate'] = async (

@@ -43,22 +43,21 @@ export class OTelLogger {
 
   private emit(severityText: string, severityNumber: number, message: string, attributes?: Record<string, any>): void {
     const span = trace.getActiveSpan();
-    const logRecord = {
+    const logRecord: any = {
       severityText,
       severityNumber,
       body: message,
       attributes: {
         service: this.serviceName,
         ...attributes,
-        ...(span && {
-          traceId: span.spanContext().traceId,
-          spanId: span.spanContext().spanId,
-        }),
       },
     };
-    
+
+    if (span) {
+      logRecord.traceId = span.spanContext().traceId;
+      logRecord.spanId = span.spanContext().spanId;
+    }
+
     this.otelLogger.emit(logRecord);
   }
 }
-// console.log(JSON.stringify(process.env, null, 4))
-export const logger = new OTelLogger(process.env.SERVICE_NAME || "unknown-service3");

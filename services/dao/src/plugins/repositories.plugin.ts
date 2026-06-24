@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import mongoose from "mongoose";
-import { logger } from "@shared/monitoring/src/logger";
+import { logger } from "@shared/monitoring/src/monitoring.plugin";
 import { ProposalRepository } from "../repositories/proposal.repository";
 import { VoteRepository } from "../repositories/vote.repository";
 import { StakingRepository } from "../repositories/staking.repository";

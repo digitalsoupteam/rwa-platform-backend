@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import mongoose from "mongoose";
-import { logger } from "@shared/monitoring/src/logger";
+import { logger } from "@shared/monitoring/src/monitoring.plugin";
 import { CompanyRepository } from "../repositories/company.repository";
 import { MemberRepository } from "../repositories/members.repository";
 import { PermissionRepository } from "../repositories/permissions.repository";
@@ -25,7 +25,7 @@ export const createRepositoriesPlugin = async (mongoUri: string) => {
   await withTraceAsync(
     'company.init.repositories_plugin.mongoose',
     async (ctx) => {
-      logger.info("Connecting to MongoDB", { uri: mongoUri });
+      logger.info("Connecting to MongoDB");
       mongoose.connection.once('connected', () => {
         logger.info("MongoDB connected successfully");
         ctx.end();

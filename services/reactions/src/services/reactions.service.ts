@@ -1,10 +1,11 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { FilterQuery, SortOrder } from "mongoose";
 import { ReactionRepository } from "../repositories/reaction.repository";
-import { IReactionEntity } from "../models/entity/reaction.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import type { IReactionEntity } from "../models/entity/reaction.entity";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
+import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
+import { LogDecorator } from "@shared/monitoring/src/logDecorator";
+import { setSpanAttributes } from "@shared/monitoring/src/tracing";
 
-@TracingDecorator()
+
 export class ReactionsService {
   constructor(
     private readonly reactionRepository: ReactionRepository
@@ -22,47 +23,58 @@ export class ReactionsService {
     };
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["data.parentId", "data.userId", "data.reaction"] })
   async setReaction(data: {
     parentId: string;
     parentType: string;
     userId: string;
     reaction: string;
   }) {
-    logger.debug("Setting reaction", {
+    setSpanAttributes({
       parentId: data.parentId,
+      parentType: data.parentType,
       userId: data.userId,
-      reaction: data.reaction
+      reaction: data.reaction,
     });
-    
+
     const reaction = await this.reactionRepository.create(data);
     return this.formatReaction(reaction);
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["data.parentId", "data.userId", "data.reaction"] })
   async resetReaction(data: {
     parentId: string;
     parentType: string;
     userId: string;
     reaction: string;
   }) {
-    logger.debug("Resetting reaction", {
+    setSpanAttributes({
       parentId: data.parentId,
+      parentType: data.parentType,
       userId: data.userId,
-      reaction: data.reaction
+      reaction: data.reaction,
     });
 
     const reaction = await this.reactionRepository.delete(data);
     return this.formatReaction(reaction);
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["params.parentId", "params.parentType", "params.userId"] })
   async getEntityReactions(params: {
     parentId: string;
     parentType: string;
     userId?: string;
   }) {
-    logger.debug("Getting entity reactions", {
+    setSpanAttributes({
       parentId: params.parentId,
       parentType: params.parentType,
-      userId: params.userId
+      ...(params.userId !== undefined && { userId: params.userId }),
     });
 
     const [reactions, userReactions] = await Promise.all([
@@ -78,22 +90,32 @@ export class ReactionsService {
     };
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["params"] })
   async getReactions(params: {
-    filter?: any;
+    filter?: Record<string, any>;
     sort?: { [key: string]: any };
     limit?: number;
     offset?: number;
   } = {}) {
-    logger.debug("Getting reactions", params);
+    const filter = params.filter ?? {};
+    setSpanAttributes({
+      entityType: "reactions",
+      ...(filter.parentId !== undefined && { parentId: filter.parentId }),
+      ...(filter.parentType !== undefined && { parentType: filter.parentType }),
+      ...(filter.userId !== undefined && { userId: filter.userId }),
+      ...(filter.reaction !== undefined && { reaction: filter.reaction }),
+    });
 
     const {
-      filter = {},
+      filter: _filter = {},
       sort = { createdAt: "desc" },
       limit = 100,
       offset = 0
     } = params;
 
-    const reactions = await this.reactionRepository.findAll(filter, sort, limit, offset);
+    const reactions = await this.reactionRepository.findAll(_filter, sort, limit, offset);
     return reactions.map(reaction => this.formatReaction(reaction));
   }
 }

@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 import {
   getOhlcPriceDataRequest,
   getOhlcPriceDataResponse,
@@ -12,9 +11,6 @@ export const getOhlcPriceDataController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/getOhlcPriceData",
       async ({ body, chartsService }) => {
-        logger.info(
-          `POST /getOhlcPriceData - Getting OHLC data for pool: ${body.poolAddress}, interval: ${body.interval}`
-        );
 
         return await chartsService.getOhlcPriceData(body);
       },

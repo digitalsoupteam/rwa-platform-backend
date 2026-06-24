@@ -1,35 +1,30 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { NotFoundError } from "@shared/errors/app-errors";
-import { FilterQuery, SortOrder } from "mongoose";
-import {
-  TokenBalanceEntity,
-  ITokenBalanceEntity,
-} from "../models/entity/tokenBalance.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { AppError } from "@shared/errors/app-errors";
+import type { FilterQuery, SortOrder } from "mongoose";
+import { TokenBalanceEntity } from "../models/entity/tokenBalance.entity";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 
-@TracingDecorator()
+
 export class TokenBalanceRepository {
   constructor(private readonly model = TokenBalanceEntity) {}
 
+  @TraceDecorator()
   async findById(id: string) {
-    logger.debug(`Finding token balance by ID: ${id}`);
     const balance = await this.model.findById(id).lean();
 
     if (!balance) {
-      throw new NotFoundError("TokenBalance", id);
+      throw new AppError({ message: `TokenBalance ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
     }
 
     return balance;
   }
 
+  @TraceDecorator()
   async findAll(
     filter: FilterQuery<typeof this.model> = {},
     sort: { [key: string]: SortOrder } = { createdAt: "asc" },
     limit: number = 100,
     offset: number = 0
   ) {
-    logger.debug(`Finding token balances with query: ${JSON.stringify(filter)}`);
-
     return await this.model
       .find(filter)
       .sort(sort)
@@ -41,6 +36,7 @@ export class TokenBalanceRepository {
   /**
    * Update balance by incrementing/decrementing the amount
    */
+  @TraceDecorator()
   async updateBalance(
     owner: string,
     tokenAddress: string,
@@ -50,8 +46,6 @@ export class TokenBalanceRepository {
     amount: number,
     lastUpdateBlock: number
   ) {
-    logger.debug(`Updating balance for ${owner} - ${tokenAddress} - ${tokenId} by ${amount}`);
-    
     const balance = await this.model.findOneAndUpdate(
       { owner, tokenAddress, tokenId, poolAddress, chainId },
       {

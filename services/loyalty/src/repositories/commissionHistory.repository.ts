@@ -1,13 +1,14 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { FilterQuery, SortOrder } from "mongoose";
+import type { FilterQuery, SortOrder } from "mongoose";
 import mongoose from "mongoose";
-import { CommissionHistoryEntity, ICommissionHistoryEntity } from "../models/entity/commissionHistory.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { CommissionHistoryEntity } from "../models/entity/commissionHistory.entity";
+import type { ICommissionHistoryEntity } from "../models/entity/commissionHistory.entity";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 
-@TracingDecorator()
+
 export class CommissionHistoryRepository {
   constructor(private readonly model = CommissionHistoryEntity) {}
 
+  @TraceDecorator()
   async create(data: Pick<ICommissionHistoryEntity,
     "userWallet" |
     "userId" |
@@ -18,7 +19,6 @@ export class CommissionHistoryRepository {
     "relatedUserWallet" |
     "relatedUserId"
   > & { amount: string }) {
-    logger.debug(`Creating commission history: ${data.actionType} for user: ${data.userWallet}, amount: ${data.amount}`);
 
     const createData = {
       ...data,
@@ -29,14 +29,13 @@ export class CommissionHistoryRepository {
     return doc.toObject();
   }
 
+  @TraceDecorator()
   async findAll(
     filter: FilterQuery<typeof this.model> = {},
     sort: { [key: string]: SortOrder } = { createdAt: "desc" },
     limit: number = 100,
     offset: number = 0
   ) {
-    logger.debug(`Finding commission history with query: ${JSON.stringify(filter)}`);
-
     return await this.model
       .find(filter)
       .sort(sort)

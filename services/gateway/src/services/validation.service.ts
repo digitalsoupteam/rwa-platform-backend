@@ -1,5 +1,8 @@
 import { GraphQLError } from 'graphql';
-import { TracingDecorator } from '@shared/monitoring/src/tracingDecorator';
+
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
 
 const SOCIAL_URL_PATTERNS: Record<string, RegExp> = {
   twitter: /^https?:\/\/(x\.com|twitter\.com)\/.+/i,
@@ -10,11 +13,14 @@ const SOCIAL_URL_PATTERNS: Record<string, RegExp> = {
 
 const VALID_SOCIAL_TYPES = new Set(Object.keys(SOCIAL_URL_PATTERNS).concat(['webpage']));
 
-@TracingDecorator()
+
 export class ValidationService {
   /**
    * Validates ISO 3166-1 alpha-2 country code
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['country'] })
   validateCountry(country: string | null | undefined): void {
     if (country == null) return;
     if (!/^[A-Z]{2}$/.test(country)) {
@@ -25,6 +31,9 @@ export class ValidationService {
   /**
    * Validates array of social links — checks type is known and URL matches the pattern
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['socials'] })
   validateSocials(socials: Array<{ type: string; url: string }> | null | undefined): void {
     if (socials == null) return;
     if (!Array.isArray(socials)) {

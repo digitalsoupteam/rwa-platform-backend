@@ -1,5 +1,4 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
 import { type ServicesPlugin } from "../../plugins/services.plugin";
 import {
   getImageRequest,
@@ -12,9 +11,6 @@ export const getImageController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/getImage",
       async ({ body, imagesService }) => {
-        logger.info(
-          `POST /getImage - Getting image with ID: ${body.id}`
-        );
 
         return await imagesService.getImage(body.id);
       },

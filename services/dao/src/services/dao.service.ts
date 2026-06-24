@@ -1,20 +1,22 @@
-import { logger } from "@shared/monitoring/src/logger";
 import { ProposalRepository } from "../repositories/proposal.repository";
 import { StakingRepository } from "../repositories/staking.repository";
 import { StakingHistoryRepository } from "../repositories/stakingHistory.repository";
 import { TimelockTaskRepository } from "../repositories/timelockTask.repository";
 import { TreasuryWithdrawRepository } from "../repositories/treasuryWithdraw.repository";
 import { VoteRepository } from "../repositories/vote.repository";
-import { Types, SortOrder } from "mongoose";
-import { IProposalEntity } from "../models/entity/proposal.entity";
-import { IVoteEntity } from "../models/entity/vote.entity";
-import { IStakingHistoryEntity } from "../models/entity/stakingHistory.entity";
-import { ITimelockTaskEntity } from "../models/entity/timelockTask.entity";
-import { ITreasuryWithdrawEntity } from "../models/entity/treasuryWithdraw.entity";
-import { IStakingEntity } from "../models/entity/staking.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import type { SortOrder } from "mongoose";
+import type { IProposalEntity } from "../models/entity/proposal.entity";
+import type { IVoteEntity } from "../models/entity/vote.entity";
+import type { IStakingHistoryEntity } from "../models/entity/stakingHistory.entity";
+import type { ITimelockTaskEntity } from "../models/entity/timelockTask.entity";
+import type { ITreasuryWithdrawEntity } from "../models/entity/treasuryWithdraw.entity";
+import type { IStakingEntity } from "../models/entity/staking.entity";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
+import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
+import { LogDecorator } from "@shared/monitoring/src/logDecorator";
+import { setSpanAttributes } from "@shared/monitoring/src/tracing";
 
-@TracingDecorator()
+
 export class DaoService {
     constructor(
         private readonly proposalRepository: ProposalRepository,
@@ -28,6 +30,9 @@ export class DaoService {
     /**
      * Process Governance_ProposalCreated event
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['event'] })
     async processProposalCreated(event: {
         emittedFrom: string;
         proposalId: string;
@@ -41,8 +46,12 @@ export class DaoService {
         transactionHash: string;
         logIndex: number;
     }) {
-        logger.info(`Processing proposal created: ${event.proposalId} by ${event.proposer}`);
-
+        setSpanAttributes({
+            wallet: event.proposer,
+            proposalId: event.proposalId,
+            chainId: event.chainId,
+            transactionHash: event.transactionHash
+        });
         await this.proposalRepository.create({
             proposalId: event.proposalId,
             proposer: event.proposer,
@@ -60,6 +69,9 @@ export class DaoService {
     /**
      * Process Governance_ProposalExecuted event
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['event'] })
     async processProposalExecuted(event: {
         emittedFrom: string;
         proposalId: string;
@@ -68,14 +80,21 @@ export class DaoService {
         transactionHash: string;
         logIndex: number;
     }) {
-        logger.info(`Processing proposal executed: ${event.proposalId} by ${event.executor}`);
-
+        setSpanAttributes({
+            wallet: event.executor,
+            proposalId: event.proposalId,
+            chainId: event.chainId,
+            transactionHash: event.transactionHash
+        });
         await this.proposalRepository.updateState(event.proposalId, "executed");
     }
 
     /**
      * Process Governance_ProposalCancelled event
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['event'] })
     async processProposalCancelled(event: {
         emittedFrom: string;
         proposalId: string;
@@ -84,14 +103,21 @@ export class DaoService {
         transactionHash: string;
         logIndex: number;
     }) {
-        logger.info(`Processing proposal cancelled: ${event.proposalId} by ${event.canceller}`);
-
+        setSpanAttributes({
+            wallet: event.canceller,
+            proposalId: event.proposalId,
+            chainId: event.chainId,
+            transactionHash: event.transactionHash
+        });
         await this.proposalRepository.updateState(event.proposalId, "canceled");
     }
 
     /**
      * Process Governance_VoteCast event
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['event'] })
     async processVoteCast(event: {
         emittedFrom: string;
         proposalId: string;
@@ -104,8 +130,12 @@ export class DaoService {
         logIndex: number;
         blockNumber: number;
     }) {
-        logger.info(`Processing vote cast: ${event.proposalId} by ${event.voter}, support: ${event.support}`);
-
+        setSpanAttributes({
+            voter: event.voter,
+            proposalId: event.proposalId,
+            chainId: event.chainId,
+            transactionHash: event.transactionHash
+        });
         await this.voteRepository.create({
             proposalId: event.proposalId,
             chainId: event.chainId,
@@ -123,6 +153,9 @@ export class DaoService {
     /**
      * Process DaoStaking_TokensStaked event
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['event'] })
     async processTokensStaked(event: {
         emittedFrom: string;
         staker: string;
@@ -132,8 +165,11 @@ export class DaoService {
         transactionHash: string;
         logIndex: number;
     }) {
-        logger.info(`Processing tokens staked: ${event.amount} by ${event.staker}`);
-
+        setSpanAttributes({
+            wallet: event.staker,
+            chainId: event.chainId,
+            transactionHash: event.transactionHash
+        });
         // Add stake amount to user's total
         await this.stakingRepository.addStake(
             event.staker,
@@ -156,6 +192,9 @@ export class DaoService {
     /**
      * Process DaoStaking_TokensUnstaked event
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['event'] })
     async processTokensUnstaked(event: {
         emittedFrom: string;
         staker: string;
@@ -165,8 +204,11 @@ export class DaoService {
         transactionHash: string;
         logIndex: number;
     }) {
-        logger.info(`Processing tokens unstaked: ${event.amount} by ${event.staker}`);
-
+        setSpanAttributes({
+            wallet: event.staker,
+            chainId: event.chainId,
+            transactionHash: event.transactionHash
+        });
         // Subtract stake amount from user's total
         await this.stakingRepository.subStake(
             event.staker,
@@ -188,6 +230,9 @@ export class DaoService {
     /**
      * Process Timelock_TransactionQueued event
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['event'] })
     async processTransactionQueued(event: {
         emittedFrom: string;
         txHash: string;
@@ -198,8 +243,10 @@ export class DaoService {
         transactionHash: string;
         logIndex: number;
     }) {
-        logger.info(`Processing transaction queued: ${event.txHash} for target ${event.target}`);
-
+        setSpanAttributes({
+            chainId: event.chainId,
+            transactionHash: event.transactionHash
+        });
         await this.timelockTaskRepository.create({
             txHash: event.txHash,
             target: event.target,
@@ -212,6 +259,9 @@ export class DaoService {
     /**
      * Process Timelock_TransactionExecuted event
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['event'] })
     async processTransactionExecuted(event: {
         emittedFrom: string;
         txHash: string;
@@ -222,14 +272,19 @@ export class DaoService {
         transactionHash: string;
         logIndex: number;
     }) {
-        logger.info(`Processing transaction executed: ${event.txHash}`);
-
+        setSpanAttributes({
+            chainId: event.chainId,
+            transactionHash: event.transactionHash
+        });
         await this.timelockTaskRepository.updateExecuted(event.txHash, true);
     }
 
     /**
      * Process Timelock_TransactionCancelled event
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['event'] })
     async processTransactionCancelled(event: {
         emittedFrom: string;
         txHash: string;
@@ -240,8 +295,10 @@ export class DaoService {
         transactionHash: string;
         logIndex: number;
     }) {
-        logger.info(`Processing transaction cancelled: ${event.txHash}`);
-
+        setSpanAttributes({
+            chainId: event.chainId,
+            transactionHash: event.transactionHash
+        });
         // For cancelled transactions, we might want to remove them or mark as cancelled
         // For now, we'll just log it since the entity doesn't have a cancelled state
     }
@@ -249,6 +306,9 @@ export class DaoService {
     /**
      * Process Treasury_Withdrawal event
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['event'] })
     async processTreasuryWithdrawal(event: {
         emittedFrom: string;
         to: string;
@@ -258,8 +318,11 @@ export class DaoService {
         transactionHash: string;
         logIndex: number;
     }) {
-        logger.info(`Processing treasury withdrawal: ${event.amount} ${event.token} to ${event.to}`);
-
+        setSpanAttributes({
+            wallet: event.to,
+            chainId: event.chainId,
+            transactionHash: event.transactionHash
+        });
         await this.treasuryWithdrawRepository.create({
             recipient: event.to,
             token: event.token,
@@ -365,14 +428,15 @@ export class DaoService {
     /**
      * Get all proposals with pagination
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['params'] })
     async getProposals(params: {
         filter?: Record<string, any>,
         sort?: { [key: string]: SortOrder },
         limit?: number,
         offset?: number
     }) {
-        logger.debug("Getting proposals list", params);
-        
         const proposals = await this.proposalRepository.findAll(
             params.filter,
             params.sort,
@@ -386,14 +450,15 @@ export class DaoService {
     /**
      * Get all votes
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['params'] })
     async getVotes(params: {
         filter?: Record<string, any>,
         sort?: { [key: string]: SortOrder },
         limit?: number,
         offset?: number
     }) {
-        logger.debug("Getting votes list", params);
-        
         const votes = await this.voteRepository.findAll(
             params.filter,
             params.sort,
@@ -407,14 +472,15 @@ export class DaoService {
     /**
      * Get staking history 
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['params'] })
     async getStakingHistory(params: {
         filter?: Record<string, any>,
         sort?: { [key: string]: SortOrder },
         limit?: number,
         offset?: number
     }) {
-        logger.debug("Getting staking history list", params);
-        
         const stakingHistory = await this.stakingHistoryRepository.findAll(
             params.filter,
             params.sort,
@@ -429,14 +495,15 @@ export class DaoService {
     /**
      * Get timelock tasks
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['params'] })
     async getTimelockTasks(params: {
         filter?: Record<string, any>,
         sort?: { [key: string]: SortOrder },
         limit?: number,
         offset?: number
     }) {
-        logger.debug("Getting timelock tasks list", params);
-        
         const timelockTasks = await this.timelockTaskRepository.findAll(
             params.filter,
             params.sort,
@@ -450,14 +517,15 @@ export class DaoService {
     /**
      * Get treasury withdrawals
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['params'] })
     async getTreasuryWithdrawals(params: {
         filter?: Record<string, any>,
         sort?: { [key: string]: SortOrder },
         limit?: number,
         offset?: number
     }) {
-        logger.debug("Getting treasury withdrawals list", params);
-        
         const treasuryWithdrawals = await this.treasuryWithdrawRepository.findAll(
             params.filter,
             params.sort,
@@ -471,14 +539,15 @@ export class DaoService {
     /**
      * Get staking records
      */
+    @TraceDecorator()
+    @MetricsDecorator()
+    @LogDecorator({ args: ['params'] })
     async getStaking(params: {
         filter?: Record<string, any>,
         sort?: { [key: string]: SortOrder },
         limit?: number,
         offset?: number
     }) {
-        logger.debug("Getting staking records list", params);
-        
         const stakingRecords = await this.stakingRepository.findAll(
             params.filter,
             params.sort,

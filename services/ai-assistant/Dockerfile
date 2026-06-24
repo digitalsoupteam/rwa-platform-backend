@@ -27,4 +27,6 @@ COPY services/ai-assistant ./services/ai-assistant
 EXPOSE ${PORT}
 
 
-CMD ["bun", "services/ai-assistant/src/index.ts"]
+WORKDIR /app/services/ai-assistant
+ENTRYPOINT ["bun"]
+CMD ["src/index.ts"]

@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../../plugins/services.plugin";
+import type { ServicesPlugin } from "../../plugins/services.plugin";
 import {
   editBusinessRequest,
   editBusinessResponse,
@@ -12,9 +11,6 @@ export const editBusinessController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/editBusiness",
       async ({ body, businessService }) => {
-        logger.info(
-          `POST /editBusiness - Updating business with ID: ${body.id}`
-        );
 
         return await businessService.editBusiness(body);
       },

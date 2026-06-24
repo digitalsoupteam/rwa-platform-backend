@@ -1,6 +1,6 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
+import { AppError } from '@shared/errors/app-errors';
 import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const requestPlatform: MutationResolvers['requestPlatform'] = async (
   _parent,
@@ -10,7 +10,7 @@ export const requestPlatform: MutationResolvers['requestPlatform'] = async (
   logger.info('Requesting platform token', { input });
 
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
   }
 
   const response = await clients.testnetFaucetClient.requestPlatform.post({

@@ -1,5 +1,4 @@
 import { t } from "elysia";
-import { paginationSchema } from "./shared.validation";
 
 /*
  * Entity schemas

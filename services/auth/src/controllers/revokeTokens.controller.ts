@@ -3,7 +3,7 @@ import {
   revokeTokensRequest,
   revokeTokensResponse,
 } from "../models/validation/user.validation";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 
 export const createRevokeTokensController = (servicesPlugin: ServicesPlugin) => {
   return new Elysia({ name: "RevokeTokensController" })

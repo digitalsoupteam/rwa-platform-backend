@@ -1,6 +1,6 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
+import { AppError } from '@shared/errors/app-errors';
 import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const requestGas: MutationResolvers['requestGas'] = async (
   _parent,

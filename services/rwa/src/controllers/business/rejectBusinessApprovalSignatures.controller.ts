@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../../plugins/services.plugin";
+import type { ServicesPlugin } from "../../plugins/services.plugin";
 import {
   rejectBusinessApprovalSignaturesRequest,
   rejectBusinessApprovalSignaturesResponse,
@@ -12,9 +11,6 @@ export const rejectBusinessApprovalSignaturesController = (servicesPlugin: Servi
     .post(
       "/rejectBusinessApprovalSignatures",
       async ({ body, businessService }) => {
-        logger.info(
-          `POST /rejectBusinessApprovalSignatures - Rejecting approval signatures for business with ID: ${body.id}`
-        );
 
         return await businessService.rejectApprovalSignatures(body.id);
       },

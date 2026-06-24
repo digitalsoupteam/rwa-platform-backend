@@ -1,5 +1,4 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
 import {
   createSignatureTaskRequest,
   createSignatureTaskResponse,
@@ -12,9 +11,6 @@ export const createSignatureTaskController = (servicesPlugin: ServicesPlugin) =>
     .post(
       "/createSignatureTask",
       async ({ body, signaturesService }) => {
-        logger.info(
-          `POST /createSignatureTask - Creating new signature task with hash: ${body.hash}`
-        );
 
         const task = await signaturesService.createTask(body);
 

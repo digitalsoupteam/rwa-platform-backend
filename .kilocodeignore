@@ -1,0 +1,6 @@
+.env
+.env.*
+
+# Allow .env.example and .env.examples
+!.env.example
+!.env.examples

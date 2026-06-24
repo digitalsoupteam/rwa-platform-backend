@@ -1,12 +1,15 @@
-import { logger } from "@shared/monitoring/src/logger";
 import { ethers, Wallet } from "ethers";
 import { SignersManagerClient } from "../clients/signersManager.client";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
+import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
+import { LogDecorator } from "@shared/monitoring/src/logDecorator";
+import { setSpanAttributes } from "@shared/monitoring/src/tracing";
+import { AppError } from "@shared/errors/app-errors";
 
 /**
  * Service for handling digital signatures
  */
-@TracingDecorator()
+
 export class SignatureService {
   private readonly wallet: Wallet;
 
@@ -20,16 +23,23 @@ export class SignatureService {
   /**
    * Sign hash with private key and send result back
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['hash', 'taskId', 'expired'] })
   async signHash(
     hash: string,
     taskId: string,
     expired: number,
   ) {
-    logger.debug("Signing hash for task", { taskId });
-
+    setSpanAttributes({
+      wallet: this.wallet.address,
+      hash,
+      taskId,
+      expired,
+    });
     const now = Math.floor(Date.now() / 1000);
     if (expired < now) {
-      throw new Error("Task expired");
+      throw new AppError({ message: "Task expired", statusCode: 410, code: "EXPIRED" });
     }
 
     const hashToSign = ethers.solidityPackedKeccak256(
@@ -48,12 +58,6 @@ export class SignatureService {
     await this.signersManagerClient.sendSignature({
       taskId,
       signer,
-      hash,
-      signature
-    });
-    
-    logger.info("Successfully signed hash", {
-      taskId,
       hash,
       signature
     });

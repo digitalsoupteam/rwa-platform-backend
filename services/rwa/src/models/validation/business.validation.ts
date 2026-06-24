@@ -1,5 +1,4 @@
 import { t } from "elysia";
-import { paginationSchema } from "./shared.validation";
 
 /*
  * Shared schemas
@@ -28,7 +27,7 @@ export const businessSchema = t.Object({
   approvalSignaturesTaskExpired: t.Optional(t.Number()),
   country: t.Optional(t.String()),
   businessType: t.Optional(t.String()),
-  socials: t.Optional(t.Array(socialLinkSchema)),
+  socials: t.Array(socialLinkSchema),
   paused: t.Boolean(),
   createdAt: t.Number(),
   updatedAt: t.Number(),

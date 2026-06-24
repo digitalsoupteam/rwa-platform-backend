@@ -1,16 +1,16 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from "@shared/errors/app-errors";
+import type { MutationResolvers } from '../../../../generated/types';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const createCompany: MutationResolvers['createCompany'] = async (
   _parent,
   { input },
   { services, clients, user }
 ) => {
-  logger.info('Creating new company', { input });
+  logger.debug('Creating new company', { input });
 
   if (!user) {
-    throw new AuthenticationError("Authentication required");
+    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
   }
 
   services.validation.validateCountry(input.country);
@@ -36,7 +36,7 @@ export const createCompany: MutationResolvers['createCompany'] = async (
     name: data.name,
     description: data.description,
     ownerId: data.ownerId,
-    country: data.country ?? null,
+    country: data.country,
     socials: data.socials ?? [],
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,

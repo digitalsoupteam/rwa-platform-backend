@@ -1,8 +1,8 @@
 
 import Redis from "ioredis";
-import { TracingDecorator } from "./tracingDecorator";
+import { TracingDecoratorClass } from "./tracingDecoratorClass";
 
-@TracingDecorator({
+@TracingDecoratorClass({
   deep: 10,
   privateEnabled: true,
   prefix: 'REDIS',

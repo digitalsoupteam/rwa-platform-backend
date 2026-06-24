@@ -1,13 +1,14 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { NotFoundError } from "@shared/errors/app-errors";
-import { FilterQuery, SortOrder } from "mongoose";
-import { PoolEntity, IPoolEntity } from "../models/entity/pool.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { AppError } from "@shared/errors/app-errors";
+import type { FilterQuery, SortOrder } from "mongoose";
+import { PoolEntity } from "../models/entity/pool.entity";
+import type { IPoolEntity } from "../models/entity/pool.entity";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 
-@TracingDecorator()
+
 export class PoolRepository {
   constructor(private readonly model = PoolEntity) { }
 
+  @TraceDecorator()
   async createPool(data: Pick<IPoolEntity,
     "ownerId" |
     "ownerType" |
@@ -35,11 +36,11 @@ export class PoolRepository {
     "tags" |
     "image"
   >>) {
-    logger.debug(`Creating pool: ${JSON.stringify(data)}`);
     const doc = await this.model.create(data);
     return doc.toObject();
   }
 
+  @TraceDecorator()
   async updatePool(id: string, data: Partial<Pick<IPoolEntity,
     "chainId" |
     "ownerWallet" |
@@ -86,35 +87,33 @@ export class PoolRepository {
     "approvalSignaturesTaskExpired" |
     "image"
   >>) {
-    logger.debug(`Updating pool fields: ${id}`);
     const doc = await this.model.findByIdAndUpdate(id, data, { new: true }).lean();
 
     if (!doc) {
-      throw new NotFoundError("Pool", id);
+      throw new AppError({ message: `Pool ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
     }
 
     return doc;
   }
 
+  @TraceDecorator()
   async findById(id: string) {
-    logger.debug(`Finding pool by ID: ${id}`);
     const doc = await this.model.findById(id).lean();
 
     if (!doc) {
-      throw new NotFoundError("Pool", id);
+      throw new AppError({ message: `Pool ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
     }
 
     return doc;
   }
 
+  @TraceDecorator()
   async findAll(
     filter: FilterQuery<typeof this.model> = {},
     sort: { [key: string]: SortOrder } = { createdAt: "asc" },
     limit: number = 100,
     offset: number = 0
   ) {
-    logger.debug(`Finding pools with query: ${JSON.stringify(filter)}`);
-
     return await this.model
       .find(filter)
       .sort(sort)
@@ -123,6 +122,7 @@ export class PoolRepository {
       .lean();
   }
 
+  @TraceDecorator()
   async updatePoolByAddress(poolAddress: string, data: Partial<Pick<IPoolEntity,
     "realHoldReserve" |
     "virtualHoldReserve" |
@@ -142,7 +142,6 @@ export class PoolRepository {
     "floatingTimestampOffset" |
     "rewardedRwaAmount"
   >>) {
-    logger.debug(`Updating pool by address: ${poolAddress}`);
     const doc = await this.model.findOneAndUpdate(
       { poolAddress },
       data,
@@ -150,18 +149,18 @@ export class PoolRepository {
     ).lean();
 
     if (!doc) {
-      throw new NotFoundError("Pool", `with address ${poolAddress}`);
+      throw new AppError({ message: `Pool with address ${poolAddress} not found`, statusCode: 404, code: "NOT_FOUND" });
     }
 
     return doc;
   }
 
+  @TraceDecorator()
   async findByAddress(poolAddress: string) {
-    logger.debug(`Finding pool by address: ${poolAddress}`);
     const doc = await this.model.findOne({ poolAddress }).lean();
 
     if (!doc) {
-      throw new NotFoundError("Pool", `with address ${poolAddress}`);
+      throw new AppError({ message: `Pool with address ${poolAddress} not found`, statusCode: 404, code: "NOT_FOUND" });
     }
 
     return doc;

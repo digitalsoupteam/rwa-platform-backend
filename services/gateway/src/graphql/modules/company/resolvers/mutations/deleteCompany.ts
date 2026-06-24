@@ -1,16 +1,16 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from "@shared/errors/app-errors";
+import type { MutationResolvers } from '../../../../generated/types';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const deleteCompany: MutationResolvers['deleteCompany'] = async (
   _parent,
   { id },
   { services, clients, user }
 ) => {
-  logger.info('Deleting company', { id });
+  logger.debug('Deleting company', { id });
 
   if (!user) {
-    throw new AuthenticationError("Authentication required");
+    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
   }
 
   const companyResponse = await services.cache.getCompany({ id });

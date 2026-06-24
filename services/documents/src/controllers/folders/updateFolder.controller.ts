@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../../plugins/services.plugin";
+import type { ServicesPlugin } from "../../plugins/services.plugin";
 import {
   updateFolderRequest,
   updateFolderResponse,
@@ -12,9 +11,6 @@ export const updateFolderController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/updateFolder",
       async ({ body, documentsService }) => {
-        logger.info(
-          `POST /updateFolder - Updating folder with ID: ${body.id}`
-        );
 
         return await documentsService.updateFolder(body);
       },

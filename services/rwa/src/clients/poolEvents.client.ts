@@ -1,6 +1,6 @@
 import { RedisEventsClient } from "@shared/redis-events/src/redis-events.client";
-import { logger } from "@shared/monitoring/src/logger";
-import { IPoolDTO } from "../models/validation/pool.validation";
+import { logger } from "@shared/monitoring/src/monitoring.plugin";
+import type { IPoolDTO } from "../models/validation/pool.validation";
 
 export class PoolEventsClient {
   constructor(private readonly redisClient: RedisEventsClient) {}

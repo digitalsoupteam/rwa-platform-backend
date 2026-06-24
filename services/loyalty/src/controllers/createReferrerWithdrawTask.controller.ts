@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 import {
   createReferrerWithdrawTaskRequest,
   createReferrerWithdrawTaskResponse,
@@ -12,9 +11,6 @@ export const createReferrerWithdrawTaskController = (servicesPlugin: ServicesPlu
     .post(
       "/createReferrerWithdrawTask",
       async ({ body, loyaltyService }) => {
-        logger.info(
-          `POST /createReferrerWithdrawTask - Creating referrer withdraw task for ${body.referrerWallet}`
-        );
 
         return await loyaltyService.createReferrerWithdrawTask(body);
       },

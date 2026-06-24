@@ -1,4 +1,4 @@
-import { QueryResolvers } from '../../../../generated/types';
+import type { QueryResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/logger';
 
 export const getPoolTransactions: QueryResolvers['getPoolTransactions'] = async (

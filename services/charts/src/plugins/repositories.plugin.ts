@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import mongoose from "mongoose";
-import { logger } from "@shared/monitoring/src/logger";
+import { logger } from "@shared/monitoring/src/monitoring.plugin";
 import { PriceDataRepository } from "../repositories/priceData.repository";
 import { PoolTransactionRepository } from "../repositories/poolTransaction.repository";
 import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";

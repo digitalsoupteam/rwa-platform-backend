@@ -18,10 +18,17 @@ datasources:
     uid: loki
     access: proxy
     url: http://loki:3100
-    editable: false
+    editable: true
     jsonData:
       maxLines: 1000
       timeout: 60
+      derivedFields:
+        - datasourceUid: tempo
+          matcherRegex: 'trace_id'
+          matcherType: label
+          name: TraceID
+          url: '$${__value.raw}'
+          urlDisplayLabel: 'View Trace'
 
   - name: Tempo
     type: tempo
@@ -41,18 +48,20 @@ datasources:
         timeShiftEnabled: true
         spanStartTimeShift: 1h
         spanEndTimeShift: 1h
-      tracesToLogs:
+      tracesToLogsV2:
         datasourceUid: loki
-        tags: ['job', 'instance', 'pod', 'namespace']
-        mappedTags: [{ key: 'service.name', value: 'service' }]
-        mapTagNamesEnabled: false
-        spanStartTimeShift: 1h
-        spanEndTimeShift: 1h
+        spanStartTimeShift: '-1h'
+        spanEndTimeShift: '1h'
+        tags:
+          - key: service.name
+            value: service_name
         filterByTraceID: false
         filterBySpanID: false
+        customQuery: true
+        query: '{$${__tags}} | trace_id="$${__trace.traceId}"'
       tracesToMetrics:
         datasourceUid: prometheus
-        tags: [{ key: 'service.name', value: 'service' }, { key: 'job' }]
+        tags: [{ key: 'service.name', value: 'service' }]
         queries:
           - name: 'Sample query'
             query: 'sum(rate(traces_spanmetrics_latency_bucket{$$__tags}[5m]))'

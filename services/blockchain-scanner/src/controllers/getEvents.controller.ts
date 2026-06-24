@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 import {
   getEventsRequest,
   getEventsResponse,
@@ -12,9 +11,6 @@ export const getEventsController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/getEvents",
       async ({ body, blockchainScannerService }) => {
-        logger.info(
-          `POST /getEvents - Getting events with filters: ${JSON.stringify(body)}`
-        );
 
         const { pagination, ...filters } = body;
 

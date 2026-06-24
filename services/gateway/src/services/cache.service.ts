@@ -1,8 +1,12 @@
 import { Redis } from 'ioredis';
-import { CompanyClient } from '../clients/eden.clients';
-import { TracingDecorator } from '@shared/monitoring/src/tracingDecorator';
+import type { CompanyClient } from '../clients/eden.clients';
 
-@TracingDecorator()
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
+
+
 export class CacheService {
   constructor(
     private redis: Redis,
@@ -13,19 +17,26 @@ export class CacheService {
     return `company:${companyId}`;
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['companyId'] })
   async resetCompanyCache(companyId: string) {
+    setSpanAttributes({ entityId: companyId });
     await this.redis.del(this.getCompanyCacheKey(companyId));
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['params'] })
   async getCompany(
     params: Parameters<CompanyClient['getCompany']['post']>[0]
   ): ReturnType<CompanyClient['getCompany']['post']> {
+    setSpanAttributes({ entityId: params.id });
     const cacheKey = this.getCompanyCacheKey(params.id);
 
     // Try to get from cache
     const cached = await this.redis.get(cacheKey);
     if (cached) {
-      console.log('Return cached company')
       // @ts-ignore
       return { data: JSON.parse(cached), error: null };
     }

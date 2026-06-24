@@ -1,5 +1,5 @@
 import { CONFIG } from "../config";
-import { logger } from "@shared/monitoring/src/logger";
+import { logger } from "@shared/monitoring/src/monitoring.plugin";
 import * as jwt from 'jsonwebtoken';
 
 

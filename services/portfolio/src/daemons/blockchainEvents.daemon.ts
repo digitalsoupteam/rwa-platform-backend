@@ -1,13 +1,14 @@
-import { BaseBlockchainDaemon, BlockchainEvent, EventRouting } from "@shared/blockchain-daemon/src/baseBlockchain.daemon";
+import { BaseBlockchainDaemon } from "@shared/blockchain-daemon/src/baseBlockchain.daemon";
+import type { BlockchainEvent } from "@shared/blockchain-daemon/src/baseBlockchain.daemon";
+import type  { EventRouting } from "@shared/blockchain-daemon/src/baseBlockchain.daemon";
 import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
 import { PortfolioService } from "../services/portfolio.service";
-import { logger } from "@shared/monitoring/src/logger";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 
 /**
  * Portfolio service implementation of blockchain events daemon
  */
-@TracingDecorator()
+
 export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
   constructor(
     rabbitClient: RabbitMQClient,
@@ -16,6 +17,7 @@ export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
     super(rabbitClient, "blockchain.events.portfolio");
   }
 
+  @TraceDecorator()
   protected getEventRouting(): EventRouting {
     return {
       "RWA_Transfer": async (event: BlockchainEvent) => {
@@ -39,15 +41,6 @@ export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
           blockNumber: event.blockNumber,
           amount: Number(amount),
           poolAddress: pool,
-        });
-
-        logger.info(`Processed swap event for user`, {
-          emittedFrom,
-          from,
-          to,
-          tokenId,
-          amount,
-          pool
         });
       }
     };

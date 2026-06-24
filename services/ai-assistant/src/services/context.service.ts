@@ -1,9 +1,11 @@
-import { logger } from "@shared/monitoring/src/logger";
 import type { RwaClient, PortfolioClient } from "../clients/eden.clients";
-import { AssistantContext } from "../models/shared/enums.model";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import type { AssistantContext } from "../models/shared/enums.model";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
+import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
+import { LogDecorator } from "@shared/monitoring/src/logDecorator";
+import { setSpanAttributes } from "@shared/monitoring/src/tracing";
 
-@TracingDecorator()
+
 export class ContextService {
   private readonly INVESTOR_BASE_PROMPT = 
     "You are an AI assistant helping investors understand and navigate RWA investment opportunities.\n" +
@@ -60,9 +62,14 @@ export class ContextService {
     private readonly portfolioClient: PortfolioClient,
   ) {}
 
-  async getContextForAssistant(contextPreferences: AssistantContext, userId: string): Promise<string> {
-    logger.debug("Getting context for assistant");
-
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['contextPreferences', 'userId'] })
+    async getContextForAssistant(contextPreferences: AssistantContext, userId: string): Promise<string> {
+    setSpanAttributes({
+      userId,
+      contextPreferences: contextPreferences.join(','),
+    });
     const contextParts = [];
 
     // Base prompts first
@@ -92,7 +99,9 @@ export class ContextService {
     return contextParts.join('\n\n');
   }
 
+  @TraceDecorator()
   private async getPopularPoolsContext(): Promise<string | null> {
+    setSpanAttributes({ contextType: 'popular_pools' });
     try {
       const now = Math.floor(Date.now() / 1000);
 
@@ -108,7 +117,6 @@ export class ContextService {
       });
 
       if (response.error) {
-        logger.error("Failed to get popular pools", { error: response.error });
         return null;
       }
 
@@ -124,12 +132,13 @@ export class ContextService {
 
       return [header, ...poolsList].join('\n');
     } catch (error) {
-      logger.error("Error getting popular pools context", { error });
       return null;
     }
   }
 
+  @TraceDecorator()
   private async getUserPortfolioContext(userId: string): Promise<string | null> {
+    setSpanAttributes({ userId, contextType: 'user_portfolio' });
     try {
       const balancesResponse = await this.portfolioClient.getBalances.post({ 
         filter: {
@@ -139,7 +148,6 @@ export class ContextService {
       });
 
       if (balancesResponse.error) {
-        logger.error("Failed to get user balances", { error: balancesResponse.error });
         return null;
       }
 
@@ -155,7 +163,6 @@ export class ContextService {
       });
 
       if (poolsResponse.error) {
-        logger.error("Failed to get pools info", { error: poolsResponse.error });
         return null;
       }
 
@@ -172,7 +179,6 @@ export class ContextService {
 
       return [header, ...investmentsList].join('\n');
     } catch (error) {
-      logger.error("Error getting user portfolio context", { error });
       return null;
     }
   }

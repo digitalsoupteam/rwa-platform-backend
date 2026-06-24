@@ -1,21 +1,21 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { NotFoundError } from "@shared/errors/app-errors";
-import { ScannerStateEntity, IScannerStateEntity } from "../models/entity/scannerState.entity";
+import { AppError } from "@shared/errors/app-errors";
+import { ScannerStateEntity } from "../models/entity/scannerState.entity";
+import type { IScannerStateEntity } from "../models/entity/scannerState.entity";
 import type { FilterQuery, SortOrder } from "mongoose";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 
-@TracingDecorator()
+
 export class ScannerStateRepository {
   constructor(private readonly model = ScannerStateEntity) {}
 
+  @TraceDecorator()
   async create(data: Pick<IScannerStateEntity, "chainId" | "lastScannedBlock">) {
-    logger.debug(`Creating ScannerState for chain: ${data.chainId}`);
     const doc = await this.model.create(data);
     return doc.toObject();
   }
 
+  @TraceDecorator()
   async update(chainId: number, data: Pick<IScannerStateEntity, "lastScannedBlock">) {
-    logger.debug(`Updating ScannerState for chain: ${chainId}`);
     const doc = await this.model.findOneAndUpdate(
       { chainId },
       data,
@@ -23,31 +23,31 @@ export class ScannerStateRepository {
     ).lean();
 
     if (!doc) {
-      throw new NotFoundError("ScannerState", chainId.toString());
+      throw new AppError({ message: `ScannerState ${chainId} not found`, statusCode: 404, code: "NOT_FOUND" });
     }
 
     return doc;
   }
 
+  @TraceDecorator()
   async delete(chainId: number) {
-    logger.debug(`Deleting ScannerState for chain: ${chainId}`);
     const doc = await this.model.findOneAndDelete({ chainId }).lean();
 
     if (!doc) {
-      throw new NotFoundError("ScannerState", chainId.toString());
+      throw new AppError({ message: `ScannerState ${chainId} not found`, statusCode: 404, code: "NOT_FOUND" });
     }
 
     return chainId;
   }
 
+  @TraceDecorator()
   async getLastScannedBlock(chainId: number): Promise<number> {
-    logger.debug(`Getting last scanned block for chain: ${chainId}`);
     const doc = await this.model.findOne({ chainId }).lean();
     return doc?.lastScannedBlock ?? 0;
   }
 
+  @TraceDecorator()
   async updateLastScannedBlock(chainId: number, blockNumber: number): Promise<void> {
-    logger.debug(`Updating last scanned block for chain ${chainId} to ${blockNumber}`);
     const doc = await this.model.findOne({ chainId });
 
     if (doc) {
@@ -64,13 +64,13 @@ export class ScannerStateRepository {
     }
   }
 
+  @TraceDecorator()
   async findAll(
     filters: FilterQuery<typeof this.model> = {},
     sort: { [key: string]: SortOrder } = { createdAt: 'asc' },
     limit: number = 100,
     offset: number = 0
   ) {
-    logger.debug(`Finding ScannerStates with filters: ${JSON.stringify(filters)}`);
     const docs = await this.model
       .find(filters)
       .sort(sort)

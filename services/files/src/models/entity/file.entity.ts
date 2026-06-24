@@ -1,4 +1,4 @@
-import mongoose, { Schema, InferRawDocType } from "mongoose";
+import mongoose, { Schema, type InferRawDocType } from "mongoose";
 
 const fileSchemaDefinition = {
   name: {

@@ -1,5 +1,4 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
 import { BusinessService } from "../services/business.service";
 import { PoolService } from "../services/pool.service";
 import type { RepositoriesPlugin } from "./repositories.plugin";

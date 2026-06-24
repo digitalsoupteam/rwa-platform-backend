@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../../plugins/services.plugin";
+import type { ServicesPlugin } from "../../plugins/services.plugin";
 import {
   createPoolRequest,
   createPoolResponse,
@@ -12,9 +11,6 @@ export const createPoolController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/createPool",
       async ({ body, poolService }) => {
-        logger.info(
-          `POST /createPool - Creating pool with name: ${body.name}`
-        );
 
         return await poolService.createPool(body);
       },

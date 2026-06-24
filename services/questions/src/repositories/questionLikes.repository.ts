@@ -1,46 +1,46 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { NotFoundError } from "@shared/errors/app-errors";
-import { FilterQuery, SortOrder, Types } from "mongoose";
+import { AppError } from "@shared/errors/app-errors";
+import { Types } from "mongoose";
+import type { FilterQuery, SortOrder } from "mongoose";
 import {
   QuestionLikesEntity,
-  IQuestionLikesEntity,
+  type IQuestionLikesEntity,
 } from "../models/entity/questionLikes.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 
-@TracingDecorator()
+
 export class QuestionLikesRepository {
   constructor(private readonly model = QuestionLikesEntity) {}
 
+  @TraceDecorator()
   async create(data: Pick<IQuestionLikesEntity, "userId"> & { questionId: string }) {
-    logger.debug(`Creating like for question: ${data.questionId} by user: ${data.userId}`);
     const doc = await this.model.create(data);
     return doc.toObject();
   }
 
+  @TraceDecorator()
   async delete(questionId: string, userId: string) {
-    logger.debug(`Deleting like for question: ${questionId} by user: ${userId}`);
     const doc = await this.model.findOneAndDelete({ questionId, userId }).lean();
 
     if (!doc) {
-      throw new NotFoundError("QuestionLike", `${questionId}:${userId}`);
+      throw new AppError({ message: `QuestionLike ${questionId}:${userId} not found`, statusCode: 404, code: "NOT_FOUND" });
     }
 
     return doc;
   }
 
+  @TraceDecorator()
   async exists(questionId: string, userId: string): Promise<boolean> {
-    logger.debug(`Checking like existence for question: ${questionId} by user: ${userId}`);
     const doc = await this.model.findOne({ questionId, userId }).lean();
     return !!doc;
   }
 
+  @TraceDecorator()
   async findByQuestionId(
     questionId: Types.ObjectId | string,
     sort: { [key: string]: SortOrder } = { createdAt: 'asc' },
     limit: number = 100,
     offset: number = 0
   ) {
-    logger.debug(`Finding likes for question: ${questionId}`);
     const docs = await this.model
       .find({ questionId })
       .sort(sort)
@@ -51,6 +51,7 @@ export class QuestionLikesRepository {
     return docs;
   }
 
+  @TraceDecorator()
   async findByQuestionIds(
     questionIds: (Types.ObjectId | string)[],
     sort: { [key: string]: SortOrder } = { createdAt: 'asc' },
@@ -65,8 +66,6 @@ export class QuestionLikesRepository {
       query.questionId = { $in: questionIds };
     }
 
-    logger.debug(`Finding likes with query: ${JSON.stringify(query)}`);
-
     return await this.model
       .find(query)
       .sort(sort)
@@ -75,13 +74,13 @@ export class QuestionLikesRepository {
       .lean();
   }
 
+  @TraceDecorator()
   async findByUserId(
     userId: string,
     sort: { [key: string]: SortOrder } = { createdAt: 'asc' },
     limit: number = 100,
     offset: number = 0
   ) {
-    logger.debug(`Finding likes by user: ${userId}`);
     const docs = await this.model
       .find({ userId })
       .sort(sort)
@@ -92,8 +91,8 @@ export class QuestionLikesRepository {
     return docs;
   }
 
+  @TraceDecorator()
   async countByQuestionId(questionId: Types.ObjectId | string): Promise<number> {
-    logger.debug(`Counting likes for question: ${questionId}`);
     return await this.model.countDocuments({ questionId });
   }
 }

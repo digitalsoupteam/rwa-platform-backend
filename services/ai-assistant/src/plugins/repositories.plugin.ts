@@ -19,7 +19,6 @@ export const createRepositoriesPlugin = async (mongoUri: string) => {
     'ai-assistant.init.repositories_plugin.mongoose',
     async (ctx) => {
       mongoose.connection.once('connected', () => {
-        console.log('ai-assistant mongoose connected')
         ctx.end();
       })
       await mongoose.connect(mongoUri);

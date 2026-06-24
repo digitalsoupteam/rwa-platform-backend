@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../../plugins/services.plugin";
+import type { ServicesPlugin } from "../../plugins/services.plugin";
 import {
   updatePoolRiskScoreRequest,
   updatePoolRiskScoreResponse,
@@ -12,9 +11,6 @@ export const updatePoolRiskScoreController = (servicesPlugin: ServicesPlugin) =>
     .post(
       "/updatePoolRiskScore",
       async ({ body, poolService }) => {
-        logger.info(
-          `POST /updatePoolRiskScore - Updating risk score for pool with ID: ${body.id}`
-        );
 
         return await poolService.updateRiskScore(body.id);
       },

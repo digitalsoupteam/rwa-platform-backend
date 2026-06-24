@@ -1,28 +1,25 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { NotFoundError } from "@shared/errors/app-errors";
-import { FilterQuery, SortOrder } from "mongoose";
-import { ReferralEntity, IReferralEntity } from "../models/entity/referral.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import type { FilterQuery, SortOrder } from "mongoose";
+import { ReferralEntity } from "../models/entity/referral.entity";
+import type { IReferralEntity } from "../models/entity/referral.entity";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 
-@TracingDecorator()
+
 export class ReferralRepository {
   constructor(private readonly model = ReferralEntity) { }
 
+  @TraceDecorator()
   async create(data: Pick<IReferralEntity,
     "userWallet" |
     "userId" |
     "referrerWallet" |
     "referrerId"
   >) {
-    logger.debug(`Creating referral: ${data.userWallet} -> ${data.referrerWallet}`);
-
     const doc = await this.model.create(data);
     return doc.toObject();
   }
 
+  @TraceDecorator()
   async findByUserWallet(userWallet: string) {
-    logger.debug(`Finding referral by user wallet: ${userWallet} `);
-
     const doc = await this.model.findOne({
       userWallet,
     }).lean();
@@ -30,9 +27,8 @@ export class ReferralRepository {
     return doc;
   }
 
+  @TraceDecorator()
   async findByReferrerWallet(referrerWallet: string) {
-    logger.debug(`Finding referral by referrer wallet: ${referrerWallet}`);
-
     const doc = await this.model.findOne({
       referrerWallet,
     }).lean();
@@ -40,9 +36,8 @@ export class ReferralRepository {
     return doc;
   }
 
+  @TraceDecorator()
   async findByUserId(userId: string) {
-    logger.debug(`Finding referral by user id: ${userId} `);
-
     const doc = await this.model.findOne({
       userId,
     }).lean();
@@ -50,14 +45,13 @@ export class ReferralRepository {
     return doc;
   }
 
+  @TraceDecorator()
   async findAll(
     filter: FilterQuery<typeof this.model> = {},
     sort: { [key: string]: SortOrder } = { createdAt: "desc" },
     limit: number = 100,
     offset: number = 0
   ) {
-    logger.debug(`Finding referrals with query: ${JSON.stringify(filter)}`);
-
     return await this.model
       .find(filter)
       .sort(sort)

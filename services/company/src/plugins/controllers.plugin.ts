@@ -8,7 +8,7 @@ import { addMemberController } from "../controllers/members/addMember.controller
 import { removeMemberController } from "../controllers/members/removeMember.controller";
 import { grantPermissionController } from "../controllers/permissions/grantPermission.controller";
 import { revokePermissionController } from "../controllers/permissions/revokePermission.controller";
-import { ServicesPlugin } from "./services.plugin";
+import type { ServicesPlugin } from "./services.plugin";
 import { withTraceSync } from "@shared/monitoring/src/tracing";
 
 export const createControllersPlugin = (servicesPlugin: ServicesPlugin) => {

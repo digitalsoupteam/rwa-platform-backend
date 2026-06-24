@@ -1,13 +1,14 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { FilterQuery, SortOrder } from "mongoose";
+import type { FilterQuery, SortOrder } from "mongoose";
 import mongoose from "mongoose";
-import { ReferrerClaimHistoryEntity, IReferrerClaimHistoryEntity } from "../models/entity/referrerClaimHistory.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { ReferrerClaimHistoryEntity } from "../models/entity/referrerClaimHistory.entity";
+import type { IReferrerClaimHistoryEntity } from "../models/entity/referrerClaimHistory.entity";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 
-@TracingDecorator()
+
 export class ReferrerClaimHistoryRepository {
   constructor(private readonly model = ReferrerClaimHistoryEntity) {}
 
+  @TraceDecorator()
   async create(data: Pick<IReferrerClaimHistoryEntity,
     "referrerWallet" |
     "referrerId" |
@@ -18,7 +19,6 @@ export class ReferrerClaimHistoryRepository {
     "logIndex" |
     "blockNumber"
   > & { amount: string }) {
-    logger.debug(`Creating referrer claim history: ${data.transactionHash}:${data.logIndex} for referrer: ${data.referrerWallet}`);
 
     const createData = {
       ...data,
@@ -29,14 +29,13 @@ export class ReferrerClaimHistoryRepository {
     return doc.toObject();
   }
 
+  @TraceDecorator()
   async findAll(
     filter: FilterQuery<typeof this.model> = {},
     sort: { [key: string]: SortOrder } = { createdAt: "desc" },
     limit: number = 100,
     offset: number = 0
   ) {
-    logger.debug(`Finding referrer claim history with query: ${JSON.stringify(filter)}`);
-
     return await this.model
       .find(filter)
       .sort(sort)

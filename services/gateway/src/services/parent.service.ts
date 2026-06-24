@@ -1,14 +1,24 @@
-import { logger } from '@shared/monitoring/src/logger';
-import { RwaClient } from '../clients/eden.clients';
+import type { RwaClient } from '../clients/eden.clients';
+
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
+import { AppError } from '@shared/errors/app-errors';
 
 
-import { TracingDecorator } from '@shared/monitoring/src/tracingDecorator';
-
-@TracingDecorator()
 export class ParentService {
   constructor(private rwaClient: RwaClient) {}
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['type', 'parentId', 'userId'] })
   public async getParentInfo(type: string, parentId: string, userId: string) {
+    setSpanAttributes({
+      entityType: type,
+      entityId: parentId,
+      userId,
+    });
     let grandParentId: string;
     let ownerId: string;
     let ownerType: string;
@@ -19,8 +29,7 @@ export class ParentService {
       });
 
       if (businessResponse.error) {
-        logger.error('Failed to get business:', businessResponse.error);
-        throw new Error('Failed to get business data');
+        throw new AppError({ message: 'Failed to get business data', statusCode: 502, code: 'UPSTREAM_ERROR' });
       }
 
       const business = businessResponse.data;
@@ -35,8 +44,7 @@ export class ParentService {
       });
 
       if (poolResponse.error) {
-        logger.error('Failed to get pool:', poolResponse.error);
-        throw new Error('Failed to get pool data');
+        throw new AppError({ message: 'Failed to get pool data', statusCode: 502, code: 'UPSTREAM_ERROR' });
       }
 
       const pool = poolResponse.data;
@@ -46,13 +54,13 @@ export class ParentService {
       ownerType = pool.ownerType;
     } else if(type == 'user'){
       if(parentId != userId) {
-        throw new Error('User type not equal parentId and userId');
+        throw new AppError({ message: 'User type not equal parentId and userId', statusCode: 400, code: 'VALIDATION_ERROR' });
       }
       grandParentId = parentId;
       ownerId = parentId;
       ownerType = 'user';
     } else {
-      throw new Error('Invalid parent type');
+      throw new AppError({ message: 'Invalid parent type', statusCode: 400, code: 'VALIDATION_ERROR' });
     }
 
     return {

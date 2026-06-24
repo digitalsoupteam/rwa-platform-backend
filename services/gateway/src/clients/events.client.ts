@@ -1,19 +1,11 @@
 import { createPubSub } from 'graphql-yoga';
 import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
-import Redis from 'ioredis';
 import { CONFIG } from "../config";
-import { logger } from "@shared/monitoring/src/logger";
 
 import { RedisWithTracing } from "@shared/monitoring/src/redis";
 
 const publishClient =  new RedisWithTracing(CONFIG.REDIS.URL);
 const subscribeClient = new RedisWithTracing(CONFIG.REDIS.URL);
-
-
-publishClient.on('connect', () => logger.info('Redis publisher connected'));
-publishClient.on('error', (err) => logger.error('Redis publisher error:', err));
-subscribeClient.on('connect', () => logger.info('Redis subscriber connected'));
-subscribeClient.on('error', (err) => logger.error('Redis subscriber error:', err));
 
 
 export interface PriceUpdatePayload {

@@ -1,10 +1,10 @@
-import { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import type { QueryResolvers } from '../../../../generated/types';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const getCompany: QueryResolvers['getCompany'] = async (
   _parent,
   { id },
-  { services, clients }
+  { services }
 ) => {
   logger.info('Getting company', { id });
 

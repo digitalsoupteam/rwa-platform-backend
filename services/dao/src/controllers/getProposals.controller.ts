@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 import {
   getProposalsRequest,
   getProposalsResponse,
@@ -12,9 +11,6 @@ export const getProposalsController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/getProposals",
       async ({ body, daoService }) => {
-        logger.info(
-          `POST /getProposals - Getting proposals`
-        );
 
         return await daoService.getProposals(body);
       },

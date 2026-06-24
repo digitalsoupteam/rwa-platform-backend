@@ -29,4 +29,6 @@ COPY services/rwa ./services/rwa
 EXPOSE ${PORT}
 
 
-CMD ["bun", "services/rwa/src/index.ts"]
+WORKDIR /app/services/rwa
+ENTRYPOINT ["bun"]
+CMD ["src/index.ts"]

@@ -1,10 +1,9 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
 import { getRawPriceDataController } from "../controllers/getRawPriceData.controller";
 import { getOhlcPriceDataController } from "../controllers/getOhlcPriceData.controller";
 import { getPoolTransactionsController } from "../controllers/getPoolTransactions.controller";
 import { getVolumeDataController } from "../controllers/getVolumeData.controller";
-import { ServicesPlugin } from "./services.plugin";
+import type { ServicesPlugin } from "./services.plugin";
 import { withTraceSync } from "@shared/monitoring/src/tracing";
 
 export const createControllersPlugin = (servicesPlugin: ServicesPlugin) => {

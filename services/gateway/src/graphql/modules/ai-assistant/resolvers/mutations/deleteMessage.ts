@@ -1,6 +1,6 @@
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
-import { AuthenticationError } from '@shared/errors/app-errors';
+import type { MutationResolvers } from '../../../../generated/types';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
+import { AppError } from "@shared/errors/app-errors";
 
 export const deleteMessage: MutationResolvers['deleteMessage'] = async (
   _parent,
@@ -8,7 +8,7 @@ export const deleteMessage: MutationResolvers['deleteMessage'] = async (
   { clients, user }
 ) => {
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
   }
 
   // Get message first to check assistant ownership
@@ -30,7 +30,7 @@ export const deleteMessage: MutationResolvers['deleteMessage'] = async (
     throw new Error('Access denied: Message does not belong to the current user');
   }
 
-  logger.info('Deleting message', { id, userId: user.id });
+  logger.debug('Deleting message', { id, userId: user.id });
 
   const response = await clients.aiAssistantClient.deleteMessage.post({
     id

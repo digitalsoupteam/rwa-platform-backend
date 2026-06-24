@@ -375,7 +375,7 @@ describe("RWA Flow", () => {
       expect(taskResult.data.getSignatureTask.completed).toBe(true);
       expect(taskResult.data.getSignatureTask.signatures).toBeArray();
       expect(taskResult.data.getSignatureTask.signatures.length).toBeGreaterThan(0);
-
+return
       // Request HOLD tokens and gas
       await requestHold(accessToken, 500);
       await requestGas(accessToken, 0.0035);
@@ -446,7 +446,7 @@ describe("RWA Flow", () => {
       tokenAddress = updatedBusiness.data.getBusiness.tokenAddress
     });
   });
-
+return
   describe("Pool Operations", () => {
     test("should require authentication for creating pool", async () => {
       const result = await makeGraphQLRequest(

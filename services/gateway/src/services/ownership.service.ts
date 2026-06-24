@@ -1,17 +1,22 @@
-import { AuthClient } from '../clients/eden.clients';
+import type { AuthClient } from '../clients/eden.clients';
 import { CacheService } from './cache.service';
-import { ForbiddenError } from '@shared/errors/app-errors';
+import { AppError } from '@shared/errors/app-errors';
+
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
 
-import { TracingDecorator } from '@shared/monitoring/src/tracingDecorator';
-
-@TracingDecorator()
 export class OwnershipService {
   constructor(
     private cacheService: CacheService,
     private authClient: AuthClient
   ) { }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['params'] })
   async checkOwnership(params: {
     userId: string;
     ownerId: string;
@@ -19,16 +24,21 @@ export class OwnershipService {
     permission: 'content' | 'deploy';
     entityId?: string;
   }): Promise<void> {
+    setSpanAttributes({
+      userId: params.userId,
+      entityType: params.ownerType,
+      ...(params.entityId !== undefined && { entityId: params.entityId }),
+    });
     const { userId, ownerId, ownerType, permission, entityId = '*' } = params;
 
     if (ownerType === 'user') {
       if (ownerId !== userId) {
-        throw new ForbiddenError('User does not have permission');
+        throw new AppError({ message: 'User does not have permission', statusCode: 403, code: 'FORBIDDEN' });
       }
     } else if (ownerType === 'company') {
       const companyResponse = await this.cacheService.getCompany({ id: ownerId });
       if (companyResponse.error || !companyResponse.data) {
-        throw new ForbiddenError('Failed to get company data');
+        throw new AppError({ message: 'Failed to get company data', statusCode: 403, code: 'FORBIDDEN' });
       }
 
       const company = companyResponse.data
@@ -49,18 +59,26 @@ export class OwnershipService {
       }
 
       if (!hasPermission) {
-        throw new ForbiddenError('User does not have required company permissions');
+        throw new AppError({ message: 'User does not have required company permissions', statusCode: 403, code: 'FORBIDDEN' });
       }
     } else {
-      throw new ForbiddenError('Invalid owner type');
+      throw new AppError({ message: 'Invalid owner type', statusCode: 403, code: 'FORBIDDEN' });
     }
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['params'] })
   async getOwnerWallet(params: {
     user: { id: string; wallet: string };
     ownerId: string;
     ownerType: string;
   }): Promise<string> {
+    setSpanAttributes({
+      userId: params.user.id,
+      wallet: params.user.wallet,
+      entityType: params.ownerType,
+    });
     const { user, ownerId, ownerType } = params;
 
     if (ownerType === 'user') {
@@ -70,14 +88,14 @@ export class OwnershipService {
     if (ownerType === 'company') {
       const companyResponse = await this.cacheService.getCompany({ id: ownerId });
       if (companyResponse.error || !companyResponse.data) {
-        throw new ForbiddenError('Failed to get company data');
+        throw new AppError({ message: 'Failed to get company data', statusCode: 403, code: 'FORBIDDEN' });
       }
 
       const ownerResponse = await this.authClient.getUser.post({
         userId: companyResponse.data.ownerId
       });
       if (ownerResponse.error || !ownerResponse.data) {
-        throw new ForbiddenError('Failed to get company owner data');
+        throw new AppError({ message: 'Failed to get company owner data', statusCode: 403, code: 'FORBIDDEN' });
       }
 
       return ownerResponse.data.wallet;

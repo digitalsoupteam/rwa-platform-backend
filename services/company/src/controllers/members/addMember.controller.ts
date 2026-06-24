@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../../plugins/services.plugin";
+import type { ServicesPlugin } from "../../plugins/services.plugin";
 import {
   addMemberRequest,
   addMemberResponse,
@@ -12,9 +11,6 @@ export const addMemberController = (servicesPlugin: ServicesPlugin) => {
   .post(
     "/addMember",
     async ({ body, companyService }) => {
-      logger.info(
-        `POST /addMember - Adding member ${body.userId} to company ${body.companyId}`
-      );
 
       return await companyService.addMember(body);
     },

@@ -1,4 +1,5 @@
-import mongoose, { Schema, InferRawDocType, Types } from "mongoose";
+import mongoose, { Schema } from "mongoose";
+import type { InferRawDocType, Types } from "mongoose";
 
 const documentSchemaDefinition = {
     folderId: {

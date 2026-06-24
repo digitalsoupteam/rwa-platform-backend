@@ -1,16 +1,16 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from "@shared/errors/app-errors";
+import type { MutationResolvers } from '../../../../../generated/types';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const rejectPoolApprovalSignatures: MutationResolvers['rejectPoolApprovalSignatures'] = async (
   _parent,
   { id },
   { services, clients, user }
 ) => {
-  logger.info('Rejecting pool approval signatures', { id });
+  logger.debug('Rejecting pool approval signatures', { id });
 
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
   }
 
   const poolResponse = await clients.rwaClient.getPool.post({

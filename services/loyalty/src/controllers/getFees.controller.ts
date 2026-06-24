@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 import {
   getFeesRequest,
   getFeesResponse,
@@ -12,9 +11,6 @@ export const getFeesController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/getFees",
       async ({ body, loyaltyService }) => {
-        logger.info(
-          `POST /getFees - Getting fees`
-        );
 
         return await loyaltyService.getFees(body);
       },

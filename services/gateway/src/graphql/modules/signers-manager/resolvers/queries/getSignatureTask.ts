@@ -1,6 +1,6 @@
-import { AuthenticationError } from "@shared/errors/app-errors";
-import { QueryResolvers } from "../../../../generated/types";
-import { logger } from "@shared/monitoring/src/logger";
+import { AppError } from "@shared/errors/app-errors";
+import type { QueryResolvers } from "../../../../generated/types";
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const getSignatureTask: QueryResolvers["getSignatureTask"] = async (
   _parent,
@@ -10,7 +10,7 @@ export const getSignatureTask: QueryResolvers["getSignatureTask"] = async (
   logger.info("Getting signature task", { taskId: input.taskId });
 
   if (!user) {
-    throw new AuthenticationError("Authentication required");
+    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
   }
 
   const response = await clients.signersManagerClient.getSignatureTask.post({

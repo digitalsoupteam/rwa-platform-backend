@@ -1,16 +1,16 @@
-import { AuthenticationError, ForbiddenError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import type { MutationResolvers } from '../../../../generated/types';
+import { AppError } from "@shared/errors/app-errors";
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const createFolder: MutationResolvers['createFolder'] = async (
   _parent,
   { input },
   { services, clients, user }
 ) => {
-  logger.info('Creating new folder', { input });
+  logger.debug('Creating new folder', { input });
 
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
   }
 
   const { grandParentId, ownerId, ownerType } = await services.parent.getParentInfo(

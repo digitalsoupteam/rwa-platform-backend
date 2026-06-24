@@ -1,10 +1,12 @@
-import { logger } from "@shared/monitoring/src/logger";
 import { GalleryRepository } from "../repositories/gallery.repository";
 import { ImageRepository } from "../repositories/image.repository";
-import { FilterQuery, SortOrder, Types } from "mongoose";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { type SortOrder } from "mongoose";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
+import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
+import { LogDecorator } from "@shared/monitoring/src/logDecorator";
+import { setSpanAttributes } from "@shared/monitoring/src/tracing";
 
-@TracingDecorator()
+
 export class ImagesService {
   constructor(
     private readonly galleryRepository: GalleryRepository,
@@ -14,6 +16,9 @@ export class ImagesService {
   /**
    * Creates a new gallery
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["data.name"] })
   async createGallery(data: {
     name: string;
     parentId: string;
@@ -22,8 +27,11 @@ export class ImagesService {
     creator: string;
     grandParentId: string;
   }) {
-    logger.debug("Creating new gallery", { name: data.name });
-    
+    setSpanAttributes({
+      userId: data.creator,
+      parentId: data.parentId,
+    });
+
     const gallery = await this.galleryRepository.create(data);
 
     return {
@@ -42,9 +50,14 @@ export class ImagesService {
   /**
    * Updates gallery name
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["params"] })
   async updateGallery(params: { id: string, updateData: { name: string } }) {
-    logger.debug("Updating gallery", params);
-    
+    setSpanAttributes({
+      entityId: params.id,
+    });
+
     const gallery = await this.galleryRepository.update(params.id, params.updateData);
 
     return {
@@ -63,9 +76,14 @@ export class ImagesService {
   /**
    * Deletes a gallery and all its images
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["id"] })
   async deleteGallery(id: string) {
-    logger.debug("Deleting gallery and its images", { id });
-    
+    setSpanAttributes({
+      entityId: id,
+    });
+
     // First delete all images in the gallery
     const images = await this.imageRepository.findAll({ galleryIds: [id] });
     for (const image of images) {
@@ -81,9 +99,14 @@ export class ImagesService {
   /**
    * Gets gallery by ID
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["id"] })
   async getGallery(id: string) {
-    logger.debug("Getting gallery", { id });
-    
+    setSpanAttributes({
+      entityId: id,
+    });
+
     const gallery = await this.galleryRepository.findById(id);
 
     return {
@@ -102,14 +125,17 @@ export class ImagesService {
   /**
    * Gets galleries list with filters, pagination and sorting
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["params"] })
   async getGalleries(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
     limit?: number;
     offset?: number;
   }) {
-    logger.debug("Getting galleries list", params);
-    
+    setSpanAttributes({});
+
     const galleries = await this.galleryRepository.findAll(
       params.filter,
       params.sort,
@@ -133,6 +159,9 @@ export class ImagesService {
   /**
    * Creates a new image in a gallery
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["data.name"] })
   async createImage(data: {
     galleryId: string;
     name: string;
@@ -144,8 +173,12 @@ export class ImagesService {
     parentId: string;
     grandParentId: string;
   }) {
-    logger.debug("Creating new image", { name: data.name });
-    
+    setSpanAttributes({
+      userId: data.creator,
+      galleryId: data.galleryId,
+      parentId: data.parentId,
+    });
+
     const image = await this.imageRepository.create(data);
 
     return {
@@ -167,6 +200,9 @@ export class ImagesService {
   /**
    * Updates image
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["params"] })
   async updateImage(params: {
     id: string;
     updateData: {
@@ -175,8 +211,10 @@ export class ImagesService {
       link?: string;
     }
   }) {
-    logger.debug("Updating image", params);
-    
+    setSpanAttributes({
+      imageId: params.id,
+    });
+
     const image = await this.imageRepository.update(params.id, params.updateData);
 
     return {
@@ -198,8 +236,13 @@ export class ImagesService {
   /**
    * Deletes image
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["id"] })
   async deleteImage(id: string) {
-    logger.debug("Deleting image", { id });
+    setSpanAttributes({
+      imageId: id,
+    });
     await this.imageRepository.delete(id);
     return { id };
   }
@@ -207,9 +250,14 @@ export class ImagesService {
   /**
    * Gets image by ID
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["id"] })
   async getImage(id: string) {
-    logger.debug("Getting image", { id });
-    
+    setSpanAttributes({
+      imageId: id,
+    });
+
     const image = await this.imageRepository.findById(id);
 
     return {
@@ -231,14 +279,17 @@ export class ImagesService {
   /**
    * Gets images list with filters, pagination and sorting
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["params"] })
   async getImages(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
     limit?: number;
     offset?: number;
   }) {
-    logger.debug("Getting images list", params);
-    
+    setSpanAttributes({});
+
     const images = await this.imageRepository.findAll(
       params.filter,
       params.sort,

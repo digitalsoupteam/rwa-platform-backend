@@ -1,63 +1,59 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { NotFoundError } from "@shared/errors/app-errors";
-import { FilterQuery, SortOrder, Types } from "mongoose";
-import {
-  DocumentsFolderEntity,
-  IDocumentsFolderEntity,
-} from "../models/entity/documentsFolder.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { AppError } from "@shared/errors/app-errors";
+import type { FilterQuery, SortOrder } from "mongoose";
+import { DocumentsFolderEntity } from "../models/entity/documentsFolder.entity";
+import type { IDocumentsFolderEntity } from "../models/entity/documentsFolder.entity";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 
-@TracingDecorator()
+
 export class DocumentsFolderRepository {
   constructor(private readonly model = DocumentsFolderEntity) {}
 
+  @TraceDecorator()
   async create(data: Pick<IDocumentsFolderEntity, "name" | "parentId" | "ownerId" | "ownerType" | "creator" | "grandParentId">) {
-    logger.debug(`Creating documents folder: ${data.name}`);
     const doc = await this.model.create(data);
     return doc.toObject();
   }
 
+  @TraceDecorator()
   async update(id: string, data: Partial<Pick<IDocumentsFolderEntity, "name">>) {
-    logger.debug(`Updating documents folder: ${id}`);
     const doc = await this.model.findByIdAndUpdate(id, data, { new: true }).lean();
 
     if (!doc) {
-      throw new NotFoundError("DocumentsFolder", id);
+      throw new AppError({ message: `DocumentsFolder ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
     }
 
     return doc;
   }
 
+  @TraceDecorator()
   async delete(id: string) {
-    logger.debug(`Deleting documents folder: ${id}`);
     const doc = await this.model.findByIdAndDelete(id).lean();
 
     if (!doc) {
-      throw new NotFoundError("DocumentsFolder", id);
+      throw new AppError({ message: `DocumentsFolder ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
     }
 
     return id;
   }
 
+  @TraceDecorator()
   async findById(id: string) {
-    logger.debug(`Finding documents folder by ID: ${id}`);
     const doc = await this.model.findById(id).lean();
 
     if (!doc) {
-      throw new NotFoundError("DocumentsFolder", id);
+      throw new AppError({ message: `DocumentsFolder ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
     }
 
     return doc;
   }
 
+  @TraceDecorator()
   async findAll(
     filter: FilterQuery<typeof this.model> = {},
     sort: { [key: string]: SortOrder } = { createdAt: "asc" },
     limit: number = 100,
     offset: number = 0
   ) {
-
-    logger.debug(`Finding documents folders with query: ${JSON.stringify(filter)}`);
 
     return await this.model
       .find(filter)

@@ -1,22 +1,26 @@
-import { logger } from "@shared/monitoring/src/logger";
 import { AssistantRepository } from "../repositories/assistant.repository";
-import { AssistantContext } from "../models/shared/enums.model";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import type { AssistantContext } from "../models/shared/enums.model";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
+import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
+import { LogDecorator } from "@shared/monitoring/src/logDecorator";
+import { setSpanAttributes } from "@shared/monitoring/src/tracing";
 
-@TracingDecorator()
+
 export class AssistantService {
   constructor(private readonly assistantRepository: AssistantRepository) {}
 
   /**
    * Creates a new AI assistant
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['data'] })
   async createAssistant(data: {
     name: string;
     userId: string;
     contextPreferences: AssistantContext;
   }) {
-    logger.debug("Creating new assistant", { name: data.name });
-    
+    setSpanAttributes({ userId: data.userId });
     const assistant = await this.assistantRepository.create(data);
 
     return {
@@ -30,16 +34,18 @@ export class AssistantService {
   /**
    * Updates assistant settings
    */
-  async updateAssistant(
-    id: string,
-    data: {
-      name?: string;
-      contextPreferences?: AssistantContext;
-    }
-  ) {
-    logger.debug("Updating assistant settings", { id });
-
-    const assistant = await this.assistantRepository.update(id, data);
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['id', 'data'] })
+    async updateAssistant(
+        id: string,
+        data: {
+          name?: string;
+          contextPreferences?: AssistantContext;
+        }
+    ) {
+      setSpanAttributes({ assistantId: id });
+      const assistant = await this.assistantRepository.update(id, data);
 
     return {
       id: assistant._id.toString(),
@@ -52,8 +58,11 @@ export class AssistantService {
   /**
    * Gets assistant by ID
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['id'] })
   async getAssistant(id: string) {
-    logger.debug("Getting assistant", { id });
+    setSpanAttributes({ assistantId: id });
     const assistant = await this.assistantRepository.findById(id);
 
     return {
@@ -67,8 +76,11 @@ export class AssistantService {
   /**
    * Gets all assistants for a user
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['userId'] })
   async getUserAssistants(userId: string) {
-    logger.debug("Getting user assistants", { userId });
+    setSpanAttributes({ userId });
     const assistants = await this.assistantRepository.findAll({ userId });
 
     return assistants.map(assistant => ({
@@ -82,8 +94,11 @@ export class AssistantService {
   /**
    * Deletes assistant by ID
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['id'] })
   async deleteAssistant(id: string) {
-    logger.debug("Deleting assistant", { id });
+    setSpanAttributes({ assistantId: id });
     await this.assistantRepository.delete(id);
     return { id };
   }

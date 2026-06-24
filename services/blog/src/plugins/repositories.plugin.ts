@@ -19,7 +19,6 @@ export const createRepositoriesPlugin = async (mongoUri: string) => {
     'blog.init.repositories_plugin.mongoose',
     async (ctx) => {
       mongoose.connection.once('connected', () => {
-        console.log('blog mongoose connected')
         ctx.end();
       })
       await mongoose.connect(mongoUri);

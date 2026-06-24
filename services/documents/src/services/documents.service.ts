@@ -1,12 +1,12 @@
-import { logger } from "@shared/monitoring/src/logger";
 import { DocumentsFolderRepository } from "../repositories/documentsFolder.repository";
 import { DocumentRepository } from "../repositories/document.repository";
-import { FilterQuery, SortOrder, Types } from "mongoose";
-import { IDocumentEntity } from "../models/entity/document.entity";
-import { DocumentEntity } from "../models/entity/document.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import type { SortOrder } from "mongoose";
+import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
+import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
+import { LogDecorator } from "@shared/monitoring/src/logDecorator";
+import { setSpanAttributes } from "@shared/monitoring/src/tracing";
 
-@TracingDecorator()
+
 export class DocumentsService {
   constructor(
     private readonly documentsFolderRepository: DocumentsFolderRepository,
@@ -16,6 +16,9 @@ export class DocumentsService {
   /**
    * Creates a new documents folder
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['data'] })
   async createFolder(data: {
     name: string;
     parentId: string;
@@ -24,8 +27,8 @@ export class DocumentsService {
     creator: string;
     grandParentId: string;
   }) {
-    logger.debug("Creating new documents folder", { name: data.name });
-    
+    setSpanAttributes({ entityType: 'folder' });
+
     const folder = await this.documentsFolderRepository.create({
       name: data.name,
       parentId: data.parentId,
@@ -51,9 +54,12 @@ export class DocumentsService {
   /**
    * Updates folder name
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["id", "updateData"] })
   async updateFolder(params: { id: string, updateData: { name: string } }) {
-    logger.debug("Updating folder", params);
-    
+    setSpanAttributes({ entityId: params.id, entityType: 'folder' });
+
     const folder = await this.documentsFolderRepository.update(params.id, params.updateData);
 
     return {
@@ -72,9 +78,12 @@ export class DocumentsService {
   /**
    * Deletes a folder and all its documents
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["id"] })
   async deleteFolder(id: string) {
-    logger.debug("Deleting folder and its documents", { id });
-    
+    setSpanAttributes({ entityId: id, entityType: 'folder' });
+
     // First delete all documents in the folder
     const documents = await this.documentRepository.findAll({ folderIds: [id] });
     for (const doc of documents) {
@@ -90,9 +99,12 @@ export class DocumentsService {
   /**
    * Gets folder by ID
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["id"] })
   async getFolder(id: string) {
-    logger.debug("Getting folder", { id });
-    
+    setSpanAttributes({ entityId: id, entityType: 'folder' });
+
     const folder = await this.documentsFolderRepository.findById(id);
 
     return {
@@ -111,14 +123,17 @@ export class DocumentsService {
   /**
    * Gets folders list with filters, pagination and sorting
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['params'] })
   async getFolders(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
     limit?: number;
     offset?: number;
   }) {
-    logger.debug("Getting folders list", params);
-    
+    setSpanAttributes({ entityType: 'folder' });
+
     const folders = await this.documentsFolderRepository.findAll(
       params.filter,
       params.sort,
@@ -142,6 +157,9 @@ export class DocumentsService {
   /**
    * Creates a new document in a folder
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['data'] })
   async createDocument(data: {
     folderId: string;
     name: string;
@@ -152,8 +170,8 @@ export class DocumentsService {
     parentId: string;
     grandParentId: string;
   }) {
-    logger.debug("Creating new document", { name: data.name });
-    
+    setSpanAttributes({ entityType: 'document' });
+
     const document = await this.documentRepository.create(data);
 
     return {
@@ -174,6 +192,9 @@ export class DocumentsService {
   /**
    * Updates document
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["id", "updateData"] })
   async updateDocument(params: {
     id: string;
     updateData: {
@@ -181,8 +202,8 @@ export class DocumentsService {
       link?: string;
     }
   }) {
-    logger.debug("Updating document", params);
-    
+    setSpanAttributes({ entityId: params.id, entityType: 'document' });
+
     const document = await this.documentRepository.update(params.id, params.updateData);
 
     return {
@@ -203,8 +224,12 @@ export class DocumentsService {
   /**
    * Deletes document
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["id"] })
   async deleteDocument(id: string) {
-    logger.debug("Deleting document", { id });
+    setSpanAttributes({ entityId: id, entityType: 'document' });
+
     await this.documentRepository.delete(id);
     return { id };
   }
@@ -212,9 +237,12 @@ export class DocumentsService {
   /**
    * Gets document by ID
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ["id"] })
   async getDocument(id: string) {
-    logger.debug("Getting document", { id });
-    
+    setSpanAttributes({ entityId: id, entityType: 'document' });
+
     const document = await this.documentRepository.findById(id);
 
     return {
@@ -235,14 +263,17 @@ export class DocumentsService {
   /**
    * Gets documents list with filters, pagination and sorting
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({ args: ['params'] })
   async getDocuments(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
     limit?: number;
     offset?: number;
   }) {
-    logger.debug("Getting documents list", params);
-    
+    setSpanAttributes({ entityType: 'document' });
+
     const documents = await this.documentRepository.findAll(
       params.filter,
       params.sort,

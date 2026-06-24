@@ -1,5 +1,4 @@
 
-import Redis from "ioredis";
 import { CONFIG } from "../config";
 import { RedisWithTracing } from "@shared/monitoring/src/redis";
 

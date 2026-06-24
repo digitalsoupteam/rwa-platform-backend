@@ -1,6 +1,5 @@
 import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../plugins/services.plugin";
+import type { ServicesPlugin } from "../plugins/services.plugin";
 import {
   getEventByIdRequest,
   getEventByIdResponse,
@@ -12,9 +11,6 @@ export const getEventByIdController = (servicesPlugin: ServicesPlugin) => {
     .post(
       "/getEventById",
       async ({ body, blockchainScannerService }) => {
-        logger.info(
-          `POST /getEventById - Getting event with id: ${body.id}`
-        );
 
         return await blockchainScannerService.getEventById(body.id);
       },
