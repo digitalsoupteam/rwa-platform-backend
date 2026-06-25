@@ -1,7 +1,51 @@
 
+export type TextContentPart = {
+  type: "text";
+  text: string;
+};
+
+export type ImageContentPart = {
+  type: "image_url";
+  imageUrl: {
+    url: string; // URL или data:image/...;base64,...
+  };
+};
+
+export type FileContentPart = {
+  type: "file";
+  file: {
+    filename: string;
+    fileData: string; // URL или data:application/pdf;base64,...
+  };
+};
+
+export type InputAudioContentPart = {
+  type: "input_audio";
+  inputAudio: {
+    data: string; // base64 (без data:-префикса)
+    format: "mp3" | "wav";
+  };
+};
+
+export type VideoContentPart = {
+  type: "video_url";
+  videoUrl: {
+    url: string; // URL или data:video/...;base64,...
+  };
+};
+
+export type ContentPart =
+  | TextContentPart
+  | ImageContentPart
+  | FileContentPart
+  | InputAudioContentPart
+  | VideoContentPart;
+
+export type MessageContent = string | ContentPart[];
+
 export interface ChatMessage {
   role: string;
-  content: string;
+  content: MessageContent;
 }
 
 

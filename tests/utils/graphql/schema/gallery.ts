@@ -76,6 +76,8 @@ export const CREATE_IMAGE = `
       name
       description
       link
+      mimeType
+      size
       ownerId
       ownerType
       creator
@@ -95,6 +97,8 @@ export const UPDATE_IMAGE = `
       name
       description
       link
+      mimeType
+      size
       ownerId
       ownerType
       creator
@@ -120,6 +124,8 @@ export const GET_IMAGE = `
       name
       description
       link
+      mimeType
+      size
       ownerId
       ownerType
       creator
@@ -139,6 +145,8 @@ export const GET_IMAGES = `
       name
       description
       link
+      mimeType
+      size
       ownerId
       ownerType
       creator

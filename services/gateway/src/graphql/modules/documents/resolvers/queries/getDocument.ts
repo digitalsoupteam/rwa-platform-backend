@@ -25,6 +25,8 @@ export const getDocument: QueryResolvers['getDocument'] = async (
     folderId: document.folderId,
     name: document.name,
     link: document.link,
+    mimeType: document.mimeType,
+    size: document.size,
     ownerId: document.ownerId,
     ownerType: document.ownerType,
     creator: document.creator,

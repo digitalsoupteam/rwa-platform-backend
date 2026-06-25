@@ -49,6 +49,8 @@ export const updateDocument: MutationResolvers['updateDocument'] = async (
     folderId: data.folderId,
     name: data.name,
     link: data.link,
+    mimeType: data.mimeType,
+    size: data.size,
     ownerId: data.ownerId,
     ownerType: data.ownerType,
     creator: data.creator,

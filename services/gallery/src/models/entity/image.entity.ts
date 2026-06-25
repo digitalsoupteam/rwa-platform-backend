@@ -41,6 +41,15 @@ const imageSchemaDefinition = {
         required: true,
         trim: true
     },
+    mimeType: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    size: {
+        type: Number,
+        required: true
+    },
     createdAt: {
         type: Number,
         default: Math.floor(Date.now() / 1000)

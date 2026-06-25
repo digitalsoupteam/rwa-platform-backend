@@ -164,6 +164,8 @@ export class DocumentsService {
     folderId: string;
     name: string;
     link: string;
+    mimeType: string;
+    size: number;
     ownerId: string;
     ownerType: string;
     creator: string;
@@ -179,6 +181,8 @@ export class DocumentsService {
       folderId: document.folderId.toString(),
       name: document.name,
       link: document.link,
+      mimeType: document.mimeType,
+      size: document.size,
       ownerId: document.ownerId,
       ownerType: document.ownerType,
       creator: document.creator,
@@ -199,7 +203,6 @@ export class DocumentsService {
     id: string;
     updateData: {
       name?: string;
-      link?: string;
     }
   }) {
     setSpanAttributes({ entityId: params.id, entityType: 'document' });
@@ -211,6 +214,8 @@ export class DocumentsService {
       folderId: document.folderId.toString(),
       name: document.name,
       link: document.link,
+      mimeType: document.mimeType,
+      size: document.size,
       ownerId: document.ownerId,
       ownerType: document.ownerType,
       creator: document.creator,
@@ -250,6 +255,8 @@ export class DocumentsService {
       folderId: document.folderId.toString(),
       name: document.name,
       link: document.link,
+      mimeType: document.mimeType,
+      size: document.size,
       ownerId: document.ownerId,
       ownerType: document.ownerType,
       creator: document.creator,
@@ -286,6 +293,8 @@ export class DocumentsService {
       folderId: doc.folderId.toString(),
       name: doc.name,
       link: doc.link,
+      mimeType: doc.mimeType,
+      size: doc.size,
       ownerId: doc.ownerId,
       ownerType: doc.ownerType,
       creator: doc.creator,

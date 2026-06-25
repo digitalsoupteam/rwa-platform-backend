@@ -356,7 +356,9 @@ describe("Documents Flow", () => {
       expect(result.data.createDocument).toBeDefined();
       expect(result.data.createDocument.name).toBe("Test Document");
       expect(result.data.createDocument.folderId).toBe(folderId);
-      expect(result.data.createDocument.link).toBeDefined(); // Path should be set by files service
+      expect(result.data.createDocument.link).toBeDefined();
+      expect(result.data.createDocument.mimeType).toBe("text/plain");
+      expect(result.data.createDocument.size).toBe(file.size);
       expect(result.data.createDocument.ownerId).toBe(companyId);
       expect(result.data.createDocument.ownerType).toBe("company");
       expect(result.data.createDocument.creator).toBe(userId);
@@ -377,6 +379,8 @@ describe("Documents Flow", () => {
       expect(result.data.getDocument).toBeDefined();
       expect(result.data.getDocument.id).toBe(documentId);
       expect(result.data.getDocument.name).toBe("Test Document");
+      expect(result.data.getDocument.mimeType).toBe("text/plain");
+      expect(result.data.getDocument.size).toBeDefined();
       expect(result.data.getDocument.ownerId).toBe(companyId);
       expect(result.data.getDocument.ownerType).toBe("company");
     });
@@ -411,7 +415,6 @@ describe("Documents Flow", () => {
             id: documentId,
             updateData: {
               name: "Updated Test Document",
-              link: "https://example.com/updated.pdf"
             }
           },
         },
@@ -422,7 +425,8 @@ describe("Documents Flow", () => {
       expect(result.data.updateDocument).toBeDefined();
       expect(result.data.updateDocument.id).toBe(documentId);
       expect(result.data.updateDocument.name).toBe("Updated Test Document");
-      expect(result.data.updateDocument.link).toBe("https://example.com/updated.pdf");
+      expect(result.data.updateDocument.mimeType).toBe("text/plain");
+      expect(result.data.updateDocument.size).toBeDefined();
       expect(result.data.updateDocument.ownerId).toBe(companyId);
       expect(result.data.updateDocument.ownerType).toBe("company");
     });
@@ -450,6 +454,49 @@ describe("Documents Flow", () => {
 
       expect(getResult.errors).toBeDefined();
       expect(getResult.errors[0].message).toBeDefined();
+    });
+  });
+
+  describe("File Validation", () => {
+    test("should reject document with wrong MIME type", async () => {
+      const fileContent = "fake image content";
+      const file = new File([fileContent], "test.jpg", { type: "image/jpeg" });
+
+      const result = await makeGraphQLRequest(
+        CREATE_DOCUMENT,
+        {
+          input: {
+            folderId,
+            name: "Should Fail",
+          },
+        },
+        accessToken,
+        file
+      );
+
+      expect(result.errors).toBeDefined();
+      expect(result.errors[0].message).toContain("not allowed");
+    });
+
+    test("should reject document with oversized file", async () => {
+      // Create a file larger than 25MB (DOCUMENTS_MAX_FILE_SIZE)
+      const oversizedContent = new Uint8Array(26 * 1024 * 1024);
+      const file = new File([oversizedContent], "big.txt", { type: "text/plain" });
+
+      const result = await makeGraphQLRequest(
+        CREATE_DOCUMENT,
+        {
+          input: {
+            folderId,
+            name: "Should Fail Oversized",
+          },
+        },
+        accessToken,
+        file
+      );
+
+      expect(result.errors).toBeDefined();
+      expect(result.errors[0].message).toContain("exceeds maximum");
     });
   });
 

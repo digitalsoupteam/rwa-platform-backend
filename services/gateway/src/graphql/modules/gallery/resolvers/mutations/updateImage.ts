@@ -50,6 +50,8 @@ export const updateImage: MutationResolvers['updateImage'] = async (
     name: data.name,
     description: data.description,
     link: data.link,
+    mimeType: data.mimeType,
+    size: data.size,
     ownerId: data.ownerId,
     ownerType: data.ownerType,
     creator: data.creator,

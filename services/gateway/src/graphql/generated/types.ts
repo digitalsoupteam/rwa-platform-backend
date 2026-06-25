@@ -109,6 +109,11 @@ export type Business = {
 export type BusinessOwnerType =
   | 'company';
 
+export type BusinessType =
+  | 'franchise'
+  | 'growth'
+  | 'startup';
+
 export type Company = {
   __typename?: 'Company';
   country?: Maybe<Scalars['String']['output']>;
@@ -146,7 +151,7 @@ export type CreateBlogInput = {
 };
 
 export type CreateBusinessInput = {
-  businessType?: InputMaybe<Scalars['String']['input']>;
+  businessType?: InputMaybe<BusinessType>;
   chainId: Scalars['String']['input'];
   country?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
@@ -281,15 +286,17 @@ export type Document = {
   grandParentId: Scalars['String']['output'];
   id: Scalars['ID']['output'];
   link: Scalars['String']['output'];
+  mimeType: Scalars['String']['output'];
   name: Scalars['String']['output'];
   ownerId: Scalars['String']['output'];
   ownerType: Scalars['String']['output'];
   parentId: Scalars['String']['output'];
+  size: Scalars['Float']['output'];
   updatedAt: Scalars['Float']['output'];
 };
 
 export type EditBusinessDataInput = {
-  businessType?: InputMaybe<Scalars['String']['input']>;
+  businessType?: InputMaybe<BusinessType>;
   chainId?: InputMaybe<Scalars['String']['input']>;
   country?: InputMaybe<Scalars['String']['input']>;
   description?: InputMaybe<Scalars['String']['input']>;
@@ -672,10 +679,12 @@ export type Image = {
   grandParentId: Scalars['String']['output'];
   id: Scalars['ID']['output'];
   link: Scalars['String']['output'];
+  mimeType: Scalars['String']['output'];
   name: Scalars['String']['output'];
   ownerId: Scalars['String']['output'];
   ownerType: Scalars['String']['output'];
   parentId: Scalars['String']['output'];
+  size: Scalars['Float']['output'];
   updatedAt: Scalars['Float']['output'];
 };
 
@@ -781,273 +790,341 @@ export type Mutation = {
   updateTopic: Topic;
 };
 
+
 export type MutationAddMemberArgs = {
   input: AddMemberInput;
 };
+
 
 export type MutationAuthenticateArgs = {
   input: AuthenticateInput;
 };
 
+
 export type MutationCreateAssistantArgs = {
   input: CreateAssistantInput;
 };
+
 
 export type MutationCreateBlogArgs = {
   input: CreateBlogInput;
 };
 
+
 export type MutationCreateBusinessArgs = {
   input: CreateBusinessInput;
 };
+
 
 export type MutationCreateBusinessWithAiArgs = {
   input: CreateBusinessWithAiInput;
 };
 
+
 export type MutationCreateCompanyArgs = {
   input: CreateCompanyInput;
 };
+
 
 export type MutationCreateDocumentArgs = {
   input: CreateDocumentInput;
 };
 
+
 export type MutationCreateFaqAnswerArgs = {
   input: CreateFaqAnswerInput;
 };
+
 
 export type MutationCreateFaqTopicArgs = {
   input: CreateFaqTopicInput;
 };
 
+
 export type MutationCreateFolderArgs = {
   input: CreateFolderInput;
 };
+
 
 export type MutationCreateGalleryArgs = {
   input: CreateGalleryInput;
 };
 
+
 export type MutationCreateImageArgs = {
   input: CreateImageInput;
 };
+
 
 export type MutationCreateMessageArgs = {
   input: CreateMessageInput;
 };
 
+
 export type MutationCreatePoolArgs = {
   input: CreatePoolInput;
 };
+
 
 export type MutationCreatePoolWithAiArgs = {
   input: CreatePoolWithAiInput;
 };
 
+
 export type MutationCreatePostArgs = {
   input: CreatePostInput;
 };
+
 
 export type MutationCreateQuestionArgs = {
   input: CreateQuestionInput;
 };
 
+
 export type MutationCreateQuestionAnswerArgs = {
   input: CreateQuestionAnswerInput;
 };
+
 
 export type MutationCreateReferrerWithdrawTaskArgs = {
   input: CreateReferrerWithdrawTaskInput;
 };
 
+
 export type MutationCreateTopicArgs = {
   input: CreateTopicInput;
 };
+
 
 export type MutationDeleteAssistantArgs = {
   id: Scalars['ID']['input'];
 };
 
+
 export type MutationDeleteBlogArgs = {
   id: Scalars['ID']['input'];
 };
+
 
 export type MutationDeleteCompanyArgs = {
   id: Scalars['ID']['input'];
 };
 
+
 export type MutationDeleteDocumentArgs = {
   id: Scalars['ID']['input'];
 };
+
 
 export type MutationDeleteFaqAnswerArgs = {
   id: Scalars['ID']['input'];
 };
 
+
 export type MutationDeleteFaqTopicArgs = {
   id: Scalars['ID']['input'];
 };
+
 
 export type MutationDeleteFolderArgs = {
   id: Scalars['ID']['input'];
 };
 
+
 export type MutationDeleteGalleryArgs = {
   id: Scalars['ID']['input'];
 };
+
 
 export type MutationDeleteImageArgs = {
   id: Scalars['ID']['input'];
 };
 
+
 export type MutationDeleteMessageArgs = {
   id: Scalars['ID']['input'];
 };
+
 
 export type MutationDeletePostArgs = {
   id: Scalars['ID']['input'];
 };
 
+
 export type MutationDeleteQuestionArgs = {
   id: Scalars['ID']['input'];
 };
+
 
 export type MutationDeleteTopicArgs = {
   id: Scalars['ID']['input'];
 };
 
+
 export type MutationEditBusinessArgs = {
   input: EditBusinessInput;
 };
+
 
 export type MutationEditPoolArgs = {
   input: EditPoolInput;
 };
 
+
 export type MutationGrantPermissionArgs = {
   input: GrantPermissionInput;
 };
+
 
 export type MutationRefreshTokenArgs = {
   input: RefreshTokenInput;
 };
 
+
 export type MutationRegisterReferralArgs = {
   input: RegisterReferralInput;
 };
+
 
 export type MutationRejectBusinessApprovalSignaturesArgs = {
   id: Scalars['ID']['input'];
 };
 
+
 export type MutationRejectPoolApprovalSignaturesArgs = {
   id: Scalars['ID']['input'];
 };
+
 
 export type MutationRemoveMemberArgs = {
   input: RemoveMemberInput;
 };
 
+
 export type MutationRequestBusinessApprovalSignaturesArgs = {
   input: RequestBusinessApprovalSignaturesInput;
 };
+
 
 export type MutationRequestGasArgs = {
   input: RequestTokenInput;
 };
 
+
 export type MutationRequestHoldArgs = {
   input: RequestTokenInput;
 };
+
 
 export type MutationRequestPlatformArgs = {
   input: RequestTokenInput;
 };
 
+
 export type MutationRequestPoolApprovalSignaturesArgs = {
   input: RequestPoolApprovalSignaturesInput;
 };
+
 
 export type MutationResetReactionArgs = {
   input: SetReactionInput;
 };
 
+
 export type MutationRevokePermissionArgs = {
   input: RevokePermissionInput;
 };
+
 
 export type MutationRevokeTokensArgs = {
   input: RevokeTokensInput;
 };
 
+
 export type MutationSetReactionArgs = {
   input: SetReactionInput;
 };
+
 
 export type MutationToggleQuestionLikeArgs = {
   questionId: Scalars['ID']['input'];
 };
 
+
 export type MutationUpdateAssistantArgs = {
   input: UpdateAssistantInput;
 };
+
 
 export type MutationUpdateBlogArgs = {
   input: UpdateBlogInput;
 };
 
+
 export type MutationUpdateBusinessRiskScoreArgs = {
   id: Scalars['ID']['input'];
 };
+
 
 export type MutationUpdateCompanyArgs = {
   input: UpdateCompanyInput;
 };
 
+
 export type MutationUpdateDocumentArgs = {
   input: UpdateDocumentInput;
 };
+
 
 export type MutationUpdateFaqAnswerArgs = {
   input: UpdateFaqAnswerInput;
 };
 
+
 export type MutationUpdateFaqTopicArgs = {
   input: UpdateFaqTopicInput;
 };
+
 
 export type MutationUpdateFolderArgs = {
   input: UpdateFolderInput;
 };
 
+
 export type MutationUpdateGalleryArgs = {
   input: UpdateGalleryInput;
 };
+
 
 export type MutationUpdateImageArgs = {
   input: UpdateImageInput;
 };
 
+
 export type MutationUpdateMessageArgs = {
   input: UpdateMessageInput;
 };
+
 
 export type MutationUpdatePoolRiskScoreArgs = {
   id: Scalars['ID']['input'];
 };
 
+
 export type MutationUpdatePostArgs = {
   input: UpdatePostInput;
 };
+
 
 export type MutationUpdateQuestionAnswerArgs = {
   input: UpdateQuestionAnswerInput;
 };
 
+
 export type MutationUpdateQuestionTextArgs = {
   input: UpdateQuestionTextInput;
 };
+
 
 export type MutationUpdateTopicArgs = {
   input: UpdateTopicInput;
@@ -1290,203 +1367,253 @@ export type Query = {
   getVotes: Array<Vote>;
 };
 
+
 export type QueryGetAssistantArgs = {
   id: Scalars['ID']['input'];
 };
+
 
 export type QueryGetBalancesArgs = {
   input: GetBalancesInput;
 };
 
+
 export type QueryGetBlogArgs = {
   id: Scalars['ID']['input'];
 };
+
 
 export type QueryGetBlogsArgs = {
   input?: InputMaybe<GetBlogsFilterInput>;
 };
 
+
 export type QueryGetBusinessArgs = {
   id: Scalars['ID']['input'];
 };
+
 
 export type QueryGetBusinessesArgs = {
   input: FilterInput;
 };
 
+
 export type QueryGetCompaniesArgs = {
   input?: InputMaybe<GetCompaniesInput>;
 };
+
 
 export type QueryGetCompanyArgs = {
   id: Scalars['ID']['input'];
 };
 
+
 export type QueryGetDocumentArgs = {
   id: Scalars['ID']['input'];
 };
 
+
 export type QueryGetDocumentsArgs = {
   input?: InputMaybe<GetDocumentsFilterInput>;
 };
+
 
 export type QueryGetEntityReactionsArgs = {
   parentId: Scalars['String']['input'];
   parentType: Scalars['String']['input'];
 };
 
+
 export type QueryGetFaqAnswerArgs = {
   id: Scalars['ID']['input'];
 };
+
 
 export type QueryGetFaqAnswersArgs = {
   input?: InputMaybe<GetFaqAnswersFilterInput>;
 };
 
+
 export type QueryGetFaqTopicArgs = {
   id: Scalars['ID']['input'];
 };
+
 
 export type QueryGetFaqTopicsArgs = {
   input?: InputMaybe<GetFaqTopicsFilterInput>;
 };
 
+
 export type QueryGetFeesArgs = {
   input?: InputMaybe<GetFeesFilterInput>;
 };
+
 
 export type QueryGetFolderArgs = {
   id: Scalars['ID']['input'];
 };
 
+
 export type QueryGetFoldersArgs = {
   input?: InputMaybe<GetFoldersFilterInput>;
 };
+
 
 export type QueryGetGalleriesArgs = {
   input?: InputMaybe<GetGalleriesFilterInput>;
 };
 
+
 export type QueryGetGalleryArgs = {
   id: Scalars['ID']['input'];
 };
+
 
 export type QueryGetHistoryArgs = {
   pagination?: InputMaybe<PaginationInput>;
 };
 
+
 export type QueryGetImageArgs = {
   id: Scalars['ID']['input'];
 };
+
 
 export type QueryGetImagesArgs = {
   input?: InputMaybe<GetImagesFilterInput>;
 };
 
+
 export type QueryGetMessageArgs = {
   id: Scalars['ID']['input'];
 };
+
 
 export type QueryGetMessageHistoryArgs = {
   assistantId: Scalars['ID']['input'];
   pagination?: InputMaybe<PaginationInput>;
 };
 
+
 export type QueryGetOhlcPriceDataArgs = {
   input: GetOhlcPriceDataInput;
 };
+
 
 export type QueryGetPoolArgs = {
   id: Scalars['ID']['input'];
 };
 
+
 export type QueryGetPoolTransactionsArgs = {
   input: GetPoolTransactionsInput;
 };
+
 
 export type QueryGetPoolsArgs = {
   input: FilterInput;
 };
 
+
 export type QueryGetPostArgs = {
   id: Scalars['ID']['input'];
 };
+
 
 export type QueryGetPostsArgs = {
   input?: InputMaybe<GetPostsFilterInput>;
 };
 
+
 export type QueryGetProposalsArgs = {
   input?: InputMaybe<GetProposalsFilterInput>;
 };
+
 
 export type QueryGetQuestionArgs = {
   id: Scalars['ID']['input'];
 };
 
+
 export type QueryGetQuestionsArgs = {
   input?: InputMaybe<GetQuestionsFilterInput>;
 };
+
 
 export type QueryGetRawPriceDataArgs = {
   input: GetRawPriceDataInput;
 };
 
+
 export type QueryGetReactionsArgs = {
   input: GetReactionsFilterInput;
 };
+
 
 export type QueryGetReferralsArgs = {
   input?: InputMaybe<GetReferralsFilterInput>;
 };
 
+
 export type QueryGetReferrerClaimHistoryArgs = {
   input?: InputMaybe<GetReferrerClaimHistoryFilterInput>;
 };
+
 
 export type QueryGetReferrerWithdrawsArgs = {
   input?: InputMaybe<GetReferrerWithdrawsFilterInput>;
 };
 
+
 export type QueryGetSignatureTaskArgs = {
   input: GetSignatureTaskInput;
 };
+
 
 export type QueryGetStakingArgs = {
   input?: InputMaybe<GetStakingFilterInput>;
 };
 
+
 export type QueryGetStakingHistoryArgs = {
   input?: InputMaybe<GetStakingHistoryFilterInput>;
 };
+
 
 export type QueryGetTimelockTasksArgs = {
   input?: InputMaybe<GetTimelockTasksFilterInput>;
 };
 
+
 export type QueryGetTopicArgs = {
   id: Scalars['ID']['input'];
 };
+
 
 export type QueryGetTopicsArgs = {
   input?: InputMaybe<GetTopicsFilterInput>;
 };
 
+
 export type QueryGetTransactionsArgs = {
   input: GetTransactionsInput;
 };
+
 
 export type QueryGetTreasuryWithdrawsArgs = {
   input?: InputMaybe<GetTreasuryWithdrawsFilterInput>;
 };
 
+
 export type QueryGetUserAssistantsArgs = {
   pagination?: InputMaybe<PaginationInput>;
 };
 
+
 export type QueryGetVolumeDataArgs = {
   input: GetVolumeDataInput;
 };
+
 
 export type QueryGetVotesArgs = {
   input?: InputMaybe<GetVotesFilterInput>;
@@ -1697,19 +1824,16 @@ export type StakingHistory = {
 export type Subscription = {
   __typename?: 'Subscription';
   _?: Maybe<Scalars['Boolean']['output']>;
-  countdown: Scalars['Int']['output'];
   poolDeployed: Pool;
   priceUpdates: PriceUpdateEvent;
   transactionUpdates: TransactionEvent;
 };
 
-export type SubscriptionCountdownArgs = {
-  from: Scalars['Int']['input'];
-};
 
 export type SubscriptionPriceUpdatesArgs = {
   poolAddress: Scalars['String']['input'];
 };
+
 
 export type SubscriptionTransactionUpdatesArgs = {
   poolAddress: Scalars['String']['input'];
@@ -1832,7 +1956,6 @@ export type UpdateCompanyInput = {
 };
 
 export type UpdateDocumentDataInput = {
-  link?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -1881,7 +2004,6 @@ export type UpdateGalleryInput = {
 
 export type UpdateImageDataInput = {
   description?: InputMaybe<Scalars['String']['input']>;
-  link?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -1986,6 +2108,7 @@ export type ResolversObject<TObject> = WithIndex<TObject>;
 
 export type ResolverTypeWrapper<T> = Promise<T> | T;
 
+
 export type ResolverWithResolve<TResult, TParent, TContext, TArgs> = {
   resolve: ResolverFn<TResult, TParent, TContext, TArgs>;
 };
@@ -2048,6 +2171,8 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
   info: GraphQLResolveInfo
 ) => TResult | Promise<TResult>;
 
+
+
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = ResolversObject<{
   AddMemberInput: AddMemberInput;
@@ -2062,6 +2187,7 @@ export type ResolversTypes = ResolversObject<{
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
   Business: ResolverTypeWrapper<Business>;
   BusinessOwnerType: BusinessOwnerType;
+  BusinessType: BusinessType;
   Company: ResolverTypeWrapper<Company>;
   CompanyWithDetails: ResolverTypeWrapper<CompanyWithDetails>;
   CreateAssistantInput: CreateAssistantInput;
@@ -2483,10 +2609,12 @@ export type DocumentResolvers<ContextType = GraphQLContext, ParentType extends R
   grandParentId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   link?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  mimeType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   ownerId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   ownerType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   parentId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  size?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -2597,10 +2725,12 @@ export type ImageResolvers<ContextType = GraphQLContext, ParentType extends Reso
   grandParentId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   link?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  mimeType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   ownerId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   ownerType?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   parentId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  size?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -3050,7 +3180,6 @@ export type StakingHistoryResolvers<ContextType = GraphQLContext, ParentType ext
 
 export type SubscriptionResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Subscription'] = ResolversParentTypes['Subscription']> = ResolversObject<{
   _?: SubscriptionResolver<Maybe<ResolversTypes['Boolean']>, "_", ParentType, ContextType>;
-  countdown?: SubscriptionResolver<ResolversTypes['Int'], "countdown", ParentType, ContextType, RequireFields<SubscriptionCountdownArgs, 'from'>>;
   poolDeployed?: SubscriptionResolver<ResolversTypes['Pool'], "poolDeployed", ParentType, ContextType>;
   priceUpdates?: SubscriptionResolver<ResolversTypes['PriceUpdateEvent'], "priceUpdates", ParentType, ContextType, RequireFields<SubscriptionPriceUpdatesArgs, 'poolAddress'>>;
   transactionUpdates?: SubscriptionResolver<ResolversTypes['TransactionEvent'], "transactionUpdates", ParentType, ContextType, RequireFields<SubscriptionTransactionUpdatesArgs, 'poolAddress'>>;
@@ -3257,3 +3386,4 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   VolumeData?: VolumeDataResolvers<ContextType>;
   Vote?: VoteResolvers<ContextType>;
 }>;
+

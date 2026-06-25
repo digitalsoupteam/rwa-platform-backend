@@ -167,6 +167,8 @@ export class ImagesService {
     name: string;
     description: string;
     link: string;
+    mimeType: string;
+    size: number;
     ownerId: string;
     ownerType: string;
     creator: string;
@@ -187,6 +189,8 @@ export class ImagesService {
       name: image.name,
       description: image.description,
       link: image.link,
+      mimeType: image.mimeType,
+      size: image.size,
       ownerId: image.ownerId,
       ownerType: image.ownerType,
       creator: image.creator,
@@ -208,7 +212,6 @@ export class ImagesService {
     updateData: {
       name?: string;
       description?: string;
-      link?: string;
     }
   }) {
     setSpanAttributes({
@@ -223,6 +226,8 @@ export class ImagesService {
       name: image.name,
       description: image.description,
       link: image.link,
+      mimeType: image.mimeType,
+      size: image.size,
       ownerId: image.ownerId,
       ownerType: image.ownerType,
       creator: image.creator,
@@ -266,6 +271,8 @@ export class ImagesService {
       name: image.name,
       description: image.description,
       link: image.link,
+      mimeType: image.mimeType,
+      size: image.size,
       ownerId: image.ownerId,
       ownerType: image.ownerType,
       creator: image.creator,
@@ -303,6 +310,8 @@ export class ImagesService {
       name: image.name,
       description: image.description,
       link: image.link,
+      mimeType: image.mimeType,
+      size: image.size,
       ownerId: image.ownerId,
       ownerType: image.ownerType,
       creator: image.creator,

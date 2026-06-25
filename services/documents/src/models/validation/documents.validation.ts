@@ -20,6 +20,8 @@ export const documentSchema = t.Object({
   folderId: t.String(),
   name: t.String(),
   link: t.String(),
+  mimeType: t.String(),
+  size: t.Number(),
   ownerId: t.String(),
   ownerType: t.String(),
   creator: t.String(),
@@ -83,6 +85,8 @@ export const createDocumentRequest = t.Pick(documentSchema, [
   "folderId",
   "name",
   "link",
+  "mimeType",
+  "size",
   "ownerId",
   "ownerType",
   "creator",
@@ -97,8 +101,7 @@ export const createDocumentResponse = documentSchema;
 export const updateDocumentRequest = t.Object({
   id: t.String(),
   updateData: t.Partial(t.Object({
-    name: t.String(),
-    link: t.String()
+    name: t.String()
   }))
 });
 export const updateDocumentResponse = documentSchema;

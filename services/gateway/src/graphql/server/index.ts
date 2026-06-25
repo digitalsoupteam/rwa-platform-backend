@@ -27,6 +27,7 @@ import {
 import type { GraphQLContext, User } from '../context/types';
 import { cacheService, ownershipService, parentService, validationService } from '../../services/services.init';
 import { pubSub } from '../../clients/events.client';
+import { CONFIG } from '../../config';
 
 import { useGraphQLSSE } from '@graphql-yoga/plugin-graphql-sse';
 import { propagation, context, trace } from '@opentelemetry/api';
@@ -114,6 +115,7 @@ export const yogaServer = createYoga({
         pubSub,
         // Add the extracted trace context for use in resolvers
         traceContext: parentContext,
+        fileValidation: CONFIG.FILE_VALIDATION,
       } as GraphQLContext;
   },
   batching: true,

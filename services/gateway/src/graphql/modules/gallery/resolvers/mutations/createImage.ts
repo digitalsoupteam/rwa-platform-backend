@@ -5,12 +5,30 @@ import { logger } from '@shared/monitoring/src/monitoring.plugin';
 export const createImage: MutationResolvers['createImage'] = async (
   _parent,
   { input },
-  { services, clients, user }
+  { services, clients, user, fileValidation }
 ) => {
   logger.debug('Creating new image', { input });
 
   if (!user) {
     throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
+  }
+
+  // Validate file MIME type before upload
+  if (!fileValidation.GALLERY_ALLOWED_MIME_TYPES.includes(input.file.type)) {
+    throw new AppError({
+      message: `File type "${input.file.type}" is not allowed. Allowed types: ${fileValidation.GALLERY_ALLOWED_MIME_TYPES.join(', ')}`,
+      statusCode: 400,
+      code: "VALIDATION_ERROR"
+    });
+  }
+
+  // Validate file size before upload
+  if (input.file.size > fileValidation.GALLERY_MAX_FILE_SIZE) {
+    throw new AppError({
+      message: `File size exceeds maximum allowed size of ${fileValidation.GALLERY_MAX_FILE_SIZE} bytes`,
+      statusCode: 400,
+      code: "VALIDATION_ERROR"
+    });
   }
 
   // Get gallery info first
@@ -47,6 +65,8 @@ export const createImage: MutationResolvers['createImage'] = async (
     name: input.name,
     description: input.description,
     link: fileResponse.data.path,
+    mimeType: fileResponse.data.mimeType,
+    size: fileResponse.data.size,
     ownerId: gallery.ownerId,
     ownerType: gallery.ownerType,
     creator: user.id,
@@ -67,6 +87,8 @@ export const createImage: MutationResolvers['createImage'] = async (
     name: data.name,
     description: data.description,
     link: data.link,
+    mimeType: data.mimeType,
+    size: data.size,
     ownerId: data.ownerId,
     ownerType: data.ownerType,
     creator: data.creator,

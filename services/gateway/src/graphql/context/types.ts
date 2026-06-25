@@ -23,6 +23,7 @@ import { OwnershipService } from '../../services/ownership.service';
 import { ParentService } from '../../services/parent.service';
 import { ValidationService } from '../../services/validation.service';
 import type { Context } from '@opentelemetry/api';
+import { CONFIG } from '../../config';
 
 export interface User {
   id: string;
@@ -59,6 +60,13 @@ export interface Services {
 
 export type PubSubInstance = ReturnType<typeof createPubSub>;
 
+export interface FileValidationConfig {
+  DOCUMENTS_ALLOWED_MIME_TYPES: string[];
+  DOCUMENTS_MAX_FILE_SIZE: number;
+  GALLERY_ALLOWED_MIME_TYPES: string[];
+  GALLERY_MAX_FILE_SIZE: number;
+}
+
 export interface GraphQLContext {
   clients: ServiceClients;
   services: Services;
@@ -66,6 +74,7 @@ export interface GraphQLContext {
   token: string | null;
   pubSub: PubSubInstance;
   traceContext: Context;
+  fileValidation: FileValidationConfig;
 }
 
 export interface RedisEvent {

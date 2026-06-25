@@ -21,6 +21,8 @@ export const imageSchema = t.Object({
   name: t.String(),
   description: t.String(),
   link: t.String(),
+  mimeType: t.String(),
+  size: t.Number(),
   ownerId: t.String(),
   ownerType: t.String(),
   creator: t.String(),
@@ -85,6 +87,8 @@ export const createImageRequest = t.Pick(imageSchema, [
   "name",
   "description",
   "link",
+  "mimeType",
+  "size",
   "ownerId",
   "ownerType",
   "creator",
@@ -100,8 +104,7 @@ export const updateImageRequest = t.Object({
   id: t.String(),
   updateData: t.Partial(t.Object({
     name: t.String(),
-    description: t.String(),
-    link: t.String()
+    description: t.String()
   }))
 });
 export const updateImageResponse = imageSchema;

@@ -7,6 +7,8 @@ type Document {
   folderId: String!
   name: String!
   link: String!
+  mimeType: String!
+  size: Float!
   ownerId: String!
   ownerType: String!
   creator: String!
@@ -48,7 +50,6 @@ input UpdateDocumentInput {
 
 input UpdateDocumentDataInput {
   name: String
-  link: String
 }
 
 # Create folder input

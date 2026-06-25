@@ -25,6 +25,8 @@ export const getImage: QueryResolvers['getImage'] = async (
     name: image.name,
     description: image.description,
     link: image.link,
+    mimeType: image.mimeType,
+    size: image.size,
     ownerId: image.ownerId,
     ownerType: image.ownerType,
     creator: image.creator,

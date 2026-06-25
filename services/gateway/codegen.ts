@@ -7,6 +7,7 @@ const config: CodegenConfig = {
       plugins: ['typescript', 'typescript-resolvers'],
       config: {
         contextType: '../context/types#GraphQLContext',
+        useTypeImports: true,
         scalars: {
           DateTime: 'Date',
           JSON: '{ [key: string]: any }',
