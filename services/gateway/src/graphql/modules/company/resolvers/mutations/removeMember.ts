@@ -1,14 +1,11 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const removeMember: MutationResolvers['removeMember'] = async (
   _parent,
   { input },
   { services, clients, user },
 ) => {
-  logger.debug('Removing member', { input });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -22,7 +19,6 @@ export const removeMember: MutationResolvers['removeMember'] = async (
   });
 
   if (companyResponse.error) {
-    logger.error('Failed to get company details:', companyResponse.error);
     throw new AppError({
       message: 'Failed to get company details',
       statusCode: 502,
@@ -32,7 +28,6 @@ export const removeMember: MutationResolvers['removeMember'] = async (
 
   // Check if current user is the owner
   if (companyResponse.data.ownerId !== user.id) {
-    logger.error('User is not the company owner', { userId: user.id, companyId: input.companyId });
     throw new AppError({
       message: 'Only company owner can remove members',
       statusCode: 403,
@@ -45,7 +40,6 @@ export const removeMember: MutationResolvers['removeMember'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to remove member:', response.error);
     throw new AppError({
       message: 'Failed to remove member',
       statusCode: 502,

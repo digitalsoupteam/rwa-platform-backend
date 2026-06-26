@@ -123,6 +123,10 @@ export class OwnershipService {
       return ownerResponse.data.wallet;
     }
 
-    throw new ForbiddenError('Invalid owner type');
+    throw new AppError({
+      message: 'Invalid owner type',
+      statusCode: 403,
+      code: 'FORBIDDEN',
+    });
   }
 }

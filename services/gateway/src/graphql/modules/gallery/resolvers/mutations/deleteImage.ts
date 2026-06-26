@@ -1,10 +1,7 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const deleteImage: MutationResolvers['deleteImage'] = async (_parent, { id }, { services, clients, user }) => {
-  logger.debug('Deleting image', { id });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -19,7 +16,6 @@ export const deleteImage: MutationResolvers['deleteImage'] = async (_parent, { i
   });
 
   if (imageResponse.error) {
-    logger.error('Failed to get image:', imageResponse.error);
     throw new AppError({
       message: 'Failed to get image data',
       statusCode: 502,
@@ -41,7 +37,6 @@ export const deleteImage: MutationResolvers['deleteImage'] = async (_parent, { i
   });
 
   if (response.error) {
-    logger.error('Failed to delete image:', response.error);
     throw new AppError({ message: 'Failed to delete image', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 

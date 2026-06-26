@@ -1,10 +1,7 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const getOhlcPriceData: QueryResolvers['getOhlcPriceData'] = async (_parent, { input }, { clients }) => {
-  logger.info('Getting OHLC price data', { input });
-
   const response = await clients.chartsClient.getOhlcPriceData.post({
     poolAddress: input.poolAddress,
     interval: input.interval as any,
@@ -14,7 +11,6 @@ export const getOhlcPriceData: QueryResolvers['getOhlcPriceData'] = async (_pare
   });
 
   if (response.error) {
-    logger.error('Failed to get OHLC price data:', response.error);
     throw new AppError({
       message: 'Failed to get OHLC price data',
       statusCode: 502,

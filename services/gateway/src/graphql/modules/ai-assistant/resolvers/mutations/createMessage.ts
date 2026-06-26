@@ -1,5 +1,4 @@
 import type { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 import { AppError } from '@shared/errors/app-errors';
 
 export const createMessage: MutationResolvers['createMessage'] = async (_parent, { input }, { clients, user }) => {
@@ -24,15 +23,12 @@ export const createMessage: MutationResolvers['createMessage'] = async (_parent,
     });
   }
 
-  logger.debug('Creating message', { input, userId: user.id });
-
   const response = await clients.aiAssistantClient.createMessage.post({
     assistantId: input.assistantId,
     text: input.text,
   });
 
   if (response.error) {
-    logger.error('Failed to create message:', response.error);
     throw new AppError({
       message: 'Failed to create message',
       statusCode: 502,

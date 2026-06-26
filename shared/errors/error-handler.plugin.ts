@@ -1,7 +1,7 @@
 import { AppError } from './app-errors';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
-export const ErrorHandlerPlugin = ({ error, set, request }) => {
+export const ErrorHandlerPlugin = ({ error, set, request }: any) => {
   if (error instanceof AppError) {
     set.status = error.statusCode;
 

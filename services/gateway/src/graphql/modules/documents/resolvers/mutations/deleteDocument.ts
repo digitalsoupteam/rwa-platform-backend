@@ -1,14 +1,11 @@
 import type { MutationResolvers } from '../../../../generated/types';
 import { AppError } from '@shared/errors/app-errors';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const deleteDocument: MutationResolvers['deleteDocument'] = async (
   _parent,
   { id },
   { services, clients, user },
 ) => {
-  logger.debug('Deleting document', { id });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -23,7 +20,6 @@ export const deleteDocument: MutationResolvers['deleteDocument'] = async (
   });
 
   if (documentResponse.error) {
-    logger.error('Failed to get document:', documentResponse.error);
     throw new AppError({
       message: 'Failed to get document data',
       statusCode: 502,
@@ -45,7 +41,6 @@ export const deleteDocument: MutationResolvers['deleteDocument'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to delete document:', response.error);
     throw new AppError({
       message: 'Failed to delete document',
       statusCode: 502,

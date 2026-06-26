@@ -1,10 +1,7 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const deleteTopic: MutationResolvers['deleteTopic'] = async (_parent, { id }, { services, clients, user }) => {
-  logger.debug('Deleting topic', { id });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -19,7 +16,6 @@ export const deleteTopic: MutationResolvers['deleteTopic'] = async (_parent, { i
   });
 
   if (topicResponse.error) {
-    logger.error('Failed to get topic:', topicResponse.error);
     throw new AppError({
       message: 'Failed to get topic data',
       statusCode: 502,
@@ -41,7 +37,6 @@ export const deleteTopic: MutationResolvers['deleteTopic'] = async (_parent, { i
   });
 
   if (response.error) {
-    logger.error('Failed to delete topic:', response.error);
     throw new AppError({ message: 'Failed to delete topic', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 

@@ -1,14 +1,11 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const deleteGallery: MutationResolvers['deleteGallery'] = async (
   _parent,
   { id },
   { services, clients, user },
 ) => {
-  logger.debug('Deleting gallery', { id });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -23,7 +20,6 @@ export const deleteGallery: MutationResolvers['deleteGallery'] = async (
   });
 
   if (galleryResponse.error) {
-    logger.error('Failed to get gallery:', galleryResponse.error);
     throw new AppError({
       message: 'Failed to get gallery data',
       statusCode: 502,
@@ -45,7 +41,6 @@ export const deleteGallery: MutationResolvers['deleteGallery'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to delete gallery:', response.error);
     throw new AppError({
       message: 'Failed to delete gallery',
       statusCode: 502,

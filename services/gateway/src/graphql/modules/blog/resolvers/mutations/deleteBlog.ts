@@ -1,10 +1,7 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const deleteBlog: MutationResolvers['deleteBlog'] = async (_parent, { id }, { services, clients, user }) => {
-  logger.debug('Deleting blog', { id });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -19,7 +16,6 @@ export const deleteBlog: MutationResolvers['deleteBlog'] = async (_parent, { id 
   });
 
   if (blogResponse.error) {
-    logger.error('Failed to get blog:', blogResponse.error);
     throw new AppError({
       message: 'Failed to get blog data',
       statusCode: 502,
@@ -41,7 +37,6 @@ export const deleteBlog: MutationResolvers['deleteBlog'] = async (_parent, { id 
   });
 
   if (response.error) {
-    logger.error('Failed to delete blog:', response.error);
     throw new AppError({ message: 'Failed to delete blog', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 

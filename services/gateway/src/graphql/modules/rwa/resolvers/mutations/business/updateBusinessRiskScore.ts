@@ -1,14 +1,11 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const updateBusinessRiskScore: MutationResolvers['updateBusinessRiskScore'] = async (
   _parent,
   { id },
   { services, clients, user },
 ) => {
-  logger.debug('Updating business risk score', { id });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -23,7 +20,6 @@ export const updateBusinessRiskScore: MutationResolvers['updateBusinessRiskScore
   });
 
   if (businessResponse.error) {
-    logger.error('Failed to get business:', businessResponse.error);
     throw new AppError({
       message: 'Failed to get business data',
       statusCode: 502,
@@ -45,7 +41,6 @@ export const updateBusinessRiskScore: MutationResolvers['updateBusinessRiskScore
   });
 
   if (response.error) {
-    logger.error('Failed to update business risk score:', response.error);
     throw new AppError({
       message: 'Failed to update business risk score',
       statusCode: 502,

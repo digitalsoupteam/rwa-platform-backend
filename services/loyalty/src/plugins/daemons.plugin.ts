@@ -2,8 +2,10 @@ import { Elysia } from 'elysia';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 import { BlockchainEventsDaemon } from '../daemons/blockchainEvents.daemon';
 import { withTraceSync, withTraceAsync } from '@shared/monitoring/src/tracing';
+import type { ClientsPlugin } from './clients.plugin';
+import type { ServicesPlugin } from './services.plugin';
 
-export const createDaemonsPlugin = async (clientsPlugin: any, servicesPlugin: any) => {
+export const createDaemonsPlugin = async (clientsPlugin: ClientsPlugin, servicesPlugin: ServicesPlugin) => {
   const blockchainEventsDaemon = withTraceSync(
     'loyalty.init.daemons.blockchain_events',
     () => new BlockchainEventsDaemon(clientsPlugin.decorator.rabbitMQClient, servicesPlugin.decorator.loyaltyService),

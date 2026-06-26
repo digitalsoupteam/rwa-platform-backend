@@ -23,7 +23,6 @@ import { OwnershipService } from '../../services/ownership.service';
 import { ParentService } from '../../services/parent.service';
 import { ValidationService } from '../../services/validation.service';
 import type { Context } from '@opentelemetry/api';
-import { CONFIG } from '../../config';
 
 export interface User {
   id: string;

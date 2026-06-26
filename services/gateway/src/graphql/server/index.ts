@@ -32,6 +32,7 @@ import { CONFIG } from '../../config';
 import { useGraphQLSSE } from '@graphql-yoga/plugin-graphql-sse';
 import { propagation, context, trace } from '@opentelemetry/api';
 import { useOpenTelemetry } from '@envelop/opentelemetry';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 const typesArray = loadFilesSync(join(__dirname, '../modules/**/*.graphql'));
 const typeDefs = mergeTypeDefs(typesArray);
@@ -57,7 +58,12 @@ export const yogaServer = createYoga({
     subscriptionsProtocol: 'SSE',
     endpoint: '/gateway/graphql',
   },
-  logging: true,
+  logging: {
+    debug: (...args: any[]) => logger.debug(String(args[0]), args[1]),
+    info: (...args: any[]) => logger.info(String(args[0]), args[1]),
+    warn: (...args: any[]) => logger.warn(String(args[0]), args[1]),
+    error: (...args: any[]) => logger.error(String(args[0]), args[1]),
+  },
   maskedErrors: false,
   context({ request }) {
     const traceparent = request.headers.get('traceparent');

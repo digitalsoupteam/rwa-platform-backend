@@ -1,10 +1,7 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const editPool: MutationResolvers['editPool'] = async (_parent, { input }, { services, clients, user }) => {
-  logger.debug('Editing pool', { input });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -18,7 +15,6 @@ export const editPool: MutationResolvers['editPool'] = async (_parent, { input }
   });
 
   if (poolResponse.error) {
-    logger.error('Failed to get pool:', poolResponse.error);
     throw new AppError({
       message: 'Failed to get pool data',
       statusCode: 502,
@@ -41,7 +37,6 @@ export const editPool: MutationResolvers['editPool'] = async (_parent, { input }
   });
 
   if (response.error) {
-    logger.error('Failed to edit pool:', response.error);
     throw new AppError({ message: 'Failed to edit pool', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 

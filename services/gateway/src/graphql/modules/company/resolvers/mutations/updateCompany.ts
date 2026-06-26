@@ -1,14 +1,11 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const updateCompany: MutationResolvers['updateCompany'] = async (
   _parent,
   { input },
   { services, clients, user },
 ) => {
-  logger.debug('Updating company', { input });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -25,7 +22,6 @@ export const updateCompany: MutationResolvers['updateCompany'] = async (
   });
 
   if (companyResponse.error) {
-    logger.error('Failed to get company details:', companyResponse.error);
     throw new AppError({
       message: 'Failed to get company details',
       statusCode: 502,
@@ -35,7 +31,6 @@ export const updateCompany: MutationResolvers['updateCompany'] = async (
 
   // Check if current user is the owner
   if (companyResponse.data.ownerId !== user.id) {
-    logger.error('User is not the company owner', { userId: user.id, companyId: input.id });
     throw new AppError({
       message: 'Only company owner can update company',
       statusCode: 502,
@@ -54,7 +49,6 @@ export const updateCompany: MutationResolvers['updateCompany'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to update company:', response.error);
     throw new AppError({
       message: 'Failed to update company',
       statusCode: 502,

@@ -1,14 +1,11 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const updateGallery: MutationResolvers['updateGallery'] = async (
   _parent,
   { input },
   { services, clients, user },
 ) => {
-  logger.debug('Updating gallery', { input });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -23,7 +20,6 @@ export const updateGallery: MutationResolvers['updateGallery'] = async (
   });
 
   if (galleryResponse.error) {
-    logger.error('Failed to get gallery:', galleryResponse.error);
     throw new AppError({
       message: 'Failed to get gallery data',
       statusCode: 502,
@@ -46,7 +42,6 @@ export const updateGallery: MutationResolvers['updateGallery'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to update gallery:', response.error);
     throw new AppError({
       message: 'Failed to update gallery',
       statusCode: 502,

@@ -1,4 +1,4 @@
-import { Resolvers } from '../../../generated/types';
+import type { Resolvers } from '../../../generated/types';
 import { getTopic } from './queries/getTopic';
 import { getTopics } from './queries/getTopics';
 import { getQuestion } from './queries/getQuestion';

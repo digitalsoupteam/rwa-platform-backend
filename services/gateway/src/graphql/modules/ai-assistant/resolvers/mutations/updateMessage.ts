@@ -1,5 +1,4 @@
 import type { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 import { AppError } from '@shared/errors/app-errors';
 
 export const updateMessage: MutationResolvers['updateMessage'] = async (_parent, { input }, { clients, user }) => {
@@ -17,7 +16,6 @@ export const updateMessage: MutationResolvers['updateMessage'] = async (_parent,
   });
 
   if (messageResponse.error) {
-    logger.error('Failed to get message:', messageResponse.error);
     throw new AppError({ message: 'Failed to get message', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
@@ -34,15 +32,12 @@ export const updateMessage: MutationResolvers['updateMessage'] = async (_parent,
     });
   }
 
-  logger.debug('Updating message', { input, userId: user.id });
-
   const response = await clients.aiAssistantClient.updateMessage.post({
     id: input.id,
     text: input.text,
   });
 
   if (response.error) {
-    logger.error('Failed to update message:', response.error);
     throw new AppError({
       message: 'Failed to update message',
       statusCode: 502,

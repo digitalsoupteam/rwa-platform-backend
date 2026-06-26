@@ -1,4 +1,4 @@
-import { Resolvers } from '../../../generated/types';
+import type { Resolvers } from '../../../generated/types';
 import { authenticate } from './mutations/authenticate';
 import { refreshToken } from './mutations/refreshToken';
 import { revokeTokens } from './mutations/revokeTokens';

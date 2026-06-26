@@ -1,14 +1,11 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const requestBusinessApprovalSignatures: MutationResolvers['requestBusinessApprovalSignatures'] = async (
   _parent,
   { input },
   { services, clients, user },
 ) => {
-  logger.debug('Requesting business approval signatures', { input });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -23,7 +20,6 @@ export const requestBusinessApprovalSignatures: MutationResolvers['requestBusine
   });
 
   if (businessResponse.error) {
-    logger.error('Failed to get business:', businessResponse.error);
     throw new AppError({
       message: 'Failed to get business data',
       statusCode: 502,
@@ -48,7 +44,6 @@ export const requestBusinessApprovalSignatures: MutationResolvers['requestBusine
   });
 
   if (response.error) {
-    logger.error('Failed to request business approval signatures:', response.error);
     throw new AppError({
       message: 'Failed to request business approval signatures',
       statusCode: 502,

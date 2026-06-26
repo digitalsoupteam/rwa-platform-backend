@@ -1,10 +1,7 @@
 import { AppError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
+import type { MutationResolvers } from '../../../../generated/types';
 
 export const requestPlatform: MutationResolvers['requestPlatform'] = async (_parent, { input }, { clients, user }) => {
-  logger.info('Requesting platform token', { input });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -20,7 +17,6 @@ export const requestPlatform: MutationResolvers['requestPlatform'] = async (_par
   });
 
   if (response.error) {
-    logger.error('Failed to request platform token:', response.error);
     throw new AppError({
       message: 'Failed to request platform token',
       statusCode: 502,

@@ -1,10 +1,7 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const getVolumeData: QueryResolvers['getVolumeData'] = async (_parent, { input }, { clients }) => {
-  logger.info('Getting volume data', { input });
-
   const response = await clients.chartsClient.getVolumeData.post({
     poolAddress: input.poolAddress,
     interval: input.interval as any,
@@ -14,7 +11,6 @@ export const getVolumeData: QueryResolvers['getVolumeData'] = async (_parent, { 
   });
 
   if (response.error) {
-    logger.error('Failed to get volume data:', response.error);
     throw new AppError({
       message: 'Failed to get volume data',
       statusCode: 502,

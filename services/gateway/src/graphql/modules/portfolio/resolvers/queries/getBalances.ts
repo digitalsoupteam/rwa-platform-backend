@@ -1,10 +1,7 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const getBalances: QueryResolvers['getBalances'] = async (_parent, { input }, { clients }) => {
-  logger.info('Getting balances', { input });
-
   const response = await clients.portfolioClient.getBalances.post({
     filter: input.filter,
     sort: input.sort,
@@ -13,7 +10,6 @@ export const getBalances: QueryResolvers['getBalances'] = async (_parent, { inpu
   });
 
   if (response.error) {
-    logger.error('Failed to get balances:', response.error);
     throw new AppError({ message: 'Failed to get balances', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 

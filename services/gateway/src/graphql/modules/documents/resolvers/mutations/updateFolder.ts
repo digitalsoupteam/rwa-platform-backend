@@ -1,14 +1,11 @@
 import type { MutationResolvers } from '../../../../generated/types';
 import { AppError } from '@shared/errors/app-errors';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const updateFolder: MutationResolvers['updateFolder'] = async (
   _parent,
   { input },
   { services, clients, user },
 ) => {
-  logger.debug('Updating folder', { input });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -23,7 +20,6 @@ export const updateFolder: MutationResolvers['updateFolder'] = async (
   });
 
   if (folderResponse.error) {
-    logger.error('Failed to get folder:', folderResponse.error);
     throw new AppError({
       message: 'Failed to get folder data',
       statusCode: 502,
@@ -46,7 +42,6 @@ export const updateFolder: MutationResolvers['updateFolder'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to update folder:', response.error);
     throw new AppError({
       message: 'Failed to update folder',
       statusCode: 502,

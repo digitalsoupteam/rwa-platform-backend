@@ -1,10 +1,7 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const setReaction: MutationResolvers['setReaction'] = async (_parent, { input }, { clients, user }) => {
-  logger.debug('Setting reaction', { input });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -21,7 +18,6 @@ export const setReaction: MutationResolvers['setReaction'] = async (_parent, { i
   });
 
   if (response.error) {
-    logger.error('Failed to set reaction:', response.error);
     throw new AppError({ message: 'Failed to set reaction', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 

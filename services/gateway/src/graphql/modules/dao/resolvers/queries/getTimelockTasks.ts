@@ -1,10 +1,7 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const getTimelockTasks: QueryResolvers['getTimelockTasks'] = async (_parent, { input }, { clients }) => {
-  logger.info('Getting timelock tasks list', { input });
-
   const response = await clients.daoClient.getTimelockTasks.post({
     filter: input?.filter || {},
     sort: input?.sort || {},
@@ -13,7 +10,6 @@ export const getTimelockTasks: QueryResolvers['getTimelockTasks'] = async (_pare
   });
 
   if (response.error) {
-    logger.error('Failed to get timelock tasks:', response.error);
     throw new AppError({
       message: 'Failed to get timelock tasks',
       statusCode: 502,

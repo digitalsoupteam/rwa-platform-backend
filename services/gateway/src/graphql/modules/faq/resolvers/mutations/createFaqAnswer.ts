@@ -1,14 +1,11 @@
 import type { MutationResolvers } from '../../../../generated/types';
 import { AppError } from '@shared/errors/app-errors';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const createFaqAnswer: MutationResolvers['createFaqAnswer'] = async (
   _parent,
   { input },
   { services, clients, user },
 ) => {
-  logger.debug('Creating new FAQ answer', { input });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -23,7 +20,6 @@ export const createFaqAnswer: MutationResolvers['createFaqAnswer'] = async (
   });
 
   if (topicResponse.error) {
-    logger.error('Failed to get topic:', topicResponse.error);
     throw new AppError({
       message: 'Failed to get topic data',
       statusCode: 502,
@@ -53,7 +49,6 @@ export const createFaqAnswer: MutationResolvers['createFaqAnswer'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to create FAQ answer:', response.error);
     throw new AppError({
       message: 'Failed to create FAQ answer',
       statusCode: 502,

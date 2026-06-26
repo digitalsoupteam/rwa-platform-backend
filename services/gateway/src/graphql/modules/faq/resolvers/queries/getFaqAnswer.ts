@@ -1,16 +1,12 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const getFaqAnswer: QueryResolvers['getFaqAnswer'] = async (_parent, { id }, { clients }) => {
-  logger.info('Getting FAQ answer by id', { id });
-
   const response = await clients.faqClient.getAnswer.post({
     id,
   });
 
   if (response.error) {
-    logger.error('Failed to get answer:', response.error);
     throw new AppError({ message: 'Failed to get answer', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 

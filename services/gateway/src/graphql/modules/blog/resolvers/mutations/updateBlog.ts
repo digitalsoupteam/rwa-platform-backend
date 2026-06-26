@@ -1,10 +1,7 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const updateBlog: MutationResolvers['updateBlog'] = async (_parent, { input }, { services, clients, user }) => {
-  logger.debug('Updating blog', { input });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -19,7 +16,6 @@ export const updateBlog: MutationResolvers['updateBlog'] = async (_parent, { inp
   });
 
   if (blogResponse.error) {
-    logger.error('Failed to get blog:', blogResponse.error);
     throw new AppError({
       message: 'Failed to get blog data',
       statusCode: 502,
@@ -42,7 +38,6 @@ export const updateBlog: MutationResolvers['updateBlog'] = async (_parent, { inp
   });
 
   if (response.error) {
-    logger.error('Failed to update blog:', response.error);
     throw new AppError({ message: 'Failed to update blog', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 

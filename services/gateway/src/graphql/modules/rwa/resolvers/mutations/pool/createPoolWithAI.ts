@@ -1,14 +1,11 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const createPoolWithAI: MutationResolvers['createPoolWithAI'] = async (
   _parent,
   { input },
   { services, clients, user },
 ) => {
-  logger.debug('Creating new pool with AI', { input });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -23,7 +20,6 @@ export const createPoolWithAI: MutationResolvers['createPoolWithAI'] = async (
   });
 
   if (businessResponse.error) {
-    logger.error('Failed to get business:', businessResponse.error);
     throw new AppError({
       message: 'Failed to get business data',
       statusCode: 502,
@@ -34,7 +30,6 @@ export const createPoolWithAI: MutationResolvers['createPoolWithAI'] = async (
   const business = businessResponse.data;
 
   if (!business.tokenAddress) {
-    logger.error('Deploy business before');
     throw new AppError({ message: 'Deploy business before', statusCode: 409, code: 'CONFLICT' });
   }
 
@@ -55,7 +50,6 @@ export const createPoolWithAI: MutationResolvers['createPoolWithAI'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to create pool with AI:', response.error);
     throw new AppError({
       message: 'Failed to create pool with AI',
       statusCode: 502,

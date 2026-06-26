@@ -1,10 +1,7 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const createPool: MutationResolvers['createPool'] = async (_parent, { input }, { services, clients, user }) => {
-  logger.debug('Creating new pool', { input });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -19,7 +16,6 @@ export const createPool: MutationResolvers['createPool'] = async (_parent, { inp
   });
 
   if (businessResponse.error) {
-    logger.error('Failed to get business:', businessResponse.error);
     throw new AppError({
       message: 'Failed to get business data',
       statusCode: 502,
@@ -30,7 +26,6 @@ export const createPool: MutationResolvers['createPool'] = async (_parent, { inp
   const business = businessResponse.data;
 
   if (!business.tokenAddress) {
-    logger.error('Deploy business before');
     throw new AppError({ message: 'Deploy business before', statusCode: 409, code: 'CONFLICT' });
   }
 
@@ -50,7 +45,6 @@ export const createPool: MutationResolvers['createPool'] = async (_parent, { inp
   });
 
   if (response.error) {
-    logger.error('Failed to create pool:', response.error);
     throw new AppError({ message: 'Failed to create pool', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 

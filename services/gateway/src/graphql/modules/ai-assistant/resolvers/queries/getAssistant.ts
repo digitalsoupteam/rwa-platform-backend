@@ -1,5 +1,4 @@
 import type { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 import { AppError } from '@shared/errors/app-errors';
 
 export const getAssistant: QueryResolvers['getAssistant'] = async (_parent, { id }, { clients, user }) => {
@@ -11,14 +10,11 @@ export const getAssistant: QueryResolvers['getAssistant'] = async (_parent, { id
     });
   }
 
-  logger.debug('Getting assistant by ID', { id, userId: user.id });
-
   const response = await clients.aiAssistantClient.getAssistant.post({
     id,
   });
 
   if (response.error) {
-    logger.error('Failed to get assistant:', response.error);
     throw new AppError({
       message: 'Failed to get assistant',
       statusCode: 502,

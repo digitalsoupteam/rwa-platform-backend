@@ -1,5 +1,4 @@
 import type { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 import { AppError } from '@shared/errors/app-errors';
 
 export const updateAssistant: MutationResolvers['updateAssistant'] = async (_parent, { input }, { clients, user }) => {
@@ -24,8 +23,6 @@ export const updateAssistant: MutationResolvers['updateAssistant'] = async (_par
     });
   }
 
-  logger.debug('Updating assistant', { input, userId: user.id });
-
   const response = await clients.aiAssistantClient.updateAssistant.post({
     id: input.id,
     name: input.name,
@@ -33,7 +30,6 @@ export const updateAssistant: MutationResolvers['updateAssistant'] = async (_par
   });
 
   if (response.error) {
-    logger.error('Failed to update assistant:', response.error);
     throw new AppError({
       message: 'Failed to update assistant',
       statusCode: 502,

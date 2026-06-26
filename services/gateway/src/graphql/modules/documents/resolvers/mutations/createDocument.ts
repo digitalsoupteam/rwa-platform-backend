@@ -1,14 +1,11 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const createDocument: MutationResolvers['createDocument'] = async (
   _parent,
   { input },
   { services, clients, user, fileValidation },
 ) => {
-  logger.debug('Creating new document', { input });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -41,7 +38,6 @@ export const createDocument: MutationResolvers['createDocument'] = async (
   });
 
   if (folderResponse.error) {
-    logger.error('Failed to get folder:', folderResponse.error);
     throw new AppError({
       message: 'Failed to get folder data',
       statusCode: 502,
@@ -64,7 +60,6 @@ export const createDocument: MutationResolvers['createDocument'] = async (
   });
 
   if (fileResponse.error) {
-    logger.error('Failed to upload file:', fileResponse.error);
     throw new AppError({ message: 'Failed to upload file', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
@@ -83,7 +78,6 @@ export const createDocument: MutationResolvers['createDocument'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to create document:', response.error);
     throw new AppError({
       message: 'Failed to create document',
       statusCode: 502,

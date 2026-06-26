@@ -1,5 +1,4 @@
 import type { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 import { AppError } from '@shared/errors/app-errors';
 
 export const getMessageHistory: QueryResolvers['getMessageHistory'] = async (
@@ -14,8 +13,6 @@ export const getMessageHistory: QueryResolvers['getMessageHistory'] = async (
       code: 'UNAUTHORIZED',
     });
   }
-
-  logger.debug('Getting message history', { assistantId, userId: user.id, pagination });
 
   // Verify assistant ownership first
   const assistantResponse = await clients.aiAssistantClient.getAssistant.post({
@@ -39,7 +36,6 @@ export const getMessageHistory: QueryResolvers['getMessageHistory'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to get message history:', response.error);
     throw new AppError({
       message: 'Failed to get message history',
       statusCode: 502,

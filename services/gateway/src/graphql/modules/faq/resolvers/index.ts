@@ -1,4 +1,4 @@
-import { Resolvers } from '../../../generated/types';
+import type { Resolvers } from '../../../generated/types';
 import { getFaqTopic } from './queries/getFaqTopic';
 import { getFaqTopics } from './queries/getFaqTopics';
 import { getFaqAnswer } from './queries/getFaqAnswer';

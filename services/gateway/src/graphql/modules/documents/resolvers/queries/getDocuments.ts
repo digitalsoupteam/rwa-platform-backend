@@ -1,10 +1,7 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const getDocuments: QueryResolvers['getDocuments'] = async (_parent, { input }, { clients }) => {
-  logger.info('Getting documents list', { input });
-
   const response = await clients.documentsClient.getDocuments.post({
     filter: input?.filter || {},
     sort: input?.sort || {},
@@ -13,7 +10,6 @@ export const getDocuments: QueryResolvers['getDocuments'] = async (_parent, { in
   });
 
   if (response.error) {
-    logger.error('Failed to get documents:', response.error);
     throw new AppError({
       message: 'Failed to get documents',
       statusCode: 502,

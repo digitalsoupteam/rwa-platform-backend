@@ -1,14 +1,11 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const getReferrerClaimHistory: QueryResolvers['getReferrerClaimHistory'] = async (
   _parent,
   { input },
   { clients },
 ) => {
-  logger.info('Getting referrer claim history list', { input });
-
   const response = await clients.loyaltyClient.getReferrerClaimHistory.post({
     filter: input?.filter || {},
     sort: input?.sort || {},
@@ -17,7 +14,6 @@ export const getReferrerClaimHistory: QueryResolvers['getReferrerClaimHistory'] 
   });
 
   if (response.error) {
-    logger.error('Failed to get referrer claim history:', response.error);
     throw new AppError({
       message: 'Failed to get referrer claim history',
       statusCode: 502,

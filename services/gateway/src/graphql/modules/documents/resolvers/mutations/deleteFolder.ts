@@ -1,10 +1,7 @@
 import type { MutationResolvers } from '../../../../generated/types';
 import { AppError } from '@shared/errors/app-errors';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const deleteFolder: MutationResolvers['deleteFolder'] = async (_parent, { id }, { services, clients, user }) => {
-  logger.debug('Deleting folder', { id });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -19,7 +16,6 @@ export const deleteFolder: MutationResolvers['deleteFolder'] = async (_parent, {
   });
 
   if (folderResponse.error) {
-    logger.error('Failed to get folder:', folderResponse.error);
     throw new AppError({
       message: 'Failed to get folder data',
       statusCode: 502,
@@ -41,7 +37,6 @@ export const deleteFolder: MutationResolvers['deleteFolder'] = async (_parent, {
   });
 
   if (response.error) {
-    logger.error('Failed to delete folder:', response.error);
     throw new AppError({
       message: 'Failed to delete folder',
       statusCode: 502,

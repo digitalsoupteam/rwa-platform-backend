@@ -1,14 +1,11 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const toggleQuestionLike: MutationResolvers['toggleQuestionLike'] = async (
   _parent,
   { questionId },
   { clients, user },
 ) => {
-  logger.debug('Toggling question like', { questionId });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -23,7 +20,6 @@ export const toggleQuestionLike: MutationResolvers['toggleQuestionLike'] = async
   });
 
   if (response.error) {
-    logger.error('Failed to toggle question like:', response.error);
     throw new AppError({
       message: 'Failed to toggle question like',
       statusCode: 502,

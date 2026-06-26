@@ -1,4 +1,4 @@
-import { Resolvers } from '../../../generated/types';
+import type { Resolvers } from '../../../generated/types';
 import { createCompany } from './mutations/createCompany';
 import { updateCompany } from './mutations/updateCompany';
 import { deleteCompany } from './mutations/deleteCompany';

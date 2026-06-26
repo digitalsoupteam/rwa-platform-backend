@@ -1,10 +1,7 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const getProposals: QueryResolvers['getProposals'] = async (_parent, { input }, { clients }) => {
-  logger.info('Getting proposals list', { input });
-
   const response = await clients.daoClient.getProposals.post({
     filter: input?.filter || {},
     sort: input?.sort || {},
@@ -13,7 +10,6 @@ export const getProposals: QueryResolvers['getProposals'] = async (_parent, { in
   });
 
   if (response.error) {
-    logger.error('Failed to get proposals:', response.error);
     throw new AppError({
       message: 'Failed to get proposals',
       statusCode: 502,

@@ -74,7 +74,7 @@ export class ContextService {
       userId,
       contextPreferences: contextPreferences.join(','),
     });
-    const contextParts = [];
+    const contextParts: string[] = [];
 
     // Base prompts first
     if (contextPreferences.includes('investor_base')) {

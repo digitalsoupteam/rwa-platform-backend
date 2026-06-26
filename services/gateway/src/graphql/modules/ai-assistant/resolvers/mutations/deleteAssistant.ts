@@ -1,5 +1,4 @@
 import type { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 import { AppError } from '@shared/errors/app-errors';
 
 export const deleteAssistant: MutationResolvers['deleteAssistant'] = async (_parent, { id }, { clients, user }) => {
@@ -24,14 +23,11 @@ export const deleteAssistant: MutationResolvers['deleteAssistant'] = async (_par
     });
   }
 
-  logger.debug('Deleting assistant', { id, userId: user.id });
-
   const response = await clients.aiAssistantClient.deleteAssistant.post({
     id,
   });
 
   if (response.error) {
-    logger.error('Failed to delete assistant:', response.error);
     throw new AppError({
       message: 'Failed to delete assistant',
       statusCode: 502,

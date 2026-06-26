@@ -1,14 +1,11 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const deleteQuestion: MutationResolvers['deleteQuestion'] = async (
   _parent,
   { id },
   { services, clients, user },
 ) => {
-  logger.debug('Deleting question', { id });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -23,7 +20,6 @@ export const deleteQuestion: MutationResolvers['deleteQuestion'] = async (
   });
 
   if (questionResponse.error) {
-    logger.error('Failed to get question:', questionResponse.error);
     throw new AppError({
       message: 'Failed to get question data',
       statusCode: 502,
@@ -45,7 +41,6 @@ export const deleteQuestion: MutationResolvers['deleteQuestion'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to delete question:', response.error);
     throw new AppError({
       message: 'Failed to delete question',
       statusCode: 502,

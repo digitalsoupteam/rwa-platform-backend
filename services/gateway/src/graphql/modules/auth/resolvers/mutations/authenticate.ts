@@ -1,11 +1,8 @@
 import { AppError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
+import type { MutationResolvers } from '../../../../generated/types';
 import { ethers } from 'ethers';
 
 export const authenticate: MutationResolvers['authenticate'] = async (_parent, { input }, { clients }) => {
-  logger.info('Authenticating user', { wallet: input.wallet });
-
   const authenticateResponse = await clients.authClient.authenticate.post({
     wallet: ethers.getAddress(input.wallet),
     signature: input.signature,
@@ -13,7 +10,6 @@ export const authenticate: MutationResolvers['authenticate'] = async (_parent, {
   });
 
   if (authenticateResponse.error) {
-    logger.error('Failed to authenticate:', authenticateResponse.error);
     throw new AppError({ message: 'Failed to authenticate', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 

@@ -1,10 +1,7 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
 
 export const getPoolTransactions: QueryResolvers['getPoolTransactions'] = async (_parent, { input }, { clients }) => {
-  logger.info('Getting pool transactions', { input });
-
   const response = await clients.chartsClient.getPoolTransactions.post({
     filter: input?.filter || {},
     sort: input?.sort || {},
@@ -13,7 +10,6 @@ export const getPoolTransactions: QueryResolvers['getPoolTransactions'] = async 
   });
 
   if (response.error) {
-    logger.error('Failed to get pool transactions:', response.error);
     throw new AppError({
       message: 'Failed to get pool transactions',
       statusCode: 502,

@@ -1,10 +1,7 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const getReferrerWithdraws: QueryResolvers['getReferrerWithdraws'] = async (_parent, { input }, { clients }) => {
-  logger.info('Getting referrer withdraws list', { input });
-
   const response = await clients.loyaltyClient.getReferrerWithdraws.post({
     filter: input?.filter || {},
     sort: input?.sort || {},
@@ -13,7 +10,6 @@ export const getReferrerWithdraws: QueryResolvers['getReferrerWithdraws'] = asyn
   });
 
   if (response.error) {
-    logger.error('Failed to get referrer withdraws:', response.error);
     throw new AppError({
       message: 'Failed to get referrer withdraws',
       statusCode: 502,

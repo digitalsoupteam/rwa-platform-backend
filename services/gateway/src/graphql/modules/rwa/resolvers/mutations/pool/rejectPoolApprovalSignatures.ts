@@ -1,14 +1,11 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const rejectPoolApprovalSignatures: MutationResolvers['rejectPoolApprovalSignatures'] = async (
   _parent,
   { id },
   { services, clients, user },
 ) => {
-  logger.debug('Rejecting pool approval signatures', { id });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -22,7 +19,6 @@ export const rejectPoolApprovalSignatures: MutationResolvers['rejectPoolApproval
   });
 
   if (poolResponse.error) {
-    logger.error('Failed to get pool:', poolResponse.error);
     throw new AppError({
       message: 'Failed to get pool data',
       statusCode: 502,
@@ -44,7 +40,6 @@ export const rejectPoolApprovalSignatures: MutationResolvers['rejectPoolApproval
   });
 
   if (response.error) {
-    logger.error('Failed to reject pool approval signatures:', response.error);
     throw new AppError({
       message: 'Failed to reject pool approval signatures',
       statusCode: 502,

@@ -1,14 +1,11 @@
 import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const updateImage: MutationResolvers['updateImage'] = async (
   _parent,
   { input },
   { services, clients, user },
 ) => {
-  logger.debug('Updating image', { input });
-
   if (!user) {
     throw new AppError({
       message: 'Authentication required',
@@ -23,7 +20,6 @@ export const updateImage: MutationResolvers['updateImage'] = async (
   });
 
   if (imageResponse.error) {
-    logger.error('Failed to get image:', imageResponse.error);
     throw new AppError({
       message: 'Failed to get image data',
       statusCode: 502,
@@ -46,7 +42,6 @@ export const updateImage: MutationResolvers['updateImage'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to update image:', response.error);
     throw new AppError({ message: 'Failed to update image', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 

@@ -1,4 +1,4 @@
-import { Resolvers } from '../../../generated/types';
+import type { Resolvers } from '../../../generated/types';
 import { getEntityReactions } from './queries/getEntityReactions';
 import { getReactions } from './queries/getReactions';
 import { setReaction } from './mutations/setReaction';
