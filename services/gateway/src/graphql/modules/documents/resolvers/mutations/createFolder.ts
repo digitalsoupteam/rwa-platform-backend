@@ -37,7 +37,7 @@ export const createFolder: MutationResolvers['createFolder'] = async (
 
   if (response.error) {
     logger.error('Failed to create folder:', response.error);
-    throw new Error('Failed to create folder');
+    throw new AppError({ message: 'Failed to create folder', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

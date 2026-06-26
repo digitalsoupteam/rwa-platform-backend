@@ -19,7 +19,7 @@ export const getUserTokens: QueryResolvers['getUserTokens'] = async (
 
   if (response.error) {
     logger.error('Failed to get user tokens:', response.error);
-    throw new Error('Failed to get user tokens');
+    throw new AppError({ message: 'Failed to get user tokens', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
 

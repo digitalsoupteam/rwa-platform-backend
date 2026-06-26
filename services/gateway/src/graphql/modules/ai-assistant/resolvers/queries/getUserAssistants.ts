@@ -23,7 +23,7 @@ export const getUserAssistants: QueryResolvers['getUserAssistants'] = async (
 
   if (response.error) {
     logger.error('Failed to get user assistants:', response.error);
-    throw new Error('Failed to get user assistants');
+    throw new AppError({ message: 'Failed to get user assistants', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

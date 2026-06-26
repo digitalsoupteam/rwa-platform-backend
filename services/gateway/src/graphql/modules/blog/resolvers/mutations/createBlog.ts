@@ -37,7 +37,7 @@ export const createBlog: MutationResolvers['createBlog'] = async (
 
   if (response.error) {
     logger.error('Failed to create blog:', response.error);
-    throw new Error('Failed to create blog');
+    throw new AppError({ message: 'Failed to create blog', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

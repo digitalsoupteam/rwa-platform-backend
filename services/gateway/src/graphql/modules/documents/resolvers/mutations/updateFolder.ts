@@ -20,7 +20,7 @@ export const updateFolder: MutationResolvers['updateFolder'] = async (
 
   if (folderResponse.error) {
     logger.error('Failed to get folder:', folderResponse.error);
-    throw new Error('Failed to get folder data');
+    throw new AppError({ message: 'Failed to get folder data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const folder = folderResponse.data;
@@ -39,7 +39,7 @@ export const updateFolder: MutationResolvers['updateFolder'] = async (
 
   if (response.error) {
     logger.error('Failed to update folder:', response.error);
-    throw new Error('Failed to update folder');
+    throw new AppError({ message: 'Failed to update folder', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

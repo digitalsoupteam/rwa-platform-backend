@@ -38,7 +38,7 @@ export const createDocument: MutationResolvers['createDocument'] = async (
 
   if (folderResponse.error) {
     logger.error('Failed to get folder:', folderResponse.error);
-    throw new Error('Failed to get folder data');
+    throw new AppError({ message: 'Failed to get folder data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const folder = folderResponse.data;
@@ -57,7 +57,7 @@ export const createDocument: MutationResolvers['createDocument'] = async (
 
   if (fileResponse.error) {
     logger.error('Failed to upload file:', fileResponse.error);
-    throw new Error('Failed to upload file');
+    throw new AppError({ message: 'Failed to upload file', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   // Create document with file path
@@ -76,7 +76,7 @@ export const createDocument: MutationResolvers['createDocument'] = async (
 
   if (response.error) {
     logger.error('Failed to create document:', response.error);
-    throw new Error('Failed to create document');
+    throw new AppError({ message: 'Failed to create document', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

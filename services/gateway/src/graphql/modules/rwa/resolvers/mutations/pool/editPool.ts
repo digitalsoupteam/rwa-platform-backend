@@ -19,7 +19,7 @@ export const editPool: MutationResolvers['editPool'] = async (
 
   if (poolResponse.error) {
     logger.error('Failed to get pool:', poolResponse.error);
-    throw new Error('Failed to get pool data');
+    throw new AppError({ message: 'Failed to get pool data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const pool = poolResponse.data;
@@ -38,7 +38,7 @@ export const editPool: MutationResolvers['editPool'] = async (
 
   if (response.error) {
     logger.error('Failed to edit pool:', response.error);
-    throw new Error('Failed to edit pool');
+    throw new AppError({ message: 'Failed to edit pool', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

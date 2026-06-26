@@ -20,7 +20,7 @@ export const createFaqAnswer: MutationResolvers['createFaqAnswer'] = async (
 
   if (topicResponse.error) {
     logger.error('Failed to get topic:', topicResponse.error);
-    throw new Error('Failed to get topic data');
+    throw new AppError({ message: 'Failed to get topic data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const topic = topicResponse.data;
@@ -47,7 +47,7 @@ export const createFaqAnswer: MutationResolvers['createFaqAnswer'] = async (
 
   if (response.error) {
     logger.error('Failed to create FAQ answer:', response.error);
-    throw new Error('Failed to create FAQ answer');
+    throw new AppError({ message: 'Failed to create FAQ answer', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

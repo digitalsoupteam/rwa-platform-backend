@@ -19,7 +19,7 @@ export const getUnlockTime: QueryResolvers['getUnlockTime'] = async (
 
   if (response.error) {
     logger.error('Failed to get token unlock time:', response.error);
-    throw new Error('Failed to get token unlock time');
+    throw new AppError({ message: 'Failed to get token unlock time', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

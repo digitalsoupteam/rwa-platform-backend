@@ -23,7 +23,7 @@ export const requestGas: MutationResolvers['requestGas'] = async (
 
   if (response.error) {
     logger.error('Failed to request gas token:', response.error);
-    throw new Error('Failed to request gas token');
+    throw new AppError({ message: 'Failed to request gas token', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

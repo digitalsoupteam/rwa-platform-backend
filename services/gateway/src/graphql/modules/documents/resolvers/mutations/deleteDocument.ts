@@ -20,7 +20,7 @@ export const deleteDocument: MutationResolvers['deleteDocument'] = async (
 
   if (documentResponse.error) {
     logger.error('Failed to get document:', documentResponse.error);
-    throw new Error('Failed to get document data');
+    throw new AppError({ message: 'Failed to get document data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const document = documentResponse.data;
@@ -38,7 +38,7 @@ export const deleteDocument: MutationResolvers['deleteDocument'] = async (
 
   if (response.error) {
     logger.error('Failed to delete document:', response.error);
-    throw new Error('Failed to delete document');
+    throw new AppError({ message: 'Failed to delete document', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   return response.data.id;

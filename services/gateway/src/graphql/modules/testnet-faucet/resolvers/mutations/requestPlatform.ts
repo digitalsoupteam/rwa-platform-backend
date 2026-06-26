@@ -21,7 +21,7 @@ export const requestPlatform: MutationResolvers['requestPlatform'] = async (
 
   if (response.error) {
     logger.error('Failed to request platform token:', response.error);
-    throw new Error('Failed to request platform token');
+    throw new AppError({ message: 'Failed to request platform token', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

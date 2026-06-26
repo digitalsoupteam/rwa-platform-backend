@@ -18,7 +18,7 @@ export const deleteMessage: MutationResolvers['deleteMessage'] = async (
 
   if (messageResponse.error) {
     logger.error('Failed to get message:', messageResponse.error);
-    throw new Error('Failed to get message');
+    throw new AppError({ message: 'Failed to get message', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   // Verify assistant ownership
@@ -27,7 +27,7 @@ export const deleteMessage: MutationResolvers['deleteMessage'] = async (
   });
 
   if (assistantResponse.error || assistantResponse.data.userId !== user.id) {
-    throw new Error('Access denied: Message does not belong to the current user');
+    throw new AppError({ message: 'Access denied: Message does not belong to the current user', statusCode: 403, code: "FORBIDDEN" });
   }
 
   logger.debug('Deleting message', { id, userId: user.id });
@@ -38,7 +38,7 @@ export const deleteMessage: MutationResolvers['deleteMessage'] = async (
 
   if (response.error) {
     logger.error('Failed to delete message:', response.error);
-    throw new Error('Failed to delete message');
+    throw new AppError({ message: 'Failed to delete message', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

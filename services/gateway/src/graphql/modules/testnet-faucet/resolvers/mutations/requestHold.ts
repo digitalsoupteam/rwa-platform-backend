@@ -21,7 +21,7 @@ export const requestHold: MutationResolvers['requestHold'] = async (
 
   if (response.error) {
     logger.error('Failed to request hold token:', response.error);
-    throw new Error('Failed to request hold token');
+    throw new AppError({ message: 'Failed to request hold token', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

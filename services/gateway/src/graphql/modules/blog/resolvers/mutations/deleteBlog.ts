@@ -20,7 +20,7 @@ export const deleteBlog: MutationResolvers['deleteBlog'] = async (
 
   if (blogResponse.error) {
     logger.error('Failed to get blog:', blogResponse.error);
-    throw new Error('Failed to get blog data');
+    throw new AppError({ message: 'Failed to get blog data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const blog = blogResponse.data;
@@ -38,7 +38,7 @@ export const deleteBlog: MutationResolvers['deleteBlog'] = async (
 
   if (response.error) {
     logger.error('Failed to delete blog:', response.error);
-    throw new Error('Failed to delete blog');
+    throw new AppError({ message: 'Failed to delete blog', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   return response.data.id;

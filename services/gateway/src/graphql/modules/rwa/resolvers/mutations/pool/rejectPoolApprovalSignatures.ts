@@ -19,7 +19,7 @@ export const rejectPoolApprovalSignatures: MutationResolvers['rejectPoolApproval
 
   if (poolResponse.error) {
     logger.error('Failed to get pool:', poolResponse.error);
-    throw new Error('Failed to get pool data');
+    throw new AppError({ message: 'Failed to get pool data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const pool = poolResponse.data;
@@ -37,7 +37,7 @@ export const rejectPoolApprovalSignatures: MutationResolvers['rejectPoolApproval
 
   if (response.error) {
     logger.error('Failed to reject pool approval signatures:', response.error);
-    throw new Error('Failed to reject pool approval signatures');
+    throw new AppError({ message: 'Failed to reject pool approval signatures', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   return true;

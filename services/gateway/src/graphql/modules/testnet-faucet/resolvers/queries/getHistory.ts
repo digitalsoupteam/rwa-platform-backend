@@ -23,7 +23,7 @@ export const getHistory: QueryResolvers['getHistory'] = async (
 
   if (response.error) {
     logger.error('Failed to get faucet request history:', response.error);
-    throw new Error('Failed to get faucet request history');
+    throw new AppError({ message: 'Failed to get faucet request history', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

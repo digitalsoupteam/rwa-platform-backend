@@ -37,7 +37,7 @@ export const createFaqTopic: MutationResolvers['createFaqTopic'] = async (
 
   if (response.error) {
     logger.error('Failed to create FAQ topic:', response.error);
-    throw new Error('Failed to create FAQ topic');
+    throw new AppError({ message: 'Failed to create FAQ topic', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

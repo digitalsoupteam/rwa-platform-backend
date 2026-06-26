@@ -19,13 +19,13 @@ export const removeMember: MutationResolvers['removeMember'] = async (
 
   if (companyResponse.error) {
     logger.error('Failed to get company details:', companyResponse.error);
-    throw new Error('Failed to get company details');
+    throw new AppError({ message: 'Failed to get company details', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   // Check if current user is the owner
   if (companyResponse.data.ownerId !== user.id) {
     logger.error('User is not the company owner', { userId: user.id, companyId: input.companyId });
-    throw new Error('Only company owner can remove members');
+    throw new AppError({ message: 'Only company owner can remove members', statusCode: 403, code: "FORBIDDEN" });
   }
 
   const response = await clients.companyClient.removeMember.post({
@@ -34,7 +34,7 @@ export const removeMember: MutationResolvers['removeMember'] = async (
 
   if (response.error) {
     logger.error('Failed to remove member:', response.error);
-    throw new Error('Failed to remove member');
+    throw new AppError({ message: 'Failed to remove member', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   await services.cache.resetCompanyCache(input.companyId)

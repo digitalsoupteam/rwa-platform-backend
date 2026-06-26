@@ -26,7 +26,7 @@ export const createCompany: MutationResolvers['createCompany'] = async (
 
   if (response.error) {
     logger.error('Failed to create company:', response.error);
-    throw new Error('Failed to create company');
+    throw new AppError({ message: 'Failed to create company', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

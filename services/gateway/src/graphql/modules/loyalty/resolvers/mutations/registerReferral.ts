@@ -20,7 +20,7 @@ export const registerReferral: MutationResolvers['registerReferral'] = async (
 
   if (userResponse.error) {
     logger.error('Failed to get user data', userResponse.error);
-    throw new Error('Failed to get user data');
+    throw new AppError({ message: 'Failed to get user data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const userData = userResponse.data;
@@ -46,7 +46,7 @@ export const registerReferral: MutationResolvers['registerReferral'] = async (
 
   if (response.error) {
     logger.error('Failed to register referral', response.error);
-    throw new Error('Failed to register referral');
+    throw new AppError({ message: 'Failed to register referral', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

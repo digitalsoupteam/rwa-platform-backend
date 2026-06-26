@@ -1,3 +1,4 @@
+import { AppError } from "@shared/errors/app-errors";
 import type { QueryResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
@@ -17,7 +18,7 @@ export const getFaqAnswers: QueryResolvers['getFaqAnswers'] = async (
 
   if (response.error) {
     logger.error('Failed to get answers:', response.error);
-    throw new Error('Failed to get answers');
+    throw new AppError({ message: 'Failed to get answers', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

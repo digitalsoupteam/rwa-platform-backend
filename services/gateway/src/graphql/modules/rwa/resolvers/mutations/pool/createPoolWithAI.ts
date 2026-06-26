@@ -20,14 +20,14 @@ export const createPoolWithAI: MutationResolvers['createPoolWithAI'] = async (
 
   if (businessResponse.error) {
     logger.error('Failed to get business:', businessResponse.error);
-    throw new Error('Failed to get business data');
+    throw new AppError({ message: 'Failed to get business data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const business = businessResponse.data;
 
   if (!business.tokenAddress) {
     logger.error('Deploy business before');
-    throw new Error('Deploy business before');
+    throw new AppError({ message: 'Deploy business before', statusCode: 409, code: "CONFLICT" });
   }
 
   await services.ownership.checkOwnership({
@@ -48,7 +48,7 @@ export const createPoolWithAI: MutationResolvers['createPoolWithAI'] = async (
 
   if (response.error) {
     logger.error('Failed to create pool with AI:', response.error);
-    throw new Error('Failed to create pool with AI');
+    throw new AppError({ message: 'Failed to create pool with AI', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

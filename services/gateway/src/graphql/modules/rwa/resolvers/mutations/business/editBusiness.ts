@@ -23,7 +23,7 @@ export const editBusiness: MutationResolvers['editBusiness'] = async (
 
   if (businessResponse.error) {
     logger.error('Failed to get business:', businessResponse.error);
-    throw new Error('Failed to get business data');
+    throw new AppError({ message: 'Failed to get business data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const business = businessResponse.data;
@@ -51,7 +51,7 @@ export const editBusiness: MutationResolvers['editBusiness'] = async (
 
   if (response.error) {
     logger.error('Failed to edit business:', response.error);
-    throw new Error('Failed to edit business');
+    throw new AppError({ message: 'Failed to edit business', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

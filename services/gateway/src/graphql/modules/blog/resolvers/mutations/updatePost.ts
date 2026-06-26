@@ -20,7 +20,7 @@ export const updatePost: MutationResolvers['updatePost'] = async (
 
   if (postResponse.error) {
     logger.error('Failed to get post:', postResponse.error);
-    throw new Error('Failed to get post data');
+    throw new AppError({ message: 'Failed to get post data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const post = postResponse.data;
@@ -39,7 +39,7 @@ export const updatePost: MutationResolvers['updatePost'] = async (
 
   if (response.error) {
     logger.error('Failed to update post:', response.error);
-    throw new Error('Failed to update post');
+    throw new AppError({ message: 'Failed to update post', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

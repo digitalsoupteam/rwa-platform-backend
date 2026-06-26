@@ -20,7 +20,7 @@ export const deleteFaqAnswer: MutationResolvers['deleteFaqAnswer'] = async (
 
   if (answerResponse.error) {
     logger.error('Failed to get answer:', answerResponse.error);
-    throw new Error('Failed to get answer data');
+    throw new AppError({ message: 'Failed to get answer data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const answer = answerResponse.data;
@@ -38,7 +38,7 @@ export const deleteFaqAnswer: MutationResolvers['deleteFaqAnswer'] = async (
 
   if (response.error) {
     logger.error('Failed to delete FAQ answer:', response.error);
-    throw new Error('Failed to delete FAQ answer');
+    throw new AppError({ message: 'Failed to delete FAQ answer', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   return response.data.id;

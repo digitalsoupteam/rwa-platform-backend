@@ -37,7 +37,7 @@ export const createGallery: MutationResolvers['createGallery'] = async (
 
   if (response.error) {
     logger.error('Failed to create gallery:', response.error);
-    throw new Error('Failed to create gallery');
+    throw new AppError({ message: 'Failed to create gallery', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

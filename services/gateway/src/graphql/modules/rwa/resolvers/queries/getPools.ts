@@ -1,3 +1,4 @@
+import { AppError } from "@shared/errors/app-errors";
 import type { QueryResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
@@ -17,7 +18,7 @@ export const getPools: QueryResolvers['getPools'] = async (
 
   if (response.error) {
     logger.error('Failed to get pools:', response.error);
-    throw new Error('Failed to get pools');
+    throw new AppError({ message: 'Failed to get pools', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   return response.data;

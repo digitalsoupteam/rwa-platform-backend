@@ -22,7 +22,7 @@ export const setReaction: MutationResolvers['setReaction'] = async (
 
   if (response.error) {
     logger.error('Failed to set reaction:', response.error);
-    throw new Error('Failed to set reaction');
+    throw new AppError({ message: 'Failed to set reaction', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

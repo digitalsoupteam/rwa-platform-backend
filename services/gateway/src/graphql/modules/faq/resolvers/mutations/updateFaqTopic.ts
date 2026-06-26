@@ -20,7 +20,7 @@ export const updateFaqTopic: MutationResolvers['updateFaqTopic'] = async (
 
   if (topicResponse.error) {
     logger.error('Failed to get FAQ topic:', topicResponse.error);
-    throw new Error('Failed to get FAQ topic data');
+    throw new AppError({ message: 'Failed to get FAQ topic data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const topic = topicResponse.data;
@@ -39,7 +39,7 @@ export const updateFaqTopic: MutationResolvers['updateFaqTopic'] = async (
 
   if (response.error) {
     logger.error('Failed to update FAQ topic:', response.error);
-    throw new Error('Failed to update FAQ topic');
+    throw new AppError({ message: 'Failed to update FAQ topic', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

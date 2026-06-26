@@ -19,7 +19,7 @@ export const createPost: MutationResolvers['createPost'] = async (
 
   if (blogResponse.error) {
     logger.error('Failed to get blog:', blogResponse.error);
-    throw new Error('Failed to get blog');
+    throw new AppError({ message: 'Failed to get blog', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const blog = blogResponse.data;
@@ -46,7 +46,7 @@ export const createPost: MutationResolvers['createPost'] = async (
 
   if (response.error) {
     logger.error('Failed to create post:', response.error);
-    throw new Error('Failed to create post');
+    throw new AppError({ message: 'Failed to create post', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

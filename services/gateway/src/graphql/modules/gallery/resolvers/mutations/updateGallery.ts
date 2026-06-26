@@ -20,7 +20,7 @@ export const updateGallery: MutationResolvers['updateGallery'] = async (
 
   if (galleryResponse.error) {
     logger.error('Failed to get gallery:', galleryResponse.error);
-    throw new Error('Failed to get gallery data');
+    throw new AppError({ message: 'Failed to get gallery data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const gallery = galleryResponse.data;
@@ -39,7 +39,7 @@ export const updateGallery: MutationResolvers['updateGallery'] = async (
 
   if (response.error) {
     logger.error('Failed to update gallery:', response.error);
-    throw new Error('Failed to update gallery');
+    throw new AppError({ message: 'Failed to update gallery', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

@@ -20,7 +20,7 @@ export const revokeTokens: MutationResolvers['revokeTokens'] = async (
 
     if (response.error) {
       logger.error('Failed to revoke tokens:', response.error);
-      throw new Error('Failed to revoke tokens');
+      throw new AppError({ message: 'Failed to revoke tokens', statusCode: 502, code: "BAD_GATEWAY" });
     }
 
     const { data } = response;

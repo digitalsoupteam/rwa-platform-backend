@@ -20,7 +20,7 @@ export const updateImage: MutationResolvers['updateImage'] = async (
 
   if (imageResponse.error) {
     logger.error('Failed to get image:', imageResponse.error);
-    throw new Error('Failed to get image data');
+    throw new AppError({ message: 'Failed to get image data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const image = imageResponse.data;
@@ -39,7 +39,7 @@ export const updateImage: MutationResolvers['updateImage'] = async (
 
   if (response.error) {
     logger.error('Failed to update image:', response.error);
-    throw new Error('Failed to update image');
+    throw new AppError({ message: 'Failed to update image', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

@@ -20,7 +20,7 @@ export const deleteImage: MutationResolvers['deleteImage'] = async (
 
   if (imageResponse.error) {
     logger.error('Failed to get image:', imageResponse.error);
-    throw new Error('Failed to get image data');
+    throw new AppError({ message: 'Failed to get image data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const image = imageResponse.data;
@@ -38,7 +38,7 @@ export const deleteImage: MutationResolvers['deleteImage'] = async (
 
   if (response.error) {
     logger.error('Failed to delete image:', response.error);
-    throw new Error('Failed to delete image');
+    throw new AppError({ message: 'Failed to delete image', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   return response.data.id;

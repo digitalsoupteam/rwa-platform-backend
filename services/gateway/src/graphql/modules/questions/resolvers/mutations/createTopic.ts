@@ -37,7 +37,7 @@ export const createTopic: MutationResolvers['createTopic'] = async (
 
   if (response.error) {
     logger.error('Failed to create topic:', response.error);
-    throw new Error('Failed to create topic');
+    throw new AppError({ message: 'Failed to create topic', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

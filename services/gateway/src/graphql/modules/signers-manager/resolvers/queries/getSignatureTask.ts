@@ -19,7 +19,7 @@ export const getSignatureTask: QueryResolvers["getSignatureTask"] = async (
 
   if (response.error) {
     logger.error("Failed to get signature task:", response.error);
-    throw new Error("Failed to get signature task");
+    throw new AppError({ message: "Failed to get signature task", statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const signatureTask = response.data

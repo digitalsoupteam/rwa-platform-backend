@@ -20,7 +20,7 @@ export const createQuestionAnswer: MutationResolvers['createQuestionAnswer'] = a
 
   if (questionResponse.error) {
     logger.error('Failed to get question:', questionResponse.error.message);
-    throw new Error('Failed to get question data');
+    throw new AppError({ message: 'Failed to get question data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const question = questionResponse.data;
@@ -40,7 +40,7 @@ export const createQuestionAnswer: MutationResolvers['createQuestionAnswer'] = a
 
   if (response.error) {
     logger.error(`Failed to create question answer:`, response.error);
-    throw new Error('Failed to create question answer');
+    throw new AppError({ message: 'Failed to create question answer', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

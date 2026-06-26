@@ -20,7 +20,7 @@ export const createReferrerWithdrawTask: MutationResolvers['createReferrerWithdr
 
   if (userResponse.error) {
     logger.error('Failed to get user data:', userResponse.error);
-    throw new Error('Failed to get user data');
+    throw new AppError({ message: 'Failed to get user data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const userData = userResponse.data;
@@ -35,7 +35,7 @@ export const createReferrerWithdrawTask: MutationResolvers['createReferrerWithdr
 
   if (response.error) {
     logger.error('Failed to create referrer withdraw task:', response.error);
-    throw new Error('Failed to create referrer withdraw task');
+    throw new AppError({ message: 'Failed to create referrer withdraw task', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

@@ -29,7 +29,7 @@ export const createBusinessWithAI: MutationResolvers['createBusinessWithAI'] = a
 
   if (response.error) {
     logger.error('Failed to create business with AI:', response.error);
-    throw new Error('Failed to create business with AI');
+    throw new AppError({ message: 'Failed to create business with AI', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

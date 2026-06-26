@@ -1,3 +1,4 @@
+import { AppError } from "@shared/errors/app-errors";
 import type { QueryResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
@@ -17,7 +18,7 @@ export const getReferrerWithdraws: QueryResolvers['getReferrerWithdraws'] = asyn
 
   if (response.error) {
     logger.error('Failed to get referrer withdraws:', response.error);
-    throw new Error('Failed to get referrer withdraws');
+    throw new AppError({ message: 'Failed to get referrer withdraws', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

@@ -20,7 +20,7 @@ export const deletePost: MutationResolvers['deletePost'] = async (
 
   if (postResponse.error) {
     logger.error('Failed to get post:', postResponse.error);
-    throw new Error('Failed to get post data');
+    throw new AppError({ message: 'Failed to get post data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const post = postResponse.data;
@@ -38,7 +38,7 @@ export const deletePost: MutationResolvers['deletePost'] = async (
 
   if (response.error) {
     logger.error('Failed to delete post:', response.error);
-    throw new Error('Failed to delete post');
+    throw new AppError({ message: 'Failed to delete post', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   return response.data.id;

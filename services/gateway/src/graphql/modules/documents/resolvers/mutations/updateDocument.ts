@@ -20,7 +20,7 @@ export const updateDocument: MutationResolvers['updateDocument'] = async (
 
   if (documentResponse.error) {
     logger.error('Failed to get document:', documentResponse.error);
-    throw new Error('Failed to get document data');
+    throw new AppError({ message: 'Failed to get document data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const document = documentResponse.data;
@@ -39,7 +39,7 @@ export const updateDocument: MutationResolvers['updateDocument'] = async (
 
   if (response.error) {
     logger.error('Failed to update document:', response.error);
-    throw new Error('Failed to update document');
+    throw new AppError({ message: 'Failed to update document', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

@@ -20,7 +20,7 @@ export const requestBusinessApprovalSignatures: MutationResolvers['requestBusine
 
   if (businessResponse.error) {
     logger.error('Failed to get business:', businessResponse.error);
-    throw new Error('Failed to get business data');
+    throw new AppError({ message: 'Failed to get business data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const business = businessResponse.data;
@@ -41,7 +41,7 @@ export const requestBusinessApprovalSignatures: MutationResolvers['requestBusine
 
   if (response.error) {
     logger.error('Failed to request business approval signatures:', response.error);
-    throw new Error('Failed to request business approval signatures');
+    throw new AppError({ message: 'Failed to request business approval signatures', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

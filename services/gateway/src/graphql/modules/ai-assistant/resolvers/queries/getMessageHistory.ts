@@ -19,7 +19,7 @@ export const getMessageHistory: QueryResolvers['getMessageHistory'] = async (
   });
 
   if (assistantResponse.error || assistantResponse.data.userId !== user.id) {
-    throw new Error('Access denied: Assistant does not belong to the current user');
+    throw new AppError({ message: 'Access denied: Assistant does not belong to the current user', statusCode: 403, code: "FORBIDDEN" });
   }
 
   const response = await clients.aiAssistantClient.getMessageHistory.post({
@@ -32,7 +32,7 @@ export const getMessageHistory: QueryResolvers['getMessageHistory'] = async (
 
   if (response.error) {
     logger.error('Failed to get message history:', response.error);
-    throw new Error('Failed to get message history');
+    throw new AppError({ message: 'Failed to get message history', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

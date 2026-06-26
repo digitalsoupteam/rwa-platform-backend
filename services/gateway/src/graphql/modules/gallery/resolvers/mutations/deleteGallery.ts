@@ -20,7 +20,7 @@ export const deleteGallery: MutationResolvers['deleteGallery'] = async (
 
   if (galleryResponse.error) {
     logger.error('Failed to get gallery:', galleryResponse.error);
-    throw new Error('Failed to get gallery data');
+    throw new AppError({ message: 'Failed to get gallery data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const gallery = galleryResponse.data;
@@ -38,7 +38,7 @@ export const deleteGallery: MutationResolvers['deleteGallery'] = async (
 
   if (response.error) {
     logger.error('Failed to delete gallery:', response.error);
-    throw new Error('Failed to delete gallery');
+    throw new AppError({ message: 'Failed to delete gallery', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   return response.data.id;

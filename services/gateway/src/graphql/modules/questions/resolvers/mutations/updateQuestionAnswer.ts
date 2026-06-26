@@ -20,7 +20,7 @@ export const updateQuestionAnswer: MutationResolvers['updateQuestionAnswer'] = a
 
   if (questionResponse.error) {
     logger.error('Failed to get question:', questionResponse.error.message);
-    throw new Error('Failed to get question data');
+    throw new AppError({ message: 'Failed to get question data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const question = questionResponse.data;
@@ -39,7 +39,7 @@ export const updateQuestionAnswer: MutationResolvers['updateQuestionAnswer'] = a
 
   if (response.error) {
     logger.error(`Failed to update question answer:`, response.error);
-    throw new Error('Failed to update question answer');
+    throw new AppError({ message: 'Failed to update question answer', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

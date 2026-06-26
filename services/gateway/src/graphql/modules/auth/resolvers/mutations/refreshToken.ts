@@ -1,3 +1,4 @@
+import { AppError } from "@shared/errors/app-errors";
 import type { MutationResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
@@ -18,7 +19,7 @@ export const refreshToken: MutationResolvers['refreshToken'] = async (
 
   if (response.error) {
     logger.error('Failed to refresh token:', response.error);
-    throw new Error('Failed to refresh token');
+    throw new AppError({ message: 'Failed to refresh token', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

@@ -20,7 +20,7 @@ export const deleteTopic: MutationResolvers['deleteTopic'] = async (
 
   if (topicResponse.error) {
     logger.error('Failed to get topic:', topicResponse.error);
-    throw new Error('Failed to get topic data');
+    throw new AppError({ message: 'Failed to get topic data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const topic = topicResponse.data;
@@ -38,7 +38,7 @@ export const deleteTopic: MutationResolvers['deleteTopic'] = async (
 
   if (response.error) {
     logger.error('Failed to delete topic:', response.error);
-    throw new Error('Failed to delete topic');
+    throw new AppError({ message: 'Failed to delete topic', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   return response.data.id;

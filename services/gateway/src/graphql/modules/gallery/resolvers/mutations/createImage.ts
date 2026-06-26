@@ -38,7 +38,7 @@ export const createImage: MutationResolvers['createImage'] = async (
 
   if (galleryResponse.error) {
     logger.error('Failed to get gallery:', galleryResponse.error);
-    throw new Error('Failed to get gallery data');
+    throw new AppError({ message: 'Failed to get gallery data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const gallery = galleryResponse.data;
@@ -57,7 +57,7 @@ export const createImage: MutationResolvers['createImage'] = async (
 
   if (fileResponse.error) {
     logger.error('Failed to upload file:', fileResponse.error);
-    throw new Error('Failed to upload file');
+    throw new AppError({ message: 'Failed to upload file', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const response = await clients.galleryClient.createImage.post({
@@ -76,7 +76,7 @@ export const createImage: MutationResolvers['createImage'] = async (
 
   if (response.error) {
     logger.error('Failed to create image:', response.error);
-    throw new Error('Failed to create image');
+    throw new AppError({ message: 'Failed to create image', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

@@ -19,7 +19,7 @@ export const getMessage: QueryResolvers['getMessage'] = async (
 
   if (response.error) {
     logger.error('Failed to get message:', response.error);
-    throw new Error('Failed to get message');
+    throw new AppError({ message: 'Failed to get message', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;
@@ -30,7 +30,7 @@ export const getMessage: QueryResolvers['getMessage'] = async (
   });
 
   if (assistantResponse.error || assistantResponse.data.userId !== user.id) {
-    throw new Error('Access denied: Message does not belong to the current user');
+    throw new AppError({ message: 'Access denied: Message does not belong to the current user', statusCode: 403, code: "FORBIDDEN" });
   }
 
   return {

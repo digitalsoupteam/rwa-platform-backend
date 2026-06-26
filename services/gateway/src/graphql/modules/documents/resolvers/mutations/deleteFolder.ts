@@ -20,7 +20,7 @@ export const deleteFolder: MutationResolvers['deleteFolder'] = async (
 
   if (folderResponse.error) {
     logger.error('Failed to get folder:', folderResponse.error);
-    throw new Error('Failed to get folder data');
+    throw new AppError({ message: 'Failed to get folder data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const folder = folderResponse.data;
@@ -38,7 +38,7 @@ export const deleteFolder: MutationResolvers['deleteFolder'] = async (
 
   if (response.error) {
     logger.error('Failed to delete folder:', response.error);
-    throw new Error('Failed to delete folder');
+    throw new AppError({ message: 'Failed to delete folder', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   return response.data.id;

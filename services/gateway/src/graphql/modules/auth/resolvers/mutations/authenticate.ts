@@ -1,3 +1,4 @@
+import { AppError } from "@shared/errors/app-errors";
 import { MutationResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 import {ethers} from 'ethers'
@@ -17,7 +18,7 @@ export const authenticate: MutationResolvers['authenticate'] = async (
 
   if (authenticateResponse.error) {
     logger.error('Failed to authenticate:', authenticateResponse.error);
-    throw new Error('Failed to authenticate');
+    throw new AppError({ message: 'Failed to authenticate', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = authenticateResponse;

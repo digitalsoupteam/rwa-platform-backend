@@ -20,7 +20,7 @@ export const updateBlog: MutationResolvers['updateBlog'] = async (
 
   if (blogResponse.error) {
     logger.error('Failed to get blog:', blogResponse.error);
-    throw new Error('Failed to get blog data');
+    throw new AppError({ message: 'Failed to get blog data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const blog = blogResponse.data;
@@ -39,7 +39,7 @@ export const updateBlog: MutationResolvers['updateBlog'] = async (
 
   if (response.error) {
     logger.error('Failed to update blog:', response.error);
-    throw new Error('Failed to update blog');
+    throw new AppError({ message: 'Failed to update blog', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

@@ -17,7 +17,7 @@ export const updateAssistant: MutationResolvers['updateAssistant'] = async (
   });
 
   if (assistantResponse.error || assistantResponse.data.userId !== user.id) {
-    throw new Error('Access denied: Assistant does not belong to the current user');
+    throw new AppError({ message: 'Access denied: Assistant does not belong to the current user', statusCode: 403, code: "FORBIDDEN" });
   }
 
   logger.debug('Updating assistant', { input, userId: user.id });
@@ -30,7 +30,7 @@ export const updateAssistant: MutationResolvers['updateAssistant'] = async (
 
   if (response.error) {
     logger.error('Failed to update assistant:', response.error);
-    throw new Error('Failed to update assistant');
+    throw new AppError({ message: 'Failed to update assistant', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

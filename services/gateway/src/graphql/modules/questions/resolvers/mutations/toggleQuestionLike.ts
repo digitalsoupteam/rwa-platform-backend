@@ -20,7 +20,7 @@ export const toggleQuestionLike: MutationResolvers['toggleQuestionLike'] = async
 
   if (response.error) {
     logger.error('Failed to toggle question like:', response.error);
-    throw new Error('Failed to toggle question like');
+    throw new AppError({ message: 'Failed to toggle question like', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   return response.data.liked;

@@ -17,7 +17,7 @@ export const getEntityReactions: QueryResolvers['getEntityReactions'] = async (
 
   if (response.error) {
     logger.error('Failed to get entity reactions:', response.error);
-    throw new Error('Failed to get entity reactions');
+    throw new AppError({ message: 'Failed to get entity reactions', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

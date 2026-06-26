@@ -19,7 +19,7 @@ export const updatePoolRiskScore: MutationResolvers['updatePoolRiskScore'] = asy
 
   if (poolResponse.error) {
     logger.error('Failed to get pool:', poolResponse.error);
-    throw new Error('Failed to get pool data');
+    throw new AppError({ message: 'Failed to get pool data', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const pool = poolResponse.data;
@@ -37,7 +37,7 @@ export const updatePoolRiskScore: MutationResolvers['updatePoolRiskScore'] = asy
 
   if (response.error) {
     logger.error('Failed to update pool risk score:', response.error);
-    throw new Error('Failed to update pool risk score');
+    throw new AppError({ message: 'Failed to update pool risk score', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

@@ -38,7 +38,7 @@ export const createBusiness: MutationResolvers['createBusiness'] = async (
 
   if (response.error) {
     logger.error('Failed to create business:', response.error);
-    throw new Error('Failed to create business');
+    throw new AppError({ message: 'Failed to create business', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;

@@ -17,7 +17,7 @@ export const deleteAssistant: MutationResolvers['deleteAssistant'] = async (
   });
 
   if (assistantResponse.error || assistantResponse.data.userId !== user.id) {
-    throw new Error('Access denied: Assistant does not belong to the current user');
+    throw new AppError({ message: 'Access denied: Assistant does not belong to the current user', statusCode: 403, code: "FORBIDDEN" });
   }
 
   logger.debug('Deleting assistant', { id, userId: user.id });
@@ -28,7 +28,7 @@ export const deleteAssistant: MutationResolvers['deleteAssistant'] = async (
 
   if (response.error) {
     logger.error('Failed to delete assistant:', response.error);
-    throw new Error('Failed to delete assistant');
+    throw new AppError({ message: 'Failed to delete assistant', statusCode: 502, code: "BAD_GATEWAY" });
   }
 
   const { data } = response;
