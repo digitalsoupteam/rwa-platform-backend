@@ -3,25 +3,7 @@ import { camelToSnakeCase } from './decorator-utils';
 import { AppError } from '@shared/errors/app-errors';
 
 export interface LogOptions {
-	args?: string[];
-}
-
-/**
- * Extract nested value from object using dot-separated path.
- * Supports both "data.wallet" and "message?.fields?.routingKey" syntax.
- * Skips the first segment (parameter label), extracts the rest from args[i].
- */
-function extractNestedValue(obj: any, path: string): any {
-	const cleanPath = path.replace(/\?\./g, '.');
-	const parts = cleanPath.split('.');
-	if (parts.length <= 1) return obj; // no nesting — return as-is
-
-	let value = obj;
-	for (let j = 1; j < parts.length; j++) {
-		if (value == null) return undefined;
-		value = value[parts[j]];
-	}
-	return value;
+	args?: (args: any[]) => Record<string, any>;
 }
 
 export function LogDecorator(options?: LogOptions) {
@@ -31,18 +13,9 @@ export function LogDecorator(options?: LogOptions) {
 		return function replacementMethod(this: any, ...args: any[]) {
 			const className = camelToSnakeCase(this.constructor.name);
 			const fullName = `${className}.${camelToSnakeCase(methodName)}`;
-			const logArgs: Record<string, any> = {};
-			if (Array.isArray(options?.args) && options.args.length > 0) {
-				options.args.forEach((name, i) => {
-					if (name.includes('.') || name.includes('?.')) {
-						logArgs[name] = extractNestedValue(args[i], name);
-					} else {
-						logArgs[name] = args[i];
-					}
-				});
-			}
+			const logArgs = options?.args ? options.args(args) : undefined;
 
-			logger.debug(`${fullName} — called`, Object.keys(logArgs).length ? logArgs : undefined);
+			logger.debug(`${fullName} — called`, logArgs);
 
 			try {
 				const result = originalMethod.apply(this, args);

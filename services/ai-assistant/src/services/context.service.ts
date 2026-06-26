@@ -7,12 +7,12 @@ import { setSpanAttributes } from "@shared/monitoring/src/tracing";
 
 
 export class ContextService {
-  private readonly INVESTOR_BASE_PROMPT = 
+  private readonly INVESTOR_BASE_PROMPT =
     "You are an AI assistant helping investors understand and navigate RWA investment opportunities.\n" +
     "You can provide information about available pools, analyze investment options, and explain how the platform works.\n" +
     "Always be clear about risks and encourage users to do their own research before investing.";
 
-  private readonly PRODUCT_OWNER_BASE_PROMPT = 
+  private readonly PRODUCT_OWNER_BASE_PROMPT =
     "You are an AI assistant helping product owners tokenize their real-world assets.\n" +
     "You can explain the tokenization process, help with pool creation, and provide guidance on managing RWA pools.\n" +
     "Focus on compliance, transparency, and best practices for successful asset tokenization.";
@@ -60,12 +60,17 @@ export class ContextService {
   constructor(
     private readonly rwaClient: RwaClient,
     private readonly portfolioClient: PortfolioClient,
-  ) {}
+  ) { }
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['contextPreferences', 'userId'] })
-    async getContextForAssistant(contextPreferences: AssistantContext, userId: string): Promise<string> {
+  @LogDecorator({
+    args: (a) => ({
+      contextPreferences: a[0],
+      userId: a[1]
+    })
+  })
+  async getContextForAssistant(contextPreferences: AssistantContext, userId: string): Promise<string> {
     setSpanAttributes({
       userId,
       contextPreferences: contextPreferences.join(','),
@@ -76,7 +81,7 @@ export class ContextService {
     if (contextPreferences.includes('investor_base')) {
       contextParts.push(this.INVESTOR_BASE_PROMPT);
     }
-    
+
     if (contextPreferences.includes('product_owner_base')) {
       contextParts.push(this.PRODUCT_OWNER_BASE_PROMPT);
     }
@@ -140,7 +145,7 @@ export class ContextService {
   private async getUserPortfolioContext(userId: string): Promise<string | null> {
     setSpanAttributes({ userId, contextType: 'user_portfolio' });
     try {
-      const balancesResponse = await this.portfolioClient.getBalances.post({ 
+      const balancesResponse = await this.portfolioClient.getBalances.post({
         filter: {
           owner: userId,
           balance: { $gt: 0 }

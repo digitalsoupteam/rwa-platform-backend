@@ -19,11 +19,16 @@ export class AuthService {
     private readonly refreshTokenExpiry: jwt.SignOptions["expiresIn"],
     private readonly domainName: string,
     private readonly domainVersion: string
-  ) {}
+  ) { }
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['wallet', 'timestamp'] })
+  @LogDecorator({
+    args: (a) => ({
+      wallet: a[0].wallet,
+      timestamp: a[0].timestamp
+    })
+  })
   async authenticate(data: {
     wallet: string;
     signature: string;
@@ -204,7 +209,9 @@ export class AuthService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['userId'] })
+  @LogDecorator({
+    args: (a) => ({ userId: a[0] })
+  })
   async getUser(userId: string) {
     setSpanAttributes({ userId });
     const user = await this.userRepository.findById(userId);
@@ -219,7 +226,9 @@ export class AuthService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['userId'] })
+  @LogDecorator({
+    args: (a) => ({ userId: a[0] })
+  })
   async getUserTokens(userId: string) {
     setSpanAttributes({ userId });
     const tokens = await this.refreshTokenRepository.findByUserId(userId);
@@ -236,7 +245,9 @@ export class AuthService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['userId'] })
+  @LogDecorator({
+    args: (a) => ({ userId: a[0] })
+  })
   async revokeTokens(userId: string, tokenHashes: string[]) {
     setSpanAttributes({ userId });
     const revokedCount = await this.refreshTokenRepository.deleteTokens(userId, tokenHashes);

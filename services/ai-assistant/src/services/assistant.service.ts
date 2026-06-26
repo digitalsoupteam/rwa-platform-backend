@@ -7,14 +7,20 @@ import { setSpanAttributes } from "@shared/monitoring/src/tracing";
 
 
 export class AssistantService {
-  constructor(private readonly assistantRepository: AssistantRepository) {}
+  constructor(private readonly assistantRepository: AssistantRepository) { }
 
   /**
    * Creates a new AI assistant
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data'] })
+  @LogDecorator({
+    args: (a) => ({
+      name: a[0].name,
+      userId: a[0].userId,
+      contextPreferences: a[0].contextPreferences,
+    })
+  })
   async createAssistant(data: {
     name: string;
     userId: string;
@@ -36,16 +42,22 @@ export class AssistantService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id', 'data'] })
-    async updateAssistant(
-        id: string,
-        data: {
-          name?: string;
-          contextPreferences?: AssistantContext;
-        }
-    ) {
-      setSpanAttributes({ assistantId: id });
-      const assistant = await this.assistantRepository.update(id, data);
+  @LogDecorator({
+    args: (a) => ({
+      id: a[0],
+      name: a[1].name,
+      contextPreferences: a[1].contextPreferences,
+    })
+  })
+  async updateAssistant(
+    id: string,
+    data: {
+      name?: string;
+      contextPreferences?: AssistantContext;
+    }
+  ) {
+    setSpanAttributes({ assistantId: id });
+    const assistant = await this.assistantRepository.update(id, data);
 
     return {
       id: assistant._id.toString(),
@@ -60,7 +72,7 @@ export class AssistantService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({ args: (a) => ({ id: a[0] }) })
   async getAssistant(id: string) {
     setSpanAttributes({ assistantId: id });
     const assistant = await this.assistantRepository.findById(id);
@@ -78,7 +90,7 @@ export class AssistantService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['userId'] })
+  @LogDecorator({ args: (a) => ({ userId: a[0] }) })
   async getUserAssistants(userId: string) {
     setSpanAttributes({ userId });
     const assistants = await this.assistantRepository.findAll({ userId });
@@ -96,7 +108,7 @@ export class AssistantService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({ args: (a) => ({ id: a[0] }) })
   async deleteAssistant(id: string) {
     setSpanAttributes({ assistantId: id });
     await this.assistantRepository.delete(id);

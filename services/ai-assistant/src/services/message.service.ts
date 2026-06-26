@@ -22,7 +22,13 @@ export class MessageService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data'] })
+  @LogDecorator({
+    args: (a) => ({
+      assistantId: a[0].assistantId,
+      text: a[0].text,
+      model: a[0].model
+    })
+  })
   async createMessage(data: {
     assistantId: string;
     text: string;
@@ -100,8 +106,14 @@ export class MessageService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['assistantId', 'limit', 'offset'] })
-    async getMessageHistory(
+  @LogDecorator({
+    args: (a) => ({
+      assistantId: a[0],
+      limit: a[1],
+      offset: a[2]
+    })
+  })
+  async getMessageHistory(
     assistantId: string,
     limit: number = 100,
     offset: number = 0
@@ -129,7 +141,9 @@ export class MessageService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] })
+  })
   async getMessage(id: string) {
     setSpanAttributes({ messageId: id });
     const message = await this.messageRepository.findById(id);
@@ -145,7 +159,9 @@ export class MessageService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] })
+  })
   async deleteMessage(id: string) {
     setSpanAttributes({ messageId: id });
     return this.messageRepository.delete(id);
@@ -156,8 +172,13 @@ export class MessageService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id', 'data'] })
-    async updateMessage(id: string, data: { text: string }) {
+  @LogDecorator({
+    args: (a) => ({
+      id: a[0],
+      text: a[1].text
+    })
+  })
+  async updateMessage(id: string, data: { text: string }) {
     setSpanAttributes({ messageId: id });
     const message = await this.messageRepository.update(id, data);
     return {
