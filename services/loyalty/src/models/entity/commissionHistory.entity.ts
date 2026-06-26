@@ -1,4 +1,4 @@
-import mongoose, { Schema, Types, type InferRawDocType } from "mongoose";
+import mongoose, { Schema, Types, type InferRawDocType } from 'mongoose';
 
 const commissionHistorySchemaDefinition = {
   userWallet: {
@@ -11,7 +11,7 @@ const commissionHistorySchemaDefinition = {
     required: true,
     trim: true,
   },
-  
+
   chainId: {
     type: String,
     required: true,
@@ -22,18 +22,18 @@ const commissionHistorySchemaDefinition = {
     required: true,
     trim: true,
   },
-  
+
   amount: {
     type: mongoose.Schema.Types.Decimal128,
     required: true,
   },
-  
+
   actionType: {
     type: String,
     required: true,
     trim: true,
   },
-  
+
   transactionHash: {
     type: String,
     required: true,
@@ -48,14 +48,14 @@ const commissionHistorySchemaDefinition = {
     type: String,
     trim: true,
   },
-  
+
   createdAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
   updatedAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
 } as const;
 
@@ -77,11 +77,8 @@ commissionHistorySchema.index({ userWallet: 1, actionType: 1 });
 commissionHistorySchema.index({ relatedUserWallet: 1 });
 commissionHistorySchema.index({ relatedUserId: 1 });
 
-export type ICommissionHistoryEntity = InferRawDocType<
-  typeof commissionHistorySchemaDefinition
-> & { _id: Types.ObjectId };
+export type ICommissionHistoryEntity = InferRawDocType<typeof commissionHistorySchemaDefinition> & {
+  _id: Types.ObjectId;
+};
 
-export const CommissionHistoryEntity = mongoose.model(
-  "CommissionHistory",
-  commissionHistorySchema
-);
+export const CommissionHistoryEntity = mongoose.model('CommissionHistory', commissionHistorySchema);

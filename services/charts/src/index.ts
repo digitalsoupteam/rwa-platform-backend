@@ -1,23 +1,20 @@
 import { createApp } from './app';
 import { tracer } from '@shared/monitoring/src/tracing';
 
-const app = await tracer.startActiveSpan(
-  'charts.init.main',
-  async (span) => {
-    const appInstance = await createApp(
-      Number(process.env.PORT),
-      String(process.env.MONGODB_URI) + '/' + String(process.env.MONGODB_DBNAME),
-      String(process.env.REDIS_URL),
-      String(process.env.SERVICE_NAME),
-      String(process.env.RABBITMQ_URL),
-      Number(process.env.RABBITMQ_MAX_RECONNECT_ATTEMPTS),
-      Number(process.env.RABBITMQ_RECONNECT_INTERVAL)
-    );
+const app = await tracer.startActiveSpan('charts.init.main', async (span) => {
+  const appInstance = await createApp(
+    Number(process.env.PORT),
+    String(process.env.MONGODB_URI) + '/' + String(process.env.MONGODB_DBNAME),
+    String(process.env.REDIS_URL),
+    String(process.env.SERVICE_NAME),
+    String(process.env.RABBITMQ_URL),
+    Number(process.env.RABBITMQ_MAX_RECONNECT_ATTEMPTS),
+    Number(process.env.RABBITMQ_RECONNECT_INTERVAL),
+  );
 
-    span.end();
-    return appInstance;
-  }
-);
+  span.end();
+  return appInstance;
+});
 
 const shutdown = async () => {
   try {

@@ -1,15 +1,19 @@
-import { AppError } from "@shared/errors/app-errors";
-import type { FilterQuery, SortOrder, Types } from "mongoose";
-import { PermissionEntity } from "../models/entity/permissions.entity";
-import type { IPermissionEntity } from "../models/entity/permissions.entity";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-
+import { AppError } from '@shared/errors/app-errors';
+import type { FilterQuery, SortOrder, Types } from 'mongoose';
+import { PermissionEntity } from '../models/entity/permissions.entity';
+import type { IPermissionEntity } from '../models/entity/permissions.entity';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
 export class PermissionRepository {
-  constructor(private readonly model = PermissionEntity) { }
+  constructor(private readonly model = PermissionEntity) {}
 
   @TraceDecorator()
-  async create(data: { companyId: Types.ObjectId | string, memberId: Types.ObjectId | string } & Pick<IPermissionEntity, "userId" | "permission" | "entity">) {
+  async create(
+    data: { companyId: Types.ObjectId | string; memberId: Types.ObjectId | string } & Pick<
+      IPermissionEntity,
+      'userId' | 'permission' | 'entity'
+    >,
+  ) {
     const doc = await this.model.create(data);
     return doc.toObject();
   }
@@ -19,7 +23,11 @@ export class PermissionRepository {
     const doc = await this.model.findByIdAndDelete(id).lean();
 
     if (!doc) {
-      throw new AppError({ message: `Permission ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({
+        message: `Permission ${id} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return id;
@@ -36,7 +44,7 @@ export class PermissionRepository {
     filter: FilterQuery<typeof this.model> = {},
     sort: { [key: string]: SortOrder } = { createdAt: 'asc' },
     limit?: number,
-    offset?: number
+    offset?: number,
   ) {
     let query = this.model.find(filter).sort(sort);
 

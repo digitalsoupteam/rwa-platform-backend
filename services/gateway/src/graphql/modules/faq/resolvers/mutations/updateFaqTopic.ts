@@ -1,26 +1,34 @@
 import type { MutationResolvers } from '../../../../generated/types';
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const updateFaqTopic: MutationResolvers['updateFaqTopic'] = async (
   _parent,
   { input },
-  { services, clients, user }
+  { services, clients, user },
 ) => {
   logger.debug('Updating FAQ topic', { input });
 
   if (!user) {
-    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Get topic first to check permissions
   const topicResponse = await clients.faqClient.getTopic.post({
-    id: input.id
+    id: input.id,
   });
 
   if (topicResponse.error) {
     logger.error('Failed to get FAQ topic:', topicResponse.error);
-    throw new AppError({ message: 'Failed to get FAQ topic data', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to get FAQ topic data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const topic = topicResponse.data;
@@ -29,17 +37,21 @@ export const updateFaqTopic: MutationResolvers['updateFaqTopic'] = async (
     userId: user.id,
     ownerId: topic.ownerId,
     ownerType: topic.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   const response = await clients.faqClient.updateTopic.post({
     id: input.id,
-    updateData: input.updateData
+    updateData: input.updateData,
   });
 
   if (response.error) {
     logger.error('Failed to update FAQ topic:', response.error);
-    throw new AppError({ message: 'Failed to update FAQ topic', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to update FAQ topic',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

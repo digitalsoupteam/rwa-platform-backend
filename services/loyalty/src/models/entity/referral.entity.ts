@@ -1,4 +1,4 @@
-import mongoose, { Schema, Types, type InferRawDocType } from "mongoose";
+import mongoose, { Schema, Types, type InferRawDocType } from 'mongoose';
 
 const referralSchemaDefinition = {
   userWallet: {
@@ -19,15 +19,15 @@ const referralSchemaDefinition = {
     type: String,
     trim: true,
   },
-  
+
   // Timestamps
   createdAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
   updatedAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
 } as const;
 
@@ -42,11 +42,8 @@ referralSchema.index({ referrerWallet: 1 });
 referralSchema.index({ referrerId: 1 });
 referralSchema.index({ createdAt: -1 });
 
-export type IReferralEntity = InferRawDocType<
-  typeof referralSchemaDefinition
-> & { _id: Types.ObjectId };
+export type IReferralEntity = InferRawDocType<typeof referralSchemaDefinition> & {
+  _id: Types.ObjectId;
+};
 
-export const ReferralEntity = mongoose.model(
-  "Referral",
-  referralSchema
-);
+export const ReferralEntity = mongoose.model('Referral', referralSchema);

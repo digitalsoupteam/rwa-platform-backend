@@ -1,16 +1,15 @@
-import { GalleryRepository } from "../repositories/gallery.repository";
-import { ImageRepository } from "../repositories/image.repository";
-import { type SortOrder } from "mongoose";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
-import { LogDecorator } from "@shared/monitoring/src/logDecorator";
-import { setSpanAttributes } from "@shared/monitoring/src/tracing";
-
+import { GalleryRepository } from '../repositories/gallery.repository';
+import { ImageRepository } from '../repositories/image.repository';
+import { type SortOrder } from 'mongoose';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
 export class ImagesService {
   constructor(
     private readonly galleryRepository: GalleryRepository,
-    private readonly imageRepository: ImageRepository
+    private readonly imageRepository: ImageRepository,
   ) {}
 
   /**
@@ -18,7 +17,7 @@ export class ImagesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["data.name"] })
+  @LogDecorator({ args: ['data.name'] })
   async createGallery(data: {
     name: string;
     parentId: string;
@@ -43,7 +42,7 @@ export class ImagesService {
       creator: gallery.creator,
       grandParentId: gallery.grandParentId,
       createdAt: gallery.createdAt,
-      updatedAt: gallery.updatedAt
+      updatedAt: gallery.updatedAt,
     };
   }
 
@@ -52,8 +51,8 @@ export class ImagesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["params"] })
-  async updateGallery(params: { id: string, updateData: { name: string } }) {
+  @LogDecorator({ args: ['params'] })
+  async updateGallery(params: { id: string; updateData: { name: string } }) {
     setSpanAttributes({
       entityId: params.id,
     });
@@ -69,7 +68,7 @@ export class ImagesService {
       creator: gallery.creator,
       grandParentId: gallery.grandParentId,
       createdAt: gallery.createdAt,
-      updatedAt: gallery.updatedAt
+      updatedAt: gallery.updatedAt,
     };
   }
 
@@ -78,7 +77,7 @@ export class ImagesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["id"] })
+  @LogDecorator({ args: ['id'] })
   async deleteGallery(id: string) {
     setSpanAttributes({
       entityId: id,
@@ -101,7 +100,7 @@ export class ImagesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["id"] })
+  @LogDecorator({ args: ['id'] })
   async getGallery(id: string) {
     setSpanAttributes({
       entityId: id,
@@ -118,7 +117,7 @@ export class ImagesService {
       creator: gallery.creator,
       grandParentId: gallery.grandParentId,
       createdAt: gallery.createdAt,
-      updatedAt: gallery.updatedAt
+      updatedAt: gallery.updatedAt,
     };
   }
 
@@ -127,7 +126,7 @@ export class ImagesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["params"] })
+  @LogDecorator({ args: ['params'] })
   async getGalleries(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
@@ -140,10 +139,10 @@ export class ImagesService {
       params.filter,
       params.sort,
       params.limit,
-      params.offset
+      params.offset,
     );
 
-    return galleries.map(gallery => ({
+    return galleries.map((gallery) => ({
       id: gallery._id.toString(),
       name: gallery.name,
       parentId: gallery.parentId,
@@ -152,7 +151,7 @@ export class ImagesService {
       creator: gallery.creator,
       grandParentId: gallery.grandParentId,
       createdAt: gallery.createdAt,
-      updatedAt: gallery.updatedAt
+      updatedAt: gallery.updatedAt,
     }));
   }
 
@@ -161,7 +160,7 @@ export class ImagesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["data.name"] })
+  @LogDecorator({ args: ['data.name'] })
   async createImage(data: {
     galleryId: string;
     name: string;
@@ -197,7 +196,7 @@ export class ImagesService {
       parentId: image.parentId,
       grandParentId: image.grandParentId,
       createdAt: image.createdAt,
-      updatedAt: image.updatedAt
+      updatedAt: image.updatedAt,
     };
   }
 
@@ -206,13 +205,13 @@ export class ImagesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["params"] })
+  @LogDecorator({ args: ['params'] })
   async updateImage(params: {
     id: string;
     updateData: {
       name?: string;
       description?: string;
-    }
+    };
   }) {
     setSpanAttributes({
       imageId: params.id,
@@ -234,7 +233,7 @@ export class ImagesService {
       parentId: image.parentId,
       grandParentId: image.grandParentId,
       createdAt: image.createdAt,
-      updatedAt: image.updatedAt
+      updatedAt: image.updatedAt,
     };
   }
 
@@ -243,7 +242,7 @@ export class ImagesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["id"] })
+  @LogDecorator({ args: ['id'] })
   async deleteImage(id: string) {
     setSpanAttributes({
       imageId: id,
@@ -257,7 +256,7 @@ export class ImagesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["id"] })
+  @LogDecorator({ args: ['id'] })
   async getImage(id: string) {
     setSpanAttributes({
       imageId: id,
@@ -279,7 +278,7 @@ export class ImagesService {
       parentId: image.parentId,
       grandParentId: image.grandParentId,
       createdAt: image.createdAt,
-      updatedAt: image.updatedAt
+      updatedAt: image.updatedAt,
     };
   }
 
@@ -288,7 +287,7 @@ export class ImagesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["params"] })
+  @LogDecorator({ args: ['params'] })
   async getImages(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
@@ -301,10 +300,10 @@ export class ImagesService {
       params.filter,
       params.sort,
       params.limit,
-      params.offset
+      params.offset,
     );
 
-    return images.map(image => ({
+    return images.map((image) => ({
       id: image._id.toString(),
       galleryId: image.galleryId.toString(),
       name: image.name,
@@ -318,7 +317,7 @@ export class ImagesService {
       parentId: image.parentId,
       grandParentId: image.grandParentId,
       createdAt: image.createdAt,
-      updatedAt: image.updatedAt
+      updatedAt: image.updatedAt,
     }));
   }
 }

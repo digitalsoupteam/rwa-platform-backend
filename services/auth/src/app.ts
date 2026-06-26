@@ -1,4 +1,3 @@
-
 import { Elysia } from 'elysia';
 import { monitoringPlugin } from '@shared/monitoring/src/monitoring.plugin';
 import { healthPlugin } from '@shared/monitoring/src/health.plugin';
@@ -6,8 +5,7 @@ import { ErrorHandlerPlugin } from '@shared/errors/error-handler.plugin';
 import { createRepositoriesPlugin } from './plugins/repositories.plugin';
 import { createServicesPlugin } from './plugins/services.plugin';
 import { createControllersPlugin } from './plugins/controllers.plugin';
-import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
-
+import { withTraceSync, withTraceAsync } from '@shared/monitoring/src/tracing';
 
 export async function createApp(
   port: number,
@@ -18,45 +16,37 @@ export async function createApp(
   domainName: string,
   domainVersion: string,
 ) {
-
   const repositoriesPlugin = await withTraceAsync(
     'auth.init.repositories_plugin',
-    async () => await createRepositoriesPlugin(mongoUri)
-  )
+    async () => await createRepositoriesPlugin(mongoUri),
+  );
 
-  const servicesPlugin = withTraceSync(
-    'auth.init.services_plugin',
-    () => createServicesPlugin(
+  const servicesPlugin = withTraceSync('auth.init.services_plugin', () =>
+    createServicesPlugin(
       repositoriesPlugin,
       jwtSecret,
       accessTokenExpiry,
       refreshTokenExpiry,
       domainName,
-      domainVersion
-    )
-  )
+      domainVersion,
+    ),
+  );
 
-  const controllersPlugin = withTraceSync(
-    'auth.init.controllers',
-    () => createControllersPlugin(servicesPlugin)
-  )
+  const controllersPlugin = withTraceSync('auth.init.controllers', () => createControllersPlugin(servicesPlugin));
 
-  const app = withTraceSync(
-    'auth.init.elysia',
-    (ctx) => {
-      const result = new Elysia()
-        .use(monitoringPlugin)
-        .use(healthPlugin)
-        .onError(ErrorHandlerPlugin)
-        .use(repositoriesPlugin)
-        .use(servicesPlugin)
-        .use(controllersPlugin)
-        .listen(port, () => {
-          ctx.end();
-        });
-      return result;
-    }
-  )
+  const app = withTraceSync('auth.init.elysia', (ctx) => {
+    const result = new Elysia()
+      .use(monitoringPlugin)
+      .use(healthPlugin)
+      .onError(ErrorHandlerPlugin)
+      .use(repositoriesPlugin)
+      .use(servicesPlugin)
+      .use(controllersPlugin)
+      .listen(port, () => {
+        ctx.end();
+      });
+    return result;
+  });
 
-  return app
+  return app;
 }

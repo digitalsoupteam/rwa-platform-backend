@@ -5,15 +5,12 @@ import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentation
 
 const traceExporter = new OTLPTraceExporter({
   url: process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT || 'http://alloy:4320/v1/traces',
-  headers: process.env.OTEL_EXPORTER_OTLP_HEADERS ? 
-    JSON.parse(process.env.OTEL_EXPORTER_OTLP_HEADERS) : {}
+  headers: process.env.OTEL_EXPORTER_OTLP_HEADERS ? JSON.parse(process.env.OTEL_EXPORTER_OTLP_HEADERS) : {},
 });
 
 export const instrumentation = opentelemetry({
   serviceName: process.env.OTEL_SERVICE_NAME || 'gateway',
-  spanProcessors: [
-    new BatchSpanProcessor(traceExporter)
-  ],
+  spanProcessors: [new BatchSpanProcessor(traceExporter)],
   instrumentations: [
     getNodeAutoInstrumentations({
       '@opentelemetry/instrumentation-http': {
@@ -24,8 +21,8 @@ export const instrumentation = opentelemetry({
         },
       },
       '@opentelemetry/instrumentation-graphql': {
-        enabled: true
-      }
+        enabled: true,
+      },
     }),
   ],
 });

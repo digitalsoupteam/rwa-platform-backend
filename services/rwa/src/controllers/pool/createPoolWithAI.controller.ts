@@ -1,22 +1,16 @@
-import { Elysia } from "elysia";
-import type { ServicesPlugin } from "../../plugins/services.plugin";
-import {
-  createPoolWithAIRequest,
-  createPoolWithAIResponse,
-} from "../../models/validation/pool.validation";
+import { Elysia } from 'elysia';
+import type { ServicesPlugin } from '../../plugins/services.plugin';
+import { createPoolWithAIRequest, createPoolWithAIResponse } from '../../models/validation/pool.validation';
 
 export const createPoolWithAIController = (servicesPlugin: ServicesPlugin) => {
-  return new Elysia({ name: "CreatePoolWithAIController" })
-    .use(servicesPlugin)
-    .post(
-      "/createPoolWithAI",
-      async ({ body, poolService }) => {
-
-        return await poolService.createPoolWithAI(body);
-      },
-      {
-        body: createPoolWithAIRequest,
-        response: createPoolWithAIResponse,
-      }
-    );
+  return new Elysia({ name: 'CreatePoolWithAIController' }).use(servicesPlugin).post(
+    '/createPoolWithAI',
+    async ({ body, poolService }) => {
+      return await poolService.createPoolWithAI(body);
+    },
+    {
+      body: createPoolWithAIRequest,
+      response: createPoolWithAIResponse,
+    },
+  );
 };

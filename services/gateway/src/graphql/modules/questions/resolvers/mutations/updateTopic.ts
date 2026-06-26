@@ -1,26 +1,34 @@
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const updateTopic: MutationResolvers['updateTopic'] = async (
   _parent,
   { input },
-  { services, clients, user }
+  { services, clients, user },
 ) => {
   logger.debug('Updating topic', { input });
 
   if (!user) {
-    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Get topic first to check permissions
   const topicResponse = await clients.questionsClient.getTopic.post({
-    id: input.id
+    id: input.id,
   });
 
   if (topicResponse.error) {
     logger.error('Failed to get topic:', topicResponse.error);
-    throw new AppError({ message: 'Failed to get topic data', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to get topic data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const topic = topicResponse.data;
@@ -29,17 +37,17 @@ export const updateTopic: MutationResolvers['updateTopic'] = async (
     userId: user.id,
     ownerId: topic.ownerId,
     ownerType: topic.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   const response = await clients.questionsClient.updateTopic.post({
     id: input.id,
-    updateData: input.updateData
+    updateData: input.updateData,
   });
 
   if (response.error) {
     logger.error('Failed to update topic:', response.error);
-    throw new AppError({ message: 'Failed to update topic', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({ message: 'Failed to update topic', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   const { data } = response;

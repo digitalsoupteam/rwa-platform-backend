@@ -1,25 +1,25 @@
-import { AppError } from "@shared/errors/app-errors";
-import { EventRepository } from "../repositories/event.repository";
-import { ScannerStateRepository } from "../repositories/scannerState.repository";
-import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
-import { LogDecorator } from "@shared/monitoring/src/logDecorator";
-import { metrics } from "@shared/monitoring/src/metrics";
-import { setSpanAttributes } from "@shared/monitoring/src/tracing";
+import { AppError } from '@shared/errors/app-errors';
+import { EventRepository } from '../repositories/event.repository';
+import { ScannerStateRepository } from '../repositories/scannerState.repository';
+import { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { metrics } from '@shared/monitoring/src/metrics';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
 /**
  * Service for handling blockchain events
  */
 
 export class BlockchainScannerService {
-  private readonly EXCHANGE_NAME = "blockchain.events";
+  private readonly EXCHANGE_NAME = 'blockchain.events';
 
   constructor(
     private readonly eventRepository: EventRepository,
     private readonly scannerStateRepository: ScannerStateRepository,
     private readonly rabbitMQClient: RabbitMQClient,
-    private readonly chainId: number
+    private readonly chainId: number,
   ) {}
 
   /**
@@ -35,7 +35,11 @@ export class BlockchainScannerService {
     });
     const event = await this.eventRepository.findById(id);
     if (!event) {
-      throw new AppError({ message: `Event with id ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({
+        message: `Event with id ${id} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return {
@@ -65,7 +69,7 @@ export class BlockchainScannerService {
       address?: string;
       name?: string;
     },
-    pagination?: { limit?: number; offset?: number }
+    pagination?: { limit?: number; offset?: number },
   ) {
     setSpanAttributes({
       entityType: 'blockchain_event',
@@ -80,7 +84,7 @@ export class BlockchainScannerService {
       filters,
       { blockNumber: -1, logIndex: -1 },
       pagination?.limit || 100,
-      pagination?.offset || 0
+      pagination?.offset || 0,
     );
 
     return events.map((event) => ({
@@ -113,7 +117,7 @@ export class BlockchainScannerService {
       logIndex: number;
       data: Record<string, any>;
       timestamp: number;
-    }>
+    }>,
   ): Promise<void> {
     setSpanAttributes({
       blockNumber,
@@ -124,7 +128,7 @@ export class BlockchainScannerService {
     if (events.length) {
       for (let i = 0; i < events.length; i++) {
         if (events[i].blockNumber !== blockNumber) {
-          throw new AppError("applyBlockEvents blockNumber!");
+          throw new AppError('applyBlockEvents blockNumber!');
         }
       }
 
@@ -147,10 +151,7 @@ export class BlockchainScannerService {
     }
 
     // Update scanner state only after successful publish
-    await this.scannerStateRepository.updateLastScannedBlock(
-      this.chainId,
-      blockNumber
-    );
+    await this.scannerStateRepository.updateLastScannedBlock(this.chainId, blockNumber);
   }
 
   /**

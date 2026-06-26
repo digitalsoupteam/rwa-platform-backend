@@ -13,7 +13,6 @@ const SOCIAL_URL_PATTERNS: Record<string, RegExp> = {
 
 const VALID_SOCIAL_TYPES = new Set(Object.keys(SOCIAL_URL_PATTERNS).concat(['webpage']));
 
-
 export class ValidationService {
   /**
    * Validates ISO 3166-1 alpha-2 country code
@@ -47,7 +46,7 @@ export class ValidationService {
 
       if (!VALID_SOCIAL_TYPES.has(link.type)) {
         throw new GraphQLError(
-          `Unknown social type: "${link.type}". Allowed: ${Array.from(VALID_SOCIAL_TYPES).join(', ')}`
+          `Unknown social type: "${link.type}". Allowed: ${Array.from(VALID_SOCIAL_TYPES).join(', ')}`,
         );
       }
 
@@ -64,7 +63,7 @@ export class ValidationService {
       const pattern = SOCIAL_URL_PATTERNS[link.type];
       if (pattern && !pattern.test(link.url)) {
         throw new GraphQLError(
-          `Invalid URL for ${link.type}: "${link.url}". Must match ${link.type === 'twitter' ? 'x.com or twitter.com' : link.type + '.com'}`
+          `Invalid URL for ${link.type}: "${link.url}". Must match ${link.type === 'twitter' ? 'x.com or twitter.com' : link.type + '.com'}`,
         );
       }
     }

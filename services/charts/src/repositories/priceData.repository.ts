@@ -1,14 +1,11 @@
-import type { FilterQuery, SortOrder } from "mongoose";
-import {
-  PriceDataEntity,
-} from "../models/entity/priceData.entity";
-import type { IPriceDataEntity } from "../models/entity/priceData.entity";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
+import type { FilterQuery, SortOrder } from 'mongoose';
+import { PriceDataEntity } from '../models/entity/priceData.entity';
+import type { IPriceDataEntity } from '../models/entity/priceData.entity';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
 // Define the type for the data needed to create a PriceData entry
 // Excludes _id, createdAt, and updatedAt as they are auto-managed or set by default
 type CreatePriceData = Omit<IPriceDataEntity, '_id' | 'createdAt' | 'updatedAt'>;
-
 
 export class PriceDataRepository {
   constructor(private readonly model = PriceDataEntity) {}
@@ -22,17 +19,11 @@ export class PriceDataRepository {
   @TraceDecorator()
   async findAll(
     filter: FilterQuery<IPriceDataEntity> = {},
-    sort: { [key: string]: SortOrder | { $meta: "textScore" } } = { timestamp: "asc" },
+    sort: { [key: string]: SortOrder | { $meta: 'textScore' } } = { timestamp: 'asc' },
     limit: number = 100,
-    offset: number = 0
+    offset: number = 0,
   ): Promise<IPriceDataEntity[]> {
-    return await this.model
-      .find(filter)
-      .sort(sort)
-      .skip(offset)
-      .limit(limit)
-      .lean<IPriceDataEntity[]>()
-      .exec();
+    return await this.model.find(filter).sort(sort).skip(offset).limit(limit).lean<IPriceDataEntity[]>().exec();
   }
 
   @TraceDecorator()
@@ -55,9 +46,9 @@ export class PriceDataRepository {
     poolAddress: string,
     startTime: number,
     endTime: number,
-    sort: { [key: string]: SortOrder } = { timestamp: "asc" },
+    sort: { [key: string]: SortOrder } = { timestamp: 'asc' },
     limit: number = 1000,
-    offset: number = 0
+    offset: number = 0,
   ): Promise<IPriceDataEntity[]> {
     const filter: FilterQuery<IPriceDataEntity> = {
       poolAddress,
@@ -75,14 +66,16 @@ export class PriceDataRepository {
     intervalSeconds: number,
     startTime: number,
     endTime: number,
-    limit?: number
-  ): Promise<{
-    timestamp: number;
-    open: string;
-    high: string;
-    low: string;
-    close: string;
-  }[]> {
+    limit?: number,
+  ): Promise<
+    {
+      timestamp: number;
+      open: string;
+      high: string;
+      low: string;
+      close: string;
+    }[]
+  > {
     const aggregationPipeline: any[] = [
       {
         $match: {
@@ -96,25 +89,22 @@ export class PriceDataRepository {
       {
         $group: {
           _id: {
-            $subtract: [
-              "$timestamp",
-              { $mod: ["$timestamp", intervalSeconds] },
-            ],
+            $subtract: ['$timestamp', { $mod: ['$timestamp', intervalSeconds] }],
           },
-          open: { $first: "$price" },
-          high: { $max: "$price" },
-          low: { $min: "$price" },
-          close: { $last: "$price" },
+          open: { $first: '$price' },
+          high: { $max: '$price' },
+          low: { $min: '$price' },
+          close: { $last: '$price' },
         },
       },
       {
         $project: {
           _id: 0,
-          timestamp: "$_id",
-          open: "$open",
-          high: "$high",
-          low: "$low",
-          close: "$close",
+          timestamp: '$_id',
+          open: '$open',
+          high: '$high',
+          low: '$low',
+          close: '$close',
         },
       },
       {

@@ -1,5 +1,5 @@
-import mongoose, { Schema, Types } from "mongoose";
-import type { InferRawDocType } from "mongoose";
+import mongoose, { Schema, Types } from 'mongoose';
+import type { InferRawDocType } from 'mongoose';
 
 const timelockTaskSchemaDefinition = {
   txHash: {
@@ -22,22 +22,22 @@ const timelockTaskSchemaDefinition = {
   },
   executed: {
     type: Boolean,
-    default: false
+    default: false,
   },
   chainId: {
     type: String,
     required: true,
     trim: true,
   },
-  
+
   // Timestamps
   createdAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
   updatedAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
 };
 
@@ -52,11 +52,8 @@ timelockTaskSchema.index({ executed: 1 });
 timelockTaskSchema.index({ eta: 1 });
 timelockTaskSchema.index({ createdAt: -1 });
 
-export type ITimelockTaskEntity = InferRawDocType<
-  typeof timelockTaskSchemaDefinition
-> & { _id: Types.ObjectId };
+export type ITimelockTaskEntity = InferRawDocType<typeof timelockTaskSchemaDefinition> & {
+  _id: Types.ObjectId;
+};
 
-export const TimelockTaskEntity = mongoose.model(
-  "TimelockTask",
-  timelockTaskSchema
-);
+export const TimelockTaskEntity = mongoose.model('TimelockTask', timelockTaskSchema);

@@ -1,12 +1,8 @@
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import type { QueryResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
-export const getDocuments: QueryResolvers['getDocuments'] = async (
-  _parent,
-  { input },
-  { clients }
-) => {
+export const getDocuments: QueryResolvers['getDocuments'] = async (_parent, { input }, { clients }) => {
   logger.info('Getting documents list', { input });
 
   const response = await clients.documentsClient.getDocuments.post({
@@ -18,12 +14,16 @@ export const getDocuments: QueryResolvers['getDocuments'] = async (
 
   if (response.error) {
     logger.error('Failed to get documents:', response.error);
-    throw new AppError({ message: 'Failed to get documents', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to get documents',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;
 
-  return data.map(doc => ({
+  return data.map((doc) => ({
     id: doc.id,
     folderId: doc.folderId,
     name: doc.name,

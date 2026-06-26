@@ -1,40 +1,35 @@
-import { Elysia } from "elysia";
-import { ChartsService } from "../services/charts.service";
-import { TransactionsService } from "../services/transactions.service";
-import type { RepositoriesPlugin } from "./repositories.plugin";
-import type { ClientsPlugin } from "./clients.plugin";
-import { withTraceSync } from "@shared/monitoring/src/tracing";
+import { Elysia } from 'elysia';
+import { ChartsService } from '../services/charts.service';
+import { TransactionsService } from '../services/transactions.service';
+import type { RepositoriesPlugin } from './repositories.plugin';
+import type { ClientsPlugin } from './clients.plugin';
+import { withTraceSync } from '@shared/monitoring/src/tracing';
 
-export const createServicesPlugin = (
-  repositoriesPlugin: RepositoriesPlugin,
-  clientsPlugin: ClientsPlugin
-) => {
+export const createServicesPlugin = (repositoriesPlugin: RepositoriesPlugin, clientsPlugin: ClientsPlugin) => {
   const chartsService = withTraceSync(
     'charts.init.services.charts',
-    () => new ChartsService(
-      repositoriesPlugin.decorator.priceDataRepository,
-      clientsPlugin.decorator.chartEventsClient
-    )
+    () =>
+      new ChartsService(repositoriesPlugin.decorator.priceDataRepository, clientsPlugin.decorator.chartEventsClient),
   );
 
   const transactionsService = withTraceSync(
     'charts.init.services.transactions',
-    () => new TransactionsService(
-      repositoriesPlugin.decorator.poolTransactionRepository,
-      clientsPlugin.decorator.chartEventsClient
-    )
+    () =>
+      new TransactionsService(
+        repositoriesPlugin.decorator.poolTransactionRepository,
+        clientsPlugin.decorator.chartEventsClient,
+      ),
   );
 
-  const plugin = withTraceSync(
-    'charts.init.services.plugin',
-    () => new Elysia({ name: "Services" })
+  const plugin = withTraceSync('charts.init.services.plugin', () =>
+    new Elysia({ name: 'Services' })
       .use(repositoriesPlugin)
       .use(clientsPlugin)
-      .decorate("chartsService", chartsService)
-      .decorate("transactionsService", transactionsService)
+      .decorate('chartsService', chartsService)
+      .decorate('transactionsService', transactionsService),
   );
 
   return plugin;
-}
+};
 
-export type ServicesPlugin = ReturnType<typeof createServicesPlugin>
+export type ServicesPlugin = ReturnType<typeof createServicesPlugin>;

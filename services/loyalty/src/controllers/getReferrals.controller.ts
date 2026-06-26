@@ -1,22 +1,16 @@
-import { Elysia } from "elysia";
-import type { ServicesPlugin } from "../plugins/services.plugin";
-import {
-  getReferralsRequest,
-  getReferralsResponse,
-} from "../models/validation/loyalty.validation";
+import { Elysia } from 'elysia';
+import type { ServicesPlugin } from '../plugins/services.plugin';
+import { getReferralsRequest, getReferralsResponse } from '../models/validation/loyalty.validation';
 
 export const getReferralsController = (servicesPlugin: ServicesPlugin) => {
-  return new Elysia({ name: "GetReferralsController" })
-    .use(servicesPlugin)
-    .post(
-      "/getReferrals",
-      async ({ body, loyaltyService }) => {
-
-        return await loyaltyService.getReferrals(body);
-      },
-      {
-        body: getReferralsRequest,
-        response: getReferralsResponse,
-      }
-    );
+  return new Elysia({ name: 'GetReferralsController' }).use(servicesPlugin).post(
+    '/getReferrals',
+    async ({ body, loyaltyService }) => {
+      return await loyaltyService.getReferrals(body);
+    },
+    {
+      body: getReferralsRequest,
+      response: getReferralsResponse,
+    },
+  );
 };

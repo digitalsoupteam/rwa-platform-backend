@@ -6,7 +6,7 @@ import { createRepositoriesPlugin } from './plugins/repositories.plugin';
 import { createClientsPlugin } from './plugins/clients.plugin';
 import { createServicesPlugin } from './plugins/services.plugin';
 import { createControllersPlugin } from './plugins/controllers.plugin';
-import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
+import { withTraceSync, withTraceAsync } from '@shared/monitoring/src/tracing';
 
 export async function createApp(
   port: number,
@@ -19,41 +19,35 @@ export async function createApp(
 ) {
   const repositoriesPlugin = await withTraceAsync(
     'ai-assistant.init.repositories_plugin',
-    async () => await createRepositoriesPlugin(mongoUri)
+    async () => await createRepositoriesPlugin(mongoUri),
   );
 
-  const clientsPlugin = withTraceSync(
-    'ai-assistant.init.clients_plugin',
-    () => createClientsPlugin(openRouterApiKey, openRouterBaseUrl, rwaServiceUrl, portfolioServiceUrl)
+  const clientsPlugin = withTraceSync('ai-assistant.init.clients_plugin', () =>
+    createClientsPlugin(openRouterApiKey, openRouterBaseUrl, rwaServiceUrl, portfolioServiceUrl),
   );
 
-  const servicesPlugin = withTraceSync(
-    'ai-assistant.init.services_plugin',
-    () => createServicesPlugin(repositoriesPlugin, clientsPlugin, openRouterModel)
+  const servicesPlugin = withTraceSync('ai-assistant.init.services_plugin', () =>
+    createServicesPlugin(repositoriesPlugin, clientsPlugin, openRouterModel),
   );
 
-  const controllersPlugin = withTraceSync(
-    'ai-assistant.init.controllers_plugin',
-    () => createControllersPlugin(servicesPlugin)
+  const controllersPlugin = withTraceSync('ai-assistant.init.controllers_plugin', () =>
+    createControllersPlugin(servicesPlugin),
   );
 
-  const app = withTraceSync(
-    'ai-assistant.init.elysia',
-    (ctx) => {
-      const result = new Elysia()
-        .use(monitoringPlugin)
-        .use(healthPlugin)
-        .onError(ErrorHandlerPlugin)
-        .use(repositoriesPlugin)
-        .use(clientsPlugin)
-        .use(servicesPlugin)
-        .use(controllersPlugin)
-        .listen(port, () => {
-          ctx.end();
-        });
-      return result;
-    }
-  );
+  const app = withTraceSync('ai-assistant.init.elysia', (ctx) => {
+    const result = new Elysia()
+      .use(monitoringPlugin)
+      .use(healthPlugin)
+      .onError(ErrorHandlerPlugin)
+      .use(repositoriesPlugin)
+      .use(clientsPlugin)
+      .use(servicesPlugin)
+      .use(controllersPlugin)
+      .listen(port, () => {
+        ctx.end();
+      });
+    return result;
+  });
 
   return app;
 }

@@ -1,22 +1,16 @@
-import { Elysia } from "elysia";
-import type { ServicesPlugin } from "../plugins/services.plugin";
-import {
-  getReactionsRequest,
-  getReactionsResponse,
-} from "../models/validation/reactions.validation";
+import { Elysia } from 'elysia';
+import type { ServicesPlugin } from '../plugins/services.plugin';
+import { getReactionsRequest, getReactionsResponse } from '../models/validation/reactions.validation';
 
 export const getReactionsController = (servicesPlugin: ServicesPlugin) => {
-  return new Elysia({ name: "GetReactionsController" })
-    .use(servicesPlugin)
-    .post(
-      "/getReactions",
-      async ({ body, reactionsService }) => {
-
-        return reactionsService.getReactions(body);
-      },
-      {
-        body: getReactionsRequest,
-        response: getReactionsResponse,
-      }
-    );
+  return new Elysia({ name: 'GetReactionsController' }).use(servicesPlugin).post(
+    '/getReactions',
+    async ({ body, reactionsService }) => {
+      return reactionsService.getReactions(body);
+    },
+    {
+      body: getReactionsRequest,
+      response: getReactionsResponse,
+    },
+  );
 };

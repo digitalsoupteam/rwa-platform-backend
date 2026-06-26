@@ -1,7 +1,6 @@
-import { getAllMethods } from "./decorator-utils";
-import { tracer } from "./tracing";
-import { AppError } from "@shared/errors/app-errors";
-
+import { getAllMethods } from './decorator-utils';
+import { tracer } from './tracing';
+import { AppError } from '@shared/errors/app-errors';
 
 function camelToSnakeCase(str: string): string {
   return str
@@ -17,13 +16,12 @@ interface TracingDecoratorOptions {
   exclude?: string[];
 }
 
-
 export function TracingDecoratorClass(options?: string | TracingDecoratorOptions) {
   return function <T extends { new (...args: any[]): {} }>(constructor: T) {
     return class extends constructor {
       constructor(...args: any[]) {
         super(...args);
-        
+
         let prefix: string | undefined;
         let deep: number = 0;
         let privateEnabled: boolean = false;
@@ -39,21 +37,24 @@ export function TracingDecoratorClass(options?: string | TracingDecoratorOptions
         }
 
         const spanPrefix = prefix || camelToSnakeCase(constructor.name);
-        
+
         const methodNames = getAllMethods(constructor.prototype, deep, privateEnabled, exclude);
 
-        console.log(`Methods (deep: ${deep}, private: ${privateEnabled}, excluded: ${exclude.join(', ')}):`, methodNames)
-        methodNames.forEach(methodName => {
+        console.log(
+          `Methods (deep: ${deep}, private: ${privateEnabled}, excluded: ${exclude.join(', ')}):`,
+          methodNames,
+        );
+        methodNames.forEach((methodName) => {
           const originalMethod = (this as any)[methodName];
-          
+
           if (typeof originalMethod === 'function') {
             (this as any)[methodName] = function (...args: any[]) {
               const spanName = `${spanPrefix}.${methodName}`;
-              
+
               return tracer.startActiveSpan(spanName, (span) => {
                 try {
                   const result = originalMethod.apply(this, args);
-                  
+
                   if (result && typeof result.then === 'function') {
                     return result
                       .then((value: any) => {
@@ -70,7 +71,7 @@ export function TracingDecoratorClass(options?: string | TracingDecoratorOptions
                         throw error;
                       });
                   }
-                  
+
                   span.end();
                   return result;
                 } catch (error: any) {

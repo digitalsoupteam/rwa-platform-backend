@@ -1,21 +1,17 @@
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import type { QueryResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
-export const getFolder: QueryResolvers['getFolder'] = async (
-  _parent,
-  { id },
-  { clients }
-) => {
+export const getFolder: QueryResolvers['getFolder'] = async (_parent, { id }, { clients }) => {
   logger.info('Getting folder by id', { id });
 
   const response = await clients.documentsClient.getFolder.post({
-    id
+    id,
   });
 
   if (response.error) {
     logger.error('Failed to get folder:', response.error);
-    throw new AppError({ message: 'Failed to get folder', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({ message: 'Failed to get folder', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   const folder = response.data;

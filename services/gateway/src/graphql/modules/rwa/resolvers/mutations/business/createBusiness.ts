@@ -1,16 +1,20 @@
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const createBusiness: MutationResolvers['createBusiness'] = async (
   _parent,
   { input },
-  { services, clients, user }
+  { services, clients, user },
 ) => {
   logger.debug('Creating new business', { input });
 
   if (!user) {
-    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   services.validation.validateCountry(input.country);
@@ -20,7 +24,7 @@ export const createBusiness: MutationResolvers['createBusiness'] = async (
     userId: user.id,
     ownerId: input.ownerId,
     ownerType: input.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   const response = await clients.rwaClient.createBusiness.post({
@@ -38,7 +42,11 @@ export const createBusiness: MutationResolvers['createBusiness'] = async (
 
   if (response.error) {
     logger.error('Failed to create business:', response.error);
-    throw new AppError({ message: 'Failed to create business', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to create business',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

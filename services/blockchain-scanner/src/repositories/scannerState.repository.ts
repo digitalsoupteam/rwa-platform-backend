@@ -1,29 +1,28 @@
-import { AppError } from "@shared/errors/app-errors";
-import { ScannerStateEntity } from "../models/entity/scannerState.entity";
-import type { IScannerStateEntity } from "../models/entity/scannerState.entity";
-import type { FilterQuery, SortOrder } from "mongoose";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-
+import { AppError } from '@shared/errors/app-errors';
+import { ScannerStateEntity } from '../models/entity/scannerState.entity';
+import type { IScannerStateEntity } from '../models/entity/scannerState.entity';
+import type { FilterQuery, SortOrder } from 'mongoose';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
 export class ScannerStateRepository {
   constructor(private readonly model = ScannerStateEntity) {}
 
   @TraceDecorator()
-  async create(data: Pick<IScannerStateEntity, "chainId" | "lastScannedBlock">) {
+  async create(data: Pick<IScannerStateEntity, 'chainId' | 'lastScannedBlock'>) {
     const doc = await this.model.create(data);
     return doc.toObject();
   }
 
   @TraceDecorator()
-  async update(chainId: number, data: Pick<IScannerStateEntity, "lastScannedBlock">) {
-    const doc = await this.model.findOneAndUpdate(
-      { chainId },
-      data,
-      { new: true }
-    ).lean();
+  async update(chainId: number, data: Pick<IScannerStateEntity, 'lastScannedBlock'>) {
+    const doc = await this.model.findOneAndUpdate({ chainId }, data, { new: true }).lean();
 
     if (!doc) {
-      throw new AppError({ message: `ScannerState ${chainId} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({
+        message: `ScannerState ${chainId} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return doc;
@@ -34,7 +33,11 @@ export class ScannerStateRepository {
     const doc = await this.model.findOneAndDelete({ chainId }).lean();
 
     if (!doc) {
-      throw new AppError({ message: `ScannerState ${chainId} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({
+        message: `ScannerState ${chainId} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return chainId;
@@ -51,15 +54,11 @@ export class ScannerStateRepository {
     const doc = await this.model.findOne({ chainId });
 
     if (doc) {
-      await this.model.findOneAndUpdate(
-        { chainId },
-        { lastScannedBlock: blockNumber },
-        { new: true }
-      ).lean();
+      await this.model.findOneAndUpdate({ chainId }, { lastScannedBlock: blockNumber }, { new: true }).lean();
     } else {
       await this.create({
         chainId,
-        lastScannedBlock: blockNumber
+        lastScannedBlock: blockNumber,
       });
     }
   }
@@ -69,14 +68,9 @@ export class ScannerStateRepository {
     filters: FilterQuery<typeof this.model> = {},
     sort: { [key: string]: SortOrder } = { createdAt: 'asc' },
     limit: number = 100,
-    offset: number = 0
+    offset: number = 0,
   ) {
-    const docs = await this.model
-      .find(filters)
-      .sort(sort)
-      .skip(offset)
-      .limit(limit)
-      .lean();
+    const docs = await this.model.find(filters).sort(sort).skip(offset).limit(limit).lean();
 
     return docs;
   }

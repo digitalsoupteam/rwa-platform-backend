@@ -1,24 +1,24 @@
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import type { QueryResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
-export const getTransactions: QueryResolvers['getTransactions'] = async (
-  _parent,
-  { input },
-  { clients }
-) => {
+export const getTransactions: QueryResolvers['getTransactions'] = async (_parent, { input }, { clients }) => {
   logger.info('Getting transactions', { input });
 
   const response = await clients.portfolioClient.getTransactions.post({
     filter: input.filter,
     sort: input.sort,
     limit: input.limit,
-    offset: input.offset
+    offset: input.offset,
   });
 
   if (response.error) {
     logger.error('Failed to get transactions:', response.error);
-    throw new AppError({ message: 'Failed to get transactions', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to get transactions',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

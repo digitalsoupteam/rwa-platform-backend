@@ -1,34 +1,33 @@
-import mongoose, { Schema } from "mongoose";
-import type { InferRawDocType } from "mongoose";
-
+import mongoose, { Schema } from 'mongoose';
+import type { InferRawDocType } from 'mongoose';
 
 const refreshTokenSchemaDefinition = {
   userId: {
     type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: true,
   },
   tokenHash: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
   },
   expiresAt: {
     type: Number,
-    required: true
+    required: true,
   },
   createdAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
   updatedAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
-  }
+    default: Math.floor(Date.now() / 1000),
+  },
 } as const;
 
 const refreshTokenSchema = new Schema(refreshTokenSchemaDefinition, {
-  timestamps: { currentTime: () => Math.floor(Date.now() / 1000) }
+  timestamps: { currentTime: () => Math.floor(Date.now() / 1000) },
 });
 
 // Indexes for performance
@@ -37,4 +36,4 @@ refreshTokenSchema.index({ tokenHash: 1 }, { unique: true });
 refreshTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // For cleanup of expired tokens
 
 export type IRefreshTokenEntity = InferRawDocType<typeof refreshTokenSchemaDefinition>;
-export const RefreshTokenEntity = mongoose.model("RefreshToken", refreshTokenSchema);
+export const RefreshTokenEntity = mongoose.model('RefreshToken', refreshTokenSchema);

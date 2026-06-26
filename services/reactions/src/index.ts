@@ -1,18 +1,15 @@
 import { createApp } from './app';
 import { tracer } from '@shared/monitoring/src/tracing';
 
-const app = await tracer.startActiveSpan(
-  'reactions.init.main',
-  async (span) => {
-    const appInstance = await createApp(
-      Number(process.env.PORT),
-      String(process.env.MONGODB_URI) + '/' + String(process.env.MONGODB_DBNAME)
-    );
-    
-    span.end();
-    return appInstance;
-  }
-);
+const app = await tracer.startActiveSpan('reactions.init.main', async (span) => {
+  const appInstance = await createApp(
+    Number(process.env.PORT),
+    String(process.env.MONGODB_URI) + '/' + String(process.env.MONGODB_DBNAME),
+  );
+
+  span.end();
+  return appInstance;
+});
 
 const shutdown = async () => {
   try {

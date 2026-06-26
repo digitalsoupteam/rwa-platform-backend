@@ -6,10 +6,7 @@ export interface WithLogAndMetricsOptions {
   metrics?: WithMetricsOptions;
 }
 
-export function withLogAndMetrics<T extends (...args: any[]) => any>(
-  options: WithLogAndMetricsOptions,
-  fn: T
-): T {
+export function withLogAndMetrics<T extends (...args: any[]) => any>(options: WithLogAndMetricsOptions, fn: T): T {
   let wrapped = fn;
 
   if (options.metrics) {

@@ -1,16 +1,15 @@
-import { BlogRepository } from "../repositories/blog.repository";
-import { PostRepository } from "../repositories/post.repository";
-import type { SortOrder } from "mongoose";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
-import { LogDecorator } from "@shared/monitoring/src/logDecorator";
-import { setSpanAttributes } from "@shared/monitoring/src/tracing";
-
+import { BlogRepository } from '../repositories/blog.repository';
+import { PostRepository } from '../repositories/post.repository';
+import type { SortOrder } from 'mongoose';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
 export class BlogsService {
   constructor(
     private readonly blogRepository: BlogRepository,
-    private readonly postRepository: PostRepository
+    private readonly postRepository: PostRepository,
   ) {}
 
   /**
@@ -55,7 +54,7 @@ export class BlogsService {
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({ args: ['params'] })
-  async updateBlog(params: { id: string, updateData: { name: string } }) {
+  async updateBlog(params: { id: string; updateData: { name: string } }) {
     setSpanAttributes({ id: params.id });
     const blog = await this.blogRepository.update(params.id, params.updateData);
 
@@ -132,14 +131,9 @@ export class BlogsService {
       limit: params.limit ?? 100,
       offset: params.offset ?? 0,
     });
-    const blogs = await this.blogRepository.findAll(
-      params.filter,
-      params.sort,
-      params.limit,
-      params.offset
-    );
+    const blogs = await this.blogRepository.findAll(params.filter, params.sort, params.limit, params.offset);
 
-    return blogs.map(blog => ({
+    return blogs.map((blog) => ({
       id: blog._id.toString(),
       name: blog.name,
       ownerId: blog.ownerId,
@@ -209,7 +203,7 @@ export class BlogsService {
       content?: string;
       images?: string[];
       documents?: string[];
-    }
+    };
   }) {
     setSpanAttributes({ id: params.id });
     const post = await this.postRepository.update(params.id, params.updateData);
@@ -287,14 +281,9 @@ export class BlogsService {
       limit: params.limit ?? 100,
       offset: params.offset ?? 0,
     });
-    const posts = await this.postRepository.findAll(
-      params.filter,
-      params.sort,
-      params.limit,
-      params.offset
-    );
+    const posts = await this.postRepository.findAll(params.filter, params.sort, params.limit, params.offset);
 
-    return posts.map(post => ({
+    return posts.map((post) => ({
       id: post._id.toString(),
       blogId: post.blogId.toString(),
       title: post.title,

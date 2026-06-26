@@ -1,29 +1,29 @@
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
-export const createBlog: MutationResolvers['createBlog'] = async (
-  _parent,
-  { input },
-  { services, clients, user }
-) => {
+export const createBlog: MutationResolvers['createBlog'] = async (_parent, { input }, { services, clients, user }) => {
   logger.debug('Creating new blog', { input });
 
   if (!user) {
-    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   const { grandParentId, ownerId, ownerType } = await services.parent.getParentInfo(
-    input.type, 
+    input.type,
     input.parentId,
-    user.id
+    user.id,
   );
 
   await services.ownership.checkOwnership({
     userId: user.id,
     ownerId,
     ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   const response = await clients.blogClient.createBlog.post({
@@ -37,7 +37,7 @@ export const createBlog: MutationResolvers['createBlog'] = async (
 
   if (response.error) {
     logger.error('Failed to create blog:', response.error);
-    throw new AppError({ message: 'Failed to create blog', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({ message: 'Failed to create blog', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   const { data } = response;

@@ -1,7 +1,6 @@
-import mongoose, { Schema } from "mongoose";
-import type { InferRawDocType } from "mongoose";
-import { AssistantContextList } from "../shared/enums.model";
-
+import mongoose, { Schema } from 'mongoose';
+import type { InferRawDocType } from 'mongoose';
+import { AssistantContextList } from '../shared/enums.model';
 
 const assistantSchemaDefinition = {
   userId: {
@@ -25,7 +24,5 @@ const assistantSchema = new Schema(assistantSchemaDefinition, {
 
 assistantSchema.index({ userId: 1 });
 
-export type IAssistantEntity = InferRawDocType<
-  typeof assistantSchemaDefinition
->;
-export const AssistantEntity = mongoose.model("Assistant", assistantSchema);
+export type IAssistantEntity = InferRawDocType<typeof assistantSchemaDefinition>;
+export const AssistantEntity = mongoose.model('Assistant', assistantSchema);

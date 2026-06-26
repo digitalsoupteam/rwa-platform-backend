@@ -1,25 +1,31 @@
-import { AppError } from "@shared/errors/app-errors";
-import type { FilterQuery, SortOrder } from "mongoose";
-import { CompanyEntity } from "../models/entity/company.entity";
-import type { ICompanyEntity } from "../models/entity/company.entity";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-
+import { AppError } from '@shared/errors/app-errors';
+import type { FilterQuery, SortOrder } from 'mongoose';
+import { CompanyEntity } from '../models/entity/company.entity';
+import type { ICompanyEntity } from '../models/entity/company.entity';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
 export class CompanyRepository {
   constructor(private readonly model = CompanyEntity) {}
 
   @TraceDecorator()
-  async create(data: Pick<ICompanyEntity, "name" | "description" | "ownerId"> & Partial<Pick<ICompanyEntity, "country" | "socials">>) {
+  async create(
+    data: Pick<ICompanyEntity, 'name' | 'description' | 'ownerId'> &
+      Partial<Pick<ICompanyEntity, 'country' | 'socials'>>,
+  ) {
     const doc = await this.model.create(data);
     return doc.toObject();
   }
 
   @TraceDecorator()
-  async update(id: string, data: Partial<Pick<ICompanyEntity, "name" | "description" | "country" | "socials">>) {
+  async update(id: string, data: Partial<Pick<ICompanyEntity, 'name' | 'description' | 'country' | 'socials'>>) {
     const doc = await this.model.findByIdAndUpdate(id, data, { new: true }).lean();
 
     if (!doc) {
-      throw new AppError({ message: `Company ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({
+        message: `Company ${id} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return doc;
@@ -30,7 +36,11 @@ export class CompanyRepository {
     const doc = await this.model.findByIdAndDelete(id).lean();
 
     if (!doc) {
-      throw new AppError({ message: `Company ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({
+        message: `Company ${id} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return id;
@@ -47,7 +57,11 @@ export class CompanyRepository {
     const doc = await this.model.findById(id).lean();
 
     if (!doc) {
-      throw new AppError({ message: `Company ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({
+        message: `Company ${id} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return doc;
@@ -58,14 +72,14 @@ export class CompanyRepository {
     filter: FilterQuery<typeof this.model> = {},
     sort: { [key: string]: SortOrder } = { createdAt: 'asc' },
     limit?: number,
-    offset?: number
+    offset?: number,
   ) {
     let query = this.model.find(filter).sort(sort);
 
     if (typeof offset === 'number') {
       query = query.skip(offset);
     }
-    
+
     if (typeof limit === 'number') {
       query = query.limit(limit);
     }

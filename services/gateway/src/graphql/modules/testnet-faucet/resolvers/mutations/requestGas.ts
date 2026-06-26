@@ -2,15 +2,11 @@ import { AppError } from '@shared/errors/app-errors';
 import { MutationResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
-export const requestGas: MutationResolvers['requestGas'] = async (
-  _parent,
-  { input },
-  { clients, user }
-) => {
+export const requestGas: MutationResolvers['requestGas'] = async (_parent, { input }, { clients, user }) => {
   logger.info('Requesting gas token', { input });
 
   if (!user) {
-    throw new AuthenticationError("Authentication required");
+    throw new AuthenticationError('Authentication required');
   }
 
   const response = await clients.testnetFaucetClient.requestGas.post({
@@ -19,11 +15,15 @@ export const requestGas: MutationResolvers['requestGas'] = async (
     amount: input.amount,
   });
 
-  console.log(JSON.stringify(response))
+  console.log(JSON.stringify(response));
 
   if (response.error) {
     logger.error('Failed to request gas token:', response.error);
-    throw new AppError({ message: 'Failed to request gas token', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to request gas token',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

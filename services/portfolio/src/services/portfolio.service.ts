@@ -1,21 +1,20 @@
-import { TokenBalanceRepository } from "../repositories/tokenBalance.repository";
-import { TransactionRepository } from "../repositories/transaction.repository";
-import type { ITokenBalanceEntity } from "../models/entity/tokenBalance.entity";
-import type { ITransactionEntity } from "../models/entity/transaction.entity";
-import type { SortOrder } from "mongoose";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
-import { LogDecorator } from "@shared/monitoring/src/logDecorator";
-import { setSpanAttributes } from "@shared/monitoring/src/tracing";
+import { TokenBalanceRepository } from '../repositories/tokenBalance.repository';
+import { TransactionRepository } from '../repositories/transaction.repository';
+import type { ITokenBalanceEntity } from '../models/entity/tokenBalance.entity';
+import type { ITransactionEntity } from '../models/entity/transaction.entity';
+import type { SortOrder } from 'mongoose';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 export class PortfolioService {
   constructor(
     private readonly tokenBalanceRepository: TokenBalanceRepository,
-    private readonly transactionRepository: TransactionRepository
-  ) { }
+    private readonly transactionRepository: TransactionRepository,
+  ) {}
 
   /**
    * Gets token balances list with filters, pagination and sorting
@@ -24,10 +23,10 @@ export class PortfolioService {
   @MetricsDecorator()
   @LogDecorator({ args: ['params'] })
   async getBalances(params: {
-    filter?: Record<string, any>,
-    sort?: { [key: string]: SortOrder },
-    limit?: number,
-    offset?: number
+    filter?: Record<string, any>;
+    sort?: { [key: string]: SortOrder };
+    limit?: number;
+    offset?: number;
   }) {
     const filter = params.filter ?? {};
     setSpanAttributes({
@@ -39,12 +38,7 @@ export class PortfolioService {
       poolAddress: filter.poolAddress,
     });
 
-    const balances = await this.tokenBalanceRepository.findAll(
-      params.filter,
-      params.sort,
-      params.limit,
-      params.offset
-    );
+    const balances = await this.tokenBalanceRepository.findAll(params.filter, params.sort, params.limit, params.offset);
 
     return balances.map(this.mapBalance);
   }
@@ -56,10 +50,10 @@ export class PortfolioService {
   @MetricsDecorator()
   @LogDecorator({ args: ['params'] })
   async getTransactions(params: {
-    filter?: Record<string, any>,
-    sort?: { [key: string]: SortOrder },
-    limit?: number,
-    offset?: number
+    filter?: Record<string, any>;
+    sort?: { [key: string]: SortOrder };
+    limit?: number;
+    offset?: number;
   }) {
     const filter = params.filter ?? {};
     setSpanAttributes({
@@ -75,7 +69,7 @@ export class PortfolioService {
       params.filter,
       params.sort,
       params.limit,
-      params.offset
+      params.offset,
     );
 
     return transactions.map(this.mapTransaction);
@@ -120,7 +114,7 @@ export class PortfolioService {
       chainId: data.chainId,
       transactionHash: data.transactionHash,
       blockNumber: data.blockNumber,
-      amount: data.amount
+      amount: data.amount,
     });
 
     if (data.from !== ZERO_ADDRESS) {
@@ -131,7 +125,7 @@ export class PortfolioService {
         data.poolAddress,
         data.chainId,
         -data.amount,
-        data.blockNumber
+        data.blockNumber,
       );
     }
 
@@ -143,7 +137,7 @@ export class PortfolioService {
         data.poolAddress,
         data.chainId,
         data.amount,
-        data.blockNumber
+        data.blockNumber,
       );
     }
   }
@@ -159,7 +153,7 @@ export class PortfolioService {
       balance: balance.balance,
       lastUpdateBlock: balance.lastUpdateBlock,
       createdAt: balance.createdAt,
-      updatedAt: balance.updatedAt
+      updatedAt: balance.updatedAt,
     };
   }
 
@@ -176,7 +170,7 @@ export class PortfolioService {
       blockNumber: tx.blockNumber,
       amount: tx.amount,
       createdAt: tx.createdAt,
-      updatedAt: tx.updatedAt
+      updatedAt: tx.updatedAt,
     };
   }
 }

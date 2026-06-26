@@ -6,10 +6,7 @@ export interface WithMetricsOptions {
   labels?: Record<string, string>;
 }
 
-export function withMetrics<T extends (...args: any[]) => any>(
-  options: WithMetricsOptions,
-  fn: T
-): T {
+export function withMetrics<T extends (...args: any[]) => any>(options: WithMetricsOptions, fn: T): T {
   return ((...args: Parameters<T>): ReturnType<T> => {
     const counterName = `${options.name}_total`;
     const histogramName = `${options.name}_duration`;
@@ -17,7 +14,11 @@ export function withMetrics<T extends (...args: any[]) => any>(
 
     const record = (result: 'success' | 'error', errorType?: string) => {
       const duration = performance.now() - startTime;
-      metrics.counter(counterName, { result, ...(errorType ? { errorType } : {}), ...options.labels });
+      metrics.counter(counterName, {
+        result,
+        ...(errorType ? { errorType } : {}),
+        ...options.labels,
+      });
       metrics.histogram(histogramName, duration, { result, ...options.labels });
     };
 

@@ -5,43 +5,33 @@ import { ErrorHandlerPlugin } from '@shared/errors/error-handler.plugin';
 import { createRepositoriesPlugin } from './plugins/repositories.plugin';
 import { createServicesPlugin } from './plugins/services.plugin';
 import { createControllersPlugin } from './plugins/controllers.plugin';
-import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
+import { withTraceSync, withTraceAsync } from '@shared/monitoring/src/tracing';
 
-export async function createApp(
-  port: number,
-  mongoUri: string
-) {
+export async function createApp(port: number, mongoUri: string) {
   const repositoriesPlugin = await withTraceAsync(
     'blog.init.repositories_plugin',
-    async () => await createRepositoriesPlugin(mongoUri)
+    async () => await createRepositoriesPlugin(mongoUri),
   );
 
-  const servicesPlugin = withTraceSync(
-    'blog.init.services_plugin',
-    () => createServicesPlugin(repositoriesPlugin)
+  const servicesPlugin = withTraceSync('blog.init.services_plugin', () => createServicesPlugin(repositoriesPlugin));
+
+  const controllersPlugin = withTraceSync('blog.init.controllers_plugin', () =>
+    createControllersPlugin(servicesPlugin),
   );
 
-  const controllersPlugin = withTraceSync(
-    'blog.init.controllers_plugin',
-    () => createControllersPlugin(servicesPlugin)
-  );
-
-  const app = withTraceSync(
-    'blog.init.elysia',
-    (ctx) => {
-      const result = new Elysia()
-        .use(monitoringPlugin)
-        .use(healthPlugin)
-        .onError(ErrorHandlerPlugin)
-        .use(repositoriesPlugin)
-        .use(servicesPlugin)
-        .use(controllersPlugin)
-        .listen(port, () => {
-          ctx.end();
-        });
-      return result;
-    }
-  );
+  const app = withTraceSync('blog.init.elysia', (ctx) => {
+    const result = new Elysia()
+      .use(monitoringPlugin)
+      .use(healthPlugin)
+      .onError(ErrorHandlerPlugin)
+      .use(repositoriesPlugin)
+      .use(servicesPlugin)
+      .use(controllersPlugin)
+      .listen(port, () => {
+        ctx.end();
+      });
+    return result;
+  });
 
   return app;
 }

@@ -1,5 +1,5 @@
-import mongoose, { Schema, Types } from "mongoose";
-import type { InferRawDocType } from "mongoose";
+import mongoose, { Schema, Types } from 'mongoose';
+import type { InferRawDocType } from 'mongoose';
 
 const businessSchemaDefinition = {
   ownerId: {
@@ -28,21 +28,21 @@ const businessSchemaDefinition = {
   },
   tokenAddress: {
     type: String,
-    trim: true
+    trim: true,
   },
   description: {
     type: String,
-    default: ''
+    default: '',
   },
   tags: {
     type: [String],
-    default: []
+    default: [],
   },
   riskScore: {
     type: Number,
     default: 100,
     min: 0,
-    max: 100
+    max: 100,
   },
   image: {
     type: String,
@@ -52,7 +52,7 @@ const businessSchemaDefinition = {
     type: String,
   },
   approvalSignaturesTaskExpired: {
-      type: Number,
+    type: Number,
   },
   country: {
     type: String,
@@ -64,23 +64,25 @@ const businessSchemaDefinition = {
     trim: true,
   },
   socials: {
-    type: [{
-      type: { type: String, required: true, trim: true },
-      url: { type: String, required: true, trim: true },
-    }],
+    type: [
+      {
+        type: { type: String, required: true, trim: true },
+        url: { type: String, required: true, trim: true },
+      },
+    ],
     default: [],
   },
   paused: {
     type: Boolean,
-    default: false
+    default: false,
   },
   createdAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
   updatedAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
 } as const;
 
@@ -94,11 +96,8 @@ businessSchema.index({ riskScore: 1 });
 businessSchema.index({ createdAt: -1 });
 businessSchema.index({ tags: 1, riskScore: 1 });
 
-export type IBusinessEntity = InferRawDocType<
-  typeof businessSchemaDefinition
-> & { _id: Types.ObjectId };
+export type IBusinessEntity = InferRawDocType<typeof businessSchemaDefinition> & {
+  _id: Types.ObjectId;
+};
 
-export const BusinessEntity = mongoose.model(
-  "Business",
-  businessSchema
-);
+export const BusinessEntity = mongoose.model('Business', businessSchema);

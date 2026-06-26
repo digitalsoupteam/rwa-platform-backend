@@ -1,28 +1,25 @@
 import { createApp } from './app';
 import { tracer } from '@shared/monitoring/src/tracing';
 
-const app = await tracer.startActiveSpan(
-  'testnet-faucet.init.main',
-  async (span) => {
-    const appInstance = await createApp(
-      Number(process.env.PORT),
-      String(process.env.MONGODB_URI) + '/' + String(process.env.MONGODB_DBNAME),
-      String(process.env.PROVIDER_URL),
-      String(process.env.WALLET_PRIVATE_KEY),
-      String(process.env.HOLD_TOKEN_ADDRESS),
-      String(process.env.PLATFORM_TOKEN_ADDRESS),
-      Number(process.env.GAS_TOKEN_AMOUNT),
-      Number(process.env.HOLD_TOKEN_AMOUNT),
-      Number(process.env.PLATFORM_TOKEN_AMOUNT),
-      Number(process.env.REQUEST_GAS_DELAY_MS),
-      Number(process.env.REQUEST_HOLD_DELAY_MS),
-      Number(process.env.REQUEST_PLATFORM_DELAY_MS)
-    );
+const app = await tracer.startActiveSpan('testnet-faucet.init.main', async (span) => {
+  const appInstance = await createApp(
+    Number(process.env.PORT),
+    String(process.env.MONGODB_URI) + '/' + String(process.env.MONGODB_DBNAME),
+    String(process.env.PROVIDER_URL),
+    String(process.env.WALLET_PRIVATE_KEY),
+    String(process.env.HOLD_TOKEN_ADDRESS),
+    String(process.env.PLATFORM_TOKEN_ADDRESS),
+    Number(process.env.GAS_TOKEN_AMOUNT),
+    Number(process.env.HOLD_TOKEN_AMOUNT),
+    Number(process.env.PLATFORM_TOKEN_AMOUNT),
+    Number(process.env.REQUEST_GAS_DELAY_MS),
+    Number(process.env.REQUEST_HOLD_DELAY_MS),
+    Number(process.env.REQUEST_PLATFORM_DELAY_MS),
+  );
 
-    span.end();
-    return appInstance;
-  }
-);
+  span.end();
+  return appInstance;
+});
 
 const shutdown = async () => {
   try {

@@ -1,26 +1,34 @@
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const createQuestionAnswer: MutationResolvers['createQuestionAnswer'] = async (
   _parent,
   { input },
-  { services, clients, user }
+  { services, clients, user },
 ) => {
   logger.debug('Creating question answer', { input });
 
   if (!user) {
-    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Get question first to check permissions
   const questionResponse = await clients.questionsClient.getQuestion.post({
-    id: input.id
+    id: input.id,
   });
 
   if (questionResponse.error) {
     logger.error('Failed to get question:', questionResponse.error.message);
-    throw new AppError({ message: 'Failed to get question data', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to get question data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const question = questionResponse.data;
@@ -29,7 +37,7 @@ export const createQuestionAnswer: MutationResolvers['createQuestionAnswer'] = a
     userId: user.id,
     ownerId: question.ownerId,
     ownerType: question.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   const response = await clients.questionsClient.createQuestionAnswer.post({
@@ -40,7 +48,11 @@ export const createQuestionAnswer: MutationResolvers['createQuestionAnswer'] = a
 
   if (response.error) {
     logger.error(`Failed to create question answer:`, response.error);
-    throw new AppError({ message: 'Failed to create question answer', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to create question answer',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

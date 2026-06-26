@@ -1,9 +1,8 @@
-import { existsSync, mkdirSync } from "node:fs";
-import { writeFile, unlink } from "node:fs/promises";
-import { join, dirname } from "node:path";
-import { randomUUID } from "node:crypto";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-
+import { existsSync, mkdirSync } from 'node:fs';
+import { writeFile, unlink } from 'node:fs/promises';
+import { join, dirname } from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
 export class StorageClient {
   constructor(private readonly rootDir: string) {

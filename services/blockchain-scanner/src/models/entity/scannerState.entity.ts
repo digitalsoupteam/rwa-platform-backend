@@ -1,5 +1,5 @@
-import mongoose, { Schema } from "mongoose";
-import type { InferRawDocType } from "mongoose";
+import mongoose, { Schema } from 'mongoose';
+import type { InferRawDocType } from 'mongoose';
 
 const scannerStateSchemaDefinition = {
   chainId: {
@@ -30,4 +30,4 @@ scannerStateSchema.index({ chainId: 1 }, { unique: true });
 scannerStateSchema.index({ isActive: 1 });
 
 export type IScannerStateEntity = InferRawDocType<typeof scannerStateSchemaDefinition>;
-export const ScannerStateEntity = mongoose.model("ScannerState", scannerStateSchema);
+export const ScannerStateEntity = mongoose.model('ScannerState', scannerStateSchema);

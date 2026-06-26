@@ -6,10 +6,10 @@ import { RedisEvent } from '../../../../context/types';
 export const priceUpdates: SubscriptionResolvers['priceUpdates'] = {
   subscribe: (_parent, { poolAddress }, { pubSub }) => {
     logger.debug(`Subscribing to price updates for pool ${poolAddress}`);
-    
+
     return pipe(
       pubSub.subscribe(`charts:price:${poolAddress}`),
-      map((event: RedisEvent) => ({ priceUpdates: event.payload }))
+      map((event: RedisEvent) => ({ priceUpdates: event.payload })),
     );
-  }
+  },
 };

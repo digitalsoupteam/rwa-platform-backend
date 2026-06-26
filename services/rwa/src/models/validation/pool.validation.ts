@@ -1,5 +1,4 @@
-import { t } from "elysia";
-
+import { t } from 'elysia';
 
 export const poolSchema = t.Object({
   id: t.String(),
@@ -61,16 +60,20 @@ export const poolSchema = t.Object({
   rewardedRwaAmount: t.Optional(t.String()),
 
   // Tranches
-  outgoingTranches: t.Array(t.Object({
-    amount: t.String(),
-    timestamp: t.Number(),
-    executedAmount: t.String()
-  })),
-  incomingTranches: t.Array(t.Object({
-    amount: t.String(),
-    expiredAt: t.Number(),
-    returnedAmount: t.String()
-  })),
+  outgoingTranches: t.Array(
+    t.Object({
+      amount: t.String(),
+      timestamp: t.Number(),
+      executedAmount: t.String(),
+    }),
+  ),
+  incomingTranches: t.Array(
+    t.Object({
+      amount: t.String(),
+      expiredAt: t.Number(),
+      returnedAmount: t.String(),
+    }),
+  ),
   lastCompletedIncomingTranche: t.Number(),
 
   // Approval
@@ -79,39 +82,34 @@ export const poolSchema = t.Object({
 
   // Timestamps
   createdAt: t.Number(),
-  updatedAt: t.Number()
+  updatedAt: t.Number(),
 });
 
 export type IPoolDTO = typeof poolSchema.static;
 // TODO ADD IMAGE
 export const createPoolRequest = t.Composite([
-  t.Pick(poolSchema, [
-    'ownerId',
-    'ownerType',
-    'name',
-    'businessId',
-    'chainId',
-    'rwaAddress'
-  ]),
-  t.Partial(t.Pick(poolSchema, [
-    'entryFeePercent',
-    'exitFeePercent',
-    'expectedHoldAmount',
-    'expectedRwaAmount',
-    'rewardPercent',
-    'entryPeriodStart',
-    'entryPeriodExpired',
-    'completionPeriodExpired',
-    'awaitCompletionExpired',
-    'floatingOutTranchesTimestamps',
-    'fixedSell',
-    'allowEntryBurn',
-    'priceImpactPercent',
-    'outgoingTranches',
-    'incomingTranches',
-    'description',
-    'tags'
-  ]))
+  t.Pick(poolSchema, ['ownerId', 'ownerType', 'name', 'businessId', 'chainId', 'rwaAddress']),
+  t.Partial(
+    t.Pick(poolSchema, [
+      'entryFeePercent',
+      'exitFeePercent',
+      'expectedHoldAmount',
+      'expectedRwaAmount',
+      'rewardPercent',
+      'entryPeriodStart',
+      'entryPeriodExpired',
+      'completionPeriodExpired',
+      'awaitCompletionExpired',
+      'floatingOutTranchesTimestamps',
+      'fixedSell',
+      'allowEntryBurn',
+      'priceImpactPercent',
+      'outgoingTranches',
+      'incomingTranches',
+      'description',
+      'tags',
+    ]),
+  ),
 ]);
 export const createPoolResponse = poolSchema;
 
@@ -124,61 +122,63 @@ export const createPoolWithAIRequest = t.Object({
   ownerType: t.String(),
   businessId: t.String(),
   chainId: t.String(),
-  rwaAddress: t.String()
+  rwaAddress: t.String(),
 });
 export const createPoolWithAIResponse = poolSchema;
 
 export const editPoolRequest = t.Object({
   id: t.String(),
-  updateData: t.Partial(t.Pick(poolSchema, [
-    'chainId',
-    'name',
-    'entryFeePercent',
-    'exitFeePercent',
-    'expectedHoldAmount',
-    'expectedRwaAmount',
-    'rewardPercent',
-    'entryPeriodStart',
-    'entryPeriodExpired',
-    'completionPeriodExpired',
-    'awaitCompletionExpired',
-    'floatingOutTranchesTimestamps',
-    'fixedSell',
-    'allowEntryBurn',
-    'priceImpactPercent',
-    'outgoingTranches',
-    'incomingTranches',
-    'description',
-    'tags'
-  ]))
+  updateData: t.Partial(
+    t.Pick(poolSchema, [
+      'chainId',
+      'name',
+      'entryFeePercent',
+      'exitFeePercent',
+      'expectedHoldAmount',
+      'expectedRwaAmount',
+      'rewardPercent',
+      'entryPeriodStart',
+      'entryPeriodExpired',
+      'completionPeriodExpired',
+      'awaitCompletionExpired',
+      'floatingOutTranchesTimestamps',
+      'fixedSell',
+      'allowEntryBurn',
+      'priceImpactPercent',
+      'outgoingTranches',
+      'incomingTranches',
+      'description',
+      'tags',
+    ]),
+  ),
 });
 export const editPoolResponse = poolSchema;
 
-export const updatePoolRiskScoreRequest = t.Pick(poolSchema, ["id"]);
+export const updatePoolRiskScoreRequest = t.Pick(poolSchema, ['id']);
 export const updatePoolRiskScoreResponse = poolSchema;
 
 export const requestPoolApprovalSignaturesRequest = t.Object({
   id: t.String(),
   ownerWallet: t.String(),
   deployerWallet: t.String(),
-  createPoolFeeRatio: t.String()
+  createPoolFeeRatio: t.String(),
 });
 
 export const requestPoolApprovalSignaturesResponse = t.Object({
-  taskId: t.String()
+  taskId: t.String(),
 });
 
-export const rejectPoolApprovalSignaturesRequest = t.Pick(poolSchema, ["id"]);
+export const rejectPoolApprovalSignaturesRequest = t.Pick(poolSchema, ['id']);
 export const rejectPoolApprovalSignaturesResponse = t.Object({});
 
-export const getPoolRequest = t.Pick(poolSchema, ["id"]);
+export const getPoolRequest = t.Pick(poolSchema, ['id']);
 export const getPoolResponse = poolSchema;
 
 export const getPoolsRequest = t.Object({
   filter: t.Optional(t.Record(t.String(), t.Any())),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
   limit: t.Optional(t.Number()),
-  offset: t.Optional(t.Number())
+  offset: t.Optional(t.Number()),
 });
 
 export const getPoolsResponse = t.Array(poolSchema);

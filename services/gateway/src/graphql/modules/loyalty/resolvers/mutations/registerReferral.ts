@@ -1,16 +1,20 @@
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const registerReferral: MutationResolvers['registerReferral'] = async (
   _parent,
   { input },
-  { clients, user }
+  { clients, user },
 ) => {
   logger.debug('Registering new referral', { input });
 
   if (!user) {
-    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Get full user data from auth service
@@ -20,7 +24,11 @@ export const registerReferral: MutationResolvers['registerReferral'] = async (
 
   if (userResponse.error) {
     logger.error('Failed to get user data', userResponse.error);
-    throw new AppError({ message: 'Failed to get user data', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to get user data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const userData = userResponse.data;
@@ -46,7 +54,11 @@ export const registerReferral: MutationResolvers['registerReferral'] = async (
 
   if (response.error) {
     logger.error('Failed to register referral', response.error);
-    throw new AppError({ message: 'Failed to register referral', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to register referral',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

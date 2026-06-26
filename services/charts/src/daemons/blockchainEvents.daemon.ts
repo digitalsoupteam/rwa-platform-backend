@@ -1,37 +1,36 @@
-import { BaseBlockchainDaemon } from "@shared/blockchain-daemon/src/baseBlockchain.daemon";
-import type { BlockchainEvent, EventRouting } from "@shared/blockchain-daemon/src/baseBlockchain.daemon";
-import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
-import { ChartsService } from "../services/charts.service";
-import { TransactionsService } from "../services/transactions.service";
-import { PoolTransactionType } from "../models/entity/poolTransaction.entity";
-
+import { BaseBlockchainDaemon } from '@shared/blockchain-daemon/src/baseBlockchain.daemon';
+import type { BlockchainEvent, EventRouting } from '@shared/blockchain-daemon/src/baseBlockchain.daemon';
+import { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
+import { ChartsService } from '../services/charts.service';
+import { TransactionsService } from '../services/transactions.service';
+import { PoolTransactionType } from '../models/entity/poolTransaction.entity';
 
 export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
   constructor(
     rabbitClient: RabbitMQClient,
     private readonly chartsService: ChartsService,
-    private readonly transactionsService: TransactionsService
+    private readonly transactionsService: TransactionsService,
   ) {
-    super(rabbitClient, "blockchain.events.charts");
+    super(rabbitClient, 'blockchain.events.charts');
   }
 
   protected getEventRouting(): EventRouting {
     return {
-      "Pool_ReservesUpdated": async (event: BlockchainEvent) => {
+      Pool_ReservesUpdated: async (event: BlockchainEvent) => {
         const { emittedFrom, realHoldReserve, virtualHoldReserve, virtualRwaReserve } = event.data as any;
-        
+
         await this.chartsService.recordPriceData({
           poolAddress: emittedFrom,
           timestamp: event.timestamp,
           blockNumber: event.blockNumber,
           realHoldReserve: realHoldReserve.toString(),
           virtualHoldReserve: virtualHoldReserve.toString(),
-          virtualRwaReserve: virtualRwaReserve.toString()
+          virtualRwaReserve: virtualRwaReserve.toString(),
         });
       },
-      "Pool_RwaMinted": async (event: BlockchainEvent) => {
+      Pool_RwaMinted: async (event: BlockchainEvent) => {
         const { emittedFrom, minter, rwaAmountMinted, holdAmountPaid, feePaid } = event.data as any;
-        
+
         await this.transactionsService.recordTransaction({
           poolAddress: emittedFrom,
           transactionType: PoolTransactionType.MINT,
@@ -39,12 +38,20 @@ export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
           timestamp: event.timestamp,
           rwaAmount: rwaAmountMinted.toString(),
           holdAmount: holdAmountPaid.toString(),
-          holdFee: feePaid.toString()
+          holdFee: feePaid.toString(),
         });
       },
-      "Pool_RwaBurned": async (event: BlockchainEvent) => {
-        const { emittedFrom, burner, rwaAmountBurned, holdAmountReceived, bonusAmountReceived, holdFeePaid, bonusFeePaid } = event.data as any;
-        
+      Pool_RwaBurned: async (event: BlockchainEvent) => {
+        const {
+          emittedFrom,
+          burner,
+          rwaAmountBurned,
+          holdAmountReceived,
+          bonusAmountReceived,
+          holdFeePaid,
+          bonusFeePaid,
+        } = event.data as any;
+
         await this.transactionsService.recordTransaction({
           poolAddress: emittedFrom,
           transactionType: PoolTransactionType.BURN,
@@ -54,9 +61,9 @@ export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
           holdAmount: holdAmountReceived.toString(),
           bonusAmount: bonusAmountReceived.toString(),
           holdFee: holdFeePaid.toString(),
-          bonusFee: bonusFeePaid.toString()
+          bonusFee: bonusFeePaid.toString(),
         });
-      }
+      },
     };
   }
 }

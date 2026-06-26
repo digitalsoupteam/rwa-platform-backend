@@ -1,5 +1,5 @@
-import mongoose, { Schema, Types } from "mongoose";
-import type { InferRawDocType } from "mongoose";
+import mongoose, { Schema, Types } from 'mongoose';
+import type { InferRawDocType } from 'mongoose';
 
 const voteSchemaDefinition = {
   proposalId: {
@@ -32,9 +32,9 @@ const voteSchemaDefinition = {
   },
   reason: {
     type: String,
-    default: "",
+    default: '',
   },
-  
+
   // Blockchain data
   transactionHash: {
     type: String,
@@ -49,15 +49,15 @@ const voteSchemaDefinition = {
     type: Number,
     required: true,
   },
-  
+
   // Timestamps
   createdAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
   updatedAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
 };
 
@@ -75,11 +75,6 @@ voteSchema.index({ chainId: 1, governanceAddress: 1 });
 voteSchema.index({ transactionHash: 1, logIndex: 1 }, { unique: true });
 voteSchema.index({ createdAt: -1 });
 
-export type IVoteEntity = InferRawDocType<
-  typeof voteSchemaDefinition
-> & { _id: Types.ObjectId };
+export type IVoteEntity = InferRawDocType<typeof voteSchemaDefinition> & { _id: Types.ObjectId };
 
-export const VoteEntity = mongoose.model(
-  "Vote",
-  voteSchema
-);
+export const VoteEntity = mongoose.model('Vote', voteSchema);

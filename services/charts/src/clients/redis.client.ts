@@ -1,9 +1,8 @@
-import { RedisEventsClient } from "@shared/redis-events/src/redis-events.client";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-
+import { RedisEventsClient } from '@shared/redis-events/src/redis-events.client';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
 export class ChartEventsClient {
-  constructor(private readonly redisClient: RedisEventsClient) { }
+  constructor(private readonly redisClient: RedisEventsClient) {}
 
   @TraceDecorator()
   async publishPriceUpdate(data: {
@@ -14,11 +13,7 @@ export class ChartEventsClient {
     virtualHoldReserve: string;
     virtualRwaReserve: string;
   }) {
-    await this.redisClient.publish(
-      `charts:price:${data.poolAddress}`,
-      "PRICE_UPDATE",
-      data
-    );
+    await this.redisClient.publish(`charts:price:${data.poolAddress}`, 'PRICE_UPDATE', data);
   }
 
   @TraceDecorator()
@@ -33,10 +28,6 @@ export class ChartEventsClient {
     holdFee: string;
     bonusFee: string;
   }) {
-    await this.redisClient.publish(
-      `charts:transactions:${data.poolAddress}`,
-      "TRANSACTION_UPDATE",
-      data
-    );
+    await this.redisClient.publish(`charts:transactions:${data.poolAddress}`, 'TRANSACTION_UPDATE', data);
   }
 }

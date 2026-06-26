@@ -1,18 +1,17 @@
-import { AppError } from "@shared/errors/app-errors";
-import { PoolTransactionRepository } from "../repositories/poolTransaction.repository";
-import { PoolTransactionType } from "../models/entity/poolTransaction.entity";
-import type { SortOrder } from "mongoose";
-import { ChartEventsClient } from "../clients/redis.client";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
-import { LogDecorator } from "@shared/monitoring/src/logDecorator";
-import { setSpanAttributes } from "@shared/monitoring/src/tracing";
-
+import { AppError } from '@shared/errors/app-errors';
+import { PoolTransactionRepository } from '../repositories/poolTransaction.repository';
+import { PoolTransactionType } from '../models/entity/poolTransaction.entity';
+import type { SortOrder } from 'mongoose';
+import { ChartEventsClient } from '../clients/redis.client';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
 export class TransactionsService {
   constructor(
     private readonly poolTransactionRepository: PoolTransactionRepository,
-    private readonly chartEventsClient: ChartEventsClient
+    private readonly chartEventsClient: ChartEventsClient,
   ) {}
 
   @TraceDecorator()
@@ -36,8 +35,8 @@ export class TransactionsService {
     });
     const transaction = await this.poolTransactionRepository.create({
       ...data,
-      bonusAmount: data.bonusAmount || "0",
-      bonusFee: data.bonusFee || "0"
+      bonusAmount: data.bonusAmount || '0',
+      bonusFee: data.bonusFee || '0',
     });
 
     const output = {
@@ -52,7 +51,7 @@ export class TransactionsService {
       holdFee: transaction.holdFee,
       bonusFee: transaction.bonusFee,
       createdAt: transaction.createdAt,
-      updatedAt: transaction.updatedAt
+      updatedAt: transaction.updatedAt,
     };
 
     await this.chartEventsClient.publishTransactionUpdate({
@@ -89,10 +88,10 @@ export class TransactionsService {
       params.filter,
       params.sort,
       params.limit,
-      params.offset
+      params.offset,
     );
 
-    return transactions.map(tx => ({
+    return transactions.map((tx) => ({
       id: tx._id.toString(),
       poolAddress: tx.poolAddress,
       transactionType: tx.transactionType,
@@ -104,7 +103,7 @@ export class TransactionsService {
       holdFee: tx.holdFee,
       bonusFee: tx.bonusFee,
       createdAt: tx.createdAt,
-      updatedAt: tx.updatedAt
+      updatedAt: tx.updatedAt,
     }));
   }
 
@@ -134,12 +133,16 @@ export class TransactionsService {
       '6h': 21600,
       '12h': 43200,
       '1d': 86400,
-      '1w': 604800
+      '1w': 604800,
     };
 
     const intervalSeconds = intervalMap[params.interval];
     if (!intervalSeconds) {
-      throw new AppError({ message: `Unsupported interval: ${params.interval}`, statusCode: 400, code: 'VALIDATION_ERROR' });
+      throw new AppError({
+        message: `Unsupported interval: ${params.interval}`,
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
     }
 
     return await this.poolTransactionRepository.aggregateVolumeData(
@@ -147,7 +150,7 @@ export class TransactionsService {
       intervalSeconds,
       params.startTime,
       params.endTime,
-      params.limit
+      params.limit,
     );
   }
 }

@@ -1,22 +1,16 @@
-import { Elysia } from "elysia";
-import { type ServicesPlugin } from "../../plugins/services.plugin";
-import {
-  updateGalleryRequest,
-  updateGalleryResponse,
-} from "../../models/validation/images.validation";
+import { Elysia } from 'elysia';
+import { type ServicesPlugin } from '../../plugins/services.plugin';
+import { updateGalleryRequest, updateGalleryResponse } from '../../models/validation/images.validation';
 
 export const updateGalleryController = (servicesPlugin: ServicesPlugin) => {
-  return new Elysia({ name: "UpdateGalleryController" })
-    .use(servicesPlugin)
-    .post(
-      "/updateGallery",
-      async ({ body, imagesService }) => {
-
-        return await imagesService.updateGallery(body);
-      },
-      {
-        body: updateGalleryRequest,
-        response: updateGalleryResponse,
-      }
-    );
+  return new Elysia({ name: 'UpdateGalleryController' }).use(servicesPlugin).post(
+    '/updateGallery',
+    async ({ body, imagesService }) => {
+      return await imagesService.updateGallery(body);
+    },
+    {
+      body: updateGalleryRequest,
+      response: updateGalleryResponse,
+    },
+  );
 };

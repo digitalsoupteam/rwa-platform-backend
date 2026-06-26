@@ -1,19 +1,18 @@
-import { CompanyRepository } from "../repositories/company.repository";
-import { PermissionRepository } from "../repositories/permissions.repository";
-import { MemberRepository } from "../repositories/members.repository";
-import type { SortOrder } from "mongoose";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
-import { LogDecorator } from "@shared/monitoring/src/logDecorator";
-import { setSpanAttributes } from "@shared/monitoring/src/tracing";
-
+import { CompanyRepository } from '../repositories/company.repository';
+import { PermissionRepository } from '../repositories/permissions.repository';
+import { MemberRepository } from '../repositories/members.repository';
+import type { SortOrder } from 'mongoose';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
 export class CompanyService {
   constructor(
     private readonly companyRepository: CompanyRepository,
     private readonly memberRepository: MemberRepository,
-    private readonly permissionRepository: PermissionRepository
-  ) { }
+    private readonly permissionRepository: PermissionRepository,
+  ) {}
 
   private mapCompany(company: any) {
     return {
@@ -24,26 +23,20 @@ export class CompanyService {
       country: company.country ?? undefined,
       socials: company.socials ?? [],
       createdAt: company.createdAt,
-      updatedAt: company.updatedAt
+      updatedAt: company.updatedAt,
     };
   }
 
   private async mapCompanyWithDetails(company: any) {
     // Get all members without limits
-    const members = await this.memberRepository.findAll(
-      { companyId: company._id },
-      { createdAt: 'asc' }
-    );
+    const members = await this.memberRepository.findAll({ companyId: company._id }, { createdAt: 'asc' });
 
     // Get all permissions without limits
-    const permissions = await this.permissionRepository.findAll(
-      { companyId: company._id },
-      { createdAt: 'asc' }
-    );
+    const permissions = await this.permissionRepository.findAll({ companyId: company._id }, { createdAt: 'asc' });
 
     // Group permissions by user
     const userPermissions: Record<string, any[]> = {};
-    permissions.forEach(permission => {
+    permissions.forEach((permission) => {
       if (!userPermissions[permission.userId]) {
         userPermissions[permission.userId] = [];
       }
@@ -55,13 +48,13 @@ export class CompanyService {
     });
 
     // Map members with their permissions
-    const users = members.map(member => {
+    const users = members.map((member) => {
       return {
         id: member._id.toString(),
         userId: member.userId,
         name: member.name,
         permissions: userPermissions[member.userId] || [],
-      }
+      };
     });
 
     return {
@@ -73,7 +66,7 @@ export class CompanyService {
       socials: company.socials ?? [],
       users,
       createdAt: company.createdAt,
-      updatedAt: company.updatedAt
+      updatedAt: company.updatedAt,
     };
   }
 
@@ -84,7 +77,7 @@ export class CompanyService {
       userId: member.userId,
       name: member.name,
       createdAt: member.createdAt,
-      updatedAt: member.updatedAt
+      updatedAt: member.updatedAt,
     };
   }
 
@@ -96,7 +89,7 @@ export class CompanyService {
       permission: permission.permission,
       entity: permission.entity ?? undefined,
       createdAt: permission.createdAt,
-      updatedAt: permission.updatedAt
+      updatedAt: permission.updatedAt,
     };
   }
 
@@ -132,13 +125,10 @@ export class CompanyService {
       description?: string;
       country?: string;
       socials?: { type: string; url: string }[];
-    }
+    };
   }) {
     setSpanAttributes({ entityId: params.id, entityType: 'company' });
-    const company = await this.companyRepository.update(
-      params.id,
-      params.updateData
-    );
+    const company = await this.companyRepository.update(params.id, params.updateData);
 
     return this.mapCompany(company);
   }
@@ -192,12 +182,7 @@ export class CompanyService {
       limit: params.limit ?? -1,
       offset: params.offset ?? 0,
     });
-    const companies = await this.companyRepository.findAll(
-      params.filter,
-      params.sort,
-      params.limit,
-      params.offset
-    );
+    const companies = await this.companyRepository.findAll(params.filter, params.sort, params.limit, params.offset);
     return companies.map(this.mapCompany);
   }
 
@@ -207,11 +192,7 @@ export class CompanyService {
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({ args: ['data'] })
-  async addMember(data: {
-    companyId: string;
-    userId: string;
-    name: string;
-  }) {
+  async addMember(data: { companyId: string; userId: string; name: string }) {
     setSpanAttributes({ companyId: data.companyId, userId: data.userId });
     const member = await this.memberRepository.create(data);
     return this.mapMember(member);

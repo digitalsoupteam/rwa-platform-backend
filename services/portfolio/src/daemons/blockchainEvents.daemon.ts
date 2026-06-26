@@ -1,9 +1,9 @@
-import { BaseBlockchainDaemon } from "@shared/blockchain-daemon/src/baseBlockchain.daemon";
-import type { BlockchainEvent } from "@shared/blockchain-daemon/src/baseBlockchain.daemon";
-import type  { EventRouting } from "@shared/blockchain-daemon/src/baseBlockchain.daemon";
-import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
-import { PortfolioService } from "../services/portfolio.service";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
+import { BaseBlockchainDaemon } from '@shared/blockchain-daemon/src/baseBlockchain.daemon';
+import type { BlockchainEvent } from '@shared/blockchain-daemon/src/baseBlockchain.daemon';
+import type { EventRouting } from '@shared/blockchain-daemon/src/baseBlockchain.daemon';
+import { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
+import { PortfolioService } from '../services/portfolio.service';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
 /**
  * Portfolio service implementation of blockchain events daemon
@@ -12,16 +12,16 @@ import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
   constructor(
     rabbitClient: RabbitMQClient,
-    private readonly portfolioService: PortfolioService
+    private readonly portfolioService: PortfolioService,
   ) {
-    super(rabbitClient, "blockchain.events.portfolio");
+    super(rabbitClient, 'blockchain.events.portfolio');
   }
 
   @TraceDecorator()
   protected getEventRouting(): EventRouting {
     return {
-      "RWA_Transfer": async (event: BlockchainEvent) => {
-        const { 
+      RWA_Transfer: async (event: BlockchainEvent) => {
+        const {
           emittedFrom, // rwa address
           from,
           to,
@@ -30,7 +30,6 @@ export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
           pool,
         } = event.data;
 
-        
         await this.portfolioService.processTransfer({
           from,
           to,
@@ -42,7 +41,7 @@ export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
           amount: Number(amount),
           poolAddress: pool,
         });
-      }
+      },
     };
   }
 }

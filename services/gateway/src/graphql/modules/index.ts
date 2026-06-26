@@ -17,7 +17,6 @@ import { reactionsResolvers } from './reactions/resolvers';
 import { loyaltyResolvers } from './loyalty/resolvers';
 import { daoResolvers } from './dao/resolvers';
 
-
 export const resolvers = mergeResolvers([
   authResolvers,
   aiAssistantResolvers,

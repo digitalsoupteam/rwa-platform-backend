@@ -1,17 +1,14 @@
-
-import Redis from "ioredis";
-import { TracingDecoratorClass } from "./tracingDecoratorClass";
+import Redis from 'ioredis';
+import { TracingDecoratorClass } from './tracingDecoratorClass';
 
 @TracingDecoratorClass({
   deep: 10,
   privateEnabled: true,
   prefix: 'REDIS',
-  exclude: [
-    'sendCommand'
-  ]
+  exclude: ['sendCommand'],
 })
 export class RedisWithTracing extends Redis {
   constructor(url: string) {
-    super(url)
+    super(url);
   }
 }

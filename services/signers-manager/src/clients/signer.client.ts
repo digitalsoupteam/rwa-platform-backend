@@ -1,6 +1,6 @@
-import type { ConsumeMessage } from "amqplib";
-import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
+import type { ConsumeMessage } from 'amqplib';
+import { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
 export interface SignatureRequest {
   hash: string;
@@ -8,10 +8,9 @@ export interface SignatureRequest {
   expired: number;
 }
 
-
 export class SignerClient {
-  private readonly SIGN_EXCHANGE = "sign.exchange";
-  private readonly RESPONSES_QUEUE = "sign.responses";
+  private readonly SIGN_EXCHANGE = 'sign.exchange';
+  private readonly RESPONSES_QUEUE = 'sign.responses';
 
   constructor(private readonly rabbitClient: RabbitMQClient) {}
 
@@ -19,14 +18,14 @@ export class SignerClient {
   async initialize(): Promise<void> {
     // Setup exchange and queues
     await this.rabbitClient.setupExchange(this.SIGN_EXCHANGE, 'fanout', {
-      durable: true
+      durable: true,
     });
 
     await this.rabbitClient.setupQueue(this.RESPONSES_QUEUE, {
       durable: true,
       arguments: {
-        "x-message-ttl": 3600000 // 1 hour
-      }
+        'x-message-ttl': 3600000, // 1 hour
+      },
     });
   }
 

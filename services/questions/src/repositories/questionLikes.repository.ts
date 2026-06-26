@@ -1,18 +1,14 @@
-import { AppError } from "@shared/errors/app-errors";
-import { Types } from "mongoose";
-import type { FilterQuery, SortOrder } from "mongoose";
-import {
-  QuestionLikesEntity,
-  type IQuestionLikesEntity,
-} from "../models/entity/questionLikes.entity";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-
+import { AppError } from '@shared/errors/app-errors';
+import { Types } from 'mongoose';
+import type { FilterQuery, SortOrder } from 'mongoose';
+import { QuestionLikesEntity, type IQuestionLikesEntity } from '../models/entity/questionLikes.entity';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
 export class QuestionLikesRepository {
   constructor(private readonly model = QuestionLikesEntity) {}
 
   @TraceDecorator()
-  async create(data: Pick<IQuestionLikesEntity, "userId"> & { questionId: string }) {
+  async create(data: Pick<IQuestionLikesEntity, 'userId'> & { questionId: string }) {
     const doc = await this.model.create(data);
     return doc.toObject();
   }
@@ -22,7 +18,11 @@ export class QuestionLikesRepository {
     const doc = await this.model.findOneAndDelete({ questionId, userId }).lean();
 
     if (!doc) {
-      throw new AppError({ message: `QuestionLike ${questionId}:${userId} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({
+        message: `QuestionLike ${questionId}:${userId} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return doc;
@@ -39,14 +39,9 @@ export class QuestionLikesRepository {
     questionId: Types.ObjectId | string,
     sort: { [key: string]: SortOrder } = { createdAt: 'asc' },
     limit: number = 100,
-    offset: number = 0
+    offset: number = 0,
   ) {
-    const docs = await this.model
-      .find({ questionId })
-      .sort(sort)
-      .skip(offset)
-      .limit(limit)
-      .lean();
+    const docs = await this.model.find({ questionId }).sort(sort).skip(offset).limit(limit).lean();
 
     return docs;
   }
@@ -56,22 +51,17 @@ export class QuestionLikesRepository {
     questionIds: (Types.ObjectId | string)[],
     sort: { [key: string]: SortOrder } = { createdAt: 'asc' },
     limit: number = 100,
-    offset: number = 0
+    offset: number = 0,
   ) {
     const query: FilterQuery<typeof this.model> = {};
 
     if (questionIds.length === 1) {
       query.questionId = questionIds[0];
-    } else if(questionIds.length > 1) {
+    } else if (questionIds.length > 1) {
       query.questionId = { $in: questionIds };
     }
 
-    return await this.model
-      .find(query)
-      .sort(sort)
-      .skip(offset)
-      .limit(limit)
-      .lean();
+    return await this.model.find(query).sort(sort).skip(offset).limit(limit).lean();
   }
 
   @TraceDecorator()
@@ -79,14 +69,9 @@ export class QuestionLikesRepository {
     userId: string,
     sort: { [key: string]: SortOrder } = { createdAt: 'asc' },
     limit: number = 100,
-    offset: number = 0
+    offset: number = 0,
   ) {
-    const docs = await this.model
-      .find({ userId })
-      .sort(sort)
-      .skip(offset)
-      .limit(limit)
-      .lean();
+    const docs = await this.model.find({ userId }).sort(sort).skip(offset).limit(limit).lean();
 
     return docs;
   }

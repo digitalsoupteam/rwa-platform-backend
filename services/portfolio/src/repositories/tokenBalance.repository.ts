@@ -1,8 +1,7 @@
-import { AppError } from "@shared/errors/app-errors";
-import type { FilterQuery, SortOrder } from "mongoose";
-import { TokenBalanceEntity } from "../models/entity/tokenBalance.entity";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-
+import { AppError } from '@shared/errors/app-errors';
+import type { FilterQuery, SortOrder } from 'mongoose';
+import { TokenBalanceEntity } from '../models/entity/tokenBalance.entity';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
 export class TokenBalanceRepository {
   constructor(private readonly model = TokenBalanceEntity) {}
@@ -12,7 +11,11 @@ export class TokenBalanceRepository {
     const balance = await this.model.findById(id).lean();
 
     if (!balance) {
-      throw new AppError({ message: `TokenBalance ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({
+        message: `TokenBalance ${id} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return balance;
@@ -21,16 +24,11 @@ export class TokenBalanceRepository {
   @TraceDecorator()
   async findAll(
     filter: FilterQuery<typeof this.model> = {},
-    sort: { [key: string]: SortOrder } = { createdAt: "asc" },
+    sort: { [key: string]: SortOrder } = { createdAt: 'asc' },
     limit: number = 100,
-    offset: number = 0
+    offset: number = 0,
   ) {
-    return await this.model
-      .find(filter)
-      .sort(sort)
-      .skip(offset)
-      .limit(limit)
-      .lean();
+    return await this.model.find(filter).sort(sort).skip(offset).limit(limit).lean();
   }
 
   /**
@@ -44,23 +42,25 @@ export class TokenBalanceRepository {
     poolAddress: string,
     chainId: string,
     amount: number,
-    lastUpdateBlock: number
+    lastUpdateBlock: number,
   ) {
-    const balance = await this.model.findOneAndUpdate(
-      { owner, tokenAddress, tokenId, poolAddress, chainId },
-      {
-        $inc: { balance: amount },
-        $set: { lastUpdateBlock },
-        $setOnInsert: {
-          owner,
-          tokenAddress,
-          tokenId,
-          poolAddress,
-          chainId
-        }
-      },
-      { new: true, upsert: true }
-    ).lean();
+    const balance = await this.model
+      .findOneAndUpdate(
+        { owner, tokenAddress, tokenId, poolAddress, chainId },
+        {
+          $inc: { balance: amount },
+          $set: { lastUpdateBlock },
+          $setOnInsert: {
+            owner,
+            tokenAddress,
+            tokenId,
+            poolAddress,
+            chainId,
+          },
+        },
+        { new: true, upsert: true },
+      )
+      .lean();
 
     return balance;
   }

@@ -1,6 +1,6 @@
-import { t } from "elysia";
-import { assistantSchema } from "./assistant.validation";
-import { paginationSchema } from "./shared.validation";
+import { t } from 'elysia';
+import { assistantSchema } from './assistant.validation';
+import { paginationSchema } from './shared.validation';
 
 /*
  * Base model schema
@@ -14,17 +14,14 @@ export const messageSchema = t.Object({
 /*
  * Create
  */
-export const createMessageRequest = t.Pick(messageSchema, [
-  "assistantId",
-  "text",
-]);
+export const createMessageRequest = t.Pick(messageSchema, ['assistantId', 'text']);
 
 export const createMessageResponse = t.Array(messageSchema);
 
 /*
  * Get
  */
-export const getMessageRequest = t.Pick(messageSchema, ["id"]);
+export const getMessageRequest = t.Pick(messageSchema, ['id']);
 
 export const getMessageResponse = messageSchema;
 
@@ -41,16 +38,13 @@ export const getMessageHistoryResponse = t.Array(messageSchema);
 /*
  * Update
  */
-export const updateMessageRequest = t.Pick(messageSchema, [
-  "id",
-  "text",
-]);
+export const updateMessageRequest = t.Pick(messageSchema, ['id', 'text']);
 
 export const updateMessageResponse = messageSchema;
 
 /*
  * Delete
  */
-export const deleteMessageRequest = t.Pick(messageSchema, ["id"]);
+export const deleteMessageRequest = t.Pick(messageSchema, ['id']);
 
-export const deleteMessageResponse = t.Pick(messageSchema, ["id"]);
+export const deleteMessageResponse = t.Pick(messageSchema, ['id']);

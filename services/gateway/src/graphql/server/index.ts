@@ -22,7 +22,7 @@ import {
   chartsClient,
   reactionsClient,
   loyaltyClient,
-  daoClient
+  daoClient,
 } from '../../clients/eden.clients';
 import type { GraphQLContext, User } from '../context/types';
 import { cacheService, ownershipService, parentService, validationService } from '../../services/services.init';
@@ -33,90 +33,91 @@ import { useGraphQLSSE } from '@graphql-yoga/plugin-graphql-sse';
 import { propagation, context, trace } from '@opentelemetry/api';
 import { useOpenTelemetry } from '@envelop/opentelemetry';
 
-
 const typesArray = loadFilesSync(join(__dirname, '../modules/**/*.graphql'));
 const typeDefs = mergeTypeDefs(typesArray);
 const schema = makeExecutableSchema({ typeDefs, resolvers });
 
-
 export const yogaServer = createYoga({
   schema,
   plugins: [
-    useOpenTelemetry({
-      resolvers: false,
-      variables: false,
-      result: false,
-    }, trace.getTracerProvider()),
+    useOpenTelemetry(
+      {
+        resolvers: false,
+        variables: false,
+        result: false,
+      },
+      trace.getTracerProvider(),
+    ),
     useGraphQLSSE({
-      endpoint: '/graphql/stream'
+      endpoint: '/graphql/stream',
     }),
   ],
   cors: false,
   graphiql: {
     subscriptionsProtocol: 'SSE',
-    endpoint: '/gateway/graphql'
+    endpoint: '/gateway/graphql',
   },
   logging: true,
   maskedErrors: false,
   context({ request }) {
-    const traceparent = request.headers.get("traceparent");
-      const tracestate = request.headers.get("tracestate");
+    const traceparent = request.headers.get('traceparent');
+    const tracestate = request.headers.get('tracestate');
 
-      // Extract trace context from headers
-      const headers: Record<string, string> = {};
-      if (traceparent) headers.traceparent = traceparent;
-      if (tracestate) headers.tracestate = tracestate;
+    // Extract trace context from headers
+    const headers: Record<string, string> = {};
+    if (traceparent) headers.traceparent = traceparent;
+    if (tracestate) headers.tracestate = tracestate;
 
-      // Extract the parent context from headers
-      const parentContext = propagation.extract(context.active(), headers);
+    // Extract the parent context from headers
+    const parentContext = propagation.extract(context.active(), headers);
 
-      const authHeader = request.headers.get("Authorization");
-      const token = authHeader?.split(" ")[1] ?? null;
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.split(' ')[1] ?? null;
 
-      let user: User | null = null;
-      if (token) {
-        const userData = extractFromToken(token);
-        if (userData) {
-          user = {
-            id: userData.userId,
-            wallet: userData.wallet
-          };
-        }
+    let user: User | null = null;
+    if (token) {
+      const userData = extractFromToken(token);
+      if (userData) {
+        user = {
+          id: userData.userId,
+          wallet: userData.wallet,
+        };
       }
-      
-      return {
-        clients: {
-          aiAssistantClient,
-          authClient,
-          testnetFaucetClient,
-          rwaClient,
-          filesClient,
-          signersManagerClient,
-          documentsClient,
-          galleryClient,
-          questionsClient,
-          faqClient,
-          blogClient,
-          portfolioClient,
-          companyClient,
-          chartsClient,
-          reactionsClient,
-          loyaltyClient,
-          daoClient
-        },
-        services: {
-          cache: cacheService,
-          ownership: ownershipService,
-          parent: parentService,
-          validation: validationService
-        },
-        user,
-        token,
-        pubSub,
-        // Add the extracted trace context for use in resolvers
-        traceContext: parentContext,
-        fileValidation: CONFIG.FILE_VALIDATION,
-      } as GraphQLContext;
+    }
+
+    return {
+      clients: {
+        aiAssistantClient,
+        authClient,
+        testnetFaucetClient,
+        rwaClient,
+        filesClient,
+        signersManagerClient,
+        documentsClient,
+        galleryClient,
+        questionsClient,
+        faqClient,
+        blogClient,
+        portfolioClient,
+        companyClient,
+        chartsClient,
+        reactionsClient,
+        loyaltyClient,
+        daoClient,
+      },
+      services: {
+        cache: cacheService,
+        ownership: ownershipService,
+        parent: parentService,
+        validation: validationService,
+      },
+      user,
+      token,
+      pubSub,
+      // Add the extracted trace context for use in resolvers
+      traceContext: parentContext,
+      fileValidation: CONFIG.FILE_VALIDATION,
+    } as GraphQLContext;
   },
   batching: true,
 });

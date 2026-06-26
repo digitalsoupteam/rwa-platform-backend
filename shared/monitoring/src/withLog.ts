@@ -6,10 +6,7 @@ export interface WithLogOptions {
   args?: string[];
 }
 
-export function withLog<T extends (...args: any[]) => any>(
-  options: WithLogOptions,
-  fn: T
-): T {
+export function withLog<T extends (...args: any[]) => any>(options: WithLogOptions, fn: T): T {
   return ((...args: Parameters<T>): ReturnType<T> => {
     const logArgs: Record<string, any> = {};
     if (options.args) {

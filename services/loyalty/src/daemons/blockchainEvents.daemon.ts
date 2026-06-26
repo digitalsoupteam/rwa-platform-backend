@@ -1,8 +1,8 @@
-import { BaseBlockchainDaemon } from "@shared/blockchain-daemon/src/baseBlockchain.daemon";
-import type { BlockchainEvent, EventRouting } from "@shared/blockchain-daemon/src/baseBlockchain.daemon";
-import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
-import { LoyaltyService } from "../services/loyalty.service";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
+import { BaseBlockchainDaemon } from '@shared/blockchain-daemon/src/baseBlockchain.daemon';
+import type { BlockchainEvent, EventRouting } from '@shared/blockchain-daemon/src/baseBlockchain.daemon';
+import { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
+import { LoyaltyService } from '../services/loyalty.service';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
 /**
  * Loyalty service implementation of blockchain events daemon
@@ -11,33 +11,33 @@ import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
 export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
   constructor(
     rabbitClient: RabbitMQClient,
-    private readonly loyaltyService: LoyaltyService
+    private readonly loyaltyService: LoyaltyService,
   ) {
-    super(rabbitClient, "blockchain.events.loyalty");
+    super(rabbitClient, 'blockchain.events.loyalty');
   }
 
   @TraceDecorator()
   protected getEventRouting(): EventRouting {
     return {
-      "Factory_CreateRWAFeeCollected": async (event: BlockchainEvent) => {
+      Factory_CreateRWAFeeCollected: async (event: BlockchainEvent) => {
         await this.loyaltyService.processCreateRWAFeeCollected(event as any);
       },
 
-      "Factory_CreatePoolFeeCollected": async (event: BlockchainEvent) => {
+      Factory_CreatePoolFeeCollected: async (event: BlockchainEvent) => {
         await this.loyaltyService.processCreatePoolFeeCollected(event as any);
       },
 
-      "Pool_RwaMinted": async (event: BlockchainEvent) => {
+      Pool_RwaMinted: async (event: BlockchainEvent) => {
         await this.loyaltyService.processRwaMinted(event as any);
       },
 
-      "Pool_RwaBurned": async (event: BlockchainEvent) => {
+      Pool_RwaBurned: async (event: BlockchainEvent) => {
         await this.loyaltyService.processRwaBurned(event as any);
       },
 
-      "ReferralTreasury_Withdrawn": async (event: BlockchainEvent) => {
+      ReferralTreasury_Withdrawn: async (event: BlockchainEvent) => {
         await this.loyaltyService.processReferralTreasuryWithdrawn(event as any);
-      }
+      },
     };
   }
 }

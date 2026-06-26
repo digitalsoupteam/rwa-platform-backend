@@ -7,12 +7,11 @@ import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
 import { LogDecorator } from '@shared/monitoring/src/logDecorator';
 import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
-
 export class OwnershipService {
   constructor(
     private cacheService: CacheService,
-    private authClient: AuthClient
-  ) { }
+    private authClient: AuthClient,
+  ) {}
 
   @TraceDecorator()
   @MetricsDecorator()
@@ -33,33 +32,44 @@ export class OwnershipService {
 
     if (ownerType === 'user') {
       if (ownerId !== userId) {
-        throw new AppError({ message: 'User does not have permission', statusCode: 403, code: 'FORBIDDEN' });
+        throw new AppError({
+          message: 'User does not have permission',
+          statusCode: 403,
+          code: 'FORBIDDEN',
+        });
       }
     } else if (ownerType === 'company') {
       const companyResponse = await this.cacheService.getCompany({ id: ownerId });
       if (companyResponse.error || !companyResponse.data) {
-        throw new AppError({ message: 'Failed to get company data', statusCode: 403, code: 'FORBIDDEN' });
+        throw new AppError({
+          message: 'Failed to get company data',
+          statusCode: 403,
+          code: 'FORBIDDEN',
+        });
       }
 
-      const company = companyResponse.data
+      const company = companyResponse.data;
 
-      let hasPermission: boolean
+      let hasPermission: boolean;
       if (userId === company.ownerId) {
         hasPermission = true;
       } else {
-        const user = company.users.find(u => u.userId === userId);
+        const user = company.users.find((u) => u.userId === userId);
         if (!user) {
           hasPermission = false;
         } else {
-          hasPermission = user.permissions.some(p =>
-            p.permission === permission &&
-            (p.entity === '*' || p.entity === entityId)
+          hasPermission = user.permissions.some(
+            (p) => p.permission === permission && (p.entity === '*' || p.entity === entityId),
           );
         }
       }
 
       if (!hasPermission) {
-        throw new AppError({ message: 'User does not have required company permissions', statusCode: 403, code: 'FORBIDDEN' });
+        throw new AppError({
+          message: 'User does not have required company permissions',
+          statusCode: 403,
+          code: 'FORBIDDEN',
+        });
       }
     } else {
       throw new AppError({ message: 'Invalid owner type', statusCode: 403, code: 'FORBIDDEN' });
@@ -88,14 +98,22 @@ export class OwnershipService {
     if (ownerType === 'company') {
       const companyResponse = await this.cacheService.getCompany({ id: ownerId });
       if (companyResponse.error || !companyResponse.data) {
-        throw new AppError({ message: 'Failed to get company data', statusCode: 403, code: 'FORBIDDEN' });
+        throw new AppError({
+          message: 'Failed to get company data',
+          statusCode: 403,
+          code: 'FORBIDDEN',
+        });
       }
 
       const ownerResponse = await this.authClient.getUser.post({
-        userId: companyResponse.data.ownerId
+        userId: companyResponse.data.ownerId,
       });
       if (ownerResponse.error || !ownerResponse.data) {
-        throw new AppError({ message: 'Failed to get company owner data', statusCode: 403, code: 'FORBIDDEN' });
+        throw new AppError({
+          message: 'Failed to get company owner data',
+          statusCode: 403,
+          code: 'FORBIDDEN',
+        });
       }
 
       return ownerResponse.data.wallet;

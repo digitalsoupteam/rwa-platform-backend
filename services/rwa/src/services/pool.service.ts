@@ -1,16 +1,14 @@
-import { AppError } from "@shared/errors/app-errors";
-import { PoolRepository } from "../repositories/pool.repository";
-import { OpenRouterClient } from "@shared/openrouter/client";
-import type { SignersManagerClient } from "../clients/eden.clients";
-import { ethers } from "ethers";
-import type { SortOrder } from "mongoose";
-import { PoolEventsClient } from "../clients/poolEvents.client";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
-import { LogDecorator } from "@shared/monitoring/src/logDecorator";
-import { setSpanAttributes } from "@shared/monitoring/src/tracing";
-
-
+import { AppError } from '@shared/errors/app-errors';
+import { PoolRepository } from '../repositories/pool.repository';
+import { OpenRouterClient } from '@shared/openrouter/client';
+import type { SignersManagerClient } from '../clients/eden.clients';
+import { ethers } from 'ethers';
+import type { SortOrder } from 'mongoose';
+import { PoolEventsClient } from '../clients/poolEvents.client';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
 export class PoolService {
   constructor(
@@ -22,8 +20,8 @@ export class PoolService {
       chainId: string;
       name: string;
       factoryAddress: string;
-    }[]
-  ) { }
+    }[],
+  ) {}
 
   private async generatePoolFields(description: string) {
     const systemMessage = `You are a DeFi pool configuration expert. Analyze the following pool description and generate optimal pool parameters.
@@ -112,31 +110,47 @@ Example response:
 }`;
 
     const response = await this.openRouterClient.chatCompletion({
-      model: "google/gemini-2.0-flash-001",
+      model: 'google/gemini-2.0-flash-001',
       messages: [
-        { role: "system", content: systemMessage },
-        { role: "user", content: "Please analyze the provided pool description and generate the required fields." },
+        { role: 'system', content: systemMessage },
+        {
+          role: 'user',
+          content: 'Please analyze the provided pool description and generate the required fields.',
+        },
       ],
     });
 
     const aiResponse = response.choices[0]?.message?.content;
     if (!aiResponse) {
-      throw new AppError({ message: "Failed to get AI response for pool field generation", statusCode: 502, code: "AI_ERROR" });
+      throw new AppError({
+        message: 'Failed to get AI response for pool field generation',
+        statusCode: 502,
+        code: 'AI_ERROR',
+      });
     }
 
     try {
       // Find first { and last } to extract JSON object
       const firstBrace = aiResponse.indexOf('{');
       const lastBrace = aiResponse.lastIndexOf('}');
-      
+
       if (firstBrace === -1 || lastBrace === -1 || firstBrace >= lastBrace) {
-        throw new AppError({ message: "No valid JSON object found in AI response", statusCode: 502, code: "AI_ERROR" });
+        throw new AppError({
+          message: 'No valid JSON object found in AI response',
+          statusCode: 502,
+          code: 'AI_ERROR',
+        });
       }
-      
+
       const jsonString = aiResponse.substring(firstBrace, lastBrace + 1);
       return JSON.parse(jsonString);
     } catch (error) {
-      throw new AppError({ message: "Failed to parse AI response as JSON", statusCode: 502, code: "AI_ERROR", cause: error });
+      throw new AppError({
+        message: 'Failed to parse AI response as JSON',
+        statusCode: 502,
+        code: 'AI_ERROR',
+        cause: error,
+      });
     }
   }
 
@@ -160,7 +174,11 @@ Example response:
       rwaAddress: data.rwaAddress,
     });
     if (!this.isChainIdSupported(data.chainId)) {
-      throw new AppError({ message: `Chain ID ${data.chainId} is not supported`, statusCode: 403, code: "NOT_ALLOWED" });
+      throw new AppError({
+        message: `Chain ID ${data.chainId} is not supported`,
+        statusCode: 403,
+        code: 'NOT_ALLOWED',
+      });
     }
 
     const aiFields = await this.generatePoolFields(data.description);
@@ -200,19 +218,23 @@ Example response:
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["id"] })
+  @LogDecorator({ args: ['id'] })
   async updateRiskScore(id: string) {
     setSpanAttributes({ entityId: id, entityType: 'pool' });
     const pool = await this.poolRepository.findById(id);
 
     if (!pool.description || !pool.tags?.length) {
-      throw new AppError({ message: "Pool description and tags are required for risk assessment", statusCode: 400, code: "VALIDATION_ERROR" });
+      throw new AppError({
+        message: 'Pool description and tags are required for risk assessment',
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
     }
 
     const systemMessage = `You are a risk assessment expert. Analyze the pool information and provide a risk score from 1 to 100.
 
 Description: ${pool.description}
-Tags: ${pool.tags.join(", ")}
+Tags: ${pool.tags.join(', ')}
 
 Consider these factors:
 - Pool model viability
@@ -235,31 +257,42 @@ RISK_SCORE: 45
 REASONING: Moderate risk due to competitive market, but strong pool model and experienced team`;
 
     const response = await this.openRouterClient.chatCompletion({
-      model: "google/gemini-2.0-flash-001",
+      model: 'google/gemini-2.0-flash-001',
       messages: [
-        { role: "system", content: systemMessage },
+        { role: 'system', content: systemMessage },
         {
-          role: "user",
-          content: "Please analyze the provided pool information and assess its risk score.",
+          role: 'user',
+          content: 'Please analyze the provided pool information and assess its risk score.',
         },
       ],
     });
 
     const aiResponse = response.choices[0]?.message?.content;
     if (!aiResponse) {
-      throw new AppError({ message: "Failed to get AI response for risk assessment", statusCode: 502, code: "AI_ERROR" });
+      throw new AppError({
+        message: 'Failed to get AI response for risk assessment',
+        statusCode: 502,
+        code: 'AI_ERROR',
+      });
     }
-    
+
     const match = aiResponse.match(/RISK_SCORE:\s*(\d+)/);
     if (!match) {
-      throw new AppError({ message: "Failed to parse risk score from AI response", statusCode: 502, code: "AI_ERROR" });
+      throw new AppError({
+        message: 'Failed to parse risk score from AI response',
+        statusCode: 502,
+        code: 'AI_ERROR',
+      });
     }
 
     const riskScore = parseInt(match[1]);
     if (isNaN(riskScore) || riskScore < 1 || riskScore > 100) {
-      throw new AppError({ message: "Invalid risk score received from AI assessment", statusCode: 502, code: "AI_ERROR" });
+      throw new AppError({
+        message: 'Invalid risk score received from AI assessment',
+        statusCode: 502,
+        code: 'AI_ERROR',
+      });
     }
-
 
     const updated = await this.poolRepository.updatePool(id, { riskScore });
     return this.mapPool(updated);
@@ -294,40 +327,40 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       amount: string;
       expiredAt: number;
       returnedAmount: string;
-    }>
+    }>,
   ): string {
     const innerHash = ethers.solidityPackedKeccak256(
       [
-        "uint256",
-        "address",
-        "address",
-        "string",
-        "uint256",
-        "string",
-        "address",
-        "uint256",
-        "uint256",
-        "uint256",
-        "uint256",
-        "uint256",
-        "uint256",
-        "uint256",
-        "uint256",
-        "uint256",
-        "bool",
-        "bool",
-        "bool",
-        "bool",
-        "uint256[]",
-        "uint256[]",
-        "uint256[]",
-        "uint256[]"
+        'uint256',
+        'address',
+        'address',
+        'string',
+        'uint256',
+        'string',
+        'address',
+        'uint256',
+        'uint256',
+        'uint256',
+        'uint256',
+        'uint256',
+        'uint256',
+        'uint256',
+        'uint256',
+        'uint256',
+        'bool',
+        'bool',
+        'bool',
+        'bool',
+        'uint256[]',
+        'uint256[]',
+        'uint256[]',
+        'uint256[]',
       ],
       [
         BigInt(chainId),
         ethers.getAddress(factoryAddress),
         ethers.getAddress(deployerWallet),
-        "deployPool",
+        'deployPool',
         BigInt(createPoolFeeRatio),
         entityId,
         ethers.getAddress(rwa),
@@ -344,11 +377,11 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
         allowEntryBurn,
         awaitCompletionExpired,
         floatingOutTranchesTimestamps,
-        outgoingTranches.map(t => BigInt(t.amount)),
-        outgoingTranches.map(t => BigInt(t.timestamp)),
-        incomingTranches.map(t => BigInt(t.amount)),
-        incomingTranches.map(t => BigInt(t.expiredAt))
-      ]
+        outgoingTranches.map((t) => BigInt(t.amount)),
+        outgoingTranches.map((t) => BigInt(t.timestamp)),
+        incomingTranches.map((t) => BigInt(t.amount)),
+        incomingTranches.map((t) => BigInt(t.expiredAt)),
+      ],
     );
 
     return innerHash;
@@ -356,15 +389,13 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["params.id"] })
-  async requestApprovalSignatures(
-    params: { 
-      id: string, 
-      ownerWallet: string, 
-      deployerWallet: string, 
-      createPoolFeeRatio: string 
-    }
-  ) {
+  @LogDecorator({ args: ['params.id'] })
+  async requestApprovalSignatures(params: {
+    id: string;
+    ownerWallet: string;
+    deployerWallet: string;
+    createPoolFeeRatio: string;
+  }) {
     setSpanAttributes({
       entityId: params.id,
       entityType: 'pool',
@@ -373,54 +404,96 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
     });
     const pool = await this.poolRepository.findById(params.id);
 
-    
     if (pool.approvalSignaturesTaskId) {
-      throw new AppError({ message: "Pool already has an active approval signatures task", statusCode: 403, code: "NOT_ALLOWED" });
+      throw new AppError({
+        message: 'Pool already has an active approval signatures task',
+        statusCode: 403,
+        code: 'NOT_ALLOWED',
+      });
     }
 
-    
     if (!pool.expectedHoldAmount || BigInt(pool.expectedHoldAmount) <= BigInt(0)) {
-      throw new AppError({ message: "expectedHoldAmount must be greater than 0", statusCode: 400, code: "VALIDATION_ERROR" });
+      throw new AppError({
+        message: 'expectedHoldAmount must be greater than 0',
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
     }
-    
+
     if (!pool.expectedRwaAmount || BigInt(pool.expectedRwaAmount) <= BigInt(0)) {
-      throw new AppError({ message: "expectedRwaAmount must be greater than 0", statusCode: 400, code: "VALIDATION_ERROR" });
-    }    
+      throw new AppError({
+        message: 'expectedRwaAmount must be greater than 0',
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
+    }
 
     if (!pool.priceImpactPercent || BigInt(pool.priceImpactPercent) <= BigInt(0)) {
-      throw new AppError({ message: "priceImpactPercent must be greater than 0", statusCode: 400, code: "VALIDATION_ERROR" });
+      throw new AppError({
+        message: 'priceImpactPercent must be greater than 0',
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
     }
 
     if (!pool.rewardPercent || BigInt(pool.rewardPercent) <= BigInt(0)) {
-      throw new AppError({ message: "rewardPercent must be greater than 0", statusCode: 400, code: "VALIDATION_ERROR" });
+      throw new AppError({
+        message: 'rewardPercent must be greater than 0',
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
     }
 
     if (!pool.entryPeriodStart || pool.entryPeriodStart <= 0) {
-      throw new AppError({ message: "entryPeriodStart must be greater than 0", statusCode: 400, code: "VALIDATION_ERROR" });
+      throw new AppError({
+        message: 'entryPeriodStart must be greater than 0',
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
     }
 
     if (!pool.entryPeriodExpired || pool.entryPeriodExpired <= pool.entryPeriodStart) {
-      throw new AppError({ message: "entryPeriodExpired must be greater than entryPeriodStart", statusCode: 400, code: "VALIDATION_ERROR" });
+      throw new AppError({
+        message: 'entryPeriodExpired must be greater than entryPeriodStart',
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
     }
 
     if (!pool.completionPeriodExpired || pool.completionPeriodExpired <= pool.entryPeriodExpired) {
-      throw new AppError({ message: "completionPeriodExpired must be greater than entryPeriodExpired", statusCode: 400, code: "VALIDATION_ERROR" });
+      throw new AppError({
+        message: 'completionPeriodExpired must be greater than entryPeriodExpired',
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
     }
 
     if (!pool.entryFeePercent) {
-      throw new AppError({ message: "entryFeePercent is required", statusCode: 400, code: "VALIDATION_ERROR" });
+      throw new AppError({
+        message: 'entryFeePercent is required',
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
     }
 
     if (!pool.exitFeePercent) {
-      throw new AppError({ message: "exitFeePercent is required", statusCode: 400, code: "VALIDATION_ERROR" });
+      throw new AppError({
+        message: 'exitFeePercent is required',
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
     }
 
     const now = Math.floor(Date.now() / 1000);
     const expired = now + 86400; // 24 hours
 
-    const network = this.supportedNetworks.find(n => n.chainId === pool.chainId);
+    const network = this.supportedNetworks.find((n) => n.chainId === pool.chainId);
     if (!network) {
-      throw new AppError({ message: `Network configuration not found for chain ID ${pool.chainId}`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({
+        message: `Network configuration not found for chain ID ${pool.chainId}`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     const messageHash = this.generatePoolMessageHash(
@@ -444,17 +517,16 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       pool.awaitCompletionExpired,
       pool.floatingOutTranchesTimestamps,
       pool.outgoingTranches,
-      pool.incomingTranches
+      pool.incomingTranches,
     );
 
-    const taskResponse =
-      await this.signersManagerClient.createSignatureTask.post({
-        ownerId: pool.ownerId,
-        ownerType: pool.ownerType,
-        hash: messageHash,
-        expired,
-        requiredSignatures: 3
-      });
+    const taskResponse = await this.signersManagerClient.createSignatureTask.post({
+      ownerId: pool.ownerId,
+      ownerType: pool.ownerType,
+      hash: messageHash,
+      expired,
+      requiredSignatures: 3,
+    });
 
     if (taskResponse.error) throw taskResponse.error;
 
@@ -462,34 +534,42 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
     await this.poolRepository.updatePool(params.id, {
       approvalSignaturesTaskId: taskId,
-      approvalSignaturesTaskExpired: expired
+      approvalSignaturesTaskExpired: expired,
     });
     return { taskId };
   }
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["id"] })
+  @LogDecorator({ args: ['id'] })
   async rejectApprovalSignatures(id: string) {
     setSpanAttributes({ entityId: id, entityType: 'pool' });
     const pool = await this.poolRepository.findById(id);
 
     if (pool.poolAddress) {
-      throw new AppError({ message: "Pool deployed!", statusCode: 403, code: "NOT_ALLOWED" });
+      throw new AppError({ message: 'Pool deployed!', statusCode: 403, code: 'NOT_ALLOWED' });
     }
 
     if (!pool.approvalSignaturesTaskId || !pool.approvalSignaturesTaskExpired) {
-      throw new AppError({ message: "Pool has no active approval signatures task", statusCode: 403, code: "NOT_ALLOWED" });
+      throw new AppError({
+        message: 'Pool has no active approval signatures task',
+        statusCode: 403,
+        code: 'NOT_ALLOWED',
+      });
     }
 
     const now = Math.floor(Date.now() / 1000);
     if (now <= pool.approvalSignaturesTaskExpired + 60) {
-      throw new AppError({ message: "Cannot reject approval signatures before expiration", statusCode: 403, code: "NOT_ALLOWED" });
+      throw new AppError({
+        message: 'Cannot reject approval signatures before expiration',
+        statusCode: 403,
+        code: 'NOT_ALLOWED',
+      });
     }
 
     await this.poolRepository.updatePool(id, {
       approvalSignaturesTaskId: null,
-      approvalSignaturesTaskExpired: null
+      approvalSignaturesTaskExpired: null,
     });
   }
 
@@ -522,19 +602,19 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       priceImpactPercent: pool.priceImpactPercent ?? undefined,
       liquidityCoefficient: pool.liquidityCoefficient ?? undefined,
       k: pool.k ?? undefined,
-      realHoldReserve: pool.realHoldReserve ?? "0",
+      realHoldReserve: pool.realHoldReserve ?? '0',
       virtualHoldReserve: pool.virtualHoldReserve ?? undefined,
       virtualRwaReserve: pool.virtualRwaReserve ?? undefined,
       floatingTimestampOffset: pool.floatingTimestampOffset ?? 0,
       isTargetReached: pool.isTargetReached ?? false,
       isFullyReturned: pool.isFullyReturned ?? false,
       fullReturnTimestamp: pool.fullReturnTimestamp ?? undefined,
-      totalClaimedAmount: pool.totalClaimedAmount ?? "0",
-      totalReturnedAmount: pool.totalReturnedAmount ?? "0",
-      awaitingBonusAmount: pool.awaitingBonusAmount ?? "0",
-      awaitingRwaAmount: pool.awaitingRwaAmount ?? "0",
-      rewardedRwaAmount: pool.rewardedRwaAmount ?? "0",
-      outgoingTranchesBalance: pool.outgoingTranchesBalance ?? "0",
+      totalClaimedAmount: pool.totalClaimedAmount ?? '0',
+      totalReturnedAmount: pool.totalReturnedAmount ?? '0',
+      awaitingBonusAmount: pool.awaitingBonusAmount ?? '0',
+      awaitingRwaAmount: pool.awaitingRwaAmount ?? '0',
+      rewardedRwaAmount: pool.rewardedRwaAmount ?? '0',
+      outgoingTranchesBalance: pool.outgoingTranchesBalance ?? '0',
       outgoingTranches: pool.outgoingTranches ?? [],
       incomingTranches: pool.incomingTranches ?? [],
       lastCompletedIncomingTranche: pool.lastCompletedIncomingTranche ?? 0,
@@ -551,7 +631,7 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["id"] })
+  @LogDecorator({ args: ['id'] })
   async getPool(id: string) {
     setSpanAttributes({ entityId: id, entityType: 'pool' });
     const pool = await this.poolRepository.findById(id);
@@ -604,7 +684,11 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       rwaAddress: data.rwaAddress,
     });
     if (!this.isChainIdSupported(data.chainId)) {
-      throw new AppError({ message: `Chain ID ${data.chainId} is not supported`, statusCode: 403, code: "NOT_ALLOWED" });
+      throw new AppError({
+        message: `Chain ID ${data.chainId} is not supported`,
+        statusCode: 403,
+        code: 'NOT_ALLOWED',
+      });
     }
 
     const pool = await this.poolRepository.createPool(data);
@@ -615,7 +699,7 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
   @MetricsDecorator()
   @LogDecorator({ args: ['params'] })
   async editPool(params: {
-    id: string,
+    id: string;
     updateData: {
       chainId?: string;
       name?: string;
@@ -645,7 +729,7 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       description?: string;
       tags?: string[];
       image?: string;
-    }
+    };
   }) {
     setSpanAttributes({
       entityId: params.id,
@@ -676,7 +760,11 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
       for (const field of immutableFields) {
         if (params.updateData[field as keyof typeof params.updateData] !== undefined) {
-          throw new AppError({ message: `Cannot edit ${field} while approval signatures task is pending`, statusCode: 403, code: "NOT_ALLOWED" });
+          throw new AppError({
+            message: `Cannot edit ${field} while approval signatures task is pending`,
+            statusCode: 403,
+            code: 'NOT_ALLOWED',
+          });
         }
       }
     }
@@ -688,36 +776,34 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({ args: ['event'] })
-  async syncPoolAfterDeployment(
-    event: {
-      emittedFrom: string,
-      awaitCompletionExpired: boolean,
-      floatingOutTranchesTimestamps: boolean,
-      holdToken: string,
-      rwaToken: string,
-      tokenId: string,
-      entityId: string,
-      entityOwnerId: string,
-      entityOwnerType: string,
-      owner: string,
-      expectedHoldAmount: string,
-      expectedRwaAmount: string,
-      expectedBonusAmount: string,
-      rewardPercent: string,
-      fixedSell: boolean,
-      allowEntryBurn: boolean,
-      entryPeriodStart: string,
-      entryPeriodExpired: string,
-      completionPeriodExpired: string,
-      k: string,
-      entryFeePercent: string,
-      exitFeePercent: string,
-      outgoingTranches: string[],
-      outgoingTranchTimestamps: number[],
-      incomingTranches: string[],
-      incomingTrancheExpired: number[],
-    }
-  ) {
+  async syncPoolAfterDeployment(event: {
+    emittedFrom: string;
+    awaitCompletionExpired: boolean;
+    floatingOutTranchesTimestamps: boolean;
+    holdToken: string;
+    rwaToken: string;
+    tokenId: string;
+    entityId: string;
+    entityOwnerId: string;
+    entityOwnerType: string;
+    owner: string;
+    expectedHoldAmount: string;
+    expectedRwaAmount: string;
+    expectedBonusAmount: string;
+    rewardPercent: string;
+    fixedSell: boolean;
+    allowEntryBurn: boolean;
+    entryPeriodStart: string;
+    entryPeriodExpired: string;
+    completionPeriodExpired: string;
+    k: string;
+    entryFeePercent: string;
+    exitFeePercent: string;
+    outgoingTranches: string[];
+    outgoingTranchTimestamps: number[];
+    incomingTranches: string[];
+    incomingTrancheExpired: number[];
+  }) {
     setSpanAttributes({
       entityId: event.entityId,
       entityType: 'pool',
@@ -728,7 +814,11 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
     });
     const pool = await this.poolRepository.findById(event.entityId);
     if (!pool) {
-      throw new AppError({ message: `Pool ${event.entityId} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({
+        message: `Pool ${event.entityId} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     const updateData: any = {
@@ -754,17 +844,17 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       outgoingTranches: event.outgoingTranches.map((amount, i) => ({
         amount,
         timestamp: event.outgoingTranchTimestamps[i],
-        executedAmount: "0"
+        executedAmount: '0',
       })),
       incomingTranches: event.incomingTranches.map((amount, i) => ({
         amount,
         expiredAt: event.incomingTrancheExpired[i],
-        returnedAmount: "0"
-      }))
+        returnedAmount: '0',
+      })),
     };
-    
+
     const updated = await this.poolRepository.updatePool(event.entityId, updateData);
-    const poolDto = this.mapPool(updated)
+    const poolDto = this.mapPool(updated);
 
     await this.poolEventsClient.publishPoolDeployed(poolDto);
 
@@ -774,10 +864,10 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({ args: ['event'] })
-  async syncPoolAwaitingBonusAmount(event: { emittedFrom: string, awaitingBonusAmount: string }) {
+  async syncPoolAwaitingBonusAmount(event: { emittedFrom: string; awaitingBonusAmount: string }) {
     setSpanAttributes({ entityType: 'pool', poolAddress: event.emittedFrom });
     const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
-      awaitingBonusAmount: event.awaitingBonusAmount
+      awaitingBonusAmount: event.awaitingBonusAmount,
     });
     return this.mapPool(updated);
   }
@@ -785,10 +875,10 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({ args: ['event'] })
-  async syncPoolAwaitingRwaAmount(event: { emittedFrom: string, awaitingRwaAmount: string }) {
+  async syncPoolAwaitingRwaAmount(event: { emittedFrom: string; awaitingRwaAmount: string }) {
     setSpanAttributes({ entityType: 'pool', poolAddress: event.emittedFrom });
     const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
-      awaitingRwaAmount: event.awaitingRwaAmount
+      awaitingRwaAmount: event.awaitingRwaAmount,
     });
     return this.mapPool(updated);
   }
@@ -796,11 +886,11 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({ args: ['event'] })
-  async syncPoolFundsFullyReturned(event: { emittedFrom: string, timestamp: number }) {
+  async syncPoolFundsFullyReturned(event: { emittedFrom: string; timestamp: number }) {
     setSpanAttributes({ entityType: 'pool', poolAddress: event.emittedFrom });
     const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
       isFullyReturned: true,
-      fullReturnTimestamp: event.timestamp
+      fullReturnTimestamp: event.timestamp,
     });
     return this.mapPool(updated);
   }
@@ -809,14 +899,14 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
   @MetricsDecorator()
   @LogDecorator({ args: ['event'] })
   async syncPoolBonusWithdrawn(event: {
-    emittedFrom: string,
-    currentAwaitingBonusAmount: string,
-    currentRewardedRwaAmount: string
+    emittedFrom: string;
+    currentAwaitingBonusAmount: string;
+    currentRewardedRwaAmount: string;
   }) {
     setSpanAttributes({ entityType: 'pool', poolAddress: event.emittedFrom });
     const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
       awaitingBonusAmount: event.currentAwaitingBonusAmount,
-      rewardedRwaAmount: event.currentRewardedRwaAmount
+      rewardedRwaAmount: event.currentRewardedRwaAmount,
     });
     return this.mapPool(updated);
   }
@@ -825,16 +915,16 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
   @MetricsDecorator()
   @LogDecorator({ args: ['event'] })
   async syncPoolIncomingReturnSummary(event: {
-    emittedFrom: string,
-    currentTotalReturnedAmount: string,
-    currentAwaitingBonusAmount: string,
-    currentLastCompletedIncomingTranche: number
+    emittedFrom: string;
+    currentTotalReturnedAmount: string;
+    currentAwaitingBonusAmount: string;
+    currentLastCompletedIncomingTranche: number;
   }) {
     setSpanAttributes({ entityType: 'pool', poolAddress: event.emittedFrom });
     const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
       totalReturnedAmount: event.currentTotalReturnedAmount,
       awaitingBonusAmount: event.currentAwaitingBonusAmount,
-      lastCompletedIncomingTranche: event.currentLastCompletedIncomingTranche
+      lastCompletedIncomingTranche: event.currentLastCompletedIncomingTranche,
     });
     return this.mapPool(updated);
   }
@@ -843,27 +933,35 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
   @MetricsDecorator()
   @LogDecorator({ args: ['event'] })
   async syncPoolIncomingTrancheUpdate(event: {
-    emittedFrom: string,
-    trancheIndex: number,
-    amountAppliedToTranche: string,
-    isNowComplete: boolean,
-    wasOnTime: boolean
+    emittedFrom: string;
+    trancheIndex: number;
+    amountAppliedToTranche: string;
+    isNowComplete: boolean;
+    wasOnTime: boolean;
   }) {
     setSpanAttributes({ entityType: 'pool', poolAddress: event.emittedFrom });
     const pool = await this.poolRepository.findByAddress(event.emittedFrom);
     if (!pool) {
-      throw new AppError({ message: `Pool with address ${event.emittedFrom} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({
+        message: `Pool with address ${event.emittedFrom} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     const incomingTranches = [...pool.incomingTranches];
     if (event.trancheIndex >= incomingTranches.length) {
-      throw new AppError({ message: `Invalid tranche index ${event.trancheIndex}`, statusCode: 400, code: "VALIDATION_ERROR" });
+      throw new AppError({
+        message: `Invalid tranche index ${event.trancheIndex}`,
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
     }
 
     incomingTranches[event.trancheIndex].returnedAmount = event.amountAppliedToTranche;
 
     const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
-      incomingTranches
+      incomingTranches,
     });
     return this.mapPool(updated);
   }
@@ -872,14 +970,14 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
   @MetricsDecorator()
   @LogDecorator({ args: ['event'] })
   async syncPoolOutgoingClaimSummary(event: {
-    emittedFrom: string,
-    currentTotalClaimedAmount: string,
-    currentOutgoingTranchesBalance: string
+    emittedFrom: string;
+    currentTotalClaimedAmount: string;
+    currentOutgoingTranchesBalance: string;
   }) {
     setSpanAttributes({ entityType: 'pool', poolAddress: event.emittedFrom });
     const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
       totalClaimedAmount: event.currentTotalClaimedAmount,
-      outgoingTranchesBalance: event.currentOutgoingTranchesBalance
+      outgoingTranchesBalance: event.currentOutgoingTranchesBalance,
     });
     return this.mapPool(updated);
   }
@@ -887,26 +985,30 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({ args: ['event'] })
-  async syncPoolOutgoingTrancheClaimed(event: {
-    emittedFrom: string,
-    trancheIndex: number,
-    amountClaimed: string
-  }) {
+  async syncPoolOutgoingTrancheClaimed(event: { emittedFrom: string; trancheIndex: number; amountClaimed: string }) {
     setSpanAttributes({ entityType: 'pool', poolAddress: event.emittedFrom });
     const pool = await this.poolRepository.findByAddress(event.emittedFrom);
     if (!pool) {
-      throw new AppError({ message: `Pool with address ${event.emittedFrom} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({
+        message: `Pool with address ${event.emittedFrom} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     const outgoingTranches = [...pool.outgoingTranches];
     if (event.trancheIndex >= outgoingTranches.length) {
-      throw new AppError({ message: `Invalid tranche index ${event.trancheIndex}`, statusCode: 400, code: "VALIDATION_ERROR" });
+      throw new AppError({
+        message: `Invalid tranche index ${event.trancheIndex}`,
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
     }
 
     outgoingTranches[event.trancheIndex].executedAmount = event.amountClaimed;
 
     const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
-      outgoingTranches
+      outgoingTranches,
     });
     return this.mapPool(updated);
   }
@@ -914,10 +1016,10 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({ args: ['event'] })
-  async syncPoolPausedState(event: { emittedFrom: string, isPaused: boolean }) {
+  async syncPoolPausedState(event: { emittedFrom: string; isPaused: boolean }) {
     setSpanAttributes({ entityType: 'pool', poolAddress: event.emittedFrom });
     const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
-      paused: event.isPaused
+      paused: event.isPaused,
     });
     return this.mapPool(updated);
   }
@@ -926,16 +1028,16 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
   @MetricsDecorator()
   @LogDecorator({ args: ['event'] })
   async syncPoolReserves(event: {
-    emittedFrom: string,
-    realHoldReserve: string,
-    virtualHoldReserve: string,
-    virtualRwaReserve: string
+    emittedFrom: string;
+    realHoldReserve: string;
+    virtualHoldReserve: string;
+    virtualRwaReserve: string;
   }) {
     setSpanAttributes({ entityType: 'pool', poolAddress: event.emittedFrom });
     const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
       realHoldReserve: event.realHoldReserve,
       virtualHoldReserve: event.virtualHoldReserve,
-      virtualRwaReserve: event.virtualRwaReserve
+      virtualRwaReserve: event.virtualRwaReserve,
     });
     return this.mapPool(updated);
   }
@@ -944,15 +1046,15 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
   @MetricsDecorator()
   @LogDecorator({ args: ['event'] })
   async syncPoolTargetReached(event: {
-    emittedFrom: string,
-    outgoingTranchesBalance: string,
-    floatingTimestampOffset: number
+    emittedFrom: string;
+    outgoingTranchesBalance: string;
+    floatingTimestampOffset: number;
   }) {
     setSpanAttributes({ entityType: 'pool', poolAddress: event.emittedFrom });
     const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
       isTargetReached: true,
       outgoingTranchesBalance: event.outgoingTranchesBalance,
-      floatingTimestampOffset: event.floatingTimestampOffset
+      floatingTimestampOffset: event.floatingTimestampOffset,
     });
     return this.mapPool(updated);
   }
@@ -960,14 +1062,12 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({ args: ['params'] })
-  async getPools(
-    params: {
-      filter?: Record<string, any>,
-      sort?: { [key: string]: SortOrder },
-      limit?: number,
-      offset?: number
-    }
-  ) {
+  async getPools(params: {
+    filter?: Record<string, any>;
+    sort?: { [key: string]: SortOrder };
+    limit?: number;
+    offset?: number;
+  }) {
     const filterJson = params.filter ? JSON.stringify(params.filter) : undefined;
     setSpanAttributes({
       entityType: 'pool',

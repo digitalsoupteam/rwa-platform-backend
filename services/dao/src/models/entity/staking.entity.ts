@@ -1,5 +1,5 @@
-import mongoose, { Schema, Types } from "mongoose";
-import type { InferRawDocType } from "mongoose";
+import mongoose, { Schema, Types } from 'mongoose';
+import type { InferRawDocType } from 'mongoose';
 
 const stakingSchemaDefinition = {
   staker: {
@@ -15,7 +15,7 @@ const stakingSchemaDefinition = {
     type: Number,
     required: true,
   },
-  
+
   chainId: {
     type: String,
     required: true,
@@ -25,11 +25,11 @@ const stakingSchemaDefinition = {
   // Timestamps
   createdAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
   updatedAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
 };
 
@@ -43,11 +43,8 @@ stakingSchema.index({ chainId: 1 });
 stakingSchema.index({ chainId: 1, staker: 1 }, { unique: true });
 stakingSchema.index({ createdAt: -1 });
 
-export type IStakingEntity = InferRawDocType<
-  typeof stakingSchemaDefinition
-> & { _id: Types.ObjectId };
+export type IStakingEntity = InferRawDocType<typeof stakingSchemaDefinition> & {
+  _id: Types.ObjectId;
+};
 
-export const StakingEntity = mongoose.model(
-  "Staking",
-  stakingSchema
-);
+export const StakingEntity = mongoose.model('Staking', stakingSchema);

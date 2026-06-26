@@ -1,15 +1,12 @@
-import { ReactionRepository } from "../repositories/reaction.repository";
-import type { IReactionEntity } from "../models/entity/reaction.entity";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
-import { LogDecorator } from "@shared/monitoring/src/logDecorator";
-import { setSpanAttributes } from "@shared/monitoring/src/tracing";
-
+import { ReactionRepository } from '../repositories/reaction.repository';
+import type { IReactionEntity } from '../models/entity/reaction.entity';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
 export class ReactionsService {
-  constructor(
-    private readonly reactionRepository: ReactionRepository
-  ) {}
+  constructor(private readonly reactionRepository: ReactionRepository) {}
 
   private formatReaction(reaction: IReactionEntity) {
     return {
@@ -19,19 +16,14 @@ export class ReactionsService {
       userId: reaction.userId,
       reaction: reaction.reaction,
       createdAt: reaction.createdAt,
-      updatedAt: reaction.updatedAt
+      updatedAt: reaction.updatedAt,
     };
   }
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["data.parentId", "data.userId", "data.reaction"] })
-  async setReaction(data: {
-    parentId: string;
-    parentType: string;
-    userId: string;
-    reaction: string;
-  }) {
+  @LogDecorator({ args: ['data.parentId', 'data.userId', 'data.reaction'] })
+  async setReaction(data: { parentId: string; parentType: string; userId: string; reaction: string }) {
     setSpanAttributes({
       parentId: data.parentId,
       parentType: data.parentType,
@@ -45,13 +37,8 @@ export class ReactionsService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["data.parentId", "data.userId", "data.reaction"] })
-  async resetReaction(data: {
-    parentId: string;
-    parentType: string;
-    userId: string;
-    reaction: string;
-  }) {
+  @LogDecorator({ args: ['data.parentId', 'data.userId', 'data.reaction'] })
+  async resetReaction(data: { parentId: string; parentType: string; userId: string; reaction: string }) {
     setSpanAttributes({
       parentId: data.parentId,
       parentType: data.parentType,
@@ -65,12 +52,8 @@ export class ReactionsService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["params.parentId", "params.parentType", "params.userId"] })
-  async getEntityReactions(params: {
-    parentId: string;
-    parentType: string;
-    userId?: string;
-  }) {
+  @LogDecorator({ args: ['params.parentId', 'params.parentType', 'params.userId'] })
+  async getEntityReactions(params: { parentId: string; parentType: string; userId?: string }) {
     setSpanAttributes({
       parentId: params.parentId,
       parentType: params.parentType,
@@ -79,43 +62,38 @@ export class ReactionsService {
 
     const [reactions, userReactions] = await Promise.all([
       this.reactionRepository.getEntityStats(params.parentId, params.parentType),
-      params.userId ?
-        this.reactionRepository.getUserReaction(params.parentId, params.userId) :
-        []
+      params.userId ? this.reactionRepository.getUserReaction(params.parentId, params.userId) : [],
     ]);
 
     return {
       reactions,
-      userReactions: userReactions.map(r => r.reaction)
+      userReactions: userReactions.map((r) => r.reaction),
     };
   }
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["params"] })
-  async getReactions(params: {
-    filter?: Record<string, any>;
-    sort?: { [key: string]: any };
-    limit?: number;
-    offset?: number;
-  } = {}) {
+  @LogDecorator({ args: ['params'] })
+  async getReactions(
+    params: {
+      filter?: Record<string, any>;
+      sort?: { [key: string]: any };
+      limit?: number;
+      offset?: number;
+    } = {},
+  ) {
     const filter = params.filter ?? {};
     setSpanAttributes({
-      entityType: "reactions",
+      entityType: 'reactions',
       ...(filter.parentId !== undefined && { parentId: filter.parentId }),
       ...(filter.parentType !== undefined && { parentType: filter.parentType }),
       ...(filter.userId !== undefined && { userId: filter.userId }),
       ...(filter.reaction !== undefined && { reaction: filter.reaction }),
     });
 
-    const {
-      filter: _filter = {},
-      sort = { createdAt: "desc" },
-      limit = 100,
-      offset = 0
-    } = params;
+    const { filter: _filter = {}, sort = { createdAt: 'desc' }, limit = 100, offset = 0 } = params;
 
     const reactions = await this.reactionRepository.findAll(_filter, sort, limit, offset);
-    return reactions.map(reaction => this.formatReaction(reaction));
+    return reactions.map((reaction) => this.formatReaction(reaction));
   }
 }

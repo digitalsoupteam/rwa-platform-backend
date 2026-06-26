@@ -1,30 +1,27 @@
 import { createApp } from './app';
 import { tracer } from '@shared/monitoring/src/tracing';
 
-const app = await tracer.startActiveSpan(
-  'loyalty.init.main',
-  async (span) => {
-    const appInstance = await createApp(
-      Number(process.env.PORT),
-      String(process.env.MONGODB_URI) + '/' + String(process.env.MONGODB_DBNAME),
-      String(process.env.RABBITMQ_URL),
-      Number(process.env.RABBITMQ_MAX_RECONNECT_ATTEMPTS),
-      Number(process.env.RABBITMQ_RECONNECT_INTERVAL),
-      String(process.env.SIGNERS_MANAGER_URL),
-      Number(process.env.LOYALTY_REFERRAL_REWARD_PERCENTAGE),
-      [
-        {
-          chainId: '97',
-          name: "BSC Testnet",
-          referralTreasuryAddress: "0xcf56E77069cC2aBfA6c1Df9bfD4155F782697B9D",
-        }
-      ]
-    );
+const app = await tracer.startActiveSpan('loyalty.init.main', async (span) => {
+  const appInstance = await createApp(
+    Number(process.env.PORT),
+    String(process.env.MONGODB_URI) + '/' + String(process.env.MONGODB_DBNAME),
+    String(process.env.RABBITMQ_URL),
+    Number(process.env.RABBITMQ_MAX_RECONNECT_ATTEMPTS),
+    Number(process.env.RABBITMQ_RECONNECT_INTERVAL),
+    String(process.env.SIGNERS_MANAGER_URL),
+    Number(process.env.LOYALTY_REFERRAL_REWARD_PERCENTAGE),
+    [
+      {
+        chainId: '97',
+        name: 'BSC Testnet',
+        referralTreasuryAddress: '0xcf56E77069cC2aBfA6c1Df9bfD4155F782697B9D',
+      },
+    ],
+  );
 
-    span.end();
-    return appInstance;
-  }
-);
+  span.end();
+  return appInstance;
+});
 
 const shutdown = async () => {
   try {

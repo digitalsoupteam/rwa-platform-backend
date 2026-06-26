@@ -1,12 +1,11 @@
 import { createPubSub } from 'graphql-yoga';
 import { createRedisEventTarget } from '@graphql-yoga/redis-event-target';
-import { CONFIG } from "../config";
+import { CONFIG } from '../config';
 
-import { RedisWithTracing } from "@shared/monitoring/src/redis";
+import { RedisWithTracing } from '@shared/monitoring/src/redis';
 
-const publishClient =  new RedisWithTracing(CONFIG.REDIS.URL);
+const publishClient = new RedisWithTracing(CONFIG.REDIS.URL);
 const subscribeClient = new RedisWithTracing(CONFIG.REDIS.URL);
-
 
 export interface PriceUpdatePayload {
   poolAddress: string;
@@ -32,6 +31,6 @@ export interface TransactionUpdatePayload {
 export const pubSub = createPubSub({
   eventTarget: createRedisEventTarget({
     publishClient,
-    subscribeClient
-  })
+    subscribeClient,
+  }),
 });

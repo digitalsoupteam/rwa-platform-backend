@@ -1,4 +1,4 @@
-import { t } from "elysia";
+import { t } from 'elysia';
 
 /*
  * Entity schemas
@@ -34,12 +34,12 @@ export const answerSchema = t.Object({
  * Create topic
  */
 export const createTopicRequest = t.Pick(topicSchema, [
-  "name",
-  "ownerId",
-  "ownerType",
-  "creator",
-  "parentId",
-  "grandParentId",
+  'name',
+  'ownerId',
+  'ownerType',
+  'creator',
+  'parentId',
+  'grandParentId',
 ]);
 export const createTopicResponse = topicSchema;
 
@@ -49,21 +49,21 @@ export const createTopicResponse = topicSchema;
 export const updateTopicRequest = t.Object({
   id: t.String(),
   updateData: t.Object({
-    name: t.String()
-  })
+    name: t.String(),
+  }),
 });
 export const updateTopicResponse = topicSchema;
 
 /*
  * Delete topic
  */
-export const deleteTopicRequest = t.Pick(topicSchema, ["id"]);
-export const deleteTopicResponse = t.Pick(topicSchema, ["id"]);
+export const deleteTopicRequest = t.Pick(topicSchema, ['id']);
+export const deleteTopicResponse = t.Pick(topicSchema, ['id']);
 
 /*
  * Get topic
  */
-export const getTopicRequest = t.Pick(topicSchema, ["id"]);
+export const getTopicRequest = t.Pick(topicSchema, ['id']);
 export const getTopicResponse = topicSchema;
 
 /*
@@ -71,9 +71,9 @@ export const getTopicResponse = topicSchema;
  */
 export const getTopicsRequest = t.Object({
   filter: t.Record(t.String(), t.Any()),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
   limit: t.Optional(t.Number()),
-  offset: t.Optional(t.Number())
+  offset: t.Optional(t.Number()),
 });
 export const getTopicsResponse = t.Array(topicSchema);
 
@@ -98,24 +98,26 @@ export const createAnswerResponse = answerSchema;
  */
 export const updateAnswerRequest = t.Object({
   id: t.String(),
-  updateData: t.Partial(t.Object({
-    question: t.String(),
-    answer: t.String(),
-    order: t.Number()
-  }))
+  updateData: t.Partial(
+    t.Object({
+      question: t.String(),
+      answer: t.String(),
+      order: t.Number(),
+    }),
+  ),
 });
 export const updateAnswerResponse = answerSchema;
 
 /*
  * Delete answer
  */
-export const deleteAnswerRequest = t.Pick(answerSchema, ["id"]);
-export const deleteAnswerResponse = t.Pick(answerSchema, ["id"]);
+export const deleteAnswerRequest = t.Pick(answerSchema, ['id']);
+export const deleteAnswerResponse = t.Pick(answerSchema, ['id']);
 
 /*
  * Get answer
  */
-export const getAnswerRequest = t.Pick(answerSchema, ["id"]);
+export const getAnswerRequest = t.Pick(answerSchema, ['id']);
 export const getAnswerResponse = answerSchema;
 
 /*
@@ -123,8 +125,8 @@ export const getAnswerResponse = answerSchema;
  */
 export const getAnswersRequest = t.Object({
   filter: t.Record(t.String(), t.Any()),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
   limit: t.Optional(t.Number()),
-  offset: t.Optional(t.Number())
+  offset: t.Optional(t.Number()),
 });
 export const getAnswersResponse = t.Array(answerSchema);

@@ -1,27 +1,23 @@
-import { AppError } from "@shared/errors/app-errors";
-import type { FilterQuery, SortOrder } from "mongoose";
-import {
-  TopicEntity,
-  type ITopicEntity,
-} from "../models/entity/topic.entity";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-
+import { AppError } from '@shared/errors/app-errors';
+import type { FilterQuery, SortOrder } from 'mongoose';
+import { TopicEntity, type ITopicEntity } from '../models/entity/topic.entity';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
 export class TopicRepository {
   constructor(private readonly model = TopicEntity) {}
 
   @TraceDecorator()
-  async create(data: Pick<ITopicEntity, "name" | "ownerId" | "ownerType" | "creator" | "parentId" | "grandParentId">) {
+  async create(data: Pick<ITopicEntity, 'name' | 'ownerId' | 'ownerType' | 'creator' | 'parentId' | 'grandParentId'>) {
     const doc = await this.model.create(data);
     return doc.toObject();
   }
 
   @TraceDecorator()
-  async update(id: string, data: Partial<Pick<ITopicEntity, "name">>) {
+  async update(id: string, data: Partial<Pick<ITopicEntity, 'name'>>) {
     const doc = await this.model.findByIdAndUpdate(id, data, { new: true }).lean();
 
     if (!doc) {
-      throw new AppError({ message: `Topic ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({ message: `Topic ${id} not found`, statusCode: 404, code: 'NOT_FOUND' });
     }
 
     return doc;
@@ -32,7 +28,7 @@ export class TopicRepository {
     const doc = await this.model.findByIdAndDelete(id).lean();
 
     if (!doc) {
-      throw new AppError({ message: `Topic ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({ message: `Topic ${id} not found`, statusCode: 404, code: 'NOT_FOUND' });
     }
 
     return id;
@@ -43,7 +39,7 @@ export class TopicRepository {
     const doc = await this.model.findById(id).lean();
 
     if (!doc) {
-      throw new AppError({ message: `Topic ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({ message: `Topic ${id} not found`, statusCode: 404, code: 'NOT_FOUND' });
     }
 
     return doc;
@@ -52,16 +48,10 @@ export class TopicRepository {
   @TraceDecorator()
   async findAll(
     filter: FilterQuery<typeof this.model> = {},
-    sort: { [key: string]: SortOrder } = { createdAt: "asc" },
+    sort: { [key: string]: SortOrder } = { createdAt: 'asc' },
     limit: number = 100,
-    offset: number = 0
+    offset: number = 0,
   ) {
-
-    return await this.model
-      .find(filter)
-      .sort(sort)
-      .skip(offset)
-      .limit(limit)
-      .lean();
+    return await this.model.find(filter).sort(sort).skip(offset).limit(limit).lean();
   }
 }

@@ -1,26 +1,34 @@
 import type { MutationResolvers } from '../../../../generated/types';
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const updateDocument: MutationResolvers['updateDocument'] = async (
   _parent,
   { input },
-  { services, clients, user }
+  { services, clients, user },
 ) => {
   logger.debug('Updating document', { input });
 
   if (!user) {
-    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Get document first to check permissions
   const documentResponse = await clients.documentsClient.getDocument.post({
-    id: input.id
+    id: input.id,
   });
 
   if (documentResponse.error) {
     logger.error('Failed to get document:', documentResponse.error);
-    throw new AppError({ message: 'Failed to get document data', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to get document data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const document = documentResponse.data;
@@ -29,17 +37,21 @@ export const updateDocument: MutationResolvers['updateDocument'] = async (
     userId: user.id,
     ownerId: document.ownerId,
     ownerType: document.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   const response = await clients.documentsClient.updateDocument.post({
     id: input.id,
-    updateData: input.updateData
+    updateData: input.updateData,
   });
 
   if (response.error) {
     logger.error('Failed to update document:', response.error);
-    throw new AppError({ message: 'Failed to update document', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to update document',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

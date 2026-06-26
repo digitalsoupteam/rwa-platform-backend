@@ -1,20 +1,19 @@
-import { PriceDataRepository } from "../repositories/priceData.repository";
-import type { IPriceDataEntity } from "../models/entity/priceData.entity";
-import type { SortOrder } from "mongoose";
-import { AppError } from "@shared/errors/app-errors";
-import { ChartEventsClient } from "../clients/redis.client";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
-import { setSpanAttributes } from "@shared/monitoring/src/tracing";
-import { LogDecorator } from "@shared/monitoring/src/logDecorator";
+import { PriceDataRepository } from '../repositories/priceData.repository';
+import type { IPriceDataEntity } from '../models/entity/priceData.entity';
+import type { SortOrder } from 'mongoose';
+import { AppError } from '@shared/errors/app-errors';
+import { ChartEventsClient } from '../clients/redis.client';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
 
 export type OhlcInterval = '1m' | '5m' | '15m' | '30m' | '1h' | '2h' | '4h' | '6h' | '12h' | '1d' | '1w';
-
 
 export class ChartsService {
   constructor(
     private readonly priceDataRepository: PriceDataRepository,
-    private readonly chartEventsClient: ChartEventsClient
+    private readonly chartEventsClient: ChartEventsClient,
   ) {}
 
   private mapPriceDataToOutput(doc: IPriceDataEntity): Omit<IPriceDataEntity, '_id'> & { id: string } {
@@ -49,7 +48,11 @@ export class ChartsService {
     });
     const virtualRwaReserveBigInt = BigInt(data.virtualRwaReserve);
     if (virtualRwaReserveBigInt === 0n) {
-      throw new AppError({ message: "virtualRwaReserve cannot be zero for price calculation.", statusCode: 400, code: 'VALIDATION_ERROR' });
+      throw new AppError({
+        message: 'virtualRwaReserve cannot be zero for price calculation.',
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
     }
 
     const virtualHoldReserveBigInt = BigInt(data.virtualHoldReserve);
@@ -106,25 +109,41 @@ export class ChartsService {
       endTime,
       sort,
       limit,
-      offset
+      offset,
     );
     return docs.map(this.mapPriceDataToOutput);
   }
 
   private getMillisecondsForInterval(interval: OhlcInterval): number {
     switch (interval) {
-      case '1m': return 60 * 1000;
-      case '5m': return 5 * 60 * 1000;
-      case '15m': return 15 * 60 * 1000;
-      case '30m': return 30 * 60 * 1000;
-      case '1h': return 60 * 60 * 1000;
-      case '2h': return 2 * 60 * 60 * 1000;
-      case '4h': return 4 * 60 * 60 * 1000;
-      case '6h': return 6 * 60 * 60 * 1000;
-      case '12h': return 12 * 60 * 60 * 1000;
-      case '1d': return 24 * 60 * 60 * 1000;
-      case '1w': return 7 * 24 * 60 * 60 * 1000;
-      default: throw new AppError({ message: `Unsupported interval: ${interval}`, statusCode: 400, code: 'VALIDATION_ERROR' });
+      case '1m':
+        return 60 * 1000;
+      case '5m':
+        return 5 * 60 * 1000;
+      case '15m':
+        return 15 * 60 * 1000;
+      case '30m':
+        return 30 * 60 * 1000;
+      case '1h':
+        return 60 * 60 * 1000;
+      case '2h':
+        return 2 * 60 * 60 * 1000;
+      case '4h':
+        return 4 * 60 * 60 * 1000;
+      case '6h':
+        return 6 * 60 * 60 * 1000;
+      case '12h':
+        return 12 * 60 * 60 * 1000;
+      case '1d':
+        return 24 * 60 * 60 * 1000;
+      case '1w':
+        return 7 * 24 * 60 * 60 * 1000;
+      default:
+        throw new AppError({
+          message: `Unsupported interval: ${interval}`,
+          statusCode: 400,
+          code: 'VALIDATION_ERROR',
+        });
     }
   }
 
@@ -137,13 +156,15 @@ export class ChartsService {
     startTime: number;
     endTime: number;
     limit?: number;
-  }): Promise<{
-    timestamp: number;
-    open: string;
-    high: string;
-    low: string;
-    close: string;
-  }[]> {
+  }): Promise<
+    {
+      timestamp: number;
+      open: string;
+      high: string;
+      low: string;
+      close: string;
+    }[]
+  > {
     setSpanAttributes({
       poolAddress: params.poolAddress,
       interval: params.interval,
@@ -158,10 +179,10 @@ export class ChartsService {
       intervalSeconds,
       startTime,
       endTime,
-      limit
+      limit,
     );
 
-    return results.map(bar => ({
+    return results.map((bar) => ({
       timestamp: bar.timestamp,
       open: bar.open,
       high: bar.high,

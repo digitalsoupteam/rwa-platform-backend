@@ -1,16 +1,15 @@
-import { DocumentsFolderRepository } from "../repositories/documentsFolder.repository";
-import { DocumentRepository } from "../repositories/document.repository";
-import type { SortOrder } from "mongoose";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
-import { LogDecorator } from "@shared/monitoring/src/logDecorator";
-import { setSpanAttributes } from "@shared/monitoring/src/tracing";
-
+import { DocumentsFolderRepository } from '../repositories/documentsFolder.repository';
+import { DocumentRepository } from '../repositories/document.repository';
+import type { SortOrder } from 'mongoose';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
 export class DocumentsService {
   constructor(
     private readonly documentsFolderRepository: DocumentsFolderRepository,
-    private readonly documentRepository: DocumentRepository
+    private readonly documentRepository: DocumentRepository,
   ) {}
 
   /**
@@ -35,7 +34,7 @@ export class DocumentsService {
       ownerId: data.ownerId,
       ownerType: data.ownerType,
       creator: data.creator,
-      grandParentId: data.grandParentId
+      grandParentId: data.grandParentId,
     });
 
     return {
@@ -56,8 +55,8 @@ export class DocumentsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["id", "updateData"] })
-  async updateFolder(params: { id: string, updateData: { name: string } }) {
+  @LogDecorator({ args: ['id', 'updateData'] })
+  async updateFolder(params: { id: string; updateData: { name: string } }) {
     setSpanAttributes({ entityId: params.id, entityType: 'folder' });
 
     const folder = await this.documentsFolderRepository.update(params.id, params.updateData);
@@ -80,7 +79,7 @@ export class DocumentsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["id"] })
+  @LogDecorator({ args: ['id'] })
   async deleteFolder(id: string) {
     setSpanAttributes({ entityId: id, entityType: 'folder' });
 
@@ -101,7 +100,7 @@ export class DocumentsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["id"] })
+  @LogDecorator({ args: ['id'] })
   async getFolder(id: string) {
     setSpanAttributes({ entityId: id, entityType: 'folder' });
 
@@ -138,10 +137,10 @@ export class DocumentsService {
       params.filter,
       params.sort,
       params.limit,
-      params.offset
+      params.offset,
     );
 
-    return folders.map(folder => ({
+    return folders.map((folder) => ({
       id: folder._id.toString(),
       name: folder.name,
       parentId: folder.parentId,
@@ -198,12 +197,12 @@ export class DocumentsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["id", "updateData"] })
+  @LogDecorator({ args: ['id', 'updateData'] })
   async updateDocument(params: {
     id: string;
     updateData: {
       name?: string;
-    }
+    };
   }) {
     setSpanAttributes({ entityId: params.id, entityType: 'document' });
 
@@ -231,7 +230,7 @@ export class DocumentsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["id"] })
+  @LogDecorator({ args: ['id'] })
   async deleteDocument(id: string) {
     setSpanAttributes({ entityId: id, entityType: 'document' });
 
@@ -244,7 +243,7 @@ export class DocumentsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["id"] })
+  @LogDecorator({ args: ['id'] })
   async getDocument(id: string) {
     setSpanAttributes({ entityId: id, entityType: 'document' });
 
@@ -281,14 +280,9 @@ export class DocumentsService {
   }) {
     setSpanAttributes({ entityType: 'document' });
 
-    const documents = await this.documentRepository.findAll(
-      params.filter,
-      params.sort,
-      params.limit,
-      params.offset
-    );
+    const documents = await this.documentRepository.findAll(params.filter, params.sort, params.limit, params.offset);
 
-    return documents.map(doc => ({
+    return documents.map((doc) => ({
       id: doc._id.toString(),
       folderId: doc.folderId.toString(),
       name: doc.name,

@@ -1,13 +1,12 @@
-import { AssistantRepository } from "../repositories/assistant.repository";
-import type { AssistantContext } from "../models/shared/enums.model";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
-import { LogDecorator } from "@shared/monitoring/src/logDecorator";
-import { setSpanAttributes } from "@shared/monitoring/src/tracing";
-
+import { AssistantRepository } from '../repositories/assistant.repository';
+import type { AssistantContext } from '../models/shared/enums.model';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
 export class AssistantService {
-  constructor(private readonly assistantRepository: AssistantRepository) { }
+  constructor(private readonly assistantRepository: AssistantRepository) {}
 
   /**
    * Creates a new AI assistant
@@ -19,13 +18,9 @@ export class AssistantService {
       name: a[0].name,
       userId: a[0].userId,
       contextPreferences: a[0].contextPreferences,
-    })
+    }),
   })
-  async createAssistant(data: {
-    name: string;
-    userId: string;
-    contextPreferences: AssistantContext;
-  }) {
+  async createAssistant(data: { name: string; userId: string; contextPreferences: AssistantContext }) {
     setSpanAttributes({ userId: data.userId });
     const assistant = await this.assistantRepository.create(data);
 
@@ -47,14 +42,14 @@ export class AssistantService {
       id: a[0],
       name: a[1].name,
       contextPreferences: a[1].contextPreferences,
-    })
+    }),
   })
   async updateAssistant(
     id: string,
     data: {
       name?: string;
       contextPreferences?: AssistantContext;
-    }
+    },
   ) {
     setSpanAttributes({ assistantId: id });
     const assistant = await this.assistantRepository.update(id, data);
@@ -95,7 +90,7 @@ export class AssistantService {
     setSpanAttributes({ userId });
     const assistants = await this.assistantRepository.findAll({ userId });
 
-    return assistants.map(assistant => ({
+    return assistants.map((assistant) => ({
       id: assistant._id.toString(),
       userId: assistant.userId,
       name: assistant.name,

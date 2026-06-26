@@ -1,24 +1,20 @@
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import { MutationResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
-import {ethers} from 'ethers'
+import { ethers } from 'ethers';
 
-export const authenticate: MutationResolvers['authenticate'] = async (
-  _parent,
-  { input },
-  { clients },
-) => {
+export const authenticate: MutationResolvers['authenticate'] = async (_parent, { input }, { clients }) => {
   logger.info('Authenticating user', { wallet: input.wallet });
 
   const authenticateResponse = await clients.authClient.authenticate.post({
     wallet: ethers.getAddress(input.wallet),
     signature: input.signature,
-    timestamp: input.timestamp
+    timestamp: input.timestamp,
   });
 
   if (authenticateResponse.error) {
     logger.error('Failed to authenticate:', authenticateResponse.error);
-    throw new AppError({ message: 'Failed to authenticate', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({ message: 'Failed to authenticate', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   const { data } = authenticateResponse;
@@ -26,8 +22,8 @@ export const authenticate: MutationResolvers['authenticate'] = async (
     userId: data.userId,
     wallet: data.wallet,
     accessToken: data.accessToken,
-    refreshToken: data.refreshToken
+    refreshToken: data.refreshToken,
   };
 
-  return result
+  return result;
 };

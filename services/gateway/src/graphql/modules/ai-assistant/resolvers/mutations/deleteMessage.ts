@@ -1,49 +1,57 @@
 import type { MutationResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 
-export const deleteMessage: MutationResolvers['deleteMessage'] = async (
-  _parent,
-  { id },
-  { clients, user }
-) => {
+export const deleteMessage: MutationResolvers['deleteMessage'] = async (_parent, { id }, { clients, user }) => {
   if (!user) {
-    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Get message first to check assistant ownership
   const messageResponse = await clients.aiAssistantClient.getMessage.post({
-    id
+    id,
   });
 
   if (messageResponse.error) {
     logger.error('Failed to get message:', messageResponse.error);
-    throw new AppError({ message: 'Failed to get message', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({ message: 'Failed to get message', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   // Verify assistant ownership
   const assistantResponse = await clients.aiAssistantClient.getAssistant.post({
-    id: messageResponse.data.assistantId
+    id: messageResponse.data.assistantId,
   });
 
   if (assistantResponse.error || assistantResponse.data.userId !== user.id) {
-    throw new AppError({ message: 'Access denied: Message does not belong to the current user', statusCode: 403, code: "FORBIDDEN" });
+    throw new AppError({
+      message: 'Access denied: Message does not belong to the current user',
+      statusCode: 403,
+      code: 'FORBIDDEN',
+    });
   }
 
   logger.debug('Deleting message', { id, userId: user.id });
 
   const response = await clients.aiAssistantClient.deleteMessage.post({
-    id
+    id,
   });
 
   if (response.error) {
     logger.error('Failed to delete message:', response.error);
-    throw new AppError({ message: 'Failed to delete message', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to delete message',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;
 
   return {
-    id: data.id
+    id: data.id,
   };
 };

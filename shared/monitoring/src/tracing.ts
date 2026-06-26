@@ -2,7 +2,6 @@ import { trace, SpanStatusCode } from '@opentelemetry/api';
 import type { Span } from '@opentelemetry/api';
 import { AppError } from '@shared/errors/app-errors';
 
-
 export const tracer = trace.getTracer(String(process.env.SERVICE_NAME), '1.0.0');
 
 /** Находит активный span (если есть) и устанавливает на него атрибуты. Ничего не делает если span нет. */
@@ -22,22 +21,26 @@ export interface SpanContext {
 }
 
 export function withTraceSync<T>(spanName: string, fn: (ctx: SpanContext) => T): T;
-export function withTraceSync<T>(spanName: string, attributes: Record<string, string | number | boolean>, fn: (ctx: SpanContext) => T): T;
+export function withTraceSync<T>(
+  spanName: string,
+  attributes: Record<string, string | number | boolean>,
+  fn: (ctx: SpanContext) => T,
+): T;
 export function withTraceSync<T>(
   spanName: string,
   attributesOrFn: Record<string, string | number | boolean> | ((ctx: SpanContext) => T),
-  fn?: (ctx: SpanContext) => T
+  fn?: (ctx: SpanContext) => T,
 ): T {
   const actualFn = typeof attributesOrFn === 'function' ? attributesOrFn : fn!;
   const attributes = typeof attributesOrFn === 'object' ? attributesOrFn : undefined;
 
   return tracer.startActiveSpan(spanName, (span) => {
     let spanEnded = false;
-    
+
     if (attributes) {
       span.setAttributes(attributes);
     }
-    
+
     const spanContext: SpanContext = {
       span,
       setAttributes: (attrs) => span.setAttributes(attrs),
@@ -48,9 +51,13 @@ export function withTraceSync<T>(
           spanEnded = true;
           span.end();
         } else {
-          throw new AppError({ message: 'Span already ended', statusCode: 500, code: 'INTERNAL_ERROR' });
+          throw new AppError({
+            message: 'Span already ended',
+            statusCode: 500,
+            code: 'INTERNAL_ERROR',
+          });
         }
-      }
+      },
     };
 
     try {
@@ -63,7 +70,7 @@ export function withTraceSync<T>(
       if (!spanEnded) {
         span.setStatus({
           code: SpanStatusCode.ERROR,
-          message: error instanceof Error ? error.message : String(error)
+          message: error instanceof Error ? error.message : String(error),
         });
         if (error instanceof AppError) {
           span.setAttribute('error.code', error.code);
@@ -79,22 +86,26 @@ export function withTraceSync<T>(
 }
 
 export function withTraceAsync<T>(spanName: string, fn: (ctx: SpanContext) => Promise<T>): Promise<T>;
-export function withTraceAsync<T>(spanName: string, attributes: Record<string, string | number | boolean>, fn: (ctx: SpanContext) => Promise<T>): Promise<T>;
+export function withTraceAsync<T>(
+  spanName: string,
+  attributes: Record<string, string | number | boolean>,
+  fn: (ctx: SpanContext) => Promise<T>,
+): Promise<T>;
 export async function withTraceAsync<T>(
   spanName: string,
   attributesOrFn: Record<string, string | number | boolean> | ((ctx: SpanContext) => Promise<T>),
-  fn?: (ctx: SpanContext) => Promise<T>
+  fn?: (ctx: SpanContext) => Promise<T>,
 ): Promise<T> {
   const actualFn = typeof attributesOrFn === 'function' ? attributesOrFn : fn!;
   const attributes = typeof attributesOrFn === 'object' ? attributesOrFn : undefined;
 
   return tracer.startActiveSpan(spanName, async (span) => {
     let spanEnded = false;
-    
+
     if (attributes) {
       span.setAttributes(attributes);
     }
-    
+
     const spanContext: SpanContext = {
       span,
       setAttributes: (attrs) => span.setAttributes(attrs),
@@ -105,9 +116,13 @@ export async function withTraceAsync<T>(
           spanEnded = true;
           span.end();
         } else {
-          throw new AppError({ message: 'Span already ended', statusCode: 500, code: 'INTERNAL_ERROR' });
+          throw new AppError({
+            message: 'Span already ended',
+            statusCode: 500,
+            code: 'INTERNAL_ERROR',
+          });
         }
-      }
+      },
     };
 
     try {
@@ -120,7 +135,7 @@ export async function withTraceAsync<T>(
       if (!spanEnded) {
         span.setStatus({
           code: SpanStatusCode.ERROR,
-          message: error instanceof Error ? error.message : String(error)
+          message: error instanceof Error ? error.message : String(error),
         });
         if (error instanceof AppError) {
           span.setAttribute('error.code', error.code);

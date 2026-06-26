@@ -1,74 +1,73 @@
-import type { RwaClient, PortfolioClient } from "../clients/eden.clients";
-import type { AssistantContext } from "../models/shared/enums.model";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
-import { LogDecorator } from "@shared/monitoring/src/logDecorator";
-import { setSpanAttributes } from "@shared/monitoring/src/tracing";
-
+import type { RwaClient, PortfolioClient } from '../clients/eden.clients';
+import type { AssistantContext } from '../models/shared/enums.model';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
 export class ContextService {
   private readonly INVESTOR_BASE_PROMPT =
-    "You are an AI assistant helping investors understand and navigate RWA investment opportunities.\n" +
-    "You can provide information about available pools, analyze investment options, and explain how the platform works.\n" +
-    "Always be clear about risks and encourage users to do their own research before investing.";
+    'You are an AI assistant helping investors understand and navigate RWA investment opportunities.\n' +
+    'You can provide information about available pools, analyze investment options, and explain how the platform works.\n' +
+    'Always be clear about risks and encourage users to do their own research before investing.';
 
   private readonly PRODUCT_OWNER_BASE_PROMPT =
-    "You are an AI assistant helping product owners tokenize their real-world assets.\n" +
-    "You can explain the tokenization process, help with pool creation, and provide guidance on managing RWA pools.\n" +
-    "Focus on compliance, transparency, and best practices for successful asset tokenization.";
+    'You are an AI assistant helping product owners tokenize their real-world assets.\n' +
+    'You can explain the tokenization process, help with pool creation, and provide guidance on managing RWA pools.\n' +
+    'Focus on compliance, transparency, and best practices for successful asset tokenization.';
 
   private readonly POOLS_CONTEXT_DESCRIPTION =
-    "Investment Pools System Description:\n\n" +
-    "A pool is a smart contract that manages the tokenization and trading of real-world assets (RWA). Each pool has:\n\n" +
-    "Core Properties:\n" +
-    "- Name and unique blockchain address (poolAddress)\n" +
-    "- RWA token contract address that represents the underlying asset\n" +
-    "- Hold token address used for investments\n" +
-    "- Risk score (0-100) calculated based on various factors\n\n" +
-    "Investment Parameters:\n" +
-    "- Entry fee: Percentage fee for entering the pool\n" +
-    "- Exit fee: Percentage fee for exiting the pool\n" +
-    "- Expected RWA amount: Target amount of RWA tokens for the pool\n" +
-    "- Expected Hold amount: Required amount of Hold tokens\n" +
-    "- Reward percentage: Additional rewards for investors\n\n" +
-    "Time Periods:\n" +
-    "- Entry period: Time window when investors can enter the pool\n" +
-    "- Completion period: Deadline for reaching the target amount\n" +
-    "- Return schedule: Configured through incoming/outgoing tranches\n\n" +
-    "Current State:\n" +
-    "- Awaiting RWA amount: Current amount of RWA tokens in the pool\n" +
-    "- Target reached status: Whether the expected amount is collected\n" +
-    "- Real/Virtual reserves: Current pool liquidity state\n" +
-    "- Pause status: Whether operations are temporarily suspended\n\n" +
-    "Below are currently active pools that are in their entry period and have collected significant funding:";
+    'Investment Pools System Description:\n\n' +
+    'A pool is a smart contract that manages the tokenization and trading of real-world assets (RWA). Each pool has:\n\n' +
+    'Core Properties:\n' +
+    '- Name and unique blockchain address (poolAddress)\n' +
+    '- RWA token contract address that represents the underlying asset\n' +
+    '- Hold token address used for investments\n' +
+    '- Risk score (0-100) calculated based on various factors\n\n' +
+    'Investment Parameters:\n' +
+    '- Entry fee: Percentage fee for entering the pool\n' +
+    '- Exit fee: Percentage fee for exiting the pool\n' +
+    '- Expected RWA amount: Target amount of RWA tokens for the pool\n' +
+    '- Expected Hold amount: Required amount of Hold tokens\n' +
+    '- Reward percentage: Additional rewards for investors\n\n' +
+    'Time Periods:\n' +
+    '- Entry period: Time window when investors can enter the pool\n' +
+    '- Completion period: Deadline for reaching the target amount\n' +
+    '- Return schedule: Configured through incoming/outgoing tranches\n\n' +
+    'Current State:\n' +
+    '- Awaiting RWA amount: Current amount of RWA tokens in the pool\n' +
+    '- Target reached status: Whether the expected amount is collected\n' +
+    '- Real/Virtual reserves: Current pool liquidity state\n' +
+    '- Pause status: Whether operations are temporarily suspended\n\n' +
+    'Below are currently active pools that are in their entry period and have collected significant funding:';
 
   private readonly PORTFOLIO_CONTEXT_DESCRIPTION =
-    "Portfolio System Description:\n\n" +
-    "Your portfolio tracks all your token balances across different investment pools:\n\n" +
-    "Token Balance Properties:\n" +
-    "- Pool Address: The smart contract address of the investment pool\n" +
-    "- Token Address: The address of the specific token (RWA or Hold)\n" +
-    "- Token ID: Unique identifier of the token within the contract\n" +
-    "- Balance: Your current token holdings\n" +
-    "- Chain ID: The blockchain network where the tokens exist\n\n" +
-    "Balance Updates:\n" +
-    "- Balances are updated when you perform transactions\n" +
-    "- Each update records the block number for tracking\n" +
-    "- System maintains history of all balance changes\n\n" +
-    "Below are your current non-zero token balances across active pools:";
+    'Portfolio System Description:\n\n' +
+    'Your portfolio tracks all your token balances across different investment pools:\n\n' +
+    'Token Balance Properties:\n' +
+    '- Pool Address: The smart contract address of the investment pool\n' +
+    '- Token Address: The address of the specific token (RWA or Hold)\n' +
+    '- Token ID: Unique identifier of the token within the contract\n' +
+    '- Balance: Your current token holdings\n' +
+    '- Chain ID: The blockchain network where the tokens exist\n\n' +
+    'Balance Updates:\n' +
+    '- Balances are updated when you perform transactions\n' +
+    '- Each update records the block number for tracking\n' +
+    '- System maintains history of all balance changes\n\n' +
+    'Below are your current non-zero token balances across active pools:';
 
   constructor(
     private readonly rwaClient: RwaClient,
     private readonly portfolioClient: PortfolioClient,
-  ) { }
+  ) {}
 
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({
     args: (a) => ({
       contextPreferences: a[0],
-      userId: a[1]
-    })
+      userId: a[1],
+    }),
   })
   async getContextForAssistant(contextPreferences: AssistantContext, userId: string): Promise<string> {
     setSpanAttributes({
@@ -90,14 +89,14 @@ export class ContextService {
     if (contextPreferences.includes('popular_pools')) {
       const poolsContext = await this.getPopularPoolsContext();
       if (poolsContext) {
-        contextParts.push(this.POOLS_CONTEXT_DESCRIPTION + "\n\n" + poolsContext);
+        contextParts.push(this.POOLS_CONTEXT_DESCRIPTION + '\n\n' + poolsContext);
       }
     }
 
     if (contextPreferences.includes('user_portfolio')) {
       const portfolioContext = await this.getUserPortfolioContext(userId);
       if (portfolioContext) {
-        contextParts.push(this.PORTFOLIO_CONTEXT_DESCRIPTION + "\n\n" + portfolioContext);
+        contextParts.push(this.PORTFOLIO_CONTEXT_DESCRIPTION + '\n\n' + portfolioContext);
       }
     }
 
@@ -116,9 +115,9 @@ export class ContextService {
           entryPeriodStart: { $lte: now },
           entryPeriodExpired: { $gt: now },
           targetReached: false,
-          awaitingRwaAmount: { $gt: "expectedRwaAmount/2" }
+          awaitingRwaAmount: { $gt: 'expectedRwaAmount/2' },
         },
-        limit: 100
+        limit: 100,
       });
 
       if (response.error) {
@@ -129,9 +128,9 @@ export class ContextService {
         return null;
       }
 
-      const header = "Currently popular investment pools:";
-      const poolsList = response.data.map(pool => {
-        const progress = (Number(pool.awaitingRwaAmount) / Number(pool.expectedRwaAmount) * 100).toFixed(1);
+      const header = 'Currently popular investment pools:';
+      const poolsList = response.data.map((pool) => {
+        const progress = ((Number(pool.awaitingRwaAmount) / Number(pool.expectedRwaAmount)) * 100).toFixed(1);
         return `- ${pool.name} (${pool.poolAddress}): ${progress}% funded (${pool.awaitingRwaAmount}/${pool.expectedRwaAmount} tokens)`;
       });
 
@@ -148,8 +147,8 @@ export class ContextService {
       const balancesResponse = await this.portfolioClient.getBalances.post({
         filter: {
           owner: userId,
-          balance: { $gt: 0 }
-        }
+          balance: { $gt: 0 },
+        },
       });
 
       if (balancesResponse.error) {
@@ -160,11 +159,11 @@ export class ContextService {
         return null;
       }
 
-      const poolIds = balancesResponse.data.map(b => b.poolAddress);
+      const poolIds = balancesResponse.data.map((b) => b.poolAddress);
       const poolsResponse = await this.rwaClient.getPools.post({
         filter: {
-          id: { $in: poolIds }
-        }
+          id: { $in: poolIds },
+        },
       });
 
       if (poolsResponse.error) {
@@ -175,9 +174,9 @@ export class ContextService {
         return null;
       }
 
-      const header = "Your current investments:";
-      const investmentsList = balancesResponse.data.map(balance => {
-        const pool = poolsResponse.data.find(p => p.id === balance.poolAddress);
+      const header = 'Your current investments:';
+      const investmentsList = balancesResponse.data.map((balance) => {
+        const pool = poolsResponse.data.find((p) => p.id === balance.poolAddress);
         if (!pool) return `- Unknown Pool: ${balance.balance} tokens`;
         return `- ${pool.name}: ${balance.balance} tokens`;
       });

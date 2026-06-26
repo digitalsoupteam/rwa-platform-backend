@@ -1,26 +1,34 @@
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const updateImage: MutationResolvers['updateImage'] = async (
   _parent,
   { input },
-  { services, clients, user }
+  { services, clients, user },
 ) => {
   logger.debug('Updating image', { input });
 
   if (!user) {
-    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Get image first to check permissions
   const imageResponse = await clients.galleryClient.getImage.post({
-    id: input.id
+    id: input.id,
   });
 
   if (imageResponse.error) {
     logger.error('Failed to get image:', imageResponse.error);
-    throw new AppError({ message: 'Failed to get image data', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to get image data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const image = imageResponse.data;
@@ -29,17 +37,17 @@ export const updateImage: MutationResolvers['updateImage'] = async (
     userId: user.id,
     ownerId: image.ownerId,
     ownerType: image.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   const response = await clients.galleryClient.updateImage.post({
     id: input.id,
-    updateData: input.updateData
+    updateData: input.updateData,
   });
 
   if (response.error) {
     logger.error('Failed to update image:', response.error);
-    throw new AppError({ message: 'Failed to update image', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({ message: 'Failed to update image', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   const { data } = response;

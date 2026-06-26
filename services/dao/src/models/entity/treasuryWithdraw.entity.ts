@@ -1,5 +1,5 @@
-import mongoose, { Schema, Types } from "mongoose";
-import type { InferRawDocType } from "mongoose";
+import mongoose, { Schema, Types } from 'mongoose';
+import type { InferRawDocType } from 'mongoose';
 
 const treasuryWithdrawSchemaDefinition = {
   recipient: {
@@ -16,7 +16,7 @@ const treasuryWithdrawSchemaDefinition = {
     type: mongoose.Schema.Types.Decimal128,
     required: true,
   },
-  
+
   // Blockchain metadata
   chainId: {
     type: String,
@@ -36,11 +36,11 @@ const treasuryWithdrawSchemaDefinition = {
   // Timestamps
   createdAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
   updatedAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
 };
 
@@ -57,11 +57,8 @@ treasuryWithdrawSchema.index({ chainId: 1, token: 1 });
 treasuryWithdrawSchema.index({ transactionHash: 1, logIndex: 1 }, { unique: true });
 treasuryWithdrawSchema.index({ createdAt: -1 });
 
-export type ITreasuryWithdrawEntity = InferRawDocType<
-  typeof treasuryWithdrawSchemaDefinition
-> & { _id: Types.ObjectId };
+export type ITreasuryWithdrawEntity = InferRawDocType<typeof treasuryWithdrawSchemaDefinition> & {
+  _id: Types.ObjectId;
+};
 
-export const TreasuryWithdrawEntity = mongoose.model(
-  "TreasuryWithdraw",
-  treasuryWithdrawSchema
-);
+export const TreasuryWithdrawEntity = mongoose.model('TreasuryWithdraw', treasuryWithdrawSchema);

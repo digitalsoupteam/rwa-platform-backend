@@ -1,7 +1,6 @@
 import { logs } from '@opentelemetry/api-logs';
 import { trace } from '@opentelemetry/api';
 
-
 export class OTelLogger {
   private otelLogger: any;
   private readonly serviceName: string;
@@ -26,17 +25,20 @@ export class OTelLogger {
   error(message: string, error?: unknown, attributes?: Record<string, any>): void {
     const errorAttributes = {
       ...(attributes || {}),
-      ...(error ? {
-        error: error instanceof Error
-          ? error.message
-          : typeof error === 'object'
-            ? JSON.stringify(error)
-            : String(error),
-        ...(error instanceof Error && {
-          errorName: error.name,
-          errorStack: error.stack,
-        })
-      } : {}),
+      ...(error
+        ? {
+            error:
+              error instanceof Error
+                ? error.message
+                : typeof error === 'object'
+                  ? JSON.stringify(error)
+                  : String(error),
+            ...(error instanceof Error && {
+              errorName: error.name,
+              errorStack: error.stack,
+            }),
+          }
+        : {}),
     };
     this.emit('ERROR', 17, message, errorAttributes);
   }

@@ -1,6 +1,6 @@
-import { AppError } from "@shared/errors/app-errors";
-import { UserEntity } from "../models/entity/user.entity";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
+import { AppError } from '@shared/errors/app-errors';
+import { UserEntity } from '../models/entity/user.entity';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
 export class UserRepository {
   constructor(private readonly model = UserEntity) {}
@@ -10,7 +10,7 @@ export class UserRepository {
     const doc = await this.model.findByIdAndDelete(id).lean();
 
     if (!doc) {
-      throw new AppError({ message: `User ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({ message: `User ${id} not found`, statusCode: 404, code: 'NOT_FOUND' });
     }
 
     return id;
@@ -21,7 +21,7 @@ export class UserRepository {
     const doc = await this.model.findById(id).lean();
 
     if (!doc) {
-      throw new AppError({ message: `User ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({ message: `User ${id} not found`, statusCode: 404, code: 'NOT_FOUND' });
     }
 
     return doc;
@@ -32,7 +32,11 @@ export class UserRepository {
     const doc = await this.model.findOne({ wallet: wallet.toLowerCase() }).lean();
 
     if (!doc) {
-      throw new AppError({ message: `User ${wallet} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({
+        message: `User ${wallet} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return doc;
@@ -49,13 +53,13 @@ export class UserRepository {
     const doc = await this.model.findOneAndUpdate(
       { wallet: wallet.toLowerCase() },
       {
-        $setOnInsert: { wallet: wallet.toLowerCase() }
+        $setOnInsert: { wallet: wallet.toLowerCase() },
       },
       {
         upsert: true,
         new: true,
-        lean: true
-      }
+        lean: true,
+      },
     );
 
     return doc!;

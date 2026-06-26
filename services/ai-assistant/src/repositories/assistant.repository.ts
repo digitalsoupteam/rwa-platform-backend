@@ -1,33 +1,29 @@
-import { AppError } from "@shared/errors/app-errors";
-import type { FilterQuery, SortOrder } from "mongoose";
-import {
-  AssistantEntity,
-} from "../models/entity/assistant.entity";
-import type { IAssistantEntity } from "../models/entity/assistant.entity";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-
+import { AppError } from '@shared/errors/app-errors';
+import type { FilterQuery, SortOrder } from 'mongoose';
+import { AssistantEntity } from '../models/entity/assistant.entity';
+import type { IAssistantEntity } from '../models/entity/assistant.entity';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
 export class AssistantRepository {
   constructor(private readonly model = AssistantEntity) {}
 
   @TraceDecorator()
-  async create(
-    data: Pick<IAssistantEntity, "userId" | "name" | "contextPreferences">
-  ) {
+  async create(data: Pick<IAssistantEntity, 'userId' | 'name' | 'contextPreferences'>) {
     const doc = await this.model.create<typeof this.model>(data);
 
     return doc.toObject();
   }
 
   @TraceDecorator()
-  async update(
-    id: string,
-    data: Partial<Pick<IAssistantEntity, "name" | "contextPreferences">>
-  ) {
+  async update(id: string, data: Partial<Pick<IAssistantEntity, 'name' | 'contextPreferences'>>) {
     const doc = await this.model.findByIdAndUpdate(id, data, { new: true }).lean();
 
     if (!doc) {
-      throw new AppError({ message: `Assistant ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({
+        message: `Assistant ${id} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return doc;
@@ -38,7 +34,11 @@ export class AssistantRepository {
     const doc = await this.model.findByIdAndDelete(id).lean();
 
     if (!doc) {
-      throw new AppError({ message: `Assistant ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({
+        message: `Assistant ${id} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return id;
@@ -49,7 +49,11 @@ export class AssistantRepository {
     const doc = await this.model.findById(id).lean();
 
     if (!doc) {
-      throw new AppError({ message: `Assistant ${id} not found`, statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({
+        message: `Assistant ${id} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return doc;
@@ -60,14 +64,9 @@ export class AssistantRepository {
     filters: FilterQuery<typeof this.model> = {},
     sort: { [key: string]: SortOrder } = { createdAt: 'asc' },
     limit: number = 100,
-    offset: number = 0
+    offset: number = 0,
   ) {
-    const docs = await this.model
-      .find(filters)
-      .sort(sort)
-      .skip(offset)
-      .limit(limit)
-      .lean();
+    const docs = await this.model.find(filters).sort(sort).skip(offset).limit(limit).lean();
 
     return docs;
   }

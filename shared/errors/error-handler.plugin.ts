@@ -1,13 +1,10 @@
-import { AppError } from "./app-errors";
-import { logger } from "@shared/monitoring/src/monitoring.plugin";
-
+import { AppError } from './app-errors';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const ErrorHandlerPlugin = ({ error, set, request }) => {
-  
   if (error instanceof AppError) {
     set.status = error.statusCode;
-    
-    
+
     logger.warn(`[${error.code}] ${error.message}`, {
       statusCode: error.statusCode,
       path: request.url,
@@ -22,10 +19,8 @@ export const ErrorHandlerPlugin = ({ error, set, request }) => {
     };
   }
 
-  
   set.status = 500;
 
-  
   logger.error('Unexpected error:', {
     path: request.url,
     error: error instanceof Error ? `${error.name}: ${error.message}` : String(error),
@@ -33,7 +28,7 @@ export const ErrorHandlerPlugin = ({ error, set, request }) => {
 
   return {
     error: {
-      code: "INTERNAL_ERROR",
+      code: 'INTERNAL_ERROR',
       message: `${error}`,
     },
   };

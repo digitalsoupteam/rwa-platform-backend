@@ -1,11 +1,11 @@
-import { ethers } from "ethers";
-import { logger } from "@shared/monitoring/src/monitoring.plugin";
-import { AppError } from "@shared/errors/app-errors";
-import EventEmitterABI from "../abi/EventEmitter.json";
-import { BlockchainScannerService } from "../services/blockchainScanner.service";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
-import { LogDecorator } from "@shared/monitoring/src/logDecorator";
+import { ethers } from 'ethers';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
+import { AppError } from '@shared/errors/app-errors';
+import EventEmitterABI from '../abi/EventEmitter.json';
+import { BlockchainScannerService } from '../services/blockchainScanner.service';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
 
 type BlockchainEventData = {
   chainId: number;
@@ -17,7 +17,6 @@ type BlockchainEventData = {
   data: Record<string, any>;
   timestamp: number;
 };
-
 
 export class BlockchainScannerDaemon {
   private provider: ethers.JsonRpcProvider;
@@ -33,14 +32,10 @@ export class BlockchainScannerDaemon {
     private scanIntervalMs: number,
     private batchSize: number,
     private chainId: number,
-    private scannerService: BlockchainScannerService
+    private scannerService: BlockchainScannerService,
   ) {
     this.provider = new ethers.JsonRpcProvider(rpcUrl);
-    this.eventEmitterContract = new ethers.Contract(
-      contractAddress,
-      EventEmitterABI.abi,
-      this.provider
-    );
+    this.eventEmitterContract = new ethers.Contract(contractAddress, EventEmitterABI.abi, this.provider);
   }
 
   /**
@@ -54,18 +49,24 @@ export class BlockchainScannerDaemon {
       const providerChainId = Number(network.chainId);
 
       if (providerChainId !== this.chainId) {
-        throw new AppError(
-          { message: `Chain ID mismatch. Expected ${this.chainId}, but provider returned ${providerChainId}`, statusCode: 502, code: 'BLOCKCHAIN_ERROR' }
-        );
+        throw new AppError({
+          message: `Chain ID mismatch. Expected ${this.chainId}, but provider returned ${providerChainId}`,
+          statusCode: 502,
+          code: 'BLOCKCHAIN_ERROR',
+        });
       }
 
       this.lastProcessedBlock = await this.scannerService.getLastProcessedBlock();
       if (this.lastProcessedBlock === 0) {
-        this.lastProcessedBlock = await this.getGenesisBlock() - 1;
+        this.lastProcessedBlock = (await this.getGenesisBlock()) - 1;
       }
-
     } catch (error) {
-      throw new AppError({ message: "Failed to initialize Blockchain Scanner Daemon", statusCode: 502, code: 'BLOCKCHAIN_ERROR', cause: error });
+      throw new AppError({
+        message: 'Failed to initialize Blockchain Scanner Daemon',
+        statusCode: 502,
+        code: 'BLOCKCHAIN_ERROR',
+        cause: error,
+      });
     }
   }
 
@@ -75,11 +76,14 @@ export class BlockchainScannerDaemon {
   private async getGenesisBlock(): Promise<number> {
     try {
       const genesisBlock = await this.eventEmitterContract.genesisBlock();
-      return typeof genesisBlock === "bigint"
-        ? Number(genesisBlock)
-        : genesisBlock;
+      return typeof genesisBlock === 'bigint' ? Number(genesisBlock) : genesisBlock;
     } catch (error) {
-      throw new AppError({ message: "Failed to get genesis block", statusCode: 502, code: 'BLOCKCHAIN_ERROR', cause: error });
+      throw new AppError({
+        message: 'Failed to get genesis block',
+        statusCode: 502,
+        code: 'BLOCKCHAIN_ERROR',
+        cause: error,
+      });
     }
   }
 
@@ -90,23 +94,21 @@ export class BlockchainScannerDaemon {
     try {
       return await this.provider.getBlockNumber();
     } catch (error) {
-      throw new AppError({ message: "Failed to get latest block number", statusCode: 502, code: 'BLOCKCHAIN_ERROR', cause: error });
+      throw new AppError({
+        message: 'Failed to get latest block number',
+        statusCode: 502,
+        code: 'BLOCKCHAIN_ERROR',
+        cause: error,
+      });
     }
   }
 
   /**
    * Get events from block range
    */
-  private async getEvents(
-    fromBlock: number,
-    toBlock: number
-  ): Promise<BlockchainEventData[]> {
+  private async getEvents(fromBlock: number, toBlock: number): Promise<BlockchainEventData[]> {
     try {
-      const allEvents = await this.eventEmitterContract.queryFilter(
-        "*" as any,
-        fromBlock,
-        toBlock
-      );
+      const allEvents = await this.eventEmitterContract.queryFilter('*' as any, fromBlock, toBlock);
 
       const eventsByBlock: Record<number, ethers.EventLog[]> = {};
       const blockNumbers: number[] = [];
@@ -144,9 +146,12 @@ export class BlockchainScannerDaemon {
 
       return processedEvents;
     } catch (error) {
-      throw new AppError(
-        { message: `Failed to get events from block ${fromBlock} to ${toBlock}`, statusCode: 502, code: 'BLOCKCHAIN_ERROR', cause: error }
-      );
+      throw new AppError({
+        message: `Failed to get events from block ${fromBlock} to ${toBlock}`,
+        statusCode: 502,
+        code: 'BLOCKCHAIN_ERROR',
+        cause: error,
+      });
     }
   }
 
@@ -154,10 +159,9 @@ export class BlockchainScannerDaemon {
     try {
       return event.fragment.name;
     } catch (error) {
-      return "Unknown";
+      return 'Unknown';
     }
   }
-
 
   private parseEventData(event: ethers.EventLog): Record<string, any> {
     try {
@@ -173,18 +177,20 @@ export class BlockchainScannerDaemon {
 
       return this.convertBigIntToString(result);
     } catch (error) {
-      throw new AppError(
-        { message: `Failed to parse event data`, statusCode: 502, code: 'BLOCKCHAIN_ERROR', cause: error }
-      );
+      throw new AppError({
+        message: `Failed to parse event data`,
+        statusCode: 502,
+        code: 'BLOCKCHAIN_ERROR',
+        cause: error,
+      });
     }
   }
 
   private convertBigIntToString(obj: any): any {
     if (obj === null || obj === undefined) return obj;
-    if (typeof obj === "bigint") return obj.toString();
-    if (Array.isArray(obj))
-      return obj.map((item) => this.convertBigIntToString(item));
-    if (typeof obj === "object") {
+    if (typeof obj === 'bigint') return obj.toString();
+    if (Array.isArray(obj)) return obj.map((item) => this.convertBigIntToString(item));
+    if (typeof obj === 'object') {
       const result: Record<string, any> = {};
       for (const key in obj) {
         if (isNaN(Number(key))) {
@@ -205,19 +211,17 @@ export class BlockchainScannerDaemon {
 
     this.isRunning = true;
 
-    this.runLoop().catch(err => {
+    this.runLoop().catch((err) => {
       this.isRunning = false;
     });
-
   }
-
 
   private async runLoop(): Promise<void> {
     while (this.isRunning) {
       try {
         await this.scan();
       } catch (error) {
-        logger.error("Error during scan cycle", error, {
+        logger.error('Error during scan cycle', error, {
           lastProcessedBlock: this.lastProcessedBlock,
           chainId: this.chainId,
         });
@@ -225,7 +229,7 @@ export class BlockchainScannerDaemon {
 
       if (!this.isRunning) break;
 
-      await new Promise(resolve => setTimeout(resolve, this.scanIntervalMs));
+      await new Promise((resolve) => setTimeout(resolve, this.scanIntervalMs));
     }
   }
 
@@ -238,8 +242,7 @@ export class BlockchainScannerDaemon {
     this.isRunning = false;
   }
 
-
-  @TraceDecorator({root: true})
+  @TraceDecorator({ root: true })
   private async scan(): Promise<void> {
     let currentBlock: number;
     try {
@@ -248,7 +251,6 @@ export class BlockchainScannerDaemon {
       return;
     }
     const confirmedBlock = currentBlock - this.blockConfirmations;
-
 
     if (this.lastProcessedBlock >= confirmedBlock) {
       return;
@@ -262,28 +264,32 @@ export class BlockchainScannerDaemon {
       await this.processBatch(fromBlock, toBlock);
       this.lastProcessedBlock = toBlock;
     } catch (error) {
-      throw new AppError({ message: "Error during blockchain scan", statusCode: 502, code: 'BLOCKCHAIN_ERROR', cause: error });
-    } 
+      throw new AppError({
+        message: 'Error during blockchain scan',
+        statusCode: 502,
+        code: 'BLOCKCHAIN_ERROR',
+        cause: error,
+      });
+    }
   }
-
 
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({ args: ['fromBlock', 'toBlock'] })
-  private async processBatch(
-    fromBlock: number,
-    toBlock: number
-  ): Promise<void> {
+  private async processBatch(fromBlock: number, toBlock: number): Promise<void> {
     const events = await this.getEvents(fromBlock, toBlock);
 
     if (events.length > 0) {
-      const eventsByBlock = events.reduce((acc, event) => {
-        if (!acc[event.blockNumber]) {
-          acc[event.blockNumber] = [];
-        }
-        acc[event.blockNumber].push(event);
-        return acc;
-      }, {} as Record<number, BlockchainEventData[]>);
+      const eventsByBlock = events.reduce(
+        (acc, event) => {
+          if (!acc[event.blockNumber]) {
+            acc[event.blockNumber] = [];
+          }
+          acc[event.blockNumber].push(event);
+          return acc;
+        },
+        {} as Record<number, BlockchainEventData[]>,
+      );
 
       const blockNumbers = Object.keys(eventsByBlock)
         .map(Number)

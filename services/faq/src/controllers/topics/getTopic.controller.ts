@@ -1,22 +1,16 @@
-import { Elysia } from "elysia";
-import type { ServicesPlugin } from "../../plugins/services.plugin";
-import {
-  getTopicRequest,
-  getTopicResponse,
-} from "../../models/validation/faq.validation";
+import { Elysia } from 'elysia';
+import type { ServicesPlugin } from '../../plugins/services.plugin';
+import { getTopicRequest, getTopicResponse } from '../../models/validation/faq.validation';
 
 export const getTopicController = (servicesPlugin: ServicesPlugin) => {
-  return new Elysia({ name: "GetTopicController" })
-    .use(servicesPlugin)
-    .post(
-      "/getTopic",
-      async ({ body, faqService }) => {
-
-        return await faqService.getTopic(body.id);
-      },
-      {
-        body: getTopicRequest,
-        response: getTopicResponse,
-      }
-    );
+  return new Elysia({ name: 'GetTopicController' }).use(servicesPlugin).post(
+    '/getTopic',
+    async ({ body, faqService }) => {
+      return await faqService.getTopic(body.id);
+    },
+    {
+      body: getTopicRequest,
+      response: getTopicResponse,
+    },
+  );
 };

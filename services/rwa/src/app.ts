@@ -7,7 +7,7 @@ import { createClientsPlugin } from './plugins/clients.plugin';
 import { createServicesPlugin } from './plugins/services.plugin';
 import { createControllersPlugin } from './plugins/controllers.plugin';
 import { createDaemonsPlugin } from './plugins/daemons.plugin';
-import { withTraceSync, withTraceAsync } from "@shared/monitoring/src/tracing";
+import { withTraceSync, withTraceAsync } from '@shared/monitoring/src/tracing';
 
 export async function createApp(
   port: number,
@@ -20,60 +20,54 @@ export async function createApp(
   rabbitMqMaxReconnectAttempts: number,
   rabbitMqReconnectInterval: number,
   signersManagerUrl: string,
-  supportedNetworks: any[]
+  supportedNetworks: any[],
 ) {
   const repositoriesPlugin = await withTraceAsync(
     'rwa.init.repositories_plugin',
-    async () => await createRepositoriesPlugin(mongoUri)
+    async () => await createRepositoriesPlugin(mongoUri),
   );
 
   const clientsPlugin = await withTraceAsync(
     'rwa.init.clients_plugin',
-    async () => await createClientsPlugin(
-      redisUrl,
-      serviceName,
-      openRouterApiKey,
-      openRouterBaseUrl,
-      rabbitMqUri,
-      rabbitMqMaxReconnectAttempts,
-      rabbitMqReconnectInterval,
-      signersManagerUrl
-    )
+    async () =>
+      await createClientsPlugin(
+        redisUrl,
+        serviceName,
+        openRouterApiKey,
+        openRouterBaseUrl,
+        rabbitMqUri,
+        rabbitMqMaxReconnectAttempts,
+        rabbitMqReconnectInterval,
+        signersManagerUrl,
+      ),
   );
 
-  const servicesPlugin = withTraceSync(
-    'rwa.init.services_plugin',
-    () => createServicesPlugin(repositoriesPlugin, clientsPlugin, supportedNetworks)
+  const servicesPlugin = withTraceSync('rwa.init.services_plugin', () =>
+    createServicesPlugin(repositoriesPlugin, clientsPlugin, supportedNetworks),
   );
 
-  const controllersPlugin = withTraceSync(
-    'rwa.init.controllers_plugin',
-    () => createControllersPlugin(servicesPlugin)
-  );
+  const controllersPlugin = withTraceSync('rwa.init.controllers_plugin', () => createControllersPlugin(servicesPlugin));
 
   const daemonsPlugin = await withTraceAsync(
     'rwa.init.daemons_plugin',
-    async () => await createDaemonsPlugin(clientsPlugin, servicesPlugin)
+    async () => await createDaemonsPlugin(clientsPlugin, servicesPlugin),
   );
 
-  const app = withTraceSync(
-    'rwa.init.elysia',
-    (ctx) => {
-      const result = new Elysia()
-        .use(monitoringPlugin)
-        .use(healthPlugin)
-        .onError(ErrorHandlerPlugin)
-        .use(repositoriesPlugin)
-        .use(clientsPlugin)
-        .use(servicesPlugin)
-        .use(daemonsPlugin)
-        .use(controllersPlugin)
-        .listen(port, () => {
-          ctx.end();
-        });
-      return result;
-    }
-  );
+  const app = withTraceSync('rwa.init.elysia', (ctx) => {
+    const result = new Elysia()
+      .use(monitoringPlugin)
+      .use(healthPlugin)
+      .onError(ErrorHandlerPlugin)
+      .use(repositoriesPlugin)
+      .use(clientsPlugin)
+      .use(servicesPlugin)
+      .use(daemonsPlugin)
+      .use(controllersPlugin)
+      .listen(port, () => {
+        ctx.end();
+      });
+    return result;
+  });
 
   return app;
 }

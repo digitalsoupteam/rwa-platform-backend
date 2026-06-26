@@ -1,21 +1,17 @@
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import type { QueryResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
-export const getImage: QueryResolvers['getImage'] = async (
-  _parent,
-  { id },
-  { clients }
-) => {
+export const getImage: QueryResolvers['getImage'] = async (_parent, { id }, { clients }) => {
   logger.info('Getting image by id', { id });
 
   const response = await clients.galleryClient.getImage.post({
-    id
+    id,
   });
 
   if (response.error) {
     logger.error('Failed to get image:', response.error);
-    throw new AppError({ message: 'Failed to get image', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({ message: 'Failed to get image', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   const image = response.data;

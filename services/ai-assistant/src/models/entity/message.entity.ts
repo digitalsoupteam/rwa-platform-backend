@@ -1,5 +1,5 @@
-import mongoose, { Schema } from "mongoose";
-import type { InferRawDocType } from "mongoose";
+import mongoose, { Schema } from 'mongoose';
+import type { InferRawDocType } from 'mongoose';
 const messageSchemaDefinition = {
   assistantId: {
     type: String,
@@ -19,4 +19,4 @@ const messageSchema = new Schema(messageSchemaDefinition, {
 messageSchema.index({ assistantId: 1 });
 
 export type IMessageEntity = InferRawDocType<typeof messageSchemaDefinition>;
-export const MessageEntity = mongoose.model("Message", messageSchema);
+export const MessageEntity = mongoose.model('Message', messageSchema);

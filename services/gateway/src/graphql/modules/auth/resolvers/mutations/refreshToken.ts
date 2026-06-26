@@ -1,12 +1,8 @@
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
-export const refreshToken: MutationResolvers['refreshToken'] = async (
-  _parent,
-  { input },
-  { clients, user }
-) => {
+export const refreshToken: MutationResolvers['refreshToken'] = async (_parent, { input }, { clients, user }) => {
   // if (!user) {
   //   throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
   // }
@@ -14,12 +10,16 @@ export const refreshToken: MutationResolvers['refreshToken'] = async (
   logger.debug('Refreshing token');
 
   const response = await clients.authClient.refreshToken.post({
-    refreshToken: input.refreshToken
+    refreshToken: input.refreshToken,
   });
 
   if (response.error) {
     logger.error('Failed to refresh token:', response.error);
-    throw new AppError({ message: 'Failed to refresh token', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to refresh token',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

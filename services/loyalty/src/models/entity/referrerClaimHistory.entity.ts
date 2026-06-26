@@ -1,4 +1,4 @@
-import mongoose, { Schema, Types, type InferRawDocType } from "mongoose";
+import mongoose, { Schema, Types, type InferRawDocType } from 'mongoose';
 
 const referrerClaimHistorySchemaDefinition = {
   referrerWallet: {
@@ -26,13 +26,13 @@ const referrerClaimHistorySchemaDefinition = {
     required: true,
     trim: true,
   },
-  
+
   // Withdrawal details
   amount: {
     type: mongoose.Schema.Types.Decimal128,
     required: true,
   },
-  
+
   // Blockchain event data
   transactionHash: {
     type: String,
@@ -51,11 +51,11 @@ const referrerClaimHistorySchemaDefinition = {
   // Timestamps
   createdAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
   updatedAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
 } as const;
 
@@ -75,11 +75,8 @@ referrerClaimHistorySchema.index({ timestamp: -1 });
 referrerClaimHistorySchema.index({ createdAt: -1 });
 referrerClaimHistorySchema.index({ referrerWallet: 1, chainId: 1, tokenAddress: 1 });
 
-export type IReferrerClaimHistoryEntity = InferRawDocType<
-  typeof referrerClaimHistorySchemaDefinition
-> & { _id: Types.ObjectId };
+export type IReferrerClaimHistoryEntity = InferRawDocType<typeof referrerClaimHistorySchemaDefinition> & {
+  _id: Types.ObjectId;
+};
 
-export const ReferrerClaimHistoryEntity = mongoose.model(
-  "ReferrerClaimHistory",
-  referrerClaimHistorySchema
-);
+export const ReferrerClaimHistoryEntity = mongoose.model('ReferrerClaimHistory', referrerClaimHistorySchema);

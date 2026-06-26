@@ -1,4 +1,4 @@
-import { t } from "elysia";
+import { t } from 'elysia';
 
 /*
  * Entity schemas
@@ -87,9 +87,9 @@ export const stakingSchema = t.Object({
  */
 export const getProposalsRequest = t.Object({
   filter: t.Optional(t.Record(t.String(), t.Any())),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
   limit: t.Optional(t.Number()),
-  offset: t.Optional(t.Number())
+  offset: t.Optional(t.Number()),
 });
 export const getProposalsResponse = t.Array(proposalSchema);
 
@@ -98,9 +98,9 @@ export const getProposalsResponse = t.Array(proposalSchema);
  */
 export const getVotesRequest = t.Object({
   filter: t.Optional(t.Record(t.String(), t.Any())),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
   limit: t.Optional(t.Number()),
-  offset: t.Optional(t.Number())
+  offset: t.Optional(t.Number()),
 });
 export const getVotesResponse = t.Array(voteSchema);
 
@@ -109,9 +109,9 @@ export const getVotesResponse = t.Array(voteSchema);
  */
 export const getStakingHistoryRequest = t.Object({
   filter: t.Optional(t.Record(t.String(), t.Any())),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
   limit: t.Optional(t.Number()),
-  offset: t.Optional(t.Number())
+  offset: t.Optional(t.Number()),
 });
 export const getStakingHistoryResponse = t.Array(stakingHistorySchema);
 
@@ -120,9 +120,9 @@ export const getStakingHistoryResponse = t.Array(stakingHistorySchema);
  */
 export const getTimelockTasksRequest = t.Object({
   filter: t.Optional(t.Record(t.String(), t.Any())),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
   limit: t.Optional(t.Number()),
-  offset: t.Optional(t.Number())
+  offset: t.Optional(t.Number()),
 });
 export const getTimelockTasksResponse = t.Array(timelockTaskSchema);
 
@@ -131,9 +131,9 @@ export const getTimelockTasksResponse = t.Array(timelockTaskSchema);
  */
 export const getTreasuryWithdrawalsRequest = t.Object({
   filter: t.Optional(t.Record(t.String(), t.Any())),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
   limit: t.Optional(t.Number()),
-  offset: t.Optional(t.Number())
+  offset: t.Optional(t.Number()),
 });
 export const getTreasuryWithdrawalsResponse = t.Array(treasuryWithdrawSchema);
 
@@ -142,8 +142,8 @@ export const getTreasuryWithdrawalsResponse = t.Array(treasuryWithdrawSchema);
  */
 export const getStakingRequest = t.Object({
   filter: t.Optional(t.Record(t.String(), t.Any())),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
   limit: t.Optional(t.Number()),
-  offset: t.Optional(t.Number())
+  offset: t.Optional(t.Number()),
 });
 export const getStakingResponse = t.Array(stakingSchema);

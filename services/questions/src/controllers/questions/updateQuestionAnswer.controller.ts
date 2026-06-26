@@ -1,22 +1,19 @@
-import { Elysia } from "elysia";
-import type { ServicesPlugin } from "../../plugins/services.plugin";
+import { Elysia } from 'elysia';
+import type { ServicesPlugin } from '../../plugins/services.plugin';
 import {
   updateQuestionAnswerRequest,
   updateQuestionAnswerResponse,
-} from "../../models/validation/questions.validation";
+} from '../../models/validation/questions.validation';
 
 export const updateQuestionAnswerController = (servicesPlugin: ServicesPlugin) => {
-  return new Elysia({ name: "UpdateQuestionAnswerController" })
-    .use(servicesPlugin)
-    .post(
-      "/updateQuestionAnswer",
-      async ({ body, questionsService }) => {
-
-        return await questionsService.updateAnswer(body);
-      },
-      {
-        body: updateQuestionAnswerRequest,
-        response: updateQuestionAnswerResponse,
-      }
-    );
+  return new Elysia({ name: 'UpdateQuestionAnswerController' }).use(servicesPlugin).post(
+    '/updateQuestionAnswer',
+    async ({ body, questionsService }) => {
+      return await questionsService.updateAnswer(body);
+    },
+    {
+      body: updateQuestionAnswerRequest,
+      response: updateQuestionAnswerResponse,
+    },
+  );
 };

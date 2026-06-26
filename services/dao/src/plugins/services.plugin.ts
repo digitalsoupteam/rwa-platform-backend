@@ -1,34 +1,28 @@
-import { Elysia } from "elysia";
-import { DaoService } from "../services/dao.service";
-import type { RepositoriesPlugin } from "./repositories.plugin";
-import type { ClientsPlugin } from "./clients.plugin";
-import { withTraceSync } from "@shared/monitoring/src/tracing";
+import { Elysia } from 'elysia';
+import { DaoService } from '../services/dao.service';
+import type { RepositoriesPlugin } from './repositories.plugin';
+import type { ClientsPlugin } from './clients.plugin';
+import { withTraceSync } from '@shared/monitoring/src/tracing';
 
-export const createServicesPlugin = (
-  repositoriesPlugin: RepositoriesPlugin,
-  clientsPlugin: ClientsPlugin
-) => {
+export const createServicesPlugin = (repositoriesPlugin: RepositoriesPlugin, clientsPlugin: ClientsPlugin) => {
   const daoService = withTraceSync(
     'dao.init.services.dao',
-    () => new DaoService(
-      repositoriesPlugin.decorator.proposalRepository,
-      repositoriesPlugin.decorator.stakingRepository,
-      repositoriesPlugin.decorator.stakingHistoryRepository,
-      repositoriesPlugin.decorator.timelockTaskRepository,
-      repositoriesPlugin.decorator.treasuryWithdrawRepository,
-      repositoriesPlugin.decorator.voteRepository
-    )
+    () =>
+      new DaoService(
+        repositoriesPlugin.decorator.proposalRepository,
+        repositoriesPlugin.decorator.stakingRepository,
+        repositoriesPlugin.decorator.stakingHistoryRepository,
+        repositoriesPlugin.decorator.timelockTaskRepository,
+        repositoriesPlugin.decorator.treasuryWithdrawRepository,
+        repositoriesPlugin.decorator.voteRepository,
+      ),
   );
 
-  const plugin = withTraceSync(
-    'dao.init.services.plugin',
-    () => new Elysia({ name: "Services" })
-      .use(repositoriesPlugin)
-      .use(clientsPlugin)
-      .decorate("daoService", daoService)
+  const plugin = withTraceSync('dao.init.services.plugin', () =>
+    new Elysia({ name: 'Services' }).use(repositoriesPlugin).use(clientsPlugin).decorate('daoService', daoService),
   );
 
   return plugin;
-}
+};
 
-export type ServicesPlugin = ReturnType<typeof createServicesPlugin>
+export type ServicesPlugin = ReturnType<typeof createServicesPlugin>;

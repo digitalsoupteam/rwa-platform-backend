@@ -1,16 +1,20 @@
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const createImage: MutationResolvers['createImage'] = async (
   _parent,
   { input },
-  { services, clients, user, fileValidation }
+  { services, clients, user, fileValidation },
 ) => {
   logger.debug('Creating new image', { input });
 
   if (!user) {
-    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Validate file MIME type before upload
@@ -18,7 +22,7 @@ export const createImage: MutationResolvers['createImage'] = async (
     throw new AppError({
       message: `File type "${input.file.type}" is not allowed. Allowed types: ${fileValidation.GALLERY_ALLOWED_MIME_TYPES.join(', ')}`,
       statusCode: 400,
-      code: "VALIDATION_ERROR"
+      code: 'VALIDATION_ERROR',
     });
   }
 
@@ -27,18 +31,22 @@ export const createImage: MutationResolvers['createImage'] = async (
     throw new AppError({
       message: `File size exceeds maximum allowed size of ${fileValidation.GALLERY_MAX_FILE_SIZE} bytes`,
       statusCode: 400,
-      code: "VALIDATION_ERROR"
+      code: 'VALIDATION_ERROR',
     });
   }
 
   // Get gallery info first
   const galleryResponse = await clients.galleryClient.getGallery.post({
-    id: input.galleryId
+    id: input.galleryId,
   });
 
   if (galleryResponse.error) {
     logger.error('Failed to get gallery:', galleryResponse.error);
-    throw new AppError({ message: 'Failed to get gallery data', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to get gallery data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const gallery = galleryResponse.data;
@@ -47,7 +55,7 @@ export const createImage: MutationResolvers['createImage'] = async (
     userId: user.id,
     ownerId: gallery.ownerId,
     ownerType: gallery.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   // Upload file to files service
@@ -57,7 +65,7 @@ export const createImage: MutationResolvers['createImage'] = async (
 
   if (fileResponse.error) {
     logger.error('Failed to upload file:', fileResponse.error);
-    throw new AppError({ message: 'Failed to upload file', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({ message: 'Failed to upload file', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   const response = await clients.galleryClient.createImage.post({
@@ -76,7 +84,7 @@ export const createImage: MutationResolvers['createImage'] = async (
 
   if (response.error) {
     logger.error('Failed to create image:', response.error);
-    throw new AppError({ message: 'Failed to create image', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({ message: 'Failed to create image', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   const { data } = response;

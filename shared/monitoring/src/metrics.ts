@@ -14,52 +14,64 @@ export class OTelMetrics {
 
   counter(name: string, labels?: Record<string, string>): void {
     const metricName = `${this.serviceName}_${name}`;
-    
+
     if (!this.counters.has(metricName)) {
-      this.counters.set(metricName, this.otelMeter.createCounter(metricName, {
-        description: `Counter metric for ${name} in ${this.serviceName}`,
-      }));
+      this.counters.set(
+        metricName,
+        this.otelMeter.createCounter(metricName, {
+          description: `Counter metric for ${name} in ${this.serviceName}`,
+        }),
+      );
     }
-    
+
     this.counters.get(metricName).add(1, labels || {});
   }
 
   batchCounter(name: string, count: number, labels?: Record<string, string>): void {
     const metricName = `${this.serviceName}_${name}`;
-    
+
     if (!this.counters.has(metricName)) {
-      this.counters.set(metricName, this.otelMeter.createCounter(metricName, {
-        description: `Counter metric for ${name} in ${this.serviceName}`,
-      }));
+      this.counters.set(
+        metricName,
+        this.otelMeter.createCounter(metricName, {
+          description: `Counter metric for ${name} in ${this.serviceName}`,
+        }),
+      );
     }
-    
+
     this.counters.get(metricName).add(count, labels || {});
   }
 
   gauge(name: string, value: number, labels?: Record<string, string>): void {
     const metricName = `${this.serviceName}_${name}`;
-    
+
     if (!this.gauges.has(metricName)) {
-      this.gauges.set(metricName, this.otelMeter.createUpDownCounter(metricName, {
-        description: `Gauge metric for ${name} in ${this.serviceName}`,
-      }));
+      this.gauges.set(
+        metricName,
+        this.otelMeter.createUpDownCounter(metricName, {
+          description: `Gauge metric for ${name} in ${this.serviceName}`,
+        }),
+      );
     }
-    
+
     this.gauges.get(metricName).add(value, labels || {});
   }
 
   histogram(name: string, value: number, labels?: Record<string, string>): void {
     const metricName = `${this.serviceName}_${name}`;
-    
+
     if (!this.histograms.has(metricName)) {
-      this.histograms.set(metricName, this.otelMeter.createHistogram(metricName, {
-        description: `Histogram metric for ${name} in ${this.serviceName}`,
-        boundaries: [5, 10, 25, 50, 100, 250, 500, 1000, 5000],
-      }));
+      this.histograms.set(
+        metricName,
+        this.otelMeter.createHistogram(metricName, {
+          description: `Histogram metric for ${name} in ${this.serviceName}`,
+          boundaries: [5, 10, 25, 50, 100, 250, 500, 1000, 5000],
+        }),
+      );
     }
-    
+
     this.histograms.get(metricName).record(value, labels || {});
   }
 }
 
-export const metrics = new OTelMetrics(process.env.SERVICE_NAME || "unknown-service2");
+export const metrics = new OTelMetrics(process.env.SERVICE_NAME || 'unknown-service2');

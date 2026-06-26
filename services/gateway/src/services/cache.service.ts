@@ -6,12 +6,11 @@ import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
 import { LogDecorator } from '@shared/monitoring/src/logDecorator';
 import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
-
 export class CacheService {
   constructor(
     private redis: Redis,
-    private companyClient: CompanyClient
-  ) { }
+    private companyClient: CompanyClient,
+  ) {}
 
   private getCompanyCacheKey(companyId: string) {
     return `company:${companyId}`;
@@ -29,7 +28,7 @@ export class CacheService {
   @MetricsDecorator()
   @LogDecorator({ args: ['params'] })
   async getCompany(
-    params: Parameters<CompanyClient['getCompany']['post']>[0]
+    params: Parameters<CompanyClient['getCompany']['post']>[0],
   ): ReturnType<CompanyClient['getCompany']['post']> {
     setSpanAttributes({ entityId: params.id });
     const cacheKey = this.getCompanyCacheKey(params.id);

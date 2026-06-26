@@ -1,26 +1,19 @@
-import { Elysia } from "elysia";
-import { ReactionsService } from "../services/reactions.service";
-import type { RepositoriesPlugin } from "./repositories.plugin";
-import { withTraceSync } from "@shared/monitoring/src/tracing";
+import { Elysia } from 'elysia';
+import { ReactionsService } from '../services/reactions.service';
+import type { RepositoriesPlugin } from './repositories.plugin';
+import { withTraceSync } from '@shared/monitoring/src/tracing';
 
-export const createServicesPlugin = (
-  repositoriesPlugin: RepositoriesPlugin
-) => {
+export const createServicesPlugin = (repositoriesPlugin: RepositoriesPlugin) => {
   const reactionsService = withTraceSync(
     'reactions.init.services.reactions',
-    () => new ReactionsService(
-      repositoriesPlugin.decorator.reactionRepository
-    )
+    () => new ReactionsService(repositoriesPlugin.decorator.reactionRepository),
   );
 
-  const plugin = withTraceSync(
-    'reactions.init.services.plugin',
-    () => new Elysia({ name: "Services" })
-      .use(repositoriesPlugin)
-      .decorate("reactionsService", reactionsService)
+  const plugin = withTraceSync('reactions.init.services.plugin', () =>
+    new Elysia({ name: 'Services' }).use(repositoriesPlugin).decorate('reactionsService', reactionsService),
   );
 
   return plugin;
-}
+};
 
-export type ServicesPlugin = ReturnType<typeof createServicesPlugin>
+export type ServicesPlugin = ReturnType<typeof createServicesPlugin>;

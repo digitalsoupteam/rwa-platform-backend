@@ -1,31 +1,31 @@
-import mongoose, { Schema, type InferRawDocType } from "mongoose";
+import mongoose, { Schema, type InferRawDocType } from 'mongoose';
 
 const fileSchemaDefinition = {
   name: {
     type: String,
     required: true,
-    trim: true
+    trim: true,
   },
   path: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
   },
   size: {
     type: Number,
-    required: true
+    required: true,
   },
   mimeType: {
     type: String,
-    required: true
-  }
+    required: true,
+  },
 } as const;
 
 const fileSchema = new Schema(fileSchemaDefinition, {
-  timestamps: { currentTime: () => Math.floor(Date.now() / 1000) }
+  timestamps: { currentTime: () => Math.floor(Date.now() / 1000) },
 });
 
 fileSchema.index({ path: 1 });
 
 export type IFileEntity = InferRawDocType<typeof fileSchemaDefinition>;
-export const FileEntity = mongoose.model("File", fileSchema);
+export const FileEntity = mongoose.model('File', fileSchema);

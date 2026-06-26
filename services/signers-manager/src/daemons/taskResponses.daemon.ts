@@ -1,10 +1,10 @@
-import { SignerClient } from "../clients/signer.client";
-import { SignaturesService } from "../services/signatures.service";
-import type { ConsumeMessage } from "amqplib";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
-import { LogDecorator } from "@shared/monitoring/src/logDecorator";
-import { AppError } from "@shared/errors/app-errors";
+import { SignerClient } from '../clients/signer.client';
+import { SignaturesService } from '../services/signatures.service';
+import type { ConsumeMessage } from 'amqplib';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { AppError } from '@shared/errors/app-errors';
 
 interface SignatureResponse {
   signer: string;
@@ -20,7 +20,7 @@ interface SignatureResponse {
 export class TaskResponsesDaemon {
   constructor(
     private readonly signerClient: SignerClient,
-    private readonly signaturesService: SignaturesService
+    private readonly signaturesService: SignaturesService,
   ) {}
 
   /**
@@ -43,7 +43,7 @@ export class TaskResponsesDaemon {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ["message?.fields?.routingKey"] })
+  @LogDecorator({ args: ['message?.fields?.routingKey'] })
   private async handleResponse(message: ConsumeMessage | null): Promise<void> {
     if (!message) return;
 
@@ -52,14 +52,18 @@ export class TaskResponsesDaemon {
 
       // Validate response
       if (!response.signer || !response.hash || !response.signature || !response.taskId) {
-        throw new AppError({ message: "Invalid signature response format", statusCode: 400, code: "VALIDATION_ERROR" });
+        throw new AppError({
+          message: 'Invalid signature response format',
+          statusCode: 400,
+          code: 'VALIDATION_ERROR',
+        });
       }
 
       // Add signature to task
       await this.signaturesService.addSignature({
         taskId: response.taskId,
         signer: response.signer,
-        signature: response.signature
+        signature: response.signature,
       });
 
       // Acknowledge message

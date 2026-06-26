@@ -1,5 +1,5 @@
-import mongoose, { Schema } from "mongoose";
-import type { InferRawDocType } from "mongoose";
+import mongoose, { Schema } from 'mongoose';
+import type { InferRawDocType } from 'mongoose';
 
 const eventSchemaDefinition = {
   chainId: {
@@ -52,4 +52,4 @@ eventSchema.index({ address: 1 });
 eventSchema.index({ name: 1 }); // Fix: use 'name' instead of non-existent 'event' field
 
 export type IEventEntity = InferRawDocType<typeof eventSchemaDefinition>;
-export const EventEntity = mongoose.model("Event", eventSchema);
+export const EventEntity = mongoose.model('Event', eventSchema);

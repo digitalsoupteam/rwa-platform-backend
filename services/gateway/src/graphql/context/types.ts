@@ -15,7 +15,7 @@ import type {
   ChartsClient,
   ReactionsClient,
   LoyaltyClient,
-  DaoClient
+  DaoClient,
 } from '../../clients/eden.clients';
 import type { createPubSub } from 'graphql-yoga';
 import { CacheService } from '../../services/cache.service';
@@ -56,7 +56,6 @@ export interface Services {
   parent: ParentService;
   validation: ValidationService;
 }
-
 
 export type PubSubInstance = ReturnType<typeof createPubSub>;
 

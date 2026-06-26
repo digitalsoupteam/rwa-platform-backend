@@ -1,26 +1,34 @@
 import type { MutationResolvers } from '../../../../generated/types';
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const updateFaqAnswer: MutationResolvers['updateFaqAnswer'] = async (
   _parent,
   { input },
-  { services, clients, user }
+  { services, clients, user },
 ) => {
   logger.debug('Updating FAQ answer', { input });
 
   if (!user) {
-    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Get answer first to check permissions
   const answerResponse = await clients.faqClient.getAnswer.post({
-    id: input.id
+    id: input.id,
   });
 
   if (answerResponse.error) {
     logger.error('Failed to get answer:', answerResponse.error);
-    throw new AppError({ message: 'Failed to get answer data', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to get answer data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const answer = answerResponse.data;
@@ -29,17 +37,21 @@ export const updateFaqAnswer: MutationResolvers['updateFaqAnswer'] = async (
     userId: user.id,
     ownerId: answer.ownerId,
     ownerType: answer.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   const response = await clients.faqClient.updateAnswer.post({
     id: input.id,
-    updateData: input.updateData
+    updateData: input.updateData,
   });
 
   if (response.error) {
     logger.error('Failed to update FAQ answer:', response.error);
-    throw new AppError({ message: 'Failed to update FAQ answer', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to update FAQ answer',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

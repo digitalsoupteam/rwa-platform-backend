@@ -5,7 +5,12 @@ import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentation
 import { AmqplibInstrumentation } from '@opentelemetry/instrumentation-amqplib';
 
 // OpenTelemetry Logs
-import { LoggerProvider, BatchLogRecordProcessor, SimpleLogRecordProcessor, ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
+import {
+  LoggerProvider,
+  BatchLogRecordProcessor,
+  SimpleLogRecordProcessor,
+  ConsoleLogRecordExporter,
+} from '@opentelemetry/sdk-logs';
 import { OTLPLogExporter } from '@opentelemetry/exporter-logs-otlp-http';
 import { logs } from '@opentelemetry/api-logs';
 
@@ -33,13 +38,10 @@ const logExporter = new OTLPLogExporter({
 
 const loggerProvider = new LoggerProvider({
   resource,
-  processors: [
-    new SimpleLogRecordProcessor(new ConsoleLogRecordExporter()),
-    new BatchLogRecordProcessor(logExporter)
-  ]
+  processors: [new SimpleLogRecordProcessor(new ConsoleLogRecordExporter()), new BatchLogRecordProcessor(logExporter)],
 });
 logs.setGlobalLoggerProvider(loggerProvider);
-export const logger = new OTelLogger(process.env.SERVICE_NAME || "unknown-service3");
+export const logger = new OTelLogger(process.env.SERVICE_NAME || 'unknown-service3');
 
 const metricExporter = new OTLPMetricExporter({
   url: `${baseUrl}/v1/metrics`,
@@ -47,24 +49,24 @@ const metricExporter = new OTLPMetricExporter({
 
 const meterProvider = new MeterProvider({
   resource,
-  readers: [new PeriodicExportingMetricReader({
-    exporter: metricExporter,
-    exportIntervalMillis: 5000,
-  })],
+  readers: [
+    new PeriodicExportingMetricReader({
+      exporter: metricExporter,
+      exportIntervalMillis: 5000,
+    }),
+  ],
 });
 metrics.setGlobalMeterProvider(meterProvider);
 
 const traceExporter = new OTLPTraceExporter({
   url: `${baseUrl}/v1/traces`,
-  headers: {}
+  headers: {},
 });
 
 export const monitoringPlugin = opentelemetry({
   serviceName: process.env.SERVICE_NAME,
   resource,
-  spanProcessors: [
-    new BatchSpanProcessor(traceExporter)
-  ],
+  spanProcessors: [new BatchSpanProcessor(traceExporter)],
   instrumentations: [
     getNodeAutoInstrumentations({
       '@opentelemetry/instrumentation-http': {
@@ -83,7 +85,7 @@ export const monitoringPlugin = opentelemetry({
         enabled: true,
         responseHook: () => {
           // console.log('redisaw1requestHook')
-        }
+        },
       },
       '@opentelemetry/instrumentation-ioredis': {
         enabled: true,

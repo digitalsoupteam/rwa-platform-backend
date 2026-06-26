@@ -1,9 +1,9 @@
-import { SignersManagerClient } from "../clients/signersManager.client";
-import { SignatureService } from "../services/signature.service";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
-import { LogDecorator } from "@shared/monitoring/src/logDecorator";
-import { AppError } from "@shared/errors/app-errors";
+import { SignersManagerClient } from '../clients/signersManager.client';
+import { SignatureService } from '../services/signature.service';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { AppError } from '@shared/errors/app-errors';
 
 /**
  * Daemon for handling signature requests
@@ -14,7 +14,7 @@ export class SignatureDaemon {
 
   constructor(
     private readonly signersManagerClient: SignersManagerClient,
-    private readonly signatureService: SignatureService
+    private readonly signatureService: SignatureService,
   ) {}
 
   /**
@@ -44,20 +44,24 @@ export class SignatureDaemon {
 
       // Validate request
       if (!request.hash || !request.taskId || !request.expired) {
-        throw new AppError({ message: "Invalid signature request format: missing required fields", statusCode: 400, code: "VALIDATION_ERROR" });
+        throw new AppError({
+          message: 'Invalid signature request format: missing required fields',
+          statusCode: 400,
+          code: 'VALIDATION_ERROR',
+        });
       }
 
       // Validate hash format
       if (!/^0x[0-9a-f]{64}$/i.test(request.hash)) {
-        throw new AppError({ message: "Invalid hash format: must be 32-byte hex string with 0x prefix", statusCode: 400, code: "VALIDATION_ERROR" });
+        throw new AppError({
+          message: 'Invalid hash format: must be 32-byte hex string with 0x prefix',
+          statusCode: 400,
+          code: 'VALIDATION_ERROR',
+        });
       }
 
       // Process signature request
-      await this.signatureService.signHash(
-        request.hash,
-        request.taskId,
-        request.expired
-      );
+      await this.signatureService.signHash(request.hash, request.taskId, request.expired);
 
       // Acknowledge message
       await this.signersManagerClient.ackMessage(message);

@@ -1,16 +1,15 @@
-import { FileRepository } from "../repositories/file.repository";
-import { StorageClient } from "../clients/storage.client";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
-import { LogDecorator } from "@shared/monitoring/src/logDecorator";
-import { setSpanAttributes } from "@shared/monitoring/src/tracing";
-import { AppError } from "@shared/errors/app-errors";
-
+import { FileRepository } from '../repositories/file.repository';
+import { StorageClient } from '../clients/storage.client';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
+import { AppError } from '@shared/errors/app-errors';
 
 export class FileService {
   constructor(
     private readonly fileRepository: FileRepository,
-    private readonly storageClient: StorageClient
+    private readonly storageClient: StorageClient,
   ) {}
 
   /**
@@ -19,9 +18,7 @@ export class FileService {
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator()
-  async createFile(data: {
-    file: File;
-  }) {
+  async createFile(data: { file: File }) {
     setSpanAttributes({
       mimeType: data.file.type,
     });
@@ -60,7 +57,11 @@ export class FileService {
     const file = await this.fileRepository.findById(id);
 
     if (!this.storageClient.fileExists(file.path)) {
-      throw new AppError({ message: "Physical file not found", statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({
+        message: 'Physical file not found',
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return {
@@ -85,7 +86,11 @@ export class FileService {
     const file = await this.fileRepository.findByPath(path);
 
     if (!this.storageClient.fileExists(file.path)) {
-      throw new AppError({ message: "Physical file not found", statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({
+        message: 'Physical file not found',
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return {
@@ -103,17 +108,24 @@ export class FileService {
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({ args: ['id', 'data'] })
-  async updateFile(id: string, data: {
-    name?: string;
-    metadata?: Record<string, any>;
-  }) {
+  async updateFile(
+    id: string,
+    data: {
+      name?: string;
+      metadata?: Record<string, any>;
+    },
+  ) {
     setSpanAttributes({
       fileId: id,
     });
     const file = await this.fileRepository.update(id, data);
 
     if (!this.storageClient.fileExists(file.path)) {
-      throw new AppError({ message: "Physical file not found", statusCode: 404, code: "NOT_FOUND" });
+      throw new AppError({
+        message: 'Physical file not found',
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return {

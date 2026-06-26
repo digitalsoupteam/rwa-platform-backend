@@ -1,12 +1,8 @@
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import type { QueryResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
-export const getVolumeData: QueryResolvers['getVolumeData'] = async (
-  _parent,
-  { input },
-  { clients }
-) => {
+export const getVolumeData: QueryResolvers['getVolumeData'] = async (_parent, { input }, { clients }) => {
   logger.info('Getting volume data', { input });
 
   const response = await clients.chartsClient.getVolumeData.post({
@@ -19,12 +15,16 @@ export const getVolumeData: QueryResolvers['getVolumeData'] = async (
 
   if (response.error) {
     logger.error('Failed to get volume data:', response.error);
-    throw new AppError({ message: 'Failed to get volume data', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to get volume data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;
 
-  return data.map(volumeData => ({
+  return data.map((volumeData) => ({
     timestamp: volumeData.timestamp,
     mintVolume: volumeData.mintVolume,
     burnVolume: volumeData.burnVolume,

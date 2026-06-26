@@ -1,12 +1,8 @@
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import type { QueryResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/logger';
 
-export const getPoolTransactions: QueryResolvers['getPoolTransactions'] = async (
-  _parent,
-  { input },
-  { clients }
-) => {
+export const getPoolTransactions: QueryResolvers['getPoolTransactions'] = async (_parent, { input }, { clients }) => {
   logger.info('Getting pool transactions', { input });
 
   const response = await clients.chartsClient.getPoolTransactions.post({
@@ -18,12 +14,16 @@ export const getPoolTransactions: QueryResolvers['getPoolTransactions'] = async 
 
   if (response.error) {
     logger.error('Failed to get pool transactions:', response.error);
-    throw new AppError({ message: 'Failed to get pool transactions', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to get pool transactions',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;
 
-  return data.map(tx => ({
+  return data.map((tx) => ({
     id: tx.id,
     poolAddress: tx.poolAddress,
     transactionType: tx.transactionType,
@@ -35,6 +35,6 @@ export const getPoolTransactions: QueryResolvers['getPoolTransactions'] = async 
     holdFee: tx.holdFee,
     bonusFee: tx.bonusFee,
     createdAt: tx.createdAt,
-    updatedAt: tx.updatedAt
+    updatedAt: tx.updatedAt,
   }));
 };

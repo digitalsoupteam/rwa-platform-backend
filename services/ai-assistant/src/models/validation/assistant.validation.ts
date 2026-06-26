@@ -1,6 +1,6 @@
-import { t } from "elysia";
-import { paginationSchema } from "./shared.validation";
-import { assistantContextSchema } from "../shared/enums.model";
+import { t } from 'elysia';
+import { paginationSchema } from './shared.validation';
+import { assistantContextSchema } from '../shared/enums.model';
 
 /*
  * Base model schema
@@ -15,12 +15,7 @@ export const assistantSchema = t.Object({
 /*
  * Create
  */
-export const createAssistantRequest = t.Pick(assistantSchema, [
-  "name",
-  "type",
-  "userId",
-  "contextPreferences",
-]);
+export const createAssistantRequest = t.Pick(assistantSchema, ['name', 'type', 'userId', 'contextPreferences']);
 
 export const createAssistantResponse = assistantSchema;
 
@@ -28,8 +23,8 @@ export const createAssistantResponse = assistantSchema;
  * Update
  */
 export const updateAssistantRequest = t.Composite([
-  t.Pick(assistantSchema, ["id"]),
-  t.Partial(t.Pick(assistantSchema, ["name", "contextPreferences"])),
+  t.Pick(assistantSchema, ['id']),
+  t.Partial(t.Pick(assistantSchema, ['name', 'contextPreferences'])),
 ]);
 
 export const updateAssistantResponse = assistantSchema;
@@ -37,14 +32,14 @@ export const updateAssistantResponse = assistantSchema;
 /*
  * Delete
  */
-export const deleteAssistantRequest = t.Pick(assistantSchema, ["id"]);
+export const deleteAssistantRequest = t.Pick(assistantSchema, ['id']);
 
-export const deleteAssistantResponse = t.Pick(assistantSchema, ["id"]);
+export const deleteAssistantResponse = t.Pick(assistantSchema, ['id']);
 
 /*
  * Get
  */
-export const getAssistantRequest = t.Pick(assistantSchema, ["id"]);
+export const getAssistantRequest = t.Pick(assistantSchema, ['id']);
 
 export const getAssistantResponse = assistantSchema;
 

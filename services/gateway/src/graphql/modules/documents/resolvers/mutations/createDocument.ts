@@ -1,16 +1,20 @@
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const createDocument: MutationResolvers['createDocument'] = async (
   _parent,
   { input },
-  { services, clients, user, fileValidation }
+  { services, clients, user, fileValidation },
 ) => {
   logger.debug('Creating new document', { input });
 
   if (!user) {
-    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Validate file MIME type before upload
@@ -18,7 +22,7 @@ export const createDocument: MutationResolvers['createDocument'] = async (
     throw new AppError({
       message: `File type "${input.file.type}" is not allowed. Allowed types: ${fileValidation.DOCUMENTS_ALLOWED_MIME_TYPES.join(', ')}`,
       statusCode: 400,
-      code: "VALIDATION_ERROR"
+      code: 'VALIDATION_ERROR',
     });
   }
 
@@ -27,18 +31,22 @@ export const createDocument: MutationResolvers['createDocument'] = async (
     throw new AppError({
       message: `File size exceeds maximum allowed size of ${fileValidation.DOCUMENTS_MAX_FILE_SIZE} bytes`,
       statusCode: 400,
-      code: "VALIDATION_ERROR"
+      code: 'VALIDATION_ERROR',
     });
   }
 
   // Get folder info first
   const folderResponse = await clients.documentsClient.getFolder.post({
-    id: input.folderId
+    id: input.folderId,
   });
 
   if (folderResponse.error) {
     logger.error('Failed to get folder:', folderResponse.error);
-    throw new AppError({ message: 'Failed to get folder data', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to get folder data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const folder = folderResponse.data;
@@ -47,7 +55,7 @@ export const createDocument: MutationResolvers['createDocument'] = async (
     userId: user.id,
     ownerId: folder.ownerId,
     ownerType: folder.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   // Upload file to files service
@@ -57,7 +65,7 @@ export const createDocument: MutationResolvers['createDocument'] = async (
 
   if (fileResponse.error) {
     logger.error('Failed to upload file:', fileResponse.error);
-    throw new AppError({ message: 'Failed to upload file', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({ message: 'Failed to upload file', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   // Create document with file path
@@ -76,7 +84,11 @@ export const createDocument: MutationResolvers['createDocument'] = async (
 
   if (response.error) {
     logger.error('Failed to create document:', response.error);
-    throw new AppError({ message: 'Failed to create document', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to create document',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

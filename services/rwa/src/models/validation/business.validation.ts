@@ -1,4 +1,4 @@
-import { t } from "elysia";
+import { t } from 'elysia';
 
 /*
  * Shared schemas
@@ -37,8 +37,8 @@ export const businessSchema = t.Object({
  * Create Business
  */
 export const createBusinessRequest = t.Composite([
-  t.Pick(businessSchema, ["name", "ownerId", "ownerType", "chainId"]),
-  t.Partial(t.Pick(businessSchema, ["description", "tags", "image", "country", "businessType", "socials"])),
+  t.Pick(businessSchema, ['name', 'ownerId', 'ownerType', 'chainId']),
+  t.Partial(t.Pick(businessSchema, ['description', 'tags', 'image', 'country', 'businessType', 'socials'])),
 ]);
 export const createBusinessResponse = businessSchema;
 
@@ -58,23 +58,16 @@ export const createBusinessWithAIResponse = businessSchema;
  */
 export const editBusinessRequest = t.Object({
   id: t.String(),
-  updateData: t.Partial(t.Pick(businessSchema, [
-    "chainId",
-    "name", 
-    "description", 
-    "tags", 
-    "image",
-    "country",
-    "businessType",
-    "socials"
-  ])),
+  updateData: t.Partial(
+    t.Pick(businessSchema, ['chainId', 'name', 'description', 'tags', 'image', 'country', 'businessType', 'socials']),
+  ),
 });
 export const editBusinessResponse = businessSchema;
 
 /*
  * Update Risk Score
  */
-export const updateBusinessRiskScoreRequest = t.Pick(businessSchema, ["id"]);
+export const updateBusinessRiskScoreRequest = t.Pick(businessSchema, ['id']);
 export const updateBusinessRiskScoreResponse = businessSchema;
 
 /*
@@ -93,13 +86,13 @@ export const requestBusinessApprovalSignaturesResponse = t.Object({
 /*
  * Reject Approval Signatures
  */
-export const rejectBusinessApprovalSignaturesRequest = t.Pick(businessSchema, ["id"]);
+export const rejectBusinessApprovalSignaturesRequest = t.Pick(businessSchema, ['id']);
 export const rejectBusinessApprovalSignaturesResponse = t.Object({});
 
 /*
  * Get Business
  */
-export const getBusinessRequest = t.Pick(businessSchema, ["id"]);
+export const getBusinessRequest = t.Pick(businessSchema, ['id']);
 export const getBusinessResponse = businessSchema;
 
 /*
@@ -107,8 +100,8 @@ export const getBusinessResponse = businessSchema;
  */
 export const getBusinessesRequest = t.Object({
   filter: t.Optional(t.Record(t.String(), t.Any())),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
   limit: t.Optional(t.Number()),
-  offset: t.Optional(t.Number())
+  offset: t.Optional(t.Number()),
 });
 export const getBusinessesResponse = t.Array(businessSchema);

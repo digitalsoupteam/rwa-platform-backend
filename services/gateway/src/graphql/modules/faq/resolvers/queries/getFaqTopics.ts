@@ -1,12 +1,8 @@
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import type { QueryResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
-export const getFaqTopics: QueryResolvers['getFaqTopics'] = async (
-  _parent,
-  { input },
-  { clients }
-) => {
+export const getFaqTopics: QueryResolvers['getFaqTopics'] = async (_parent, { input }, { clients }) => {
   logger.info('Getting FAQ topics list', { input });
 
   const response = await clients.faqClient.getTopics.post({
@@ -18,12 +14,12 @@ export const getFaqTopics: QueryResolvers['getFaqTopics'] = async (
 
   if (response.error) {
     logger.error('Failed to get topics:', response.error);
-    throw new AppError({ message: 'Failed to get topics', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({ message: 'Failed to get topics', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   const { data } = response;
 
-  return data.map(topic => ({
+  return data.map((topic) => ({
     id: topic.id,
     name: topic.name,
     ownerId: topic.ownerId,

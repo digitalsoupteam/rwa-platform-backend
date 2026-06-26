@@ -4,12 +4,12 @@ import { logger } from '@shared/monitoring/src/monitoring.plugin';
 import { RedisEvent } from '../../../../context/types';
 
 export const transactionUpdates: SubscriptionResolvers['transactionUpdates'] = {
-  subscribe: (_parent, { poolAddress }, {pubSub}) => {
+  subscribe: (_parent, { poolAddress }, { pubSub }) => {
     logger.debug(`Subscribing to transaction updates for pool ${poolAddress}`);
-    
+
     return pipe(
       pubSub.subscribe(`charts:transactions:${poolAddress}`),
-      map((event: RedisEvent) => ({ transactionUpdates: event.payload }))
+      map((event: RedisEvent) => ({ transactionUpdates: event.payload })),
     );
-  }
+  },
 };

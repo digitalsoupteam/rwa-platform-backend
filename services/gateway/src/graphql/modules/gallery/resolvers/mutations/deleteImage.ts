@@ -1,26 +1,30 @@
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
-export const deleteImage: MutationResolvers['deleteImage'] = async (
-  _parent,
-  { id },
-  { services, clients, user }
-) => {
+export const deleteImage: MutationResolvers['deleteImage'] = async (_parent, { id }, { services, clients, user }) => {
   logger.debug('Deleting image', { id });
 
   if (!user) {
-    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Get image first to check permissions
   const imageResponse = await clients.galleryClient.getImage.post({
-    id
+    id,
   });
 
   if (imageResponse.error) {
     logger.error('Failed to get image:', imageResponse.error);
-    throw new AppError({ message: 'Failed to get image data', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to get image data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const image = imageResponse.data;
@@ -29,16 +33,16 @@ export const deleteImage: MutationResolvers['deleteImage'] = async (
     userId: user.id,
     ownerId: image.ownerId,
     ownerType: image.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   const response = await clients.galleryClient.deleteImage.post({
-    id
+    id,
   });
 
   if (response.error) {
     logger.error('Failed to delete image:', response.error);
-    throw new AppError({ message: 'Failed to delete image', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({ message: 'Failed to delete image', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   return response.data.id;

@@ -1,8 +1,8 @@
-import { Elysia } from "elysia";
-import { FaucetService } from "../services/faucet.service";
-import type { RepositoriesPlugin } from "./repositories.plugin";
-import type { ClientsPlugin } from "./clients.plugin";
-import { withTraceSync } from "@shared/monitoring/src/tracing";
+import { Elysia } from 'elysia';
+import { FaucetService } from '../services/faucet.service';
+import type { RepositoriesPlugin } from './repositories.plugin';
+import type { ClientsPlugin } from './clients.plugin';
+import { withTraceSync } from '@shared/monitoring/src/tracing';
 
 export const createServicesPlugin = (
   repositoriesPlugin: RepositoriesPlugin,
@@ -14,33 +14,33 @@ export const createServicesPlugin = (
   platformTokenAmount: number,
   requestGasDelay: number,
   requestHoldDelay: number,
-  requestPlatformDelay: number
+  requestPlatformDelay: number,
 ) => {
   const faucetService = withTraceSync(
     'testnet-faucet.init.services.faucet',
-    () => new FaucetService(
-      repositoriesPlugin.decorator.faucetRequestRepository,
-      clientsPlugin.decorator.blockchainClient,
-      holdTokenAddress,
-      platformTokenAddress,
-      gasTokenAmount,
-      holdTokenAmount,
-      platformTokenAmount,
-      requestGasDelay,
-      requestHoldDelay,
-      requestPlatformDelay
-    )
+    () =>
+      new FaucetService(
+        repositoriesPlugin.decorator.faucetRequestRepository,
+        clientsPlugin.decorator.blockchainClient,
+        holdTokenAddress,
+        platformTokenAddress,
+        gasTokenAmount,
+        holdTokenAmount,
+        platformTokenAmount,
+        requestGasDelay,
+        requestHoldDelay,
+        requestPlatformDelay,
+      ),
   );
 
-  const plugin = withTraceSync(
-    'testnet-faucet.init.services.plugin',
-    () => new Elysia({ name: "Services" })
+  const plugin = withTraceSync('testnet-faucet.init.services.plugin', () =>
+    new Elysia({ name: 'Services' })
       .use(repositoriesPlugin)
       .use(clientsPlugin)
-      .decorate("faucetService", faucetService)
+      .decorate('faucetService', faucetService),
   );
 
   return plugin;
-}
+};
 
-export type ServicesPlugin = ReturnType<typeof createServicesPlugin>
+export type ServicesPlugin = ReturnType<typeof createServicesPlugin>;

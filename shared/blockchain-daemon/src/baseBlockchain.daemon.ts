@@ -1,7 +1,7 @@
-import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
-import { logger } from "@shared/monitoring/src/monitoring.plugin";
-import type { ConsumeMessage } from "amqplib";
-import { AppError } from "@shared/errors/app-errors";
+import { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
+import type { ConsumeMessage } from 'amqplib';
+import { AppError } from '@shared/errors/app-errors';
 
 export interface BlockchainEvent {
   chainId: number;
@@ -24,12 +24,12 @@ export interface EventRouting {
  * Base daemon for handling blockchain events
  */
 export abstract class BaseBlockchainDaemon {
-  private readonly EXCHANGE_NAME = "blockchain.events";
+  private readonly EXCHANGE_NAME = 'blockchain.events';
   private isRunning: boolean = false;
 
   constructor(
     protected readonly rabbitClient: RabbitMQClient,
-    private readonly queueName: string
+    private readonly queueName: string,
   ) {}
 
   /**
@@ -43,41 +43,41 @@ export abstract class BaseBlockchainDaemon {
    */
   async initialize(): Promise<void> {
     try {
-      logger.info("Initializing Blockchain Events Daemon");
+      logger.info('Initializing Blockchain Events Daemon');
 
       const channel = this.rabbitClient.getChannel();
       if (!channel) {
-        throw new AppError({ message: "RabbitMQ channel not initialized", statusCode: 503, code: "SERVICE_UNAVAILABLE" });
+        throw new AppError({
+          message: 'RabbitMQ channel not initialized',
+          statusCode: 503,
+          code: 'SERVICE_UNAVAILABLE',
+        });
       }
 
       const routing = this.getEventRouting();
 
       // Setup direct exchange
-      await this.rabbitClient.setupExchange(this.EXCHANGE_NAME, "direct", { 
-        durable: true 
+      await this.rabbitClient.setupExchange(this.EXCHANGE_NAME, 'direct', {
+        durable: true,
       });
-      
+
       // Create queue
-      await this.rabbitClient.setupQueue(this.queueName, { 
-        durable: true 
+      await this.rabbitClient.setupQueue(this.queueName, {
+        durable: true,
       });
-      
+
       // Bind queue to each event we want to handle
       for (const eventName of Object.keys(routing)) {
-        await this.rabbitClient.bindQueue(
-          this.queueName,
-          this.EXCHANGE_NAME,
-          eventName
-        );
+        await this.rabbitClient.bindQueue(this.queueName, this.EXCHANGE_NAME, eventName);
         logger.info(`Bound queue ${this.queueName} to event ${eventName}`);
       }
 
       // Start consuming messages
       await this.startConsuming();
 
-      logger.info("Blockchain Events Daemon initialized successfully");
+      logger.info('Blockchain Events Daemon initialized successfully');
     } catch (error) {
-      logger.error("Failed to initialize Blockchain Events Daemon:", error);
+      logger.error('Failed to initialize Blockchain Events Daemon:', error);
       throw error;
     }
   }
@@ -86,11 +86,9 @@ export abstract class BaseBlockchainDaemon {
    * Start consuming messages
    */
   private async startConsuming(): Promise<void> {
-    await this.rabbitClient.consume(
-      this.queueName,
-      this.handleMessage.bind(this),
-      { noAck: false }
-    );
+    await this.rabbitClient.consume(this.queueName, this.handleMessage.bind(this), {
+      noAck: false,
+    });
   }
 
   /**
@@ -116,12 +114,12 @@ export abstract class BaseBlockchainDaemon {
 
         // Process event
         await handler(event);
-        
+
         // Acknowledge message
         await this.rabbitClient.ack(message);
 
         logger.debug(`Successfully processed blockchain event ${event.name}`, {
-          transactionHash: event.transactionHash
+          transactionHash: event.transactionHash,
         });
       } catch (error) {
         logger.error(`Error processing blockchain event ${event.name}:`, error);
@@ -138,12 +136,12 @@ export abstract class BaseBlockchainDaemon {
    */
   async start(): Promise<void> {
     if (this.isRunning) {
-      logger.warn("Blockchain Events Daemon is already running");
+      logger.warn('Blockchain Events Daemon is already running');
       return;
     }
 
     this.isRunning = true;
-    logger.info("Starting Blockchain Events Daemon");
+    logger.info('Starting Blockchain Events Daemon');
   }
 
   /**
@@ -151,11 +149,11 @@ export abstract class BaseBlockchainDaemon {
    */
   async stop(): Promise<void> {
     if (!this.isRunning) {
-      logger.warn("Blockchain Events Daemon is not running");
+      logger.warn('Blockchain Events Daemon is not running');
       return;
     }
 
     this.isRunning = false;
-    logger.info("Stopping Blockchain Events Daemon");
+    logger.info('Stopping Blockchain Events Daemon');
   }
 }

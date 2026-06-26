@@ -1,4 +1,4 @@
-import { t } from "elysia";
+import { t } from 'elysia';
 
 /*
  * Entity schemas
@@ -42,12 +42,12 @@ export const questionSchema = t.Object({
  * Create topic
  */
 export const createTopicRequest = t.Pick(topicSchema, [
-  "name",
-  "ownerId",
-  "ownerType",
-  "creator",
-  "parentId",
-  "grandParentId",
+  'name',
+  'ownerId',
+  'ownerType',
+  'creator',
+  'parentId',
+  'grandParentId',
 ]);
 export const createTopicResponse = topicSchema;
 
@@ -57,21 +57,21 @@ export const createTopicResponse = topicSchema;
 export const updateTopicRequest = t.Object({
   id: t.String(),
   updateData: t.Object({
-    name: t.String()
-  })
+    name: t.String(),
+  }),
 });
 export const updateTopicResponse = topicSchema;
 
 /*
  * Delete topic
  */
-export const deleteTopicRequest = t.Pick(topicSchema, ["id"]);
-export const deleteTopicResponse = t.Pick(topicSchema, ["id"]);
+export const deleteTopicRequest = t.Pick(topicSchema, ['id']);
+export const deleteTopicResponse = t.Pick(topicSchema, ['id']);
 
 /*
  * Get topic
  */
-export const getTopicRequest = t.Pick(topicSchema, ["id"]);
+export const getTopicRequest = t.Pick(topicSchema, ['id']);
 export const getTopicResponse = topicSchema;
 
 /*
@@ -79,9 +79,9 @@ export const getTopicResponse = topicSchema;
  */
 export const getTopicsRequest = t.Object({
   filter: t.Record(t.String(), t.Any()),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
   limit: t.Optional(t.Number()),
-  offset: t.Optional(t.Number())
+  offset: t.Optional(t.Number()),
 });
 export const getTopicsResponse = t.Array(topicSchema);
 
@@ -89,13 +89,13 @@ export const getTopicsResponse = t.Array(topicSchema);
  * Create question
  */
 export const createQuestionRequest = t.Pick(questionSchema, [
-  "topicId",
-  "text",
-  "ownerId",
-  "ownerType",
-  "creator",
-  "parentId",
-  "grandParentId",
+  'topicId',
+  'text',
+  'ownerId',
+  'ownerType',
+  'creator',
+  'parentId',
+  'grandParentId',
 ]);
 export const createQuestionResponse = questionSchema;
 
@@ -105,8 +105,8 @@ export const createQuestionResponse = questionSchema;
 export const updateQuestionTextRequest = t.Object({
   id: t.String(),
   updateData: t.Object({
-    text: t.String()
-  })
+    text: t.String(),
+  }),
 });
 export const updateQuestionTextResponse = questionSchema;
 
@@ -116,7 +116,7 @@ export const updateQuestionTextResponse = questionSchema;
 export const createQuestionAnswerRequest = t.Object({
   id: t.String(),
   userId: t.String(),
-  text: t.String()
+  text: t.String(),
 });
 export const createQuestionAnswerResponse = t.Composite([
   t.Required(t.Pick(questionSchema, ['answer'])),
@@ -129,8 +129,8 @@ export const createQuestionAnswerResponse = t.Composite([
 export const updateQuestionAnswerRequest = t.Object({
   id: t.String(),
   updateData: t.Object({
-    text: t.String()
-  })
+    text: t.String(),
+  }),
 });
 export const updateQuestionAnswerResponse = t.Composite([
   t.Required(t.Pick(questionSchema, ['answer'])),
@@ -140,13 +140,13 @@ export const updateQuestionAnswerResponse = t.Composite([
 /*
  * Delete question
  */
-export const deleteQuestionRequest = t.Pick(questionSchema, ["id"]);
-export const deleteQuestionResponse = t.Pick(questionSchema, ["id"]);
+export const deleteQuestionRequest = t.Pick(questionSchema, ['id']);
+export const deleteQuestionResponse = t.Pick(questionSchema, ['id']);
 
 /*
  * Get question
  */
-export const getQuestionRequest = t.Pick(questionSchema, ["id"]);
+export const getQuestionRequest = t.Pick(questionSchema, ['id']);
 export const getQuestionResponse = questionSchema;
 
 /*
@@ -154,9 +154,9 @@ export const getQuestionResponse = questionSchema;
  */
 export const getQuestionsRequest = t.Object({
   filter: t.Record(t.String(), t.Any()),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
   limit: t.Optional(t.Number()),
-  offset: t.Optional(t.Number())
+  offset: t.Optional(t.Number()),
 });
 export const getQuestionsResponse = t.Array(questionSchema);
 

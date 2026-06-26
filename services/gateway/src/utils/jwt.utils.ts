@@ -1,7 +1,6 @@
-import { CONFIG } from "../config";
-import { logger } from "@shared/monitoring/src/monitoring.plugin";
+import { CONFIG } from '../config';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 import * as jwt from 'jsonwebtoken';
-
 
 export interface TokenPayload {
   userId: string;
@@ -11,12 +10,10 @@ export interface TokenPayload {
   iat: number;
 }
 
-
 export interface DecodedToken {
   exp: number;
   [key: string]: string | number;
 }
-
 
 export function verifyToken(token: string): TokenPayload | null {
   try {
@@ -28,14 +25,13 @@ export function verifyToken(token: string): TokenPayload | null {
   }
 }
 
-
 export function decodeToken(token: string): DecodedToken | null {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) {
       return null;
     }
-    
+
     const payload = parts[1];
     const decoded = Buffer.from(payload, 'base64').toString();
     return JSON.parse(decoded) as DecodedToken;
@@ -45,13 +41,12 @@ export function decodeToken(token: string): DecodedToken | null {
   }
 }
 
-
 export function isTokenExpired(decodedToken: DecodedToken): boolean {
   try {
     if (!decodedToken || !decodedToken.exp) {
       return true;
     }
-    
+
     const currentTime = Math.floor(Date.now() / 1000);
     return decodedToken.exp < currentTime;
   } catch (error) {
@@ -60,14 +55,13 @@ export function isTokenExpired(decodedToken: DecodedToken): boolean {
   }
 }
 
-
 export function extractFromToken(token: string): { userId: string; wallet: string } | null {
   try {
     const decoded = verifyToken(token);
     if (!decoded || !decoded.userId || !decoded.wallet || decoded.type !== 'access') {
       return null;
     }
-    
+
     return {
       userId: decoded.userId,
       wallet: decoded.wallet,

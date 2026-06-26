@@ -1,25 +1,33 @@
-import { AppError } from "@shared/errors/app-errors";
+import { AppError } from '@shared/errors/app-errors';
 import type { MutationResolvers } from '../../../../../generated/types';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export const requestPoolApprovalSignatures: MutationResolvers['requestPoolApprovalSignatures'] = async (
   _parent,
   { input },
-  { services, clients, user }
+  { services, clients, user },
 ) => {
   logger.debug('Requesting pool approval signatures', { input });
 
   if (!user) {
-    throw new AppError({ message: "Authentication required", statusCode: 401, code: "UNAUTHORIZED" });
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   const poolResponse = await clients.rwaClient.getPool.post({
-    id: input.id
+    id: input.id,
   });
 
   if (poolResponse.error) {
     logger.error('Failed to get pool:', poolResponse.error);
-    throw new AppError({ message: 'Failed to get pool data', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to get pool data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const pool = poolResponse.data;
@@ -28,19 +36,23 @@ export const requestPoolApprovalSignatures: MutationResolvers['requestPoolApprov
     userId: user.id,
     ownerId: pool.ownerId,
     ownerType: pool.ownerType,
-    permission: 'deploy'
+    permission: 'deploy',
   });
 
   const response = await clients.rwaClient.requestPoolApprovalSignatures.post({
     id: input.id,
     ownerWallet: input.ownerWallet,
     deployerWallet: input.deployerWallet,
-    createPoolFeeRatio: input.createPoolFeeRatio
+    createPoolFeeRatio: input.createPoolFeeRatio,
   });
 
   if (response.error) {
     logger.error('Failed to request pool approval signatures:', response.error);
-    throw new AppError({ message: 'Failed to request pool approval signatures', statusCode: 502, code: "BAD_GATEWAY" });
+    throw new AppError({
+      message: 'Failed to request pool approval signatures',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

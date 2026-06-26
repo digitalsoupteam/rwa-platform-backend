@@ -1,22 +1,16 @@
-import { Elysia } from "elysia";
-import type { ServicesPlugin } from "../plugins/services.plugin";
-import {
-  getTransactionsRequest,
-  getTransactionsResponse,
-} from "../models/validation/portfolio.validation";
+import { Elysia } from 'elysia';
+import type { ServicesPlugin } from '../plugins/services.plugin';
+import { getTransactionsRequest, getTransactionsResponse } from '../models/validation/portfolio.validation';
 
 export const getTransactionsController = (servicesPlugin: ServicesPlugin) => {
-  return new Elysia({ name: "GetTransactionsController" })
-    .use(servicesPlugin)
-    .post(
-      "/getTransactions",
-      async ({ body, portfolioService }) => {
-        
-        return await portfolioService.getTransactions(body);
-      },
-      {
-        body: getTransactionsRequest,
-        response: getTransactionsResponse,
-      }
-    );
+  return new Elysia({ name: 'GetTransactionsController' }).use(servicesPlugin).post(
+    '/getTransactions',
+    async ({ body, portfolioService }) => {
+      return await portfolioService.getTransactions(body);
+    },
+    {
+      body: getTransactionsRequest,
+      response: getTransactionsResponse,
+    },
+  );
 };

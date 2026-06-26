@@ -1,4 +1,4 @@
-import { t } from "elysia";
+import { t } from 'elysia';
 
 /*
  * Shared schemas
@@ -49,16 +49,20 @@ export const companyWithDetailsSchema = t.Object({
   ownerId: t.String(),
   country: t.Optional(t.String()),
   socials: t.Array(socialLinkSchema),
-  users: t.Array(t.Object({
-    id: t.String(),
-    userId: t.String(),
-    name: t.String(),
-    permissions: t.Array(t.Object({
+  users: t.Array(
+    t.Object({
       id: t.String(),
-      permission: t.String(),
-      entity: t.Optional(t.String()),
-    })),
-  })),
+      userId: t.String(),
+      name: t.String(),
+      permissions: t.Array(
+        t.Object({
+          id: t.String(),
+          permission: t.String(),
+          entity: t.Optional(t.String()),
+        }),
+      ),
+    }),
+  ),
   createdAt: t.Number(),
   updatedAt: t.Number(),
 });
@@ -67,8 +71,8 @@ export const companyWithDetailsSchema = t.Object({
  * Create company
  */
 export const createCompanyRequest = t.Composite([
-  t.Pick(companySchema, ["name", "description", "ownerId"]),
-  t.Partial(t.Pick(companySchema, ["country", "socials"])),
+  t.Pick(companySchema, ['name', 'description', 'ownerId']),
+  t.Partial(t.Pick(companySchema, ['country', 'socials'])),
 ]);
 export const createCompanyResponse = companySchema;
 
@@ -82,20 +86,20 @@ export const updateCompanyRequest = t.Object({
     description: t.Optional(t.String()),
     country: t.Optional(t.String()),
     socials: t.Optional(t.Array(socialLinkSchema)),
-  })
+  }),
 });
 export const updateCompanyResponse = companySchema;
 
 /*
  * Delete company
  */
-export const deleteCompanyRequest = t.Pick(companySchema, ["id"]);
-export const deleteCompanyResponse = t.Pick(companySchema, ["id"]);
+export const deleteCompanyRequest = t.Pick(companySchema, ['id']);
+export const deleteCompanyResponse = t.Pick(companySchema, ['id']);
 
 /*
  * Get company
  */
-export const getCompanyRequest = t.Pick(companySchema, ["id"]);
+export const getCompanyRequest = t.Pick(companySchema, ['id']);
 export const getCompanyResponse = companyWithDetailsSchema;
 
 /*
@@ -112,18 +116,14 @@ export const getCompaniesResponse = t.Array(companySchema);
 /*
  * Add member
  */
-export const addMemberRequest = t.Pick(memberSchema, [
-  "companyId",
-  "userId",
-  "name",
-]);
+export const addMemberRequest = t.Pick(memberSchema, ['companyId', 'userId', 'name']);
 export const addMemberResponse = memberSchema;
 
 /*
  * Remove member
  */
-export const removeMemberRequest = t.Pick(memberSchema, ["id"]);
-export const removeMemberResponse = t.Pick(memberSchema, ["id"]);
+export const removeMemberRequest = t.Pick(memberSchema, ['id']);
+export const removeMemberResponse = t.Pick(memberSchema, ['id']);
 
 /*
  * Grant permission
@@ -140,5 +140,5 @@ export const grantPermissionResponse = permissionSchema;
 /*
  * Revoke permission
  */
-export const revokePermissionRequest = t.Pick(permissionSchema, ["id"]);
-export const revokePermissionResponse = t.Pick(permissionSchema, ["id"]);
+export const revokePermissionRequest = t.Pick(permissionSchema, ['id']);
+export const revokePermissionResponse = t.Pick(permissionSchema, ['id']);

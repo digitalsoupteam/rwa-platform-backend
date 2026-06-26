@@ -1,16 +1,15 @@
-import { TopicRepository } from "../repositories/topic.repository";
-import { AnswerRepository } from "../repositories/answer.repository";
-import type { SortOrder } from "mongoose";
-import { TraceDecorator } from "@shared/monitoring/src/traceDecorator";
-import { MetricsDecorator } from "@shared/monitoring/src/metricsDecorator";
-import { LogDecorator } from "@shared/monitoring/src/logDecorator";
-import { setSpanAttributes } from "@shared/monitoring/src/tracing";
-
+import { TopicRepository } from '../repositories/topic.repository';
+import { AnswerRepository } from '../repositories/answer.repository';
+import type { SortOrder } from 'mongoose';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
 export class FaqService {
   constructor(
     private readonly topicRepository: TopicRepository,
-    private readonly answerRepository: AnswerRepository
+    private readonly answerRepository: AnswerRepository,
   ) {}
 
   /**
@@ -53,7 +52,7 @@ export class FaqService {
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({ args: ['id'] })
-  async updateTopic(params: { id: string, updateData: { name: string } }) {
+  async updateTopic(params: { id: string; updateData: { name: string } }) {
     setSpanAttributes({ entityId: params.id });
 
     const topic = await this.topicRepository.update(params.id, params.updateData);
@@ -130,14 +129,9 @@ export class FaqService {
   }) {
     setSpanAttributes({});
 
-    const topics = await this.topicRepository.findAll(
-      params.filter,
-      params.sort,
-      params.limit,
-      params.offset
-    );
+    const topics = await this.topicRepository.findAll(params.filter, params.sort, params.limit, params.offset);
 
-    return topics.map(topic => ({
+    return topics.map((topic) => ({
       id: topic._id.toString(),
       name: topic.name,
       ownerId: topic.ownerId,
@@ -202,7 +196,7 @@ export class FaqService {
       question?: string;
       answer?: string;
       order?: number;
-    }
+    };
   }) {
     setSpanAttributes({ entityId: params.id });
 
@@ -277,14 +271,9 @@ export class FaqService {
   }) {
     setSpanAttributes({});
 
-    const answers = await this.answerRepository.findAll(
-      params.filter,
-      params.sort,
-      params.limit,
-      params.offset
-    );
+    const answers = await this.answerRepository.findAll(params.filter, params.sort, params.limit, params.offset);
 
-    return answers.map(answer => ({
+    return answers.map((answer) => ({
       id: answer._id.toString(),
       topicId: answer.topicId.toString(),
       question: answer.question,
