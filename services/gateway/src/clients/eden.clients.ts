@@ -20,17 +20,11 @@ import type { App as DaoApp } from '@services/dao/src';
 import { createEdenTreatyClient } from '@shared/monitoring/src/eden';
 
 export const authClient = createEdenTreatyClient<AuthApp>(CONFIG.SERVICES.AUTH.URL);
-export const aiAssistantClient = createEdenTreatyClient<AiAssistantApp>(
-  CONFIG.SERVICES.ASSISTANT.URL,
-);
-export const testnetFaucetClient = createEdenTreatyClient<TestnetFaucetApp>(
-  CONFIG.SERVICES.TESTNET_FAUCET.URL,
-);
+export const aiAssistantClient = createEdenTreatyClient<AiAssistantApp>(CONFIG.SERVICES.ASSISTANT.URL);
+export const testnetFaucetClient = createEdenTreatyClient<TestnetFaucetApp>(CONFIG.SERVICES.TESTNET_FAUCET.URL);
 export const rwaClient = createEdenTreatyClient<RwaApp>(CONFIG.SERVICES.RWA.URL);
 export const filesClient = createEdenTreatyClient<FilesApp>(CONFIG.SERVICES.FILES.URL);
-export const signersManagerClient = createEdenTreatyClient<SignersManagerApp>(
-  CONFIG.SERVICES.SIGNERS_MANAGER.URL,
-);
+export const signersManagerClient = createEdenTreatyClient<SignersManagerApp>(CONFIG.SERVICES.SIGNERS_MANAGER.URL);
 export const documentsClient = createEdenTreatyClient<DocumentsApp>(CONFIG.SERVICES.DOCUMENTS.URL);
 export const galleryClient = createEdenTreatyClient<GalleryApp>(CONFIG.SERVICES.GALLERY.URL);
 export const questionsClient = createEdenTreatyClient<QuestionsApp>(CONFIG.SERVICES.QUESTIONS.URL);

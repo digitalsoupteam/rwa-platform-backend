@@ -11,9 +11,7 @@ export const createControllersPlugin = (servicesPlugin: ServicesPlugin, maxFileS
     createFileController(servicesPlugin, maxFileSize),
   );
 
-  const getFileCtrl = withTraceSync('files.init.controllers.get_file', () =>
-    getFileController(servicesPlugin),
-  );
+  const getFileCtrl = withTraceSync('files.init.controllers.get_file', () => getFileController(servicesPlugin));
 
   const updateFileCtrl = withTraceSync('files.init.controllers.update_file', () =>
     updateFileController(servicesPlugin),
@@ -24,11 +22,7 @@ export const createControllersPlugin = (servicesPlugin: ServicesPlugin, maxFileS
   );
 
   const plugin = withTraceSync('files.init.controllers.plugin', () =>
-    new Elysia({ name: 'Controllers' })
-      .use(createFileCtrl)
-      .use(getFileCtrl)
-      .use(updateFileCtrl)
-      .use(deleteFileCtrl),
+    new Elysia({ name: 'Controllers' }).use(createFileCtrl).use(getFileCtrl).use(updateFileCtrl).use(deleteFileCtrl),
   );
 
   return plugin;

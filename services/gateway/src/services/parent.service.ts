@@ -11,7 +11,9 @@ export class ParentService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['type', 'parentId', 'userId'] })
+  @LogDecorator({
+    args: (a) => ({ type: a[0], parentId: a[1], userId: a[2] }),
+  })
   public async getParentInfo(type: string, parentId: string, userId: string) {
     setSpanAttributes({
       entityType: type,

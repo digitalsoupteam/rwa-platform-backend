@@ -17,7 +17,9 @@ export class ImagesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data.name'] })
+  @LogDecorator({
+    args: (a) => ({ name: a[0].name }),
+  })
   async createGallery(data: {
     name: string;
     parentId: string;
@@ -51,7 +53,9 @@ export class ImagesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
   async updateGallery(params: { id: string; updateData: { name: string } }) {
     setSpanAttributes({
       entityId: params.id,
@@ -77,7 +81,9 @@ export class ImagesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async deleteGallery(id: string) {
     setSpanAttributes({
       entityId: id,
@@ -100,7 +106,9 @@ export class ImagesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getGallery(id: string) {
     setSpanAttributes({
       entityId: id,
@@ -126,7 +134,9 @@ export class ImagesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
   async getGalleries(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
@@ -135,12 +145,7 @@ export class ImagesService {
   }) {
     setSpanAttributes({});
 
-    const galleries = await this.galleryRepository.findAll(
-      params.filter,
-      params.sort,
-      params.limit,
-      params.offset,
-    );
+    const galleries = await this.galleryRepository.findAll(params.filter, params.sort, params.limit, params.offset);
 
     return galleries.map((gallery) => ({
       id: gallery._id.toString(),
@@ -160,7 +165,9 @@ export class ImagesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data.name'] })
+  @LogDecorator({
+    args: (a) => ({ name: a[0].name }),
+  })
   async createImage(data: {
     galleryId: string;
     name: string;
@@ -205,7 +212,9 @@ export class ImagesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
   async updateImage(params: {
     id: string;
     updateData: {
@@ -242,7 +251,9 @@ export class ImagesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async deleteImage(id: string) {
     setSpanAttributes({
       imageId: id,
@@ -256,7 +267,9 @@ export class ImagesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getImage(id: string) {
     setSpanAttributes({
       imageId: id,
@@ -287,7 +300,9 @@ export class ImagesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
   async getImages(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
@@ -296,12 +311,7 @@ export class ImagesService {
   }) {
     setSpanAttributes({});
 
-    const images = await this.imageRepository.findAll(
-      params.filter,
-      params.sort,
-      params.limit,
-      params.offset,
-    );
+    const images = await this.imageRepository.findAll(params.filter, params.sort, params.limit, params.offset);
 
     return images.map((image) => ({
       id: image._id.toString(),

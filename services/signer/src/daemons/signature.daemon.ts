@@ -35,7 +35,9 @@ export class SignatureDaemon {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['message'] })
+  @LogDecorator({
+    args: (a) => ({ hash: a[0].hash, taskId: a[0].taskId }),
+  })
   private async handleSignatureRequest(message: any): Promise<void> {
     if (!message) return;
 

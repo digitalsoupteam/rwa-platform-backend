@@ -17,7 +17,16 @@ export class DocumentsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data'] })
+  @LogDecorator({
+    args: (a) => ({
+      name: a[0].name,
+      parentId: a[0].parentId,
+      ownerId: a[0].ownerId,
+      ownerType: a[0].ownerType,
+      creator: a[0].creator,
+      grandParentId: a[0].grandParentId,
+    }),
+  })
   async createFolder(data: {
     name: string;
     parentId: string;
@@ -55,7 +64,9 @@ export class DocumentsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id', 'updateData'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0], name: a[1].name }),
+  })
   async updateFolder(params: { id: string; updateData: { name: string } }) {
     setSpanAttributes({ entityId: params.id, entityType: 'folder' });
 
@@ -79,7 +90,9 @@ export class DocumentsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async deleteFolder(id: string) {
     setSpanAttributes({ entityId: id, entityType: 'folder' });
 
@@ -100,7 +113,9 @@ export class DocumentsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getFolder(id: string) {
     setSpanAttributes({ entityId: id, entityType: 'folder' });
 
@@ -124,7 +139,9 @@ export class DocumentsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
   async getFolders(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
@@ -158,7 +175,16 @@ export class DocumentsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data'] })
+  @LogDecorator({
+    args: (a) => ({
+      name: a[0].name,
+      parentId: a[0].parentId,
+      ownerId: a[0].ownerId,
+      ownerType: a[0].ownerType,
+      creator: a[0].creator,
+      grandParentId: a[0].grandParentId,
+    }),
+  })
   async createDocument(data: {
     folderId: string;
     name: string;
@@ -197,7 +223,9 @@ export class DocumentsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id', 'updateData'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0], name: a[1].name }),
+  })
   async updateDocument(params: {
     id: string;
     updateData: {
@@ -230,7 +258,9 @@ export class DocumentsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async deleteDocument(id: string) {
     setSpanAttributes({ entityId: id, entityType: 'document' });
 
@@ -243,7 +273,9 @@ export class DocumentsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getDocument(id: string) {
     setSpanAttributes({ entityId: id, entityType: 'document' });
 
@@ -271,7 +303,9 @@ export class DocumentsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
   async getDocuments(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };

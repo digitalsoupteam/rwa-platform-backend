@@ -120,7 +120,14 @@ Response format:
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data'] })
+  @LogDecorator({
+    args: (a) => ({
+      description: a[0].description,
+      ownerId: a[0].ownerId,
+      ownerType: a[0].ownerType,
+      chainId: a[0].chainId,
+    }),
+  })
   async createBusinessWithAI(data: { description: string; ownerId: string; ownerType: string; chainId: string }) {
     setSpanAttributes({
       ownerId: data.ownerId,
@@ -151,7 +158,14 @@ Response format:
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data'] })
+  @LogDecorator({
+    args: (a) => ({
+      description: a[0].description,
+      ownerId: a[0].ownerId,
+      ownerType: a[0].ownerType,
+      chainId: a[0].chainId,
+    }),
+  })
   async createBusiness(data: {
     name: string;
     ownerId: string;
@@ -186,7 +200,9 @@ Response format:
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
   async editBusiness(params: {
     id: string;
     updateData: {
@@ -231,7 +247,9 @@ Response format:
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async updateRiskScore(id: string) {
     setSpanAttributes({ entityId: id, entityType: 'business' });
     const business = await this.businessRepository.findById(id);
@@ -317,7 +335,9 @@ REASONING: Moderate risk due to competitive market, but strong business model an
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
   async requestApprovalSignatures(params: {
     id: string;
     ownerWallet: string;
@@ -385,7 +405,9 @@ REASONING: Moderate risk due to competitive market, but strong business model an
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async rejectApprovalSignatures(id: string) {
     setSpanAttributes({ entityId: id, entityType: 'business' });
     const business = await this.businessRepository.findById(id);
@@ -422,7 +444,9 @@ REASONING: Moderate risk due to competitive market, but strong business model an
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['eventData'] })
+  @LogDecorator({
+    args: (a) => ({ entityId: a[0].entityId, emittedFrom: a[0].emittedFrom, owner: a[0].owner }),
+  })
   async syncAfterDeployment(eventData: { entityId: string; emittedFrom: string; owner: string }) {
     setSpanAttributes({
       entityId: eventData.entityId,
@@ -464,7 +488,9 @@ REASONING: Moderate risk due to competitive market, but strong business model an
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getBusiness(id: string) {
     setSpanAttributes({ entityId: id, entityType: 'business' });
     const business = await this.businessRepository.findById(id);
@@ -473,7 +499,9 @@ REASONING: Moderate risk due to competitive market, but strong business model an
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
   async getBusinesses(params: {
     filter?: Record<string, any>;
     sort?: { [key: string]: SortOrder };

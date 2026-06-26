@@ -19,7 +19,9 @@ export class ValidationService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['country'] })
+  @LogDecorator({
+    args: (a) => ({ country: a[0] }),
+  })
   validateCountry(country: string | null | undefined): void {
     if (country == null) return;
     if (!/^[A-Z]{2}$/.test(country)) {
@@ -32,7 +34,9 @@ export class ValidationService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['socials'] })
+  @LogDecorator({
+    args: (a) => ({ socials: a[0] }),
+  })
   validateSocials(socials: Array<{ type: string; url: string }> | null | undefined): void {
     if (socials == null) return;
     if (!Array.isArray(socials)) {

@@ -25,7 +25,9 @@ export class SignatureService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['hash', 'taskId', 'expired'] })
+  @LogDecorator({
+    args: (a) => ({ hash: a[0], taskId: a[1], expired: a[2] }),
+  })
   async signHash(hash: string, taskId: string, expired: number) {
     setSpanAttributes({
       wallet: this.wallet.address,

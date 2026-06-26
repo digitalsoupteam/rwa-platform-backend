@@ -14,13 +14,11 @@ export const createRepositoriesPlugin = async (mongoUri: string) => {
   });
 
   const plugin = withTraceSync('files.init.repositories.plugin', () =>
-    new Elysia({ name: 'Repositories' })
-      .decorate('fileRepository', fileRepository)
-      .onStop(async () => {
-        await withTraceAsync('files.stop.repositories_plugin', async () => {
-          await mongoose.disconnect();
-        });
-      }),
+    new Elysia({ name: 'Repositories' }).decorate('fileRepository', fileRepository).onStop(async () => {
+      await withTraceAsync('files.stop.repositories_plugin', async () => {
+        await mongoose.disconnect();
+      });
+    }),
   );
 
   return plugin;

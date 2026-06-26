@@ -16,7 +16,13 @@ export class TransactionsService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data.poolAddress', 'data.transactionType', 'data.userAddress'] })
+  @LogDecorator({
+    args: (a) => ({
+      poolAddress: a[0].poolAddress,
+      transactionType: a[0].transactionType,
+      userAddress: a[0].userAddress,
+    }),
+  })
   async recordTransaction(data: {
     poolAddress: string;
     transactionType: PoolTransactionType;
@@ -71,7 +77,9 @@ export class TransactionsService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params.filter', 'params.sort'] })
+  @LogDecorator({
+    args: (a) => ({ filter: a[0].filter, sort: a[0].sort }),
+  })
   async getTransactions(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
@@ -109,7 +117,9 @@ export class TransactionsService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['poolAddress', 'interval', 'startTime', 'endTime'] })
+  @LogDecorator({
+    args: (a) => ({ poolAddress: a[0], interval: a[1], startTime: a[2], endTime: a[3] }),
+  })
   async getVolumeData(params: {
     poolAddress: string;
     interval: string;

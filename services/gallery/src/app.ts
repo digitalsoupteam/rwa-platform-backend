@@ -13,9 +13,7 @@ export async function createApp(port: number, mongoUri: string) {
     async () => await createRepositoriesPlugin(mongoUri),
   );
 
-  const servicesPlugin = withTraceSync('gallery.init.services_plugin', () =>
-    createServicesPlugin(repositoriesPlugin),
-  );
+  const servicesPlugin = withTraceSync('gallery.init.services_plugin', () => createServicesPlugin(repositoriesPlugin));
 
   const controllersPlugin = withTraceSync('gallery.init.controllers_plugin', () =>
     createControllersPlugin(servicesPlugin),

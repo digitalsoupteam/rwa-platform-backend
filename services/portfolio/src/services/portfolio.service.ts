@@ -21,7 +21,9 @@ export class PortfolioService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
   async getBalances(params: {
     filter?: Record<string, any>;
     sort?: { [key: string]: SortOrder };
@@ -48,7 +50,9 @@ export class PortfolioService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
   async getTransactions(params: {
     filter?: Record<string, any>;
     sort?: { [key: string]: SortOrder };
@@ -80,7 +84,19 @@ export class PortfolioService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data'] })
+  @LogDecorator({
+    args: (a) => ({
+      from: a[0].from,
+      to: a[0].to,
+      tokenAddress: a[0].tokenAddress,
+      tokenId: a[0].tokenId,
+      poolAddress: a[0].poolAddress,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      blockNumber: a[0].blockNumber,
+      amount: a[0].amount,
+    }),
+  })
   async processTransfer(data: {
     from: string;
     to: string;

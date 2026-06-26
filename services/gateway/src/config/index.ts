@@ -70,13 +70,9 @@ export const CONFIG = {
   },
 
   FILE_VALIDATION: {
-    DOCUMENTS_ALLOWED_MIME_TYPES: (process.env.DOCUMENTS_ALLOWED_MIME_TYPES || '')
-      .split(',')
-      .filter(Boolean),
+    DOCUMENTS_ALLOWED_MIME_TYPES: (process.env.DOCUMENTS_ALLOWED_MIME_TYPES || '').split(',').filter(Boolean),
     DOCUMENTS_MAX_FILE_SIZE: Number(process.env.DOCUMENTS_MAX_FILE_SIZE) || 26214400,
-    GALLERY_ALLOWED_MIME_TYPES: (process.env.GALLERY_ALLOWED_MIME_TYPES || '')
-      .split(',')
-      .filter(Boolean),
+    GALLERY_ALLOWED_MIME_TYPES: (process.env.GALLERY_ALLOWED_MIME_TYPES || '').split(',').filter(Boolean),
     GALLERY_MAX_FILE_SIZE: Number(process.env.GALLERY_MAX_FILE_SIZE) || 5242880,
   },
 };

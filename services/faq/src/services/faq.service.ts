@@ -17,7 +17,9 @@ export class FaqService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['name'] })
+  @LogDecorator({
+    args: (a) => ({ name: a[0] }),
+  })
   async createTopic(data: {
     name: string;
     ownerId: string;
@@ -51,7 +53,9 @@ export class FaqService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async updateTopic(params: { id: string; updateData: { name: string } }) {
     setSpanAttributes({ entityId: params.id });
 
@@ -75,7 +79,9 @@ export class FaqService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async deleteTopic(id: string) {
     setSpanAttributes({ entityId: id });
 
@@ -96,7 +102,9 @@ export class FaqService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getTopic(id: string) {
     setSpanAttributes({ entityId: id });
 
@@ -120,7 +128,9 @@ export class FaqService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['filter'] })
+  @LogDecorator({
+    args: (a) => ({ filter: a[0] }),
+  })
   async getTopics(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
@@ -149,7 +159,9 @@ export class FaqService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['question'] })
+  @LogDecorator({
+    args: (a) => ({ question: a[0] }),
+  })
   async createAnswer(data: {
     topicId: string;
     question: string;
@@ -189,7 +201,9 @@ export class FaqService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async updateAnswer(params: {
     id: string;
     updateData: {
@@ -223,7 +237,9 @@ export class FaqService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async deleteAnswer(id: string) {
     setSpanAttributes({ entityId: id });
     await this.answerRepository.delete(id);
@@ -235,7 +251,9 @@ export class FaqService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getAnswer(id: string) {
     setSpanAttributes({ entityId: id });
 
@@ -262,7 +280,9 @@ export class FaqService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['filter'] })
+  @LogDecorator({
+    args: (a) => ({ filter: a[0] }),
+  })
   async getAnswers(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };

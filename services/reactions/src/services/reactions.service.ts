@@ -22,7 +22,9 @@ export class ReactionsService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data.parentId', 'data.userId', 'data.reaction'] })
+  @LogDecorator({
+    args: (a) => ({ parentId: a[0].parentId, userId: a[0].userId, reaction: a[0].reaction }),
+  })
   async setReaction(data: { parentId: string; parentType: string; userId: string; reaction: string }) {
     setSpanAttributes({
       parentId: data.parentId,
@@ -37,7 +39,9 @@ export class ReactionsService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data.parentId', 'data.userId', 'data.reaction'] })
+  @LogDecorator({
+    args: (a) => ({ parentId: a[0].parentId, userId: a[0].userId, reaction: a[0].reaction }),
+  })
   async resetReaction(data: { parentId: string; parentType: string; userId: string; reaction: string }) {
     setSpanAttributes({
       parentId: data.parentId,
@@ -52,7 +56,9 @@ export class ReactionsService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params.parentId', 'params.parentType', 'params.userId'] })
+  @LogDecorator({
+    args: (a) => ({ parentId: a[0].parentId, parentType: a[0].parentType, userId: a[0].userId }),
+  })
   async getEntityReactions(params: { parentId: string; parentType: string; userId?: string }) {
     setSpanAttributes({
       parentId: params.parentId,
@@ -73,7 +79,9 @@ export class ReactionsService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
   async getReactions(
     params: {
       filter?: Record<string, any>;

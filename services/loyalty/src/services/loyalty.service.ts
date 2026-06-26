@@ -57,7 +57,12 @@ export class LoyaltyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+    }),
+  })
   async processCreateRWAFeeCollected(event: {
     data: {
       sender: string;
@@ -116,7 +121,12 @@ export class LoyaltyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+    }),
+  })
   async processCreatePoolFeeCollected(event: {
     data: {
       sender: string;
@@ -175,7 +185,12 @@ export class LoyaltyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+    }),
+  })
   async processRwaMinted(event: {
     data: {
       minter: string;
@@ -235,7 +250,12 @@ export class LoyaltyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+    }),
+  })
   async processRwaBurned(event: {
     data: {
       burner: string;
@@ -308,7 +328,12 @@ export class LoyaltyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+    }),
+  })
   async processReferralTreasuryWithdrawn(event: {
     data: {
       user: string;
@@ -343,7 +368,14 @@ export class LoyaltyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({
+      userWallet: a[0].userWallet,
+      userId: a[0].userId,
+      limit: a[0].limit,
+      offset: a[0].offset,
+    }),
+  })
   async registerReferral(params: { userWallet: string; userId: string; referrerWallet?: string; referrerId?: string }) {
     setSpanAttributes({
       wallet: params.userWallet,
@@ -474,7 +506,14 @@ export class LoyaltyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({
+      userWallet: a[0].userWallet,
+      userId: a[0].userId,
+      limit: a[0].limit,
+      offset: a[0].offset,
+    }),
+  })
   async getFees(params: {
     filter?: Record<string, any>;
     sort?: { [key: string]: SortOrder };
@@ -493,7 +532,14 @@ export class LoyaltyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({
+      userWallet: a[0].userWallet,
+      userId: a[0].userId,
+      limit: a[0].limit,
+      offset: a[0].offset,
+    }),
+  })
   async getReferrals(params: {
     filter?: Record<string, any>;
     sort?: { [key: string]: SortOrder };
@@ -512,7 +558,14 @@ export class LoyaltyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({
+      userWallet: a[0].userWallet,
+      userId: a[0].userId,
+      limit: a[0].limit,
+      offset: a[0].offset,
+    }),
+  })
   async createReferrerWithdrawTask(params: {
     referrerWallet: string;
     referrerId: string;
@@ -662,7 +715,14 @@ export class LoyaltyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({
+      userWallet: a[0].userWallet,
+      userId: a[0].userId,
+      limit: a[0].limit,
+      offset: a[0].offset,
+    }),
+  })
   async getReferrerWithdraws(params: {
     filter?: Record<string, any>;
     sort?: { [key: string]: SortOrder };
@@ -686,7 +746,14 @@ export class LoyaltyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({
+      userWallet: a[0].userWallet,
+      userId: a[0].userId,
+      limit: a[0].limit,
+      offset: a[0].offset,
+    }),
+  })
   async getReferrerClaimHistory(params: {
     filter?: Record<string, any>;
     sort?: { [key: string]: SortOrder };
@@ -769,7 +836,14 @@ export class LoyaltyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({
+      userWallet: a[0].userWallet,
+      userId: a[0].userId,
+      limit: a[0].limit,
+      offset: a[0].offset,
+    }),
+  })
   async getCommissionHistory(params: {
     filter?: Record<string, any>;
     sort?: { [key: string]: SortOrder };

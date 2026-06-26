@@ -156,7 +156,15 @@ Example response:
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data'] })
+  @LogDecorator({
+    args: (a) => ({
+      description: a[0].description,
+      ownerId: a[0].ownerId,
+      businessId: a[0].businessId,
+      chainId: a[0].chainId,
+      rwaAddress: a[0].rwaAddress,
+    }),
+  })
   async createPoolWithAI(data: {
     description: string;
     ownerId: string;
@@ -218,7 +226,7 @@ Example response:
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({ args: (a) => ({ id: a[0] }) })
   async updateRiskScore(id: string) {
     setSpanAttributes({ entityId: id, entityType: 'pool' });
     const pool = await this.poolRepository.findById(id);
@@ -389,7 +397,9 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params.id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id }),
+  })
   async requestApprovalSignatures(params: {
     id: string;
     ownerWallet: string;
@@ -541,7 +551,9 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async rejectApprovalSignatures(id: string) {
     setSpanAttributes({ entityId: id, entityType: 'pool' });
     const pool = await this.poolRepository.findById(id);
@@ -631,7 +643,9 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getPool(id: string) {
     setSpanAttributes({ entityId: id, entityType: 'pool' });
     const pool = await this.poolRepository.findById(id);
@@ -640,7 +654,14 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data'] })
+  @LogDecorator({
+    args: (a) => ({
+      ownerId: a[0].ownerId,
+      businessId: a[0].businessId,
+      chainId: a[0].chainId,
+      rwaAddress: a[0].rwaAddress,
+    }),
+  })
   async createPool(data: {
     ownerId: string;
     ownerType: string;
@@ -697,7 +718,9 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id }),
+  })
   async editPool(params: {
     id: string;
     updateData: {
@@ -775,7 +798,9 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({ entityId: a[0].entityId, poolAddress: a[0].emittedFrom }),
+  })
   async syncPoolAfterDeployment(event: {
     emittedFrom: string;
     awaitCompletionExpired: boolean;
@@ -863,7 +888,9 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({ poolAddress: a[0].emittedFrom, awaitingBonusAmount: a[0].awaitingBonusAmount }),
+  })
   async syncPoolAwaitingBonusAmount(event: { emittedFrom: string; awaitingBonusAmount: string }) {
     setSpanAttributes({ entityType: 'pool', poolAddress: event.emittedFrom });
     const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
@@ -874,7 +901,9 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({ poolAddress: a[0].emittedFrom, awaitingRwaAmount: a[0].awaitingRwaAmount }),
+  })
   async syncPoolAwaitingRwaAmount(event: { emittedFrom: string; awaitingRwaAmount: string }) {
     setSpanAttributes({ entityType: 'pool', poolAddress: event.emittedFrom });
     const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
@@ -885,7 +914,9 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({ poolAddress: a[0].emittedFrom, timestamp: a[0].timestamp }),
+  })
   async syncPoolFundsFullyReturned(event: { emittedFrom: string; timestamp: number }) {
     setSpanAttributes({ entityType: 'pool', poolAddress: event.emittedFrom });
     const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
@@ -897,7 +928,13 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      poolAddress: a[0].emittedFrom,
+      currentAwaitingBonusAmount: a[0].currentAwaitingBonusAmount,
+      currentRewardedRwaAmount: a[0].currentRewardedRwaAmount,
+    }),
+  })
   async syncPoolBonusWithdrawn(event: {
     emittedFrom: string;
     currentAwaitingBonusAmount: string;
@@ -913,7 +950,12 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      poolAddress: a[0].emittedFrom,
+      currentTotalReturnedAmount: a[0].currentTotalReturnedAmount,
+    }),
+  })
   async syncPoolIncomingReturnSummary(event: {
     emittedFrom: string;
     currentTotalReturnedAmount: string;
@@ -931,7 +973,13 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      poolAddress: a[0].emittedFrom,
+      trancheIndex: a[0].trancheIndex,
+      isNowComplete: a[0].isNowComplete,
+    }),
+  })
   async syncPoolIncomingTrancheUpdate(event: {
     emittedFrom: string;
     trancheIndex: number;
@@ -968,7 +1016,12 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      poolAddress: a[0].emittedFrom,
+      currentTotalClaimedAmount: a[0].currentTotalClaimedAmount,
+    }),
+  })
   async syncPoolOutgoingClaimSummary(event: {
     emittedFrom: string;
     currentTotalClaimedAmount: string;
@@ -984,7 +1037,13 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      poolAddress: a[0].emittedFrom,
+      trancheIndex: a[0].trancheIndex,
+      amountClaimed: a[0].amountClaimed,
+    }),
+  })
   async syncPoolOutgoingTrancheClaimed(event: { emittedFrom: string; trancheIndex: number; amountClaimed: string }) {
     setSpanAttributes({ entityType: 'pool', poolAddress: event.emittedFrom });
     const pool = await this.poolRepository.findByAddress(event.emittedFrom);
@@ -1015,7 +1074,9 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({ poolAddress: a[0].emittedFrom, isPaused: a[0].isPaused }),
+  })
   async syncPoolPausedState(event: { emittedFrom: string; isPaused: boolean }) {
     setSpanAttributes({ entityType: 'pool', poolAddress: event.emittedFrom });
     const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
@@ -1026,7 +1087,12 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      poolAddress: a[0].emittedFrom,
+      realHoldReserve: a[0].realHoldReserve,
+    }),
+  })
   async syncPoolReserves(event: {
     emittedFrom: string;
     realHoldReserve: string;
@@ -1044,7 +1110,9 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({ poolAddress: a[0].emittedFrom }),
+  })
   async syncPoolTargetReached(event: {
     emittedFrom: string;
     outgoingTranchesBalance: string;
@@ -1061,7 +1129,9 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
   async getPools(params: {
     filter?: Record<string, any>;
     sort?: { [key: string]: SortOrder };

@@ -17,7 +17,16 @@ export class BlogsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data'] })
+  @LogDecorator({
+    args: (a) => ({
+      name: a[0].name,
+      ownerId: a[0].ownerId,
+      ownerType: a[0].ownerType,
+      creator: a[0].creator,
+      parentId: a[0].parentId,
+      grandParentId: a[0].grandParentId,
+    }),
+  })
   async createBlog(data: {
     name: string;
     ownerId: string;
@@ -53,7 +62,9 @@ export class BlogsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
   async updateBlog(params: { id: string; updateData: { name: string } }) {
     setSpanAttributes({ id: params.id });
     const blog = await this.blogRepository.update(params.id, params.updateData);
@@ -76,7 +87,9 @@ export class BlogsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async deleteBlog(id: string) {
     setSpanAttributes({ id });
     // First delete all posts in the blog
@@ -96,7 +109,9 @@ export class BlogsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getBlog(id: string) {
     setSpanAttributes({ id });
     const blog = await this.blogRepository.findById(id);
@@ -119,7 +134,9 @@ export class BlogsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
   async getBlogs(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
@@ -151,7 +168,16 @@ export class BlogsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data'] })
+  @LogDecorator({
+    args: (a) => ({
+      name: a[0].name,
+      ownerId: a[0].ownerId,
+      ownerType: a[0].ownerType,
+      creator: a[0].creator,
+      parentId: a[0].parentId,
+      grandParentId: a[0].grandParentId,
+    }),
+  })
   async createPost(data: {
     blogId: string;
     title: string;
@@ -195,7 +221,9 @@ export class BlogsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
   async updatePost(params: {
     id: string;
     updateData: {
@@ -230,7 +258,9 @@ export class BlogsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async deletePost(id: string) {
     setSpanAttributes({ id });
     await this.postRepository.delete(id);
@@ -242,7 +272,9 @@ export class BlogsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getPost(id: string) {
     setSpanAttributes({ id });
     const post = await this.postRepository.findById(id);
@@ -269,7 +301,9 @@ export class BlogsService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
   async getPosts(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };

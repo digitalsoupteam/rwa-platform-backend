@@ -31,7 +31,15 @@ export class DaoService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].emittedFrom,
+      proposalId: a[0].proposalId,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
   async processProposalCreated(event: {
     emittedFrom: string;
     proposalId: string;
@@ -70,7 +78,15 @@ export class DaoService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].emittedFrom,
+      proposalId: a[0].proposalId,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
   async processProposalExecuted(event: {
     emittedFrom: string;
     proposalId: string;
@@ -93,7 +109,15 @@ export class DaoService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].emittedFrom,
+      proposalId: a[0].proposalId,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
   async processProposalCancelled(event: {
     emittedFrom: string;
     proposalId: string;
@@ -116,7 +140,15 @@ export class DaoService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].emittedFrom,
+      proposalId: a[0].proposalId,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
   async processVoteCast(event: {
     emittedFrom: string;
     proposalId: string;
@@ -154,7 +186,15 @@ export class DaoService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].emittedFrom,
+      proposalId: a[0].proposalId,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
   async processTokensStaked(event: {
     emittedFrom: string;
     staker: string;
@@ -188,7 +228,15 @@ export class DaoService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].emittedFrom,
+      proposalId: a[0].proposalId,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
   async processTokensUnstaked(event: {
     emittedFrom: string;
     staker: string;
@@ -222,7 +270,15 @@ export class DaoService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].emittedFrom,
+      proposalId: a[0].proposalId,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
   async processTransactionQueued(event: {
     emittedFrom: string;
     txHash: string;
@@ -251,7 +307,15 @@ export class DaoService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].emittedFrom,
+      proposalId: a[0].proposalId,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
   async processTransactionExecuted(event: {
     emittedFrom: string;
     txHash: string;
@@ -274,7 +338,15 @@ export class DaoService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].emittedFrom,
+      proposalId: a[0].proposalId,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
   async processTransactionCancelled(event: {
     emittedFrom: string;
     txHash: string;
@@ -298,7 +370,15 @@ export class DaoService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['event'] })
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].emittedFrom,
+      proposalId: a[0].proposalId,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
   async processTreasuryWithdrawal(event: {
     emittedFrom: string;
     to: string;
@@ -420,7 +500,9 @@ export class DaoService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
   async getProposals(params: {
     filter?: Record<string, any>;
     sort?: { [key: string]: SortOrder };
@@ -437,7 +519,9 @@ export class DaoService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
   async getVotes(params: {
     filter?: Record<string, any>;
     sort?: { [key: string]: SortOrder };
@@ -454,7 +538,9 @@ export class DaoService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
   async getStakingHistory(params: {
     filter?: Record<string, any>;
     sort?: { [key: string]: SortOrder };
@@ -476,7 +562,9 @@ export class DaoService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
   async getTimelockTasks(params: {
     filter?: Record<string, any>;
     sort?: { [key: string]: SortOrder };
@@ -498,7 +586,9 @@ export class DaoService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
   async getTreasuryWithdrawals(params: {
     filter?: Record<string, any>;
     sort?: { [key: string]: SortOrder };
@@ -520,7 +610,9 @@ export class DaoService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
   async getStaking(params: {
     filter?: Record<string, any>;
     sort?: { [key: string]: SortOrder };

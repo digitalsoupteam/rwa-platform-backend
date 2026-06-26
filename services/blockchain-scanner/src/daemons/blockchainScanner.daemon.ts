@@ -275,7 +275,9 @@ export class BlockchainScannerDaemon {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['fromBlock', 'toBlock'] })
+  @LogDecorator({
+    args: (a) => ({ fromBlock: a[0], toBlock: a[1] }),
+  })
   private async processBatch(fromBlock: number, toBlock: number): Promise<void> {
     const events = await this.getEvents(fromBlock, toBlock);
 

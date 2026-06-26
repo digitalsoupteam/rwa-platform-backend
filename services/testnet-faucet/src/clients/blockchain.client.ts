@@ -60,7 +60,9 @@ export class BlockchainClient {
   /**
    * Send native tokens (ETH/MATIC) to recipient
    */
-  @LogDecorator({ args: ['recipientAddress', 'amount'] })
+  @LogDecorator({
+    args: (a) => ({ recipientAddress: a[0], amount: a[1] }),
+  })
   async transferToken(recipientAddress: string, amount: string): Promise<string> {
     if (!this.initialized) {
       throw new AppError({
@@ -128,7 +130,9 @@ export class BlockchainClient {
   /**
    * Send ERC20 tokens to recipient
    */
-  @LogDecorator({ args: ['tokenAddress', 'recipientAddress', 'amount'] })
+  @LogDecorator({
+    args: (a) => ({ tokenAddress: a[0], recipientAddress: a[1], amount: a[2] }),
+  })
   async transferERC20Token(tokenAddress: string, recipientAddress: string, amount: string): Promise<string> {
     if (!this.initialized) {
       throw new AppError({

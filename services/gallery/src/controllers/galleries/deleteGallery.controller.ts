@@ -1,9 +1,6 @@
 import { Elysia } from 'elysia';
 import { type ServicesPlugin } from '../../plugins/services.plugin';
-import {
-  deleteGalleryRequest,
-  deleteGalleryResponse,
-} from '../../models/validation/images.validation';
+import { deleteGalleryRequest, deleteGalleryResponse } from '../../models/validation/images.validation';
 
 export const deleteGalleryController = (servicesPlugin: ServicesPlugin) => {
   return new Elysia({ name: 'DeleteGalleryController' }).use(servicesPlugin).post(

@@ -18,7 +18,9 @@ export class CacheService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['companyId'] })
+  @LogDecorator({
+    args: (a) => ({ companyId: a[0] }),
+  })
   async resetCompanyCache(companyId: string) {
     setSpanAttributes({ entityId: companyId });
     await this.redis.del(this.getCompanyCacheKey(companyId));
@@ -26,7 +28,9 @@ export class CacheService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id }),
+  })
   async getCompany(
     params: Parameters<CompanyClient['getCompany']['post']>[0],
   ): ReturnType<CompanyClient['getCompany']['post']> {

@@ -19,7 +19,15 @@ export class SignaturesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data'] })
+  @LogDecorator({
+    args: (a) => ({
+      ownerId: a[0].ownerId,
+      ownerType: a[0].ownerType,
+      hash: a[0].hash,
+      requiredSignatures: a[0].requiredSignatures,
+      expired: a[0].expired,
+    }),
+  })
   async createTask(data: {
     ownerId: string;
     ownerType: string;
@@ -57,7 +65,9 @@ export class SignaturesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data.taskId', 'data.signer'] })
+  @LogDecorator({
+    args: (a) => ({ taskId: a[0].taskId, signer: a[0].signer }),
+  })
   async addSignature(data: { taskId: string; signer: string; signature: string }) {
     setSpanAttributes({
       taskId: data.taskId,
@@ -106,7 +116,9 @@ export class SignaturesService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['taskId'] })
+  @LogDecorator({
+    args: (a) => ({ taskId: a[0] }),
+  })
   async getSignatureTask(taskId: string) {
     setSpanAttributes({
       taskId: taskId,

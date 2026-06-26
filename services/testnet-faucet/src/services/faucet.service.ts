@@ -25,17 +25,27 @@ export class FaucetService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data'] })
+  @LogDecorator({
+    args: (a) => ({ userId: a[0].userId, wallet: a[0].wallet, amount: a[0].amount }),
+  })
   async getRequestHistory(data: { userId: string; limit?: number; offset?: number }) {
     setSpanAttributes({ userId: data.userId });
     const { userId, limit = 50, offset = 0 } = data;
 
     if (limit > 100) {
-      throw new AppError('Limit cannot exceed 100');
+      throw new AppError({
+        message: 'Limit cannot exceed 100',
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
     }
 
     if (offset < 0) {
-      throw new AppError('Offset cannot be negative');
+      throw new AppError({
+        message: 'Offset cannot be negative',
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
     }
 
     const results = await this.faucetRequestRepository.findAll(
@@ -59,7 +69,9 @@ export class FaucetService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data'] })
+  @LogDecorator({
+    args: (a) => ({ userId: a[0].userId, wallet: a[0].wallet, amount: a[0].amount }),
+  })
   async getTokenUnlockTime(data: { userId: string }) {
     setSpanAttributes({ userId: data.userId });
     const [lastGasRequest, lastHoldRequest, lastPlatformRequest] = await Promise.all([
@@ -91,7 +103,9 @@ export class FaucetService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data'] })
+  @LogDecorator({
+    args: (a) => ({ userId: a[0].userId, wallet: a[0].wallet, amount: a[0].amount }),
+  })
   async requestGasToken(data: { userId: string; wallet: string; amount: number }) {
     setSpanAttributes({
       userId: data.userId,
@@ -128,7 +142,9 @@ export class FaucetService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data'] })
+  @LogDecorator({
+    args: (a) => ({ userId: a[0].userId, wallet: a[0].wallet, amount: a[0].amount }),
+  })
   async requestHoldToken(data: { userId: string; wallet: string; amount: number }) {
     setSpanAttributes({
       userId: data.userId,
@@ -169,7 +185,9 @@ export class FaucetService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data'] })
+  @LogDecorator({
+    args: (a) => ({ userId: a[0].userId, wallet: a[0].wallet, amount: a[0].amount }),
+  })
   async requestPlatformToken(data: { userId: string; wallet: string; amount: number }) {
     setSpanAttributes({
       userId: data.userId,

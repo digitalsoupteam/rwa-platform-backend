@@ -27,7 +27,9 @@ export class BlockchainScannerService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getEventById(id: string) {
     setSpanAttributes({
       entityId: id,
@@ -60,7 +62,9 @@ export class BlockchainScannerService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['filters', 'sort', 'limit', 'offset'] })
+  @LogDecorator({
+    args: (a) => ({ limit: a[2], offset: a[3] }),
+  })
   async getEvents(
     filters: {
       chainId?: number;
@@ -105,7 +109,9 @@ export class BlockchainScannerService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['blockNumber'] })
+  @LogDecorator({
+    args: (a) => ({ blockNumber: a[0] }),
+  })
   async applyBlockEvents(
     blockNumber: number,
     events: Array<{
@@ -128,7 +134,11 @@ export class BlockchainScannerService {
     if (events.length) {
       for (let i = 0; i < events.length; i++) {
         if (events[i].blockNumber !== blockNumber) {
-          throw new AppError('applyBlockEvents blockNumber!');
+          throw new AppError({
+            message: 'applyBlockEvents blockNumber!',
+            statusCode: 502,
+            code: 'BLOCKCHAIN_ERROR',
+          });
         }
       }
 
@@ -171,7 +181,9 @@ export class BlockchainScannerService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['blockNumber'] })
+  @LogDecorator({
+    args: (a) => ({ blockNumber: a[0] }),
+  })
   async updateLastProcessedBlock(blockNumber: number): Promise<void> {
     setSpanAttributes({
       blockNumber,

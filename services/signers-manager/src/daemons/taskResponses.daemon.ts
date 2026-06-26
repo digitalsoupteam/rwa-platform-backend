@@ -43,7 +43,9 @@ export class TaskResponsesDaemon {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['message?.fields?.routingKey'] })
+  @LogDecorator({
+    args: (a) => ({ routingKey: a[0]?.fields?.routingKey }),
+  })
   private async handleResponse(message: ConsumeMessage | null): Promise<void> {
     if (!message) return;
 

@@ -15,7 +15,9 @@ export class OwnershipService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ userId: a[0].userId, ownerId: a[0].ownerId, ownerType: a[0].ownerType }),
+  })
   async checkOwnership(params: {
     userId: string;
     ownerId: string;
@@ -78,7 +80,9 @@ export class OwnershipService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ userId: a[0].userId, ownerId: a[0].ownerId, ownerType: a[0].ownerType }),
+  })
   async getOwnerWallet(params: {
     user: { id: string; wallet: string };
     ownerId: string;

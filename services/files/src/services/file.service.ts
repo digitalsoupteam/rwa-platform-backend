@@ -49,7 +49,9 @@ export class FileService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getFile(id: string) {
     setSpanAttributes({
       fileId: id,
@@ -78,7 +80,9 @@ export class FileService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['path'] })
+  @LogDecorator({
+    args: (a) => ({ path: a[0] }),
+  })
   async getFileByPath(path: string) {
     setSpanAttributes({
       path,
@@ -107,7 +111,9 @@ export class FileService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id', 'data'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0], name: a[1].name }),
+  })
   async updateFile(
     id: string,
     data: {
@@ -142,7 +148,9 @@ export class FileService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async deleteFile(id: string) {
     setSpanAttributes({
       fileId: id,

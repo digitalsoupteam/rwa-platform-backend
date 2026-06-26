@@ -98,7 +98,9 @@ export class CompanyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data'] })
+  @LogDecorator({
+    args: (a) => ({ name: a[0].name, description: a[0].description, ownerId: a[0].ownerId, country: a[0].country }),
+  })
   async createCompany(data: {
     name: string;
     description: string;
@@ -117,7 +119,9 @@ export class CompanyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id', 'updateData'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0], name: a[1].name }),
+  })
   async updateCompany(params: {
     id: string;
     updateData: {
@@ -138,7 +142,9 @@ export class CompanyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['companyId'] })
+  @LogDecorator({
+    args: (a) => ({ companyId: a[0] }),
+  })
   async deleteCompany(companyId: string) {
     setSpanAttributes({ companyId });
     // Delete all permissions in company
@@ -158,7 +164,9 @@ export class CompanyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['id'] })
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getCompany(id: string) {
     setSpanAttributes({ entityId: id, entityType: 'company' });
     const company = await this.companyRepository.findById(id);
@@ -170,7 +178,9 @@ export class CompanyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['params'] })
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
   async getCompanies(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
@@ -191,7 +201,9 @@ export class CompanyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data'] })
+  @LogDecorator({
+    args: (a) => ({ name: a[0].name, description: a[0].description, ownerId: a[0].ownerId, country: a[0].country }),
+  })
   async addMember(data: { companyId: string; userId: string; name: string }) {
     setSpanAttributes({ companyId: data.companyId, userId: data.userId });
     const member = await this.memberRepository.create(data);
@@ -203,7 +215,9 @@ export class CompanyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['memberId'] })
+  @LogDecorator({
+    args: (a) => ({ memberId: a[0] }),
+  })
   async removeMember(memberId: string) {
     setSpanAttributes({ entityId: memberId, entityType: 'member' });
     // Delete all user permissions in company
@@ -220,7 +234,9 @@ export class CompanyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data'] })
+  @LogDecorator({
+    args: (a) => ({ name: a[0].name, description: a[0].description, ownerId: a[0].ownerId, country: a[0].country }),
+  })
   async grantPermission(data: {
     companyId: string;
     memberId: string;
@@ -244,7 +260,9 @@ export class CompanyService {
    */
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['permissionId'] })
+  @LogDecorator({
+    args: (a) => ({ permissionId: a[0] }),
+  })
   async revokePermission(permissionId: string) {
     setSpanAttributes({ entityId: permissionId, entityType: 'permission' });
     await this.permissionRepository.delete(permissionId);

@@ -14,7 +14,9 @@ export class TokenService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['tokenId'] })
+  @LogDecorator({
+    args: (a) => ({ tokenId: a[0] }),
+  })
   async getTokenMetadata(tokenId: string) {
     setSpanAttributes({ tokenId });
     // Find pool by tokenId

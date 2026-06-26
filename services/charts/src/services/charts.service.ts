@@ -33,7 +33,9 @@ export class ChartsService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['data.poolAddress', 'data.timestamp', 'data.blockNumber'] })
+  @LogDecorator({
+    args: (a) => ({ poolAddress: a[0].poolAddress, timestamp: a[0].timestamp, blockNumber: a[0].blockNumber }),
+  })
   async recordPriceData(data: {
     poolAddress: string;
     timestamp: number;
@@ -89,7 +91,9 @@ export class ChartsService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['poolAddress', 'startTime', 'endTime'] })
+  @LogDecorator({
+    args: (a) => ({ poolAddress: a[0], startTime: a[1], endTime: a[2] }),
+  })
   async getRawPriceData(params: {
     poolAddress: string;
     startTime: number;
@@ -149,7 +153,9 @@ export class ChartsService {
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: ['poolAddress', 'interval', 'startTime', 'endTime'] })
+  @LogDecorator({
+    args: (a) => ({ poolAddress: a[0], interval: a[1], startTime: a[2], endTime: a[3] }),
+  })
   async getOhlcPriceData(params: {
     poolAddress: string;
     interval: OhlcInterval;
