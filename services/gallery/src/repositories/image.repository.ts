@@ -10,7 +10,7 @@ export class ImageRepository {
   async create(
     data: { galleryId: Types.ObjectId | string } & Pick<
       IImageEntity,
-      'name' | 'description' | 'link' | 'ownerId' | 'ownerType' | 'creator' | 'parentId' | 'grandParentId'
+      'name' | 'description' | 'fileId' | 'path' | 'mimeType' | 'size' | 'ownerId' | 'ownerType' | 'creator' | 'parentId' | 'grandParentId'
     >,
   ) {
     const doc = await this.model.create(data);
@@ -18,7 +18,7 @@ export class ImageRepository {
   }
 
   @TraceDecorator()
-  async update(id: string, data: Partial<Pick<IImageEntity, 'name' | 'description' | 'link'>>) {
+  async update(id: string, data: Partial<Pick<IImageEntity, 'name' | 'description'>>) {
     const doc = await this.model.findByIdAndUpdate(id, data, { new: true }).lean();
 
     if (!doc) {

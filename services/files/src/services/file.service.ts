@@ -24,10 +24,10 @@ export class FileService {
       mimeType: data.file.type,
     });
     const buffer = await data.file.arrayBuffer();
-    const storagePath = this.storageClient.generatePath(data.file.name);
+    const relativePath = this.storageClient.generatePath(data.file.name);
 
     // Save file to storage
-    await this.storageClient.saveFile(storagePath, Buffer.from(buffer));
+    await this.storageClient.saveFile(relativePath, Buffer.from(buffer));
 
     // Determine MIME type from file content (magic bytes).
     // Text files (.txt, .csv) have no magic bytes — fallback to client-provided type (stripped of parameters).
@@ -36,7 +36,7 @@ export class FileService {
 
     const file = await this.fileRepository.create({
       name: data.file.name,
-      path: storagePath,
+      path: relativePath,
       size: data.file.size,
       mimeType,
     });

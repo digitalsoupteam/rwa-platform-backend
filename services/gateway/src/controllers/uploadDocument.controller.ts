@@ -58,11 +58,12 @@ export const uploadDocumentController = new Elysia({ name: 'UploadDocumentContro
         throw new AppError({ message: 'Failed to upload file', statusCode: 502, code: 'BAD_GATEWAY' });
       }
 
-      // Create document with file path
+      // Create document with file link
       const response = await documentsClient.createDocument.post({
         folderId,
         name,
-        link: fileResponse.data.path,
+        fileId: fileResponse.data.id,
+        path: fileResponse.data.path,
         mimeType: fileResponse.data.mimeType,
         size: fileResponse.data.size,
         ownerId: folder.ownerId,
@@ -84,7 +85,9 @@ export const uploadDocumentController = new Elysia({ name: 'UploadDocumentContro
         id: data.id,
         folderId: data.folderId,
         name: data.name,
-        link: data.link,
+        fileId: data.fileId,
+        path: data.path,
+        url: data.url,
         mimeType: data.mimeType,
         size: data.size,
         ownerId: data.ownerId,
@@ -106,7 +109,9 @@ export const uploadDocumentController = new Elysia({ name: 'UploadDocumentContro
         id: t.String(),
         folderId: t.String(),
         name: t.String(),
-        link: t.String(),
+        fileId: t.String(),
+        path: t.String(),
+        url: t.String(),
         mimeType: t.String(),
         size: t.Number(),
         ownerId: t.String(),

@@ -32,7 +32,11 @@ const documentSchemaDefinition = {
     required: true,
     trim: true,
   },
-  link: {
+  fileId: {
+    type: String,
+    required: true,
+  },
+  path: {
     type: String,
     required: true,
     trim: true,

@@ -20,7 +20,9 @@ type Image {
   galleryId: String!
   name: String!
   description: String!
-  link: String!
+  fileId: String!
+  path: String!
+  url: String!
   mimeType: String!
   size: Float!
   ownerId: String!

@@ -36,6 +36,9 @@ export const deleteDocument: MutationResolvers['deleteDocument'] = async (
     permission: 'content',
   });
 
+  // Delete file from files service
+  await clients.filesClient.deleteFile.post({ id: document.fileId });
+
   const response = await clients.documentsClient.deleteDocument.post({
     id,
   });

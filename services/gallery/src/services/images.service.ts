@@ -5,11 +5,13 @@ import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
 import { LogDecorator } from '@shared/monitoring/src/logDecorator';
 import { setSpanAttributes } from '@shared/monitoring/src/tracing';
+import { buildFileUrl } from '@shared/files/src/index';
 
 export class ImagesService {
   constructor(
     private readonly galleryRepository: GalleryRepository,
     private readonly imageRepository: ImageRepository,
+    private readonly filesBaseUrl: string,
   ) {}
 
   /**
@@ -172,7 +174,8 @@ export class ImagesService {
     galleryId: string;
     name: string;
     description: string;
-    link: string;
+    fileId: string;
+    path: string;
     mimeType: string;
     size: number;
     ownerId: string;
@@ -194,7 +197,9 @@ export class ImagesService {
       galleryId: image.galleryId.toString(),
       name: image.name,
       description: image.description,
-      link: image.link,
+      fileId: image.fileId,
+      path: image.path,
+      url: buildFileUrl(image.path, this.filesBaseUrl),
       mimeType: image.mimeType,
       size: image.size,
       ownerId: image.ownerId,
@@ -233,7 +238,9 @@ export class ImagesService {
       galleryId: image.galleryId.toString(),
       name: image.name,
       description: image.description,
-      link: image.link,
+      fileId: image.fileId,
+      path: image.path,
+      url: buildFileUrl(image.path, this.filesBaseUrl),
       mimeType: image.mimeType,
       size: image.size,
       ownerId: image.ownerId,
@@ -282,7 +289,9 @@ export class ImagesService {
       galleryId: image.galleryId.toString(),
       name: image.name,
       description: image.description,
-      link: image.link,
+      fileId: image.fileId,
+      path: image.path,
+      url: buildFileUrl(image.path, this.filesBaseUrl),
       mimeType: image.mimeType,
       size: image.size,
       ownerId: image.ownerId,
@@ -318,7 +327,9 @@ export class ImagesService {
       galleryId: image.galleryId.toString(),
       name: image.name,
       description: image.description,
-      link: image.link,
+      fileId: image.fileId,
+      path: image.path,
+      url: buildFileUrl(image.path, this.filesBaseUrl),
       mimeType: image.mimeType,
       size: image.size,
       ownerId: image.ownerId,

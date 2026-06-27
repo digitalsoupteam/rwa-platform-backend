@@ -12,7 +12,7 @@ export class DocumentRepository {
   async create(
     data: { folderId: Types.ObjectId | string } & Pick<
       IDocumentEntity,
-      'name' | 'link' | 'ownerId' | 'ownerType' | 'creator' | 'parentId' | 'grandParentId'
+      'name' | 'fileId' | 'path' | 'mimeType' | 'size' | 'ownerId' | 'ownerType' | 'creator' | 'parentId' | 'grandParentId'
     >,
   ) {
     const doc = await this.model.create(data);
@@ -20,7 +20,7 @@ export class DocumentRepository {
   }
 
   @TraceDecorator()
-  async update(id: string, data: Partial<Pick<IDocumentEntity, 'name' | 'link'>>) {
+  async update(id: string, data: Partial<Pick<IDocumentEntity, 'name'>>) {
     const doc = await this.model.findByIdAndUpdate(id, data, { new: true }).lean();
 
     if (!doc) {

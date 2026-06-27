@@ -3,11 +3,15 @@ import { ImagesService } from '../services/images.service';
 import { type RepositoriesPlugin } from './repositories.plugin';
 import { withTraceSync } from '@shared/monitoring/src/tracing';
 
-export const createServicesPlugin = (repositoriesPlugin: RepositoriesPlugin) => {
+export const createServicesPlugin = (repositoriesPlugin: RepositoriesPlugin, filesBaseUrl: string) => {
   const imagesService = withTraceSync(
     'gallery.init.services.images',
     () =>
-      new ImagesService(repositoriesPlugin.decorator.galleryRepository, repositoriesPlugin.decorator.imageRepository),
+      new ImagesService(
+        repositoriesPlugin.decorator.galleryRepository,
+        repositoriesPlugin.decorator.imageRepository,
+        filesBaseUrl,
+      ),
   );
 
   const plugin = withTraceSync('gallery.init.services.plugin', () =>

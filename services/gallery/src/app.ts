@@ -7,13 +7,15 @@ import { createServicesPlugin } from './plugins/services.plugin';
 import { createControllersPlugin } from './plugins/controllers.plugin';
 import { withTraceSync, withTraceAsync } from '@shared/monitoring/src/tracing';
 
-export async function createApp(port: number, mongoUri: string) {
+export async function createApp(port: number, mongoUri: string, filesBaseUrl: string) {
   const repositoriesPlugin = await withTraceAsync(
     'gallery.init.repositories_plugin',
     async () => await createRepositoriesPlugin(mongoUri),
   );
 
-  const servicesPlugin = withTraceSync('gallery.init.services_plugin', () => createServicesPlugin(repositoriesPlugin));
+  const servicesPlugin = withTraceSync('gallery.init.services_plugin', () =>
+    createServicesPlugin(repositoriesPlugin, filesBaseUrl),
+  );
 
   const controllersPlugin = withTraceSync('gallery.init.controllers_plugin', () =>
     createControllersPlugin(servicesPlugin),

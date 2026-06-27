@@ -58,12 +58,13 @@ export const uploadImageController = new Elysia({ name: 'UploadImageController' 
         throw new AppError({ message: 'Failed to upload file', statusCode: 502, code: 'BAD_GATEWAY' });
       }
 
-      // Create image with file path
+      // Create image with file link
       const response = await galleryClient.createImage.post({
         galleryId,
         name,
         description,
-        link: fileResponse.data.path,
+        fileId: fileResponse.data.id,
+        path: fileResponse.data.path,
         mimeType: fileResponse.data.mimeType,
         size: fileResponse.data.size,
         ownerId: gallery.ownerId,
@@ -86,7 +87,9 @@ export const uploadImageController = new Elysia({ name: 'UploadImageController' 
         galleryId: data.galleryId,
         name: data.name,
         description: data.description,
-        link: data.link,
+        fileId: data.fileId,
+        path: data.path,
+        url: data.url,
         mimeType: data.mimeType,
         size: data.size,
         ownerId: data.ownerId,
@@ -110,7 +113,9 @@ export const uploadImageController = new Elysia({ name: 'UploadImageController' 
         galleryId: t.String(),
         name: t.String(),
         description: t.String(),
-        link: t.String(),
+        fileId: t.String(),
+        path: t.String(),
+        url: t.String(),
         mimeType: t.String(),
         size: t.Number(),
         ownerId: t.String(),

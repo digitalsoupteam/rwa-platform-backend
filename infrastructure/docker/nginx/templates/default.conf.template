@@ -41,7 +41,7 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    location /files/ {
+    location ${FILES_URL_PATH}/ {
         alias /app/storage/;
         add_header X-Content-Type-Options nosniff;
         expires 1y;

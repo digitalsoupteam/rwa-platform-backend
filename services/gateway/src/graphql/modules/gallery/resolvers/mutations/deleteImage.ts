@@ -32,6 +32,9 @@ export const deleteImage: MutationResolvers['deleteImage'] = async (_parent, { i
     permission: 'content',
   });
 
+  // Delete file from files service
+  await clients.filesClient.deleteFile.post({ id: image.fileId });
+
   const response = await clients.galleryClient.deleteImage.post({
     id,
   });

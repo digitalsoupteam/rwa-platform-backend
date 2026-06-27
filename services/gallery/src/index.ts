@@ -1,10 +1,15 @@
 import { createApp } from './app';
 import { tracer } from '@shared/monitoring/src/tracing';
+import { buildFilesBaseUrl } from '@shared/files/src/index';
 
 const app = await tracer.startActiveSpan('gallery.init.main', async (span) => {
   const appInstance = await createApp(
     Number(process.env.PORT),
     String(process.env.MONGODB_URI) + '/' + String(process.env.MONGODB_DBNAME),
+    buildFilesBaseUrl(
+      String(process.env.BASE_DOMAIN),
+      String(process.env.FILES_URL_PATH),
+    ),
   );
 
   span.end();

@@ -5,11 +5,13 @@ import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
 import { LogDecorator } from '@shared/monitoring/src/logDecorator';
 import { setSpanAttributes } from '@shared/monitoring/src/tracing';
+import { buildFileUrl } from '@shared/files/src/index';
 
 export class DocumentsService {
   constructor(
     private readonly documentsFolderRepository: DocumentsFolderRepository,
     private readonly documentRepository: DocumentRepository,
+    private readonly filesBaseUrl: string,
   ) {}
 
   /**
@@ -188,7 +190,8 @@ export class DocumentsService {
   async createDocument(data: {
     folderId: string;
     name: string;
-    link: string;
+    fileId: string;
+    path: string;
     mimeType: string;
     size: number;
     ownerId: string;
@@ -205,7 +208,9 @@ export class DocumentsService {
       id: document._id.toString(),
       folderId: document.folderId.toString(),
       name: document.name,
-      link: document.link,
+      fileId: document.fileId,
+      path: document.path,
+      url: buildFileUrl(document.path, this.filesBaseUrl),
       mimeType: document.mimeType,
       size: document.size,
       ownerId: document.ownerId,
@@ -240,7 +245,9 @@ export class DocumentsService {
       id: document._id.toString(),
       folderId: document.folderId.toString(),
       name: document.name,
-      link: document.link,
+      fileId: document.fileId,
+      path: document.path,
+      url: buildFileUrl(document.path, this.filesBaseUrl),
       mimeType: document.mimeType,
       size: document.size,
       ownerId: document.ownerId,
@@ -285,7 +292,9 @@ export class DocumentsService {
       id: document._id.toString(),
       folderId: document.folderId.toString(),
       name: document.name,
-      link: document.link,
+      fileId: document.fileId,
+      path: document.path,
+      url: buildFileUrl(document.path, this.filesBaseUrl),
       mimeType: document.mimeType,
       size: document.size,
       ownerId: document.ownerId,
@@ -320,7 +329,9 @@ export class DocumentsService {
       id: doc._id.toString(),
       folderId: doc.folderId.toString(),
       name: doc.name,
-      link: doc.link,
+      fileId: doc.fileId,
+      path: doc.path,
+      url: buildFileUrl(doc.path, this.filesBaseUrl),
       mimeType: doc.mimeType,
       size: doc.size,
       ownerId: doc.ownerId,

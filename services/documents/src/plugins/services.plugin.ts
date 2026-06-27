@@ -3,13 +3,14 @@ import { DocumentsService } from '../services/documents.service';
 import type { RepositoriesPlugin } from './repositories.plugin';
 import { withTraceSync } from '@shared/monitoring/src/tracing';
 
-export const createServicesPlugin = (repositoriesPlugin: RepositoriesPlugin) => {
+export const createServicesPlugin = (repositoriesPlugin: RepositoriesPlugin, filesBaseUrl: string) => {
   const documentsService = withTraceSync(
     'documents.init.services.documents',
     () =>
       new DocumentsService(
         repositoriesPlugin.decorator.documentsFolderRepository,
         repositoriesPlugin.decorator.documentRepository,
+        filesBaseUrl,
       ),
   );
 

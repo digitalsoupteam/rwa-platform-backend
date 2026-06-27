@@ -211,6 +211,8 @@ services:
       OTEL_SERVICE_NAME: ${DOCUMENTS_SERVICE_NAME}
       OTEL_RESOURCE_ATTRIBUTES: service.name=${DOCUMENTS_SERVICE_NAME},service.version=${DOCUMENTS_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
       PORT: ${DOCUMENTS_PORT}
+      BASE_DOMAIN: ${BASE_DOMAIN}
+      FILES_URL_PATH: ${FILES_URL_PATH}
     volumes: *monitoring-volumes
     networks:
       - app-network
@@ -278,6 +280,8 @@ services:
       OTEL_SERVICE_NAME: ${GALLERY_SERVICE_NAME}
       OTEL_RESOURCE_ATTRIBUTES: service.name=${GALLERY_SERVICE_NAME},service.version=${GALLERY_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
       PORT: ${GALLERY_PORT}
+      BASE_DOMAIN: ${BASE_DOMAIN}
+      FILES_URL_PATH: ${FILES_URL_PATH}
     volumes: *monitoring-volumes
     networks:
       - app-network
@@ -574,6 +578,7 @@ services:
       - NGINX_SSL_KEY_PATH=${NGINX_SSL_KEY_PATH}
       - DOCUMENTS_MAX_FILE_SIZE=${DOCUMENTS_MAX_FILE_SIZE}
       - GALLERY_MAX_FILE_SIZE=${GALLERY_MAX_FILE_SIZE}
+      - FILES_URL_PATH=${FILES_URL_PATH}
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/templates:/etc/nginx/templates:ro

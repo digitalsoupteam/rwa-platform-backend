@@ -69,7 +69,8 @@ export const createDocument: MutationResolvers['createDocument'] = async (
   const response = await clients.documentsClient.createDocument.post({
     folderId: input.folderId,
     name: input.name,
-    link: fileResponse.data.path,
+    fileId: fileResponse.data.id,
+    path: fileResponse.data.path,
     mimeType: fileResponse.data.mimeType,
     size: fileResponse.data.size,
     ownerId: folder.ownerId,
@@ -80,11 +81,9 @@ export const createDocument: MutationResolvers['createDocument'] = async (
   });
 
   if (response.error) {
-    throw new AppError({
-      message: 'Failed to create document',
-      statusCode: 502,
-      code: 'BAD_GATEWAY',
-    });
+    // Compensation: delete uploaded file if document creation failed
+    await clients.filesClient.deleteFile.post({ id: fileResponse.data.id });
+    throw new AppError({ message: 'Failed to create document', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   const { data } = response;
@@ -93,7 +92,9 @@ export const createDocument: MutationResolvers['createDocument'] = async (
     id: data.id,
     folderId: data.folderId,
     name: data.name,
-    link: data.link,
+    fileId: data.fileId,
+    path: data.path,
+    url: data.url,
     mimeType: data.mimeType,
     size: data.size,
     ownerId: data.ownerId,

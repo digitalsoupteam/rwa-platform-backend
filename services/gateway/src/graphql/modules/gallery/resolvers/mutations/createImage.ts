@@ -69,7 +69,8 @@ export const createImage: MutationResolvers['createImage'] = async (
     galleryId: input.galleryId,
     name: input.name,
     description: input.description,
-    link: fileResponse.data.path,
+    fileId: fileResponse.data.id,
+    path: fileResponse.data.path,
     mimeType: fileResponse.data.mimeType,
     size: fileResponse.data.size,
     ownerId: gallery.ownerId,
@@ -80,6 +81,8 @@ export const createImage: MutationResolvers['createImage'] = async (
   });
 
   if (response.error) {
+    // Compensation: delete uploaded file if image creation failed
+    await clients.filesClient.deleteFile.post({ id: fileResponse.data.id });
     throw new AppError({ message: 'Failed to create image', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
@@ -90,7 +93,9 @@ export const createImage: MutationResolvers['createImage'] = async (
     galleryId: data.galleryId,
     name: data.name,
     description: data.description,
-    link: data.link,
+    fileId: data.fileId,
+    path: data.path,
+    url: data.url,
     mimeType: data.mimeType,
     size: data.size,
     ownerId: data.ownerId,
