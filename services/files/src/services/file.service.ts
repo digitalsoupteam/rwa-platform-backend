@@ -5,6 +5,7 @@ import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
 import { LogDecorator } from '@shared/monitoring/src/logDecorator';
 import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 import { AppError } from '@shared/errors/app-errors';
+import { fileTypeFromBuffer } from 'file-type';
 
 export class FileService {
   constructor(
@@ -28,11 +29,16 @@ export class FileService {
     // Save file to storage
     await this.storageClient.saveFile(storagePath, Buffer.from(buffer));
 
+    // Determine MIME type from file content (magic bytes).
+    // Text files (.txt, .csv) have no magic bytes — fallback to client-provided type (stripped of parameters).
+    const detected = await fileTypeFromBuffer(Buffer.from(buffer));
+    const mimeType = detected?.mime ?? data.file.type.split(';')[0].trim();
+
     const file = await this.fileRepository.create({
       name: data.file.name,
       path: storagePath,
       size: data.file.size,
-      mimeType: data.file.type,
+      mimeType,
     });
 
     return {

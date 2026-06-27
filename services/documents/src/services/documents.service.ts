@@ -65,7 +65,7 @@ export class DocumentsService {
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({
-    args: (a) => ({ id: a[0], name: a[1].name }),
+    args: (a) => ({ id: a[0].id, name: a[0].updateData.name }),
   })
   async updateFolder(params: { id: string; updateData: { name: string } }) {
     setSpanAttributes({ entityId: params.id, entityType: 'folder' });
@@ -224,7 +224,7 @@ export class DocumentsService {
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({
-    args: (a) => ({ id: a[0], name: a[1].name }),
+    args: (a) => ({ id: a[0].id, name: a[0].updateData.name }),
   })
   async updateDocument(params: {
     id: string;

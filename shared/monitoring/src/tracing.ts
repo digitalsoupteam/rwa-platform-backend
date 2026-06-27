@@ -1,6 +1,7 @@
 import { trace, SpanStatusCode } from '@opentelemetry/api';
 import type { Span } from '@opentelemetry/api';
 import { AppError } from '@shared/errors/app-errors';
+import { recordExceptionWithCause } from './decorator-utils';
 
 export const tracer = trace.getTracer(String(process.env.SERVICE_NAME), '1.0.0');
 
@@ -68,6 +69,7 @@ export function withTraceSync<T>(
       return result;
     } catch (error) {
       if (!spanEnded) {
+        recordExceptionWithCause(span, error);
         span.setStatus({
           code: SpanStatusCode.ERROR,
           message: error instanceof Error ? error.message : String(error),
@@ -133,6 +135,7 @@ export async function withTraceAsync<T>(
       return result;
     } catch (error) {
       if (!spanEnded) {
+        recordExceptionWithCause(span, error);
         span.setStatus({
           code: SpanStatusCode.ERROR,
           message: error instanceof Error ? error.message : String(error),

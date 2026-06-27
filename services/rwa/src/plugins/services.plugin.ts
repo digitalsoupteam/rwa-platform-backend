@@ -10,6 +10,7 @@ export const createServicesPlugin = (
   repositoriesPlugin: RepositoriesPlugin,
   clientsPlugin: ClientsPlugin,
   supportedNetworks: any[],
+  openRouterModel: string,
 ) => {
   const businessService = withTraceSync(
     'rwa.init.services.business',
@@ -19,6 +20,7 @@ export const createServicesPlugin = (
         clientsPlugin.decorator.openRouterClient,
         clientsPlugin.decorator.signersManagerClient,
         supportedNetworks,
+        openRouterModel,
       ),
   );
 
@@ -31,6 +33,7 @@ export const createServicesPlugin = (
         clientsPlugin.decorator.signersManagerClient,
         clientsPlugin.decorator.poolEventsClient,
         supportedNetworks,
+        openRouterModel,
       ),
   );
 

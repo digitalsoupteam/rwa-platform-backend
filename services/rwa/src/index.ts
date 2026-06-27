@@ -9,6 +9,7 @@ const app = await tracer.startActiveSpan('rwa.init.main', async (span) => {
     String(process.env.SERVICE_NAME),
     String(process.env.OPENROUTER_API_KEY),
     String(process.env.OPENROUTER_BASE_URL),
+    String(process.env.OPENROUTER_MODEL),
     String(process.env.RABBITMQ_URL),
     Number(process.env.RABBITMQ_MAX_RECONNECT_ATTEMPTS),
     Number(process.env.RABBITMQ_RECONNECT_INTERVAL),

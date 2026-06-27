@@ -2,6 +2,7 @@ import { expect, test, describe, beforeAll } from "bun:test";
 import { ethers, HDNodeWallet, JsonRpcProvider } from "ethers";
 import { TESTNET_RPC } from "./utils/config";
 import { makeGraphQLRequest } from "./utils/graphql/makeGraphQLRequest";
+import { makeRestRequest } from "./utils/makeRestRequest";
 import { authenticate } from "./utils/authenticate";
 import {
   CREATE_FOLDER,
@@ -9,7 +10,6 @@ import {
   DELETE_FOLDER,
   GET_FOLDER,
   GET_FOLDERS,
-  CREATE_DOCUMENT,
   UPDATE_DOCUMENT,
   DELETE_DOCUMENT,
   GET_DOCUMENT,
@@ -340,30 +340,24 @@ describe("Documents Flow", () => {
       const fileContent = "Test file content";
       const file = new File([fileContent], "test.txt", { type: "text/plain" });
 
-      const result = await makeGraphQLRequest(
-        CREATE_DOCUMENT,
-        {
-          input: {
-            folderId,
-            name: "Test Document",
-          },
-        },
-        accessToken,
-        file
+      const result = await makeRestRequest(
+        "/api/documents/createDocument",
+        { file, folderId, name: "Test Document" },
+        accessToken
       );
 
-      expect(result.errors).toBeUndefined();
-      expect(result.data.createDocument).toBeDefined();
-      expect(result.data.createDocument.name).toBe("Test Document");
-      expect(result.data.createDocument.folderId).toBe(folderId);
-      expect(result.data.createDocument.link).toBeDefined();
-      expect(result.data.createDocument.mimeType).toBe("text/plain");
-      expect(result.data.createDocument.size).toBe(file.size);
-      expect(result.data.createDocument.ownerId).toBe(companyId);
-      expect(result.data.createDocument.ownerType).toBe("company");
-      expect(result.data.createDocument.creator).toBe(userId);
+      expect(result.error).toBeUndefined();
+      expect(result.id).toBeDefined();
+      expect(result.name).toBe("Test Document");
+      expect(result.folderId).toBe(folderId);
+      expect(result.link).toBeDefined();
+      expect(result.mimeType).toBe("text/plain");
+      expect(result.size).toBe(file.size);
+      expect(result.ownerId).toBe(companyId);
+      expect(result.ownerType).toBe("company");
+      expect(result.creator).toBe(userId);
 
-      documentId = result.data.createDocument.id;
+      documentId = result.id;
     });
 
     test("should get document by id", async () => {
@@ -462,20 +456,14 @@ describe("Documents Flow", () => {
       const fileContent = "fake image content";
       const file = new File([fileContent], "test.jpg", { type: "image/jpeg" });
 
-      const result = await makeGraphQLRequest(
-        CREATE_DOCUMENT,
-        {
-          input: {
-            folderId,
-            name: "Should Fail",
-          },
-        },
-        accessToken,
-        file
+      const result = await makeRestRequest(
+        "/api/documents/createDocument",
+        { file, folderId, name: "Should Fail" },
+        accessToken
       );
 
-      expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toContain("not allowed");
+      expect(result.error).toBeDefined();
+      expect(result.error.message).toContain("not allowed");
     });
 
     test("should reject document with oversized file", async () => {
@@ -483,20 +471,14 @@ describe("Documents Flow", () => {
       const oversizedContent = new Uint8Array(26 * 1024 * 1024);
       const file = new File([oversizedContent], "big.txt", { type: "text/plain" });
 
-      const result = await makeGraphQLRequest(
-        CREATE_DOCUMENT,
-        {
-          input: {
-            folderId,
-            name: "Should Fail Oversized",
-          },
-        },
-        accessToken,
-        file
+      const result = await makeRestRequest(
+        "/api/documents/createDocument",
+        { file, folderId, name: "Should Fail Oversized" },
+        accessToken
       );
 
-      expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toContain("exceeds maximum");
+      expect(result.error).toBeDefined();
+      expect(result.error.message).toContain("exceeds maximum");
     });
   });
 

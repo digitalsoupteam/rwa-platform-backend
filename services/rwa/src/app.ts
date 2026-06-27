@@ -16,6 +16,7 @@ export async function createApp(
   serviceName: string,
   openRouterApiKey: string,
   openRouterBaseUrl: string,
+  openRouterModel: string,
   rabbitMqUri: string,
   rabbitMqMaxReconnectAttempts: number,
   rabbitMqReconnectInterval: number,
@@ -43,7 +44,7 @@ export async function createApp(
   );
 
   const servicesPlugin = withTraceSync('rwa.init.services_plugin', () =>
-    createServicesPlugin(repositoriesPlugin, clientsPlugin, supportedNetworks),
+    createServicesPlugin(repositoriesPlugin, clientsPlugin, supportedNetworks, openRouterModel),
   );
 
   const controllersPlugin = withTraceSync('rwa.init.controllers_plugin', () => createControllersPlugin(servicesPlugin));

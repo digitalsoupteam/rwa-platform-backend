@@ -21,6 +21,7 @@ export class PoolService {
       name: string;
       factoryAddress: string;
     }[],
+    private readonly openRouterModel: string,
   ) {}
 
   private async generatePoolFields(description: string) {
@@ -110,7 +111,7 @@ Example response:
 }`;
 
     const response = await this.openRouterClient.chatCompletion({
-      model: 'google/gemini-2.0-flash-001',
+      model: this.openRouterModel,
       messages: [
         { role: 'system', content: systemMessage },
         {
@@ -265,7 +266,7 @@ RISK_SCORE: 45
 REASONING: Moderate risk due to competitive market, but strong pool model and experienced team`;
 
     const response = await this.openRouterClient.chatCompletion({
-      model: 'google/gemini-2.0-flash-001',
+      model: this.openRouterModel,
       messages: [
         { role: 'system', content: systemMessage },
         {

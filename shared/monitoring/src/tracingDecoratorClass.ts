@@ -1,4 +1,4 @@
-import { getAllMethods } from './decorator-utils';
+import { getAllMethods, recordExceptionWithCause } from './decorator-utils';
 import { tracer } from './tracing';
 import { AppError } from '@shared/errors/app-errors';
 
@@ -62,7 +62,7 @@ export function TracingDecoratorClass(options?: string | TracingDecoratorOptions
                         return value;
                       })
                       .catch((error: any) => {
-                        span.recordException(error);
+                        recordExceptionWithCause(span, error);
                         span.setStatus({ code: 2, message: error.message });
                         if (error instanceof AppError) {
                           span.setAttribute('error.code', error.code);
@@ -75,7 +75,7 @@ export function TracingDecoratorClass(options?: string | TracingDecoratorOptions
                   span.end();
                   return result;
                 } catch (error: any) {
-                  span.recordException(error);
+                  recordExceptionWithCause(span, error);
                   span.setStatus({ code: 2, message: error.message });
                   if (error instanceof AppError) {
                     span.setAttribute('error.code', error.code);

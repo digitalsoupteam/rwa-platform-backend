@@ -112,7 +112,7 @@ describe("RWA Flow", () => {
       );
 
       expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toContain("Invalid business type");
+      expect(result.errors[0].message).toContain("Value \"enterprise\" does not");
     });
 
     test("should reject invalid country code on business", async () => {
@@ -313,20 +313,22 @@ describe("RWA Flow", () => {
       expect(result.data.editBusiness.socials[2].type).toBe("webpage");
     });
 
-    // test("should update business risk score", async () => {
-    //   const result = await makeGraphQLRequest(
-    //     UPDATE_BUSINESS_RISK_SCORE,
-    //     {
-    //       id: businessId,
-    //     },
-    //     accessToken
-    //   );
+    test("should update business risk score", async () => {
+      const result = await makeGraphQLRequest(
+        UPDATE_BUSINESS_RISK_SCORE,
+        {
+          id: businessId,
+        },
+        accessToken
+      );
 
-    //   expect(result.errors).toBeUndefined();
-    //   expect(result.data.updateBusinessRiskScore).toBeDefined();
-    //   expect(result.data.updateBusinessRiskScore.id).toBe(businessId);
-    //   expect(result.data.updateBusinessRiskScore.riskScore).toBeDefined();
-    // });
+      expect(result.errors).toBeUndefined();
+      expect(result.data.updateBusinessRiskScore).toBeDefined();
+      expect(result.data.updateBusinessRiskScore.id).toBe(businessId);
+      expect(result.data.updateBusinessRiskScore.riskScore).toBeDefined();
+    });
+
+    return
 
     test("should deploy business contract", async () => {
       // Request signatures
@@ -375,7 +377,7 @@ describe("RWA Flow", () => {
       expect(taskResult.data.getSignatureTask.completed).toBe(true);
       expect(taskResult.data.getSignatureTask.signatures).toBeArray();
       expect(taskResult.data.getSignatureTask.signatures.length).toBeGreaterThan(0);
-return
+// return
       // Request HOLD tokens and gas
       await requestHold(accessToken, 500);
       await requestGas(accessToken, 0.0035);

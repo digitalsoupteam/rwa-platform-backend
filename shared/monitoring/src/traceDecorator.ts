@@ -1,5 +1,5 @@
 import { tracer } from './tracing';
-import { camelToSnakeCase } from './decorator-utils';
+import { camelToSnakeCase, recordExceptionWithCause } from './decorator-utils';
 import type { SpanOptions } from '@opentelemetry/api';
 import { AppError } from '@shared/errors/app-errors';
 
@@ -30,7 +30,7 @@ export function TraceDecorator(options?: TraceOptions) {
                 return value;
               })
               .catch((error: any) => {
-                span.recordException(error);
+                recordExceptionWithCause(span, error);
                 span.setStatus({ code: 2, message: error.message });
                 if (error instanceof AppError) {
                   span.setAttribute('error.code', error.code);
@@ -43,7 +43,7 @@ export function TraceDecorator(options?: TraceOptions) {
           span.end();
           return result;
         } catch (error: any) {
-          span.recordException(error);
+          recordExceptionWithCause(span, error);
           span.setStatus({ code: 2, message: error.message });
           if (error instanceof AppError) {
             span.setAttribute('error.code', error.code);

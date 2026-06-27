@@ -23,6 +23,7 @@ export class BusinessService {
     private readonly openRouterClient: OpenRouterClient,
     private readonly signersManagerClient: SignersManagerClient,
     private readonly supportedNetworks: NetworkConfig[],
+    private readonly openRouterModel: string,
   ) {}
 
   private isChainIdSupported(chainId: string): boolean {
@@ -73,7 +74,7 @@ Response format:
 }`;
 
     const response = await this.openRouterClient.chatCompletion({
-      model: 'google/gemini-2.0-flash-001',
+      model: this.openRouterModel,
       messages: [
         { role: 'system', content: systemMessage },
         {
@@ -289,7 +290,7 @@ RISK_SCORE: 45
 REASONING: Moderate risk due to competitive market, but strong business model and experienced team`;
 
     const response = await this.openRouterClient.chatCompletion({
-      model: 'google/gemini-2.0-flash-001',
+      model: this.openRouterModel,
       messages: [
         { role: 'system', content: systemMessage },
         {

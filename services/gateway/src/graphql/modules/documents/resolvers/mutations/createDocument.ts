@@ -15,9 +15,11 @@ export const createDocument: MutationResolvers['createDocument'] = async (
   }
 
   // Validate file MIME type before upload
-  if (!fileValidation.DOCUMENTS_ALLOWED_MIME_TYPES.includes(input.file.type)) {
+  // Strip parameters (e.g. ";charset=utf-8") — only type/subtype matters
+  const mimeType = input.file.type.split(';')[0].trim();
+  if (!fileValidation.DOCUMENTS_ALLOWED_MIME_TYPES.includes(mimeType)) {
     throw new AppError({
-      message: `File type "${input.file.type}" is not allowed. Allowed types: ${fileValidation.DOCUMENTS_ALLOWED_MIME_TYPES.join(', ')}`,
+      message: `File type "${mimeType}" is not allowed. Allowed types: ${fileValidation.DOCUMENTS_ALLOWED_MIME_TYPES.join(', ')}`,
       statusCode: 400,
       code: 'VALIDATION_ERROR',
     });
