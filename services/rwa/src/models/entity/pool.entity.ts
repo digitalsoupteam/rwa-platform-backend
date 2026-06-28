@@ -255,6 +255,12 @@ const poolSchemaDefinition = {
     type: Number,
   },
 
+  // Evaluation
+  riskScoreEvaluationProcess: {
+    type: Boolean,
+    default: false,
+  },
+
   // Timestamps
   createdAt: {
     type: Number,

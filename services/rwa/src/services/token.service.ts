@@ -10,6 +10,7 @@ export class TokenService {
   constructor(
     private readonly poolRepository: PoolRepository,
     private readonly businessRepository: BusinessRepository,
+    private readonly placeholderImageUrl: string,
   ) {}
 
   @TraceDecorator()
@@ -36,7 +37,7 @@ export class TokenService {
     const description = [business.description, pool.description].filter(Boolean).join('\n\n');
 
     // Get image with fallback logic
-    const image = pool.image || business.image || `https://example.com/images/${tokenId}.png`;
+    const image = pool.image || business.image || this.placeholderImageUrl;
 
     // Format metadata according to ERC-1155 Metadata URI JSON Schema
     return {

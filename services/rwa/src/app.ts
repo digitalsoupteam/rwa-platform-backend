@@ -22,6 +22,7 @@ export async function createApp(
   rabbitMqReconnectInterval: number,
   signersManagerUrl: string,
   supportedNetworks: any[],
+  placeholderImageUrl: string,
 ) {
   const repositoriesPlugin = await withTraceAsync(
     'rwa.init.repositories_plugin',
@@ -44,7 +45,7 @@ export async function createApp(
   );
 
   const servicesPlugin = withTraceSync('rwa.init.services_plugin', () =>
-    createServicesPlugin(repositoriesPlugin, clientsPlugin, supportedNetworks, openRouterModel),
+    createServicesPlugin(repositoriesPlugin, clientsPlugin, supportedNetworks, openRouterModel, placeholderImageUrl),
   );
 
   const controllersPlugin = withTraceSync('rwa.init.controllers_plugin', () => createControllersPlugin(servicesPlugin));

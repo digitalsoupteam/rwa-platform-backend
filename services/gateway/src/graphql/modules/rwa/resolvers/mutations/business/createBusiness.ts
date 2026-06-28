@@ -31,7 +31,6 @@ export const createBusiness: MutationResolvers['createBusiness'] = async (
     chainId: input.chainId,
     description: input.description,
     tags: input.tags,
-    image: input.image ?? undefined,
     country: input.country ?? undefined,
     businessType: input.businessType ?? undefined,
     socials: input.socials ?? undefined,

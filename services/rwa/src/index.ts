@@ -1,6 +1,7 @@
 import { createApp } from './app';
 import { tracer } from '@shared/monitoring/src/tracing';
 
+
 const app = await tracer.startActiveSpan('rwa.init.main', async (span) => {
   const appInstance = await createApp(
     Number(process.env.PORT),
@@ -21,6 +22,7 @@ const app = await tracer.startActiveSpan('rwa.init.main', async (span) => {
         factoryAddress: '0xF46A71cac8B1A8F734559Cc4367CD1546A1A29bF',
       },
     ],
+    `https://${String(process.env.BASE_DOMAIN)}${String(process.env.PLACEHOLDER_IMAGE_PATH)}`,
   );
 
   span.end();

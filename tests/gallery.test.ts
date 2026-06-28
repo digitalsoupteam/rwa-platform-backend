@@ -335,7 +335,9 @@ describe("Gallery Flow", () => {
       expect(result.id).toBeDefined();
       expect(result.name).toBe("Test Image");
       expect(result.description).toBe("Test Description");
-      expect(result.link).toBeDefined();
+      expect(result.url).toBeDefined();
+      expect(result.fileId).toBeDefined();
+      expect(result.path).toBeDefined();
       expect(result.mimeType).toBe("image/jpeg");
       expect(result.size).toBe(file.size);
       expect(result.galleryId).toBe(galleryId);

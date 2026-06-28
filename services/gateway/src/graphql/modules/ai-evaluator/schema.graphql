@@ -27,14 +27,15 @@ type Evaluation {
   grandParentId: String!
   ownerId: String!
   ownerType: String!
-  riskScore: Int!
-  reasoning: String!
+  status: String!
+  riskScore: Int
+  reasoning: String
   factors: [EvaluationFactor!]!
-  stage1Response: String!
-  stage2Response: String!
+  stage1Response: String
+  stage2Response: String
   evaluatedDocuments: [EvaluationDocumentRef!]!
   evaluatedImages: [EvaluationImageRef!]!
-  modelUsed: String!
+  modelUsed: String
   createdAt: Float!
   updatedAt: Float!
 }
@@ -61,9 +62,4 @@ input GetEvaluationsInput {
 extend type Query {
   getEvaluation(id: ID!): Evaluation!
   getEvaluations(input: GetEvaluationsInput): [Evaluation!]!
-}
-
-extend type Mutation {
-  evaluatePoolRisk(poolId: ID!): Evaluation!
-  evaluateBusinessRisk(businessId: ID!): Evaluation!
 }

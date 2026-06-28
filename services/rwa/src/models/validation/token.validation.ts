@@ -25,7 +25,7 @@ const statusPropertiesSchema = t.Object({
 export const tokenMetadataSchema = t.Object({
   name: t.String(),
   description: t.String(),
-  image: t.String(),
+  image: t.Optional(t.String()),
   decimals: t.Number(),
   properties: t.Object({
     business: businessPropertiesSchema,

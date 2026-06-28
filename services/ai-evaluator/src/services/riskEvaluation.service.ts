@@ -10,10 +10,12 @@ import type {
   QuestionsClient,
   PortfolioClient,
 } from '../clients/eden.clients';
+import type { EvaluationResultsClient } from '../clients/evaluationResults.client';
 import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
 import { LogDecorator } from '@shared/monitoring/src/logDecorator';
 import { setSpanAttributes } from '@shared/monitoring/src/tracing';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 import type { SortOrder } from 'mongoose';
 
 type SiblingPoolMeta = {
@@ -59,7 +61,9 @@ export class RiskEvaluationService {
     private readonly reactionsClient: ReactionsClient,
     private readonly questionsClient: QuestionsClient,
     private readonly portfolioClient: PortfolioClient,
+    private readonly evaluationResultsClient: EvaluationResultsClient,
     private readonly openRouterModel: string,
+    private readonly maxFilesPerRequest: number,
   ) {}
 
   // ========== Public orchestrators ==========
@@ -67,11 +71,92 @@ export class RiskEvaluationService {
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({
-    args: (a) => ({ poolId: a[0].poolId }),
+    args: (a) => ({ entityType: a[0].entityType, entityId: a[0].entityId }),
   })
-  async evaluatePoolRisk({ poolId }: { poolId: string }) {
-    setSpanAttributes({ entityId: poolId, entityType: 'pool' });
+  async startEvaluation(params: {
+    entityType: 'pool' | 'business';
+    entityId: string;
+    ownerId: string;
+    ownerType: string;
+  }): Promise<{ evaluationId: string }> {
+    setSpanAttributes({ entityId: params.entityId, entityType: params.entityType });
 
+    const grandParentId =
+      params.entityType === 'pool' ? await this.resolvePoolBusinessId(params.entityId) : params.entityId;
+
+    const evaluation = await this.evaluationRepository.create({
+      entityType: params.entityType,
+      parentId: params.entityId,
+      grandParentId,
+      ownerId: params.ownerId,
+      ownerType: params.ownerType,
+      status: 'pending',
+      factors: [],
+      evaluatedDocuments: [],
+      evaluatedImages: [],
+    });
+
+    const evaluationId = evaluation._id.toString();
+
+    // Fire-and-forget: run the full pipeline without awaiting
+    this.runEvaluation(evaluationId, params.entityType, params.entityId).catch((error) => {
+      logger.error(`Evaluation ${evaluationId} failed:`, error);
+    });
+
+    return { evaluationId };
+  }
+
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ evaluationId: a[0].id }),
+  })
+  async getEvaluation({ id }: { id: string }) {
+    setSpanAttributes({ evaluationId: id });
+    const evaluation = await this.evaluationRepository.findById(id);
+    return this.mapEvaluation(evaluation);
+  }
+
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ filterKeys: Object.keys(a[0].filter).join(',') }),
+  })
+  async getEvaluations({
+    filter,
+    sort,
+    limit,
+    offset,
+  }: {
+    filter: Record<string, any>;
+    sort?: { [key: string]: SortOrder };
+    limit?: number;
+    offset?: number;
+  }) {
+    setSpanAttributes({ filterKeys: Object.keys(filter).join(',') });
+    const evaluations = await this.evaluationRepository.findAll(filter, sort, limit, offset);
+    return evaluations.map((e) => this.mapEvaluation(e));
+  }
+
+  // ========== Async pipeline ==========
+
+  @TraceDecorator({ root: true })
+  @LogDecorator()
+  private async runEvaluation(evaluationId: string, entityType: 'pool' | 'business', entityId: string) {
+    try {
+      if (entityType === 'pool') {
+        await this.runPoolEvaluation(evaluationId, entityId);
+      } else {
+        await this.runBusinessEvaluation(evaluationId, entityId);
+      }
+    } catch (error) {
+      logger.error(`Evaluation ${evaluationId} pipeline failed:`, error);
+      await this.evaluationRepository.updateById(evaluationId, { status: 'failed' }).catch(() => {});
+    }
+  }
+
+  @TraceDecorator()
+  private async runPoolEvaluation(evaluationId: string, poolId: string) {
     const pool = await this.fetchPool({ poolId });
     const business = await this.fetchBusiness({ businessId: pool.businessId });
     const siblingPools = await this.fetchSiblingPools({
@@ -112,12 +197,8 @@ export class RiskEvaluationService {
       fetchedImages,
     });
 
-    const evaluation = await this.evaluationRepository.create({
-      entityType: 'pool',
-      parentId: poolId,
-      grandParentId: pool.businessId,
-      ownerId: pool.ownerId,
-      ownerType: pool.ownerType,
+    await this.evaluationRepository.updateById(evaluationId, {
+      status: 'completed',
       riskScore: stage2.riskScore,
       reasoning: stage2.reasoning,
       factors: stage2.factors,
@@ -128,26 +209,16 @@ export class RiskEvaluationService {
       modelUsed: this.openRouterModel,
     });
 
-    const response = await this.rwaClient.setPoolRiskScore.post({ id: poolId, riskScore: stage2.riskScore });
-    if (response.error) {
-      throw new AppError({
-        message: 'Failed to set pool risk score in rwa service',
-        statusCode: 502,
-        code: 'UPSTREAM_ERROR',
-      });
-    }
-
-    return this.mapEvaluation(evaluation);
+    await this.evaluationResultsClient.publishEvaluationResult({
+      evaluationId,
+      entityType: 'pool',
+      entityId: poolId,
+      riskScore: stage2.riskScore,
+    });
   }
 
   @TraceDecorator()
-  @MetricsDecorator()
-  @LogDecorator({
-    args: (a) => ({ businessId: a[0].businessId }),
-  })
-  async evaluateBusinessRisk({ businessId }: { businessId: string }) {
-    setSpanAttributes({ entityId: businessId, entityType: 'business' });
-
+  private async runBusinessEvaluation(evaluationId: string, businessId: string) {
     const business = await this.fetchBusiness({ businessId });
     const pools = await this.fetchBusinessPools({ businessId });
 
@@ -180,12 +251,8 @@ export class RiskEvaluationService {
       fetchedImages,
     });
 
-    const evaluation = await this.evaluationRepository.create({
-      entityType: 'business',
-      parentId: businessId,
-      grandParentId: businessId,
-      ownerId: business.ownerId,
-      ownerType: business.ownerType,
+    await this.evaluationRepository.updateById(evaluationId, {
+      status: 'completed',
       riskScore: stage2.riskScore,
       reasoning: stage2.reasoning,
       factors: stage2.factors,
@@ -196,48 +263,19 @@ export class RiskEvaluationService {
       modelUsed: this.openRouterModel,
     });
 
-    const response = await this.rwaClient.setBusinessRiskScore.post({ id: businessId, riskScore: stage2.riskScore });
-    if (response.error) {
-      throw new AppError({
-        message: 'Failed to set business risk score in rwa service',
-        statusCode: 502,
-        code: 'UPSTREAM_ERROR',
-      });
-    }
-
-    return this.mapEvaluation(evaluation);
+    await this.evaluationResultsClient.publishEvaluationResult({
+      evaluationId,
+      entityType: 'business',
+      entityId: businessId,
+      riskScore: stage2.riskScore,
+    });
   }
 
   @TraceDecorator()
-  @MetricsDecorator()
-  @LogDecorator({
-    args: (a) => ({ evaluationId: a[0].id }),
-  })
-  async getEvaluation({ id }: { id: string }) {
-    setSpanAttributes({ evaluationId: id });
-    const evaluation = await this.evaluationRepository.findById(id);
-    return this.mapEvaluation(evaluation);
-  }
-
-  @TraceDecorator()
-  @MetricsDecorator()
-  @LogDecorator({
-    args: (a) => ({ filterKeys: Object.keys(a[0].filter).join(',') }),
-  })
-  async getEvaluations({
-    filter,
-    sort,
-    limit,
-    offset,
-  }: {
-    filter: Record<string, any>;
-    sort?: { [key: string]: SortOrder };
-    limit?: number;
-    offset?: number;
-  }) {
-    setSpanAttributes({ filterKeys: Object.keys(filter).join(',') });
-    const evaluations = await this.evaluationRepository.findAll(filter, sort, limit, offset);
-    return evaluations.map((e) => this.mapEvaluation(e));
+  @LogDecorator({ args: (a) => ({ poolId: a[0] }) })
+  private async resolvePoolBusinessId(poolId: string): Promise<string> {
+    const pool = await this.fetchPool({ poolId });
+    return pool.businessId;
   }
 
   // ========== Private fetch methods ==========
@@ -590,6 +628,15 @@ If you don't need any documents or images, return empty arrays.`;
     fetchedDocuments: DocumentMeta[];
     fetchedImages: ImageMeta[];
   }): Promise<Stage2Result> {
+    const totalFiles = params.fetchedDocuments.length + params.fetchedImages.length;
+    if (totalFiles > this.maxFilesPerRequest) {
+      throw new AppError({
+        message: `Too many files for OpenRouter request: ${totalFiles} (documents=${params.fetchedDocuments.length}, images=${params.fetchedImages.length}). Maximum allowed: ${this.maxFilesPerRequest}`,
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
+    }
+
     const contentParts: Array<TextContentPart | FileContentPart | ImageContentPart> = [
       { type: 'text', text: params.summary },
       {
@@ -713,14 +760,15 @@ riskScore must be an integer between 1 and 100. 0 is not allowed.`,
       grandParentId: evaluation.grandParentId,
       ownerId: evaluation.ownerId,
       ownerType: evaluation.ownerType,
-      riskScore: evaluation.riskScore,
-      reasoning: evaluation.reasoning,
+      status: evaluation.status,
+      riskScore: evaluation.riskScore ?? undefined,
+      reasoning: evaluation.reasoning ?? undefined,
       factors: evaluation.factors ?? [],
-      stage1Response: evaluation.stage1Response,
-      stage2Response: evaluation.stage2Response,
+      stage1Response: evaluation.stage1Response ?? undefined,
+      stage2Response: evaluation.stage2Response ?? undefined,
       evaluatedDocuments: evaluation.evaluatedDocuments ?? [],
       evaluatedImages: evaluation.evaluatedImages ?? [],
-      modelUsed: evaluation.modelUsed,
+      modelUsed: evaluation.modelUsed ?? undefined,
       createdAt: evaluation.createdAt,
       updatedAt: evaluation.updatedAt,
     };

@@ -1,6 +1,8 @@
 import { Elysia } from 'elysia';
 import { OpenRouterClient } from '@shared/openrouter/client';
-import { withTraceSync } from '@shared/monitoring/src/tracing';
+import { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
+import { withTraceSync, withTraceAsync } from '@shared/monitoring/src/tracing';
 import {
   createRwaClient,
   createDocumentsClient,
@@ -9,6 +11,8 @@ import {
   createQuestionsClient,
   createPortfolioClient,
 } from '../clients/eden.clients';
+import { EvaluationResultsClient } from '../clients/evaluationResults.client';
+import { EvaluationRequestsClient } from '../clients/evaluationRequests.client';
 
 export const createClientsPlugin = (
   openRouterApiKey: string,
@@ -19,6 +23,9 @@ export const createClientsPlugin = (
   reactionsServiceUrl: string,
   questionsServiceUrl: string,
   portfolioServiceUrl: string,
+  rabbitMqUri: string,
+  rabbitMqMaxReconnectAttempts: number,
+  rabbitMqReconnectInterval: number,
 ) => {
   const openRouterClient = withTraceSync(
     'ai-evaluator.init.clients.openrouter',
@@ -47,6 +54,26 @@ export const createClientsPlugin = (
     createPortfolioClient(portfolioServiceUrl),
   );
 
+  const rabbitMQClient = withTraceSync(
+    'ai-evaluator.init.clients.rabbitmq',
+    () =>
+      new RabbitMQClient({
+        uri: rabbitMqUri,
+        reconnectAttempts: rabbitMqMaxReconnectAttempts,
+        reconnectInterval: rabbitMqReconnectInterval,
+      }),
+  );
+
+  const evaluationResultsClient = withTraceSync(
+    'ai-evaluator.init.clients.evaluation_results',
+    () => new EvaluationResultsClient(rabbitMQClient),
+  );
+
+  const evaluationRequestsClient = withTraceSync(
+    'ai-evaluator.init.clients.evaluation_requests',
+    () => new EvaluationRequestsClient(rabbitMQClient),
+  );
+
   const plugin = withTraceSync('ai-evaluator.init.clients.plugin', () =>
     new Elysia({ name: 'Clients' })
       .decorate('openRouterClient', openRouterClient)
@@ -55,7 +82,16 @@ export const createClientsPlugin = (
       .decorate('galleryClient', galleryClient)
       .decorate('reactionsClient', reactionsClient)
       .decorate('questionsClient', questionsClient)
-      .decorate('portfolioClient', portfolioClient),
+      .decorate('portfolioClient', portfolioClient)
+      .decorate('rabbitMQClient', rabbitMQClient)
+      .decorate('evaluationResultsClient', evaluationResultsClient)
+      .decorate('evaluationRequestsClient', evaluationRequestsClient)
+      .onStop(async () => {
+        await withTraceAsync('ai-evaluator.stop.clients', async () => {
+          await rabbitMQClient.disconnect();
+          logger.info('Clients disconnected');
+        });
+      }),
   );
 
   return plugin;

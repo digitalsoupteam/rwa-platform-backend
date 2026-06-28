@@ -11,6 +11,7 @@ export const createServicesPlugin = (
   clientsPlugin: ClientsPlugin,
   supportedNetworks: any[],
   openRouterModel: string,
+  placeholderImageUrl: string,
 ) => {
   const businessService = withTraceSync(
     'rwa.init.services.business',
@@ -19,6 +20,8 @@ export const createServicesPlugin = (
         repositoriesPlugin.decorator.businessRepository,
         clientsPlugin.decorator.openRouterClient,
         clientsPlugin.decorator.signersManagerClient,
+        clientsPlugin.decorator.rabbitMQClient,
+        clientsPlugin.decorator.evaluationRequestsClient,
         supportedNetworks,
         openRouterModel,
       ),
@@ -32,6 +35,8 @@ export const createServicesPlugin = (
         clientsPlugin.decorator.openRouterClient,
         clientsPlugin.decorator.signersManagerClient,
         clientsPlugin.decorator.poolEventsClient,
+        clientsPlugin.decorator.rabbitMQClient,
+        clientsPlugin.decorator.evaluationRequestsClient,
         supportedNetworks,
         openRouterModel,
       ),
@@ -40,7 +45,11 @@ export const createServicesPlugin = (
   const tokenService = withTraceSync(
     'rwa.init.services.token',
     () =>
-      new TokenService(repositoriesPlugin.decorator.poolRepository, repositoriesPlugin.decorator.businessRepository),
+      new TokenService(
+        repositoriesPlugin.decorator.poolRepository,
+        repositoriesPlugin.decorator.businessRepository,
+        placeholderImageUrl,
+      ),
   );
 
   const plugin = withTraceSync('rwa.init.services.plugin', () =>

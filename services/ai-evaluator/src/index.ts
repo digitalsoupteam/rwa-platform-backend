@@ -14,6 +14,10 @@ const app = await tracer.startActiveSpan('ai-evaluator.init.main', async (span) 
     String(process.env.REACTIONS_SERVICE_URL),
     String(process.env.QUESTIONS_SERVICE_URL),
     String(process.env.PORTFOLIO_SERVICE_URL),
+    String(process.env.RABBITMQ_URL),
+    Number(process.env.RABBITMQ_MAX_RECONNECT_ATTEMPTS),
+    Number(process.env.RABBITMQ_RECONNECT_INTERVAL),
+    Number(process.env.AI_EVALUATOR_MAX_FILES_PER_REQUEST) || 20,
   );
 
   span.end();

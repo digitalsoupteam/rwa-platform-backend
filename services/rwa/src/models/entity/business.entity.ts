@@ -54,6 +54,10 @@ const businessSchemaDefinition = {
   approvalSignaturesTaskExpired: {
     type: Number,
   },
+  riskScoreEvaluationProcess: {
+    type: Boolean,
+    default: false,
+  },
   country: {
     type: String,
     trim: true,

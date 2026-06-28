@@ -8,8 +8,9 @@ export const evaluationSchema = t.Object({
   grandParentId: t.String(),
   ownerId: t.String(),
   ownerType: t.String(),
-  riskScore: t.Number(),
-  reasoning: t.String(),
+  status: t.Union([t.Literal('pending'), t.Literal('completed'), t.Literal('failed')]),
+  riskScore: t.Optional(t.Number()),
+  reasoning: t.Optional(t.String()),
   factors: t.Array(
     t.Object({
       name: t.String(),
@@ -17,8 +18,8 @@ export const evaluationSchema = t.Object({
       detail: t.String(),
     }),
   ),
-  stage1Response: t.String(),
-  stage2Response: t.String(),
+  stage1Response: t.Optional(t.String()),
+  stage2Response: t.Optional(t.String()),
   evaluatedDocuments: t.Array(
     t.Object({
       id: t.String(),
@@ -32,22 +33,21 @@ export const evaluationSchema = t.Object({
       name: t.String(),
     }),
   ),
-  modelUsed: t.String(),
+  modelUsed: t.Optional(t.String()),
   createdAt: t.Number(),
   updatedAt: t.Number(),
 });
 
-/* Evaluate pool risk */
-export const evaluatePoolRiskRequest = t.Object({
-  poolId: t.String(),
+/* Start evaluation */
+export const startEvaluationRequest = t.Object({
+  entityType: entityTypeSchema,
+  entityId: t.String(),
+  ownerId: t.String(),
+  ownerType: t.String(),
 });
-export const evaluatePoolRiskResponse = evaluationSchema;
-
-/* Evaluate business risk */
-export const evaluateBusinessRiskRequest = t.Object({
-  businessId: t.String(),
+export const startEvaluationResponse = t.Object({
+  evaluationId: t.String(),
 });
-export const evaluateBusinessRiskResponse = evaluationSchema;
 
 /* Get evaluation */
 export const getEvaluationRequest = t.Pick(evaluationSchema, ['id']);

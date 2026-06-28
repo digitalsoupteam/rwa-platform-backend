@@ -54,7 +54,7 @@ services:
       context: ../..
       dockerfile: services/ai-evaluator/Dockerfile
     environment:
-      <<: [*mongo-env, *monitoring-env, *openrouter-env]
+      <<: [*mongo-env, *monitoring-env, *openrouter-env, *rabbit-env]
       SERVICE_NAME: ${AI_EVALUATOR_SERVICE_NAME}
       SERVICE_VERSION: ${AI_EVALUATOR_SERVICE_VERSION}
       MONGODB_DBNAME: ${AI_EVALUATOR_MONGODB_DBNAME}
@@ -478,6 +478,9 @@ services:
       RABBITMQ_EXCHANGE: ${RABBITMQ_BLOCKCHAIN_EVENTS_EXCHANGE}
       REDIS_URL: ${REDIS_URL}
       SIGNERS_MANAGER_URL: ${SIGNERS_MANAGER_SERVICE_URL}
+      AI_EVALUATOR_URL: ${AI_EVALUATOR_SERVICE_URL}
+      BASE_DOMAIN: ${BASE_DOMAIN}
+      PLACEHOLDER_IMAGE_PATH: ${PLACEHOLDER_IMAGE_PATH}
     volumes: *monitoring-volumes
     networks:
       - app-network
@@ -620,6 +623,7 @@ services:
       - ${NGINX_CHALLENGE_PATH}:/var/www/certbot:ro
       - nginx_logs:/var/log/nginx
       - files_storage:/app/storage
+      - ./nginx/static:/usr/share/nginx/html/static:ro
     networks:
       - app-network
 

@@ -8,6 +8,7 @@ export const createServicesPlugin = (
   repositoriesPlugin: RepositoriesPlugin,
   clientsPlugin: ClientsPlugin,
   openRouterModel: string,
+  maxFilesPerRequest: number,
 ) => {
   const riskEvaluationService = withTraceSync(
     'ai-evaluator.init.services.risk_evaluation',
@@ -21,7 +22,9 @@ export const createServicesPlugin = (
         clientsPlugin.decorator.reactionsClient,
         clientsPlugin.decorator.questionsClient,
         clientsPlugin.decorator.portfolioClient,
+        clientsPlugin.decorator.evaluationResultsClient,
         openRouterModel,
+        maxFilesPerRequest,
       ),
   );
 

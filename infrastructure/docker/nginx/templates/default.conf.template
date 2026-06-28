@@ -49,6 +49,13 @@ server {
         try_files $uri =404;
     }
 
+    location /static/ {
+        alias /usr/share/nginx/html/static/;
+        add_header X-Content-Type-Options nosniff;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
     location /api/documents/createDocument {
         client_max_body_size ${DOCUMENTS_MAX_FILE_SIZE};
 

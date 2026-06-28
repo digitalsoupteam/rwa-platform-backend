@@ -25,6 +25,7 @@ type Business {
   image: String
   approvalSignaturesTaskId: String
   approvalSignaturesTaskExpired: Float
+  riskScoreEvaluationProcess: Boolean!
   country: String
   businessType: String
   socials: [SocialLink!]!
@@ -100,6 +101,9 @@ type Pool {
   approvalSignaturesTaskId: String
   approvalSignaturesTaskExpired: Float
 
+  # Evaluation
+  riskScoreEvaluationProcess: Boolean!
+
   # Timestamps
   createdAt: Float!
   updatedAt: Float!
@@ -131,7 +135,6 @@ input CreateBusinessInput {
   chainId: String!
   description: String
   tags: [String!]
-  image: String
   country: String
   businessType: BusinessType
   socials: [SocialLinkInput!]
@@ -146,7 +149,6 @@ input EditBusinessDataInput {
   name: String
   description: String
   tags: [String!]
-  image: String
   chainId: String
   country: String
   businessType: BusinessType
@@ -178,7 +180,6 @@ input CreatePoolInput {
   incomingTranches: [IncomingTrancheInput!]
   description: String
   tags: [String!]
-  image: String
 }
 
 input EditPoolInput {
@@ -206,7 +207,6 @@ input EditPoolDataInput {
   incomingTranches: [IncomingTrancheInput!]
   description: String
   tags: [String!]
-  image: String
 }
 
 input OutgoingTrancheInput {
@@ -261,6 +261,7 @@ extend type Mutation {
   createBusinessWithAI(input: CreateBusinessWithAIInput!): Business!
   createBusiness(input: CreateBusinessInput!): Business!
   editBusiness(input: EditBusinessInput!): Business!
+  updateBusinessRiskScore(id: ID!): Business!
   requestBusinessApprovalSignatures(input: RequestBusinessApprovalSignaturesInput!): ApprovalSignaturesResponse!
   rejectBusinessApprovalSignatures(id: ID!): Boolean!
 
@@ -268,6 +269,7 @@ extend type Mutation {
   createPoolWithAI(input: CreatePoolWithAIInput!): Pool!
   createPool(input: CreatePoolInput!): Pool!
   editPool(input: EditPoolInput!): Pool!
+  updatePoolRiskScore(id: ID!): Pool!
   requestPoolApprovalSignatures(input: RequestPoolApprovalSignaturesInput!): ApprovalSignaturesResponse!
   rejectPoolApprovalSignatures(id: ID!): Boolean!
 }

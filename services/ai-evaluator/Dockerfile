@@ -7,6 +7,10 @@ COPY package.json .
 COPY shared/monitoring/package.json ./shared/monitoring/
 COPY shared/errors/package.json ./shared/errors/
 COPY shared/openrouter/package.json ./shared/openrouter/
+COPY shared/files/package.json ./shared/files/
+COPY shared/blockchain-daemon/package.json ./shared/blockchain-daemon/
+COPY shared/rabbitmq/package.json ./shared/rabbitmq/
+COPY shared/redis-events/package.json ./shared/redis-events/
 
 COPY services/rwa/package.json ./services/rwa/
 COPY services/documents/package.json ./services/documents/

@@ -5,6 +5,8 @@ import type { SignersManagerClient } from '../clients/eden.clients';
 import { ethers } from 'ethers';
 import type { SortOrder } from 'mongoose';
 import { PoolEventsClient } from '../clients/poolEvents.client';
+import type { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
+import type { EvaluationRequestsClient } from '../clients/evaluationRequests.client';
 import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
 import { LogDecorator } from '@shared/monitoring/src/logDecorator';
@@ -16,6 +18,8 @@ export class PoolService {
     private readonly openRouterClient: OpenRouterClient,
     private readonly signersManagerClient: SignersManagerClient,
     private readonly poolEventsClient: PoolEventsClient,
+    private readonly rabbitMQClient: RabbitMQClient,
+    private readonly evaluationRequestsClient: EvaluationRequestsClient,
     private readonly supportedNetworks: {
       chainId: string;
       name: string;
@@ -228,6 +232,38 @@ Example response:
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({
+    args: (a) => ({ id: a[0].id }),
+  })
+  async requestEvaluation({ id }: { id: string }) {
+    setSpanAttributes({ entityId: id, entityType: 'pool' });
+    const pool = await this.poolRepository.findById(id);
+
+    if (pool.riskScoreEvaluationProcess) {
+      throw new AppError({
+        message: 'Evaluation already in progress',
+        statusCode: 403,
+        code: 'NOT_ALLOWED',
+      });
+    }
+
+    await this.poolRepository.updatePool(id, {
+      riskScoreEvaluationProcess: true,
+    });
+
+    await this.evaluationRequestsClient.publishEvaluationRequest({
+      entityType: 'pool',
+      entityId: id,
+      ownerId: pool.ownerId,
+      ownerType: pool.ownerType,
+    });
+
+    const updated = await this.poolRepository.findById(id);
+    return this.mapPool(updated);
+  }
+
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
     args: (a) => ({ id: a[0].id, riskScore: a[0].riskScore }),
   })
   async setRiskScore({ id, riskScore }: { id: string; riskScore: number }) {
@@ -239,7 +275,11 @@ Example response:
         code: 'VALIDATION_ERROR',
       });
     }
-    const updated = await this.poolRepository.updatePool(id, { riskScore });
+
+    const updated = await this.poolRepository.updatePool(id, {
+      riskScore,
+      riskScoreEvaluationProcess: false,
+    });
     return this.mapPool(updated);
   }
 
@@ -573,6 +613,7 @@ Example response:
       riskScore: pool.riskScore ?? undefined,
       approvalSignaturesTaskId: pool.approvalSignaturesTaskId ?? undefined,
       approvalSignaturesTaskExpired: pool.approvalSignaturesTaskExpired ?? undefined,
+      riskScoreEvaluationProcess: pool.riskScoreEvaluationProcess,
       createdAt: pool.createdAt,
       updatedAt: pool.updatedAt,
     };
@@ -651,6 +692,17 @@ Example response:
 
     const pool = await this.poolRepository.createPool(data);
     return this.mapPool(pool);
+  }
+
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id }),
+  })
+  async updatePoolImage(params: { id: string; image: string }) {
+    setSpanAttributes({ entityId: params.id, entityType: 'pool' });
+    const updated = await this.poolRepository.updatePool(params.id, { image: params.image });
+    return this.mapPool(updated);
   }
 
   @TraceDecorator()

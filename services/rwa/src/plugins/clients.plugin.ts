@@ -5,6 +5,8 @@ import { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
 import { createSignersManagerClient } from '../clients/eden.clients';
 import { RedisEventsClient } from '@shared/redis-events/src/redis-events.client';
 import { PoolEventsClient } from '../clients/poolEvents.client';
+import { EvaluationResultsClient } from '../clients/evaluationResults.client';
+import { EvaluationRequestsClient } from '../clients/evaluationRequests.client';
 import { withTraceSync, withTraceAsync } from '@shared/monitoring/src/tracing';
 
 export const createClientsPlugin = async (
@@ -43,10 +45,22 @@ export const createClientsPlugin = async (
       }),
   );
 
+  const evaluationResultsClient = withTraceSync(
+    'rwa.init.clients.evaluation_results',
+    () => new EvaluationResultsClient(rabbitMQClient),
+  );
+
+  const evaluationRequestsClient = withTraceSync(
+    'rwa.init.clients.evaluation_requests',
+    () => new EvaluationRequestsClient(rabbitMQClient),
+  );
+
   await withTraceAsync('rwa.init.clients.rabbitmq_connect', async () => {
     logger.debug('Initializing clients');
     await rabbitMQClient.connect();
-    logger.info('RabbitMQ client connected');
+    await evaluationResultsClient.initialize();
+    await evaluationRequestsClient.initialize();
+    logger.info('RabbitMQ client connected, evaluation results and requests queues initialized');
   });
 
   const plugin = withTraceSync('rwa.init.clients.plugin', () =>
@@ -56,6 +70,8 @@ export const createClientsPlugin = async (
       .decorate('poolEventsClient', poolEventsClient)
       .decorate('openRouterClient', openRouterClient)
       .decorate('rabbitMQClient', rabbitMQClient)
+      .decorate('evaluationResultsClient', evaluationResultsClient)
+      .decorate('evaluationRequestsClient', evaluationRequestsClient)
       .onStop(async () => {
         await withTraceAsync('rwa.stop.clients', async () => {
           await rabbitMQClient.disconnect();

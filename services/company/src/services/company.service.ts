@@ -120,7 +120,7 @@ export class CompanyService {
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({
-    args: (a) => ({ id: a[0], name: a[1].name }),
+    args: (a) => ({ id: a[0].id, name: a[0].updateData.name }),
   })
   async updateCompany(params: {
     id: string;

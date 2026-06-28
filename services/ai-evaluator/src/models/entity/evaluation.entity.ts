@@ -1,6 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
 import type { InferRawDocType, Types } from 'mongoose';
-import { EntityTypeList } from '../shared/enums.model';
+import { EntityTypeList, EvaluationStatusList } from '../shared/enums.model';
 
 const evaluationSchemaDefinition = {
   entityType: {
@@ -28,15 +28,19 @@ const evaluationSchemaDefinition = {
     required: true,
     trim: true,
   },
+  status: {
+    type: String,
+    required: true,
+    enum: EvaluationStatusList,
+    default: 'pending',
+  },
   riskScore: {
     type: Number,
-    required: true,
     min: 1,
     max: 100,
   },
   reasoning: {
     type: String,
-    required: true,
   },
   factors: {
     type: [
@@ -50,11 +54,9 @@ const evaluationSchemaDefinition = {
   },
   stage1Response: {
     type: String,
-    required: true,
   },
   stage2Response: {
     type: String,
-    required: true,
   },
   evaluatedDocuments: {
     type: [
@@ -77,7 +79,6 @@ const evaluationSchemaDefinition = {
   },
   modelUsed: {
     type: String,
-    required: true,
   },
   createdAt: {
     type: Number,

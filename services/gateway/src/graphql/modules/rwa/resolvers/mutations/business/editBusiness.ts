@@ -46,7 +46,6 @@ export const editBusiness: MutationResolvers['editBusiness'] = async (
       name: input.updateData.name,
       description: input.updateData.description,
       tags: input.updateData.tags,
-      image: input.updateData.image,
       country: input.updateData.country,
       businessType: input.updateData.businessType,
       socials: input.updateData.socials,

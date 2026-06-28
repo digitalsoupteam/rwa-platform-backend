@@ -6,6 +6,8 @@ import { OpenRouterClient } from '@shared/openrouter/client';
 import { ethers } from 'ethers';
 import type { SortOrder } from 'mongoose';
 import type { SignersManagerClient } from '../clients/eden.clients';
+import type { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
+import type { EvaluationRequestsClient } from '../clients/evaluationRequests.client';
 import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
 import { LogDecorator } from '@shared/monitoring/src/logDecorator';
@@ -22,6 +24,8 @@ export class BusinessService {
     private readonly businessRepository: BusinessRepository,
     private readonly openRouterClient: OpenRouterClient,
     private readonly signersManagerClient: SignersManagerClient,
+    private readonly rabbitMQClient: RabbitMQClient,
+    private readonly evaluationRequestsClient: EvaluationRequestsClient,
     private readonly supportedNetworks: NetworkConfig[],
     private readonly openRouterModel: string,
   ) {}
@@ -202,6 +206,17 @@ Response format:
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({
+    args: (a) => ({ id: a[0].id }),
+  })
+  async updateBusinessImage(params: { id: string; image: string }) {
+    setSpanAttributes({ entityId: params.id, entityType: 'business' });
+    const updated = await this.businessRepository.updateBusiness(params.id, { image: params.image });
+    return this.mapBusiness(updated);
+  }
+
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
     args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
   })
   async editBusiness(params: {
@@ -249,6 +264,38 @@ Response format:
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({
+    args: (a) => ({ id: a[0].id }),
+  })
+  async requestEvaluation({ id }: { id: string }) {
+    setSpanAttributes({ entityId: id, entityType: 'business' });
+    const business = await this.businessRepository.findById(id);
+
+    if (business.riskScoreEvaluationProcess) {
+      throw new AppError({
+        message: 'Evaluation already in progress',
+        statusCode: 403,
+        code: 'NOT_ALLOWED',
+      });
+    }
+
+    await this.businessRepository.updateBusiness(id, {
+      riskScoreEvaluationProcess: true,
+    });
+
+    await this.evaluationRequestsClient.publishEvaluationRequest({
+      entityType: 'business',
+      entityId: id,
+      ownerId: business.ownerId,
+      ownerType: business.ownerType,
+    });
+
+    const updated = await this.businessRepository.findById(id);
+    return this.mapBusiness(updated);
+  }
+
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
     args: (a) => ({ id: a[0].id, riskScore: a[0].riskScore }),
   })
   async setRiskScore({ id, riskScore }: { id: string; riskScore: number }) {
@@ -260,8 +307,10 @@ Response format:
         code: 'VALIDATION_ERROR',
       });
     }
+
     const updated = await this.businessRepository.updateBusiness(id, {
       riskScore,
+      riskScoreEvaluationProcess: false,
     });
 
     return this.mapBusiness(updated);
@@ -411,6 +460,7 @@ Response format:
       image: business.image ?? undefined,
       approvalSignaturesTaskId: business.approvalSignaturesTaskId ?? undefined,
       approvalSignaturesTaskExpired: business.approvalSignaturesTaskExpired ?? undefined,
+      riskScoreEvaluationProcess: business.riskScoreEvaluationProcess,
       country: business.country ?? undefined,
       businessType: business.businessType ?? undefined,
       socials: business.socials ?? [],

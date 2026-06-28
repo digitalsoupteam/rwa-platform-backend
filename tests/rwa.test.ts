@@ -2,6 +2,7 @@ import { expect, test, describe, beforeAll } from "bun:test";
 import { ethers, HDNodeWallet, JsonRpcProvider } from "ethers";
 import { FACTORY_ADDRESS, HOLD_TOKEN_ADDRESS, TESTNET_RPC } from "./utils/config";
 import { makeGraphQLRequest } from "./utils/graphql/makeGraphQLRequest";
+import { makeRestRequest } from "./utils/makeRestRequest";
 import { authenticate } from "./utils/authenticate";
 import { CREATE_COMPANY } from "./utils/graphql/schema/company";
 import {
@@ -325,7 +326,19 @@ describe("RWA Flow", () => {
       expect(result.errors).toBeUndefined();
       expect(result.data.updateBusinessRiskScore).toBeDefined();
       expect(result.data.updateBusinessRiskScore.id).toBe(businessId);
-      expect(result.data.updateBusinessRiskScore.riskScore).toBeDefined();
+
+      // Wait for async evaluation to complete — poll until riskScore appears
+      let riskScore: number | undefined;
+      await new Promise(resolve => setTimeout(resolve, 5000));
+      const poll = await makeGraphQLRequest(
+        GET_BUSINESS,
+        { id: businessId },
+        accessToken
+      );
+      riskScore = poll.data.getBusiness.riskScore;
+      expect(riskScore).toBeDefined();
+      expect(riskScore).toBeGreaterThanOrEqual(1);
+      expect(riskScore).toBeLessThanOrEqual(100);
     });
 
     return
@@ -353,7 +366,7 @@ describe("RWA Flow", () => {
 
       // Wait for signatures to be processed
       await new Promise(resolve => setTimeout(resolve, 10000));
-        const updatedBusiness2 = await makeGraphQLRequest(
+      const updatedBusiness2 = await makeGraphQLRequest(
         GET_BUSINESS,
         {
           id: businessId,
@@ -377,7 +390,7 @@ describe("RWA Flow", () => {
       expect(taskResult.data.getSignatureTask.completed).toBe(true);
       expect(taskResult.data.getSignatureTask.signatures).toBeArray();
       expect(taskResult.data.getSignatureTask.signatures.length).toBeGreaterThan(0);
-// return
+      // return
       // Request HOLD tokens and gas
       await requestHold(accessToken, 500);
       await requestGas(accessToken, 0.0035);
@@ -448,7 +461,7 @@ describe("RWA Flow", () => {
       tokenAddress = updatedBusiness.data.getBusiness.tokenAddress
     });
   });
-return
+  return
   describe("Pool Operations", () => {
     test("should require authentication for creating pool", async () => {
       const result = await makeGraphQLRequest(
@@ -531,7 +544,7 @@ return
       const expectedRwaAmount = "100000"; // 100,000 RWA units
 
       // Entry period: 30 days
-      const entryPeriodStart = now - 100; 
+      const entryPeriodStart = now - 100;
       const entryPeriodExpired = entryPeriodStart + (30 * 86400); // 30 days duration
 
       // Completion period: 60 days
@@ -603,9 +616,9 @@ return
               expectedHoldAmount,
               expectedRwaAmount,
               rewardPercent,
-              priceImpactPercent: "101", 
-              entryFeePercent: "100", 
-              exitFeePercent: "100", 
+              priceImpactPercent: "101",
+              entryFeePercent: "100",
+              exitFeePercent: "100",
               entryPeriodStart,
               entryPeriodExpired,
               completionPeriodExpired,
@@ -674,7 +687,19 @@ return
       expect(result.errors).toBeUndefined();
       expect(result.data.updatePoolRiskScore).toBeDefined();
       expect(result.data.updatePoolRiskScore.id).toBe(poolId);
-      expect(result.data.updatePoolRiskScore.riskScore).toBeDefined();
+
+      // Wait for async evaluation to complete — poll until riskScore appears
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      const poll = await makeGraphQLRequest(
+        GET_POOL,
+        { id: poolId },
+        accessToken
+      );
+      const riskScore = poll.data.getPool.riskScore;
+
+      expect(riskScore).toBeDefined();
+      expect(riskScore).toBeGreaterThanOrEqual(1);
+      expect(riskScore).toBeLessThanOrEqual(100);
     });
 
     test("should deploy pool contract", async () => {
@@ -979,6 +1004,136 @@ return
 
       expect(result.errors).toBeDefined();
       expect(result.errors[0].message).toBe("User does not have required company permissions");
+    });
+  });
+
+  describe("Token Image Upload", () => {
+    test("should require authentication for uploading pool image", async () => {
+      const file = new File(["fake image"], "test.png", { type: "image/png" });
+
+      const result = await makeRestRequest(
+        "/api/pool/uploadImage",
+        { file, poolId: "some-pool-id" },
+        undefined,
+      );
+
+      expect(result.error).toBeDefined();
+      expect(result.error.message).toBe("Authentication required");
+    });
+
+    test("should require authentication for uploading business image", async () => {
+      const file = new File(["fake image"], "test.png", { type: "image/png" });
+
+      const result = await makeRestRequest(
+        "/api/business/uploadImage",
+        { file, businessId: "some-business-id" },
+        undefined,
+      );
+
+      expect(result.error).toBeDefined();
+      expect(result.error.message).toBe("Authentication required");
+    });
+
+    test("should reject pool image with wrong MIME type", async () => {
+      const file = new File(["not an image"], "test.txt", { type: "text/plain" });
+
+      const result = await makeRestRequest(
+        "/api/pool/uploadImage",
+        { file, poolId },
+        accessToken,
+      );
+
+      expect(result.error).toBeDefined();
+      expect(result.error.message).toContain("not allowed");
+    });
+
+    test("should reject business image with wrong MIME type", async () => {
+      const file = new File(["not an image"], "test.txt", { type: "text/plain" });
+
+      const result = await makeRestRequest(
+        "/api/business/uploadImage",
+        { file, businessId },
+        accessToken,
+      );
+
+      expect(result.error).toBeDefined();
+      expect(result.error.message).toContain("not allowed");
+    });
+
+    test("should not allow non-owner to upload pool image", async () => {
+      const file = new File(["fake image"], "test.png", { type: "image/png" });
+
+      const result = await makeRestRequest(
+        "/api/pool/uploadImage",
+        { file, poolId },
+        accessToken2,
+      );
+
+      expect(result.error).toBeDefined();
+      expect(result.error.message).toBe("User does not have required company permissions");
+    });
+
+    test("should not allow non-owner to upload business image", async () => {
+      const file = new File(["fake image"], "test.png", { type: "image/png" });
+
+      const result = await makeRestRequest(
+        "/api/business/uploadImage",
+        { file, businessId },
+        accessToken2,
+      );
+
+      expect(result.error).toBeDefined();
+      expect(result.error.message).toBe("User does not have required company permissions");
+    });
+
+    test("should upload pool image successfully", async () => {
+      const file = new File(["fake image content"], "pool.png", { type: "image/png" });
+
+      const result = await makeRestRequest(
+        "/api/pool/uploadImage",
+        { file, poolId },
+        accessToken,
+      );
+
+      expect(result.error).toBeUndefined();
+      expect(result.id).toBe(poolId);
+      expect(result.url).toBeDefined();
+      expect(result.url).toBeTruthy();
+
+      // Verify pool image was updated
+      const poolResult = await makeGraphQLRequest(
+        GET_POOL,
+        { id: poolId },
+        accessToken,
+      );
+
+      expect(poolResult.errors).toBeUndefined();
+      expect(poolResult.data.getPool.image).toBe(result.url);
+    });
+
+    test("should upload business image successfully", async () => {
+      const file = new File(["fake image content"], "business.png", { type: "image/png" });
+
+      const result = await makeRestRequest(
+        "/api/business/uploadImage",
+        { file, businessId },
+        accessToken,
+      );
+
+      expect(result.error).toBeUndefined();
+      expect(result.id).toBe(businessId);
+      expect(result.url).toBeDefined();
+      expect(result.url).toBeTruthy();
+
+      // Verify business image was updated
+      const businessResult = await makeGraphQLRequest(
+        GET_BUSINESS,
+        { id: businessId },
+        accessToken,
+      );
+
+      expect(businessResult.errors).toBeUndefined();
+      expect(businessResult.data.getBusiness.image).toBe(result.url);
     });
   });
 

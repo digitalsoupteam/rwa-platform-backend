@@ -338,7 +338,7 @@ describe("Documents Flow", () => {
     test("should create a document with file", async () => {
       // Create test file
       const fileContent = "Test file content";
-      const file = new File([fileContent], "test.txt", { type: "text/plain" });
+      const file = new File([fileContent], "test.pdf", { type: "application/pdf" });
 
       const result = await makeRestRequest(
         "/api/documents/createDocument",
@@ -350,8 +350,10 @@ describe("Documents Flow", () => {
       expect(result.id).toBeDefined();
       expect(result.name).toBe("Test Document");
       expect(result.folderId).toBe(folderId);
-      expect(result.link).toBeDefined();
-      expect(result.mimeType).toBe("text/plain");
+      expect(result.url).toBeDefined();
+      expect(result.fileId).toBeDefined();
+      expect(result.path).toBeDefined();
+      expect(result.mimeType).toBe("application/pdf");
       expect(result.size).toBe(file.size);
       expect(result.ownerId).toBe(companyId);
       expect(result.ownerType).toBe("company");
@@ -373,7 +375,7 @@ describe("Documents Flow", () => {
       expect(result.data.getDocument).toBeDefined();
       expect(result.data.getDocument.id).toBe(documentId);
       expect(result.data.getDocument.name).toBe("Test Document");
-      expect(result.data.getDocument.mimeType).toBe("text/plain");
+      expect(result.data.getDocument.mimeType).toBe("application/pdf");
       expect(result.data.getDocument.size).toBeDefined();
       expect(result.data.getDocument.ownerId).toBe(companyId);
       expect(result.data.getDocument.ownerType).toBe("company");
@@ -419,7 +421,7 @@ describe("Documents Flow", () => {
       expect(result.data.updateDocument).toBeDefined();
       expect(result.data.updateDocument.id).toBe(documentId);
       expect(result.data.updateDocument.name).toBe("Updated Test Document");
-      expect(result.data.updateDocument.mimeType).toBe("text/plain");
+      expect(result.data.updateDocument.mimeType).toBe("application/pdf");
       expect(result.data.updateDocument.size).toBeDefined();
       expect(result.data.updateDocument.ownerId).toBe(companyId);
       expect(result.data.updateDocument.ownerType).toBe("company");
@@ -469,7 +471,7 @@ describe("Documents Flow", () => {
     test("should reject document with oversized file", async () => {
       // Create a file larger than 25MB (DOCUMENTS_MAX_FILE_SIZE)
       const oversizedContent = new Uint8Array(26 * 1024 * 1024);
-      const file = new File([oversizedContent], "big.txt", { type: "text/plain" });
+      const file = new File([oversizedContent], "big.pdf", { type: "application/pdf" });
 
       const result = await makeRestRequest(
         "/api/documents/createDocument",

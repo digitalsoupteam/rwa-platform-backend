@@ -14,6 +14,19 @@ export class EvaluationRepository {
   }
 
   @TraceDecorator()
+  async updateById(id: string, data: Partial<IEvaluationEntity>) {
+    const doc = await this.model.findByIdAndUpdate(id, data, { new: true }).lean();
+    if (!doc) {
+      throw new AppError({
+        message: `Evaluation ${id} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
+    }
+    return doc;
+  }
+
+  @TraceDecorator()
   async findById(id: string) {
     const doc = await this.model.findById(id).lean();
     if (!doc) {

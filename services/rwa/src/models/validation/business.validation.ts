@@ -26,6 +26,7 @@ export const businessSchema = t.Object({
   image: t.Optional(t.String()),
   approvalSignaturesTaskId: t.Optional(t.String()),
   approvalSignaturesTaskExpired: t.Optional(t.Number()),
+  riskScoreEvaluationProcess: t.Boolean(),
   country: t.Optional(t.String()),
   businessType: t.Optional(businessTypeSchema),
   socials: t.Array(socialLinkSchema),
@@ -65,14 +66,8 @@ export const editBusinessRequest = t.Object({
 });
 export const editBusinessResponse = businessSchema;
 
-/*
- * Update Risk Score
- */
-export const setBusinessRiskScoreRequest = t.Object({
-  id: t.String(),
-  riskScore: t.Number({ minimum: 1, maximum: 100 }),
-});
-export const setBusinessRiskScoreResponse = businessSchema;
+export const requestBusinessEvaluationRequest = t.Pick(businessSchema, ['id']);
+export const requestBusinessEvaluationResponse = businessSchema;
 
 /*
  * Request Approval Signatures
@@ -109,3 +104,12 @@ export const getBusinessesRequest = t.Object({
   offset: t.Optional(t.Number()),
 });
 export const getBusinessesResponse = t.Array(businessSchema);
+
+/*
+ * Update Business Image
+ */
+export const updateBusinessImageRequest = t.Object({
+  id: t.String(),
+  image: t.String(),
+});
+export const updateBusinessImageResponse = businessSchema;

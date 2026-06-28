@@ -75,7 +75,9 @@ export const CREATE_IMAGE = `
       galleryId
       name
       description
-      link
+      fileId
+      path
+      url
       mimeType
       size
       ownerId
@@ -96,7 +98,9 @@ export const UPDATE_IMAGE = `
       galleryId
       name
       description
-      link
+      fileId
+      path
+      url
       mimeType
       size
       ownerId
@@ -123,7 +127,9 @@ export const GET_IMAGE = `
       galleryId
       name
       description
-      link
+      fileId
+      path
+      url
       mimeType
       size
       ownerId
@@ -144,7 +150,9 @@ export const GET_IMAGES = `
       galleryId
       name
       description
-      link
+      fileId
+      path
+      url
       mimeType
       size
       ownerId

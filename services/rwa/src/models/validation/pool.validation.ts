@@ -80,6 +80,9 @@ export const poolSchema = t.Object({
   approvalSignaturesTaskId: t.Optional(t.String()),
   approvalSignaturesTaskExpired: t.Optional(t.Number()),
 
+  // Evaluation
+  riskScoreEvaluationProcess: t.Boolean(),
+
   // Timestamps
   createdAt: t.Number(),
   updatedAt: t.Number(),
@@ -154,11 +157,8 @@ export const editPoolRequest = t.Object({
 });
 export const editPoolResponse = poolSchema;
 
-export const setPoolRiskScoreRequest = t.Object({
-  id: t.String(),
-  riskScore: t.Number({ minimum: 1, maximum: 100 }),
-});
-export const setPoolRiskScoreResponse = poolSchema;
+export const requestPoolEvaluationRequest = t.Pick(poolSchema, ['id']);
+export const requestPoolEvaluationResponse = poolSchema;
 
 export const requestPoolApprovalSignaturesRequest = t.Object({
   id: t.String(),
@@ -185,3 +185,12 @@ export const getPoolsRequest = t.Object({
 });
 
 export const getPoolsResponse = t.Array(poolSchema);
+
+/*
+ * Update Pool Image
+ */
+export const updatePoolImageRequest = t.Object({
+  id: t.String(),
+  image: t.String(),
+});
+export const updatePoolImageResponse = poolSchema;

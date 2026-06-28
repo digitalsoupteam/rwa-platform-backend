@@ -4,6 +4,8 @@ import { monitoringPlugin, logger } from '@shared/monitoring/src/monitoring.plug
 import { healthPlugin } from '@shared/monitoring/src/health.plugin';
 import { uploadDocumentController } from './controllers/uploadDocument.controller';
 import { uploadImageController } from './controllers/uploadImage.controller';
+import { uploadPoolImageController } from './controllers/uploadPoolImage.controller';
+import { uploadBusinessImageController } from './controllers/uploadBusinessImage.controller';
 
 new Elysia({
   serve: {
@@ -15,6 +17,8 @@ new Elysia({
   .state('startTime', 0 as number)
   .use(uploadDocumentController)
   .use(uploadImageController)
+  .use(uploadPoolImageController)
+  .use(uploadBusinessImageController)
   .all('/graphql', (context) => yogaServer.handle(context.request))
   .all('/graphql/stream', (context) => yogaServer.handle(context.request))
   .listen(3000);

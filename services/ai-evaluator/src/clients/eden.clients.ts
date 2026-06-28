@@ -1,17 +1,21 @@
+import { createEdenTreatyClient } from '@shared/monitoring/src/eden';
 import type { App as RwaApp } from '@services/rwa/src';
 import type { App as DocumentsApp } from '@services/documents/src';
 import type { App as GalleryApp } from '@services/gallery/src';
-import type { App as ReactionsApp } from '@services/reactions/src';
 import type { App as QuestionsApp } from '@services/questions/src';
 import type { App as PortfolioApp } from '@services/portfolio/src';
-import { createEdenTreatyClient } from '@shared/monitoring/src/eden';
+import type { App as ReactionsApp } from '@services/reactions/src';
 
+
+// Using any as type param to break circular type dependency:
+// ai-evaluator imports App from rwa -> rwa imports App from ai-evaluator
 export const createRwaClient = (url: string) => createEdenTreatyClient<RwaApp>(url);
 export const createDocumentsClient = (url: string) => createEdenTreatyClient<DocumentsApp>(url);
 export const createGalleryClient = (url: string) => createEdenTreatyClient<GalleryApp>(url);
 export const createReactionsClient = (url: string) => createEdenTreatyClient<ReactionsApp>(url);
 export const createQuestionsClient = (url: string) => createEdenTreatyClient<QuestionsApp>(url);
 export const createPortfolioClient = (url: string) => createEdenTreatyClient<PortfolioApp>(url);
+
 
 export type RwaClient = ReturnType<typeof createRwaClient>;
 export type DocumentsClient = ReturnType<typeof createDocumentsClient>;
