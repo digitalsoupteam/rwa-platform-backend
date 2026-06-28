@@ -282,9 +282,8 @@ Response format:
       riskScoreEvaluationProcess: true,
     });
 
-    await this.evaluationRequestsClient.publishEvaluationRequest({
-      entityType: 'business',
-      entityId: id,
+    await this.evaluationRequestsClient.publishEvaluationRequest('evaluateBusiness', {
+      businessId: id,
       ownerId: business.ownerId,
       ownerType: business.ownerType,
     });

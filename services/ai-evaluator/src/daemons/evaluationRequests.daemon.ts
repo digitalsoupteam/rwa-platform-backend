@@ -7,11 +7,9 @@ import { LogDecorator } from '@shared/monitoring/src/logDecorator';
 import { AppError } from '@shared/errors/app-errors';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
-interface EvaluationRequest {
-  entityType: 'pool' | 'business';
-  entityId: string;
-  ownerId: string;
-  ownerType: string;
+interface RpcMessage {
+  method: 'evaluatePool' | 'evaluateBusiness';
+  args: Record<string, unknown>;
 }
 
 export class EvaluationRequestsDaemon {
@@ -35,25 +33,21 @@ export class EvaluationRequestsDaemon {
     if (!message) return;
 
     try {
-      const request = JSON.parse(message.content.toString()) as EvaluationRequest;
+      const { method, args } = JSON.parse(message.content.toString()) as RpcMessage;
 
-      if (!request.entityType || !request.entityId || !request.ownerId || !request.ownerType) {
+      if (method === 'evaluatePool') {
+        const { poolId, ownerId, ownerType } = args as { poolId: string; ownerId: string; ownerType: string };
+        await this.riskEvaluationService.evaluatePool({ poolId, ownerId, ownerType });
+      } else if (method === 'evaluateBusiness') {
+        const { businessId, ownerId, ownerType } = args as { businessId: string; ownerId: string; ownerType: string };
+        await this.riskEvaluationService.evaluateBusiness({ businessId, ownerId, ownerType });
+      } else {
         throw new AppError({
-          message: 'Invalid evaluation request format',
+          message: `Unknown method: ${method}`,
           statusCode: 400,
           code: 'VALIDATION_ERROR',
         });
       }
-
-      if (request.entityType !== 'pool' && request.entityType !== 'business') {
-        throw new AppError({
-          message: `Unknown entityType: ${request.entityType}`,
-          statusCode: 400,
-          code: 'VALIDATION_ERROR',
-        });
-      }
-
-      await this.riskEvaluationService.startEvaluation(request);
 
       await this.evaluationRequestsClient.ackMessage(message);
     } catch (error) {

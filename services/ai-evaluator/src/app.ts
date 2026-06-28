@@ -8,7 +8,6 @@ import { createServicesPlugin } from './plugins/services.plugin';
 import { createControllersPlugin } from './plugins/controllers.plugin';
 import { createDaemonsPlugin } from './plugins/daemons.plugin';
 import { withTraceSync, withTraceAsync } from '@shared/monitoring/src/tracing';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export async function createApp(
   port: number,
@@ -32,28 +31,19 @@ export async function createApp(
     async () => await createRepositoriesPlugin(mongoUri),
   );
 
-  const clientsPlugin = withTraceSync('ai-evaluator.init.clients_plugin', () =>
-    createClientsPlugin(
-      openRouterApiKey,
-      openRouterBaseUrl,
-      rwaServiceUrl,
-      documentsServiceUrl,
-      galleryServiceUrl,
-      reactionsServiceUrl,
-      questionsServiceUrl,
-      portfolioServiceUrl,
-      rabbitMqUri,
-      rabbitMqMaxReconnectAttempts,
-      rabbitMqReconnectInterval,
-    ),
+  const clientsPlugin = await createClientsPlugin(
+    openRouterApiKey,
+    openRouterBaseUrl,
+    rwaServiceUrl,
+    documentsServiceUrl,
+    galleryServiceUrl,
+    reactionsServiceUrl,
+    questionsServiceUrl,
+    portfolioServiceUrl,
+    rabbitMqUri,
+    rabbitMqMaxReconnectAttempts,
+    rabbitMqReconnectInterval,
   );
-
-  await withTraceAsync('ai-evaluator.init.clients.rabbitmq_connect', async () => {
-    logger.debug('Initializing RabbitMQ client');
-    await clientsPlugin.decorator.rabbitMQClient.connect();
-    await clientsPlugin.decorator.evaluationResultsClient.initialize();
-    logger.info('RabbitMQ client connected, evaluation results queue initialized');
-  });
 
   const servicesPlugin = withTraceSync('ai-evaluator.init.services_plugin', () =>
     createServicesPlugin(repositoriesPlugin, clientsPlugin, openRouterModel, maxFilesPerRequest),

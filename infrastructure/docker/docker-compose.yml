@@ -73,6 +73,8 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   auth:
     container_name: auth
@@ -871,8 +873,10 @@ services:
       - app-network
     #restart: unless-stopped
     depends_on:
-      - redis
-      - lldap
+      redis:
+        condition: service_started
+      lldap:
+        condition: service_healthy
 
   lldap:
     image: lldap/lldap:latest
@@ -887,6 +891,12 @@ services:
     networks:
       - app-network
     #restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 3890 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
   homer:
     image: b4bz/homer:latest

@@ -14,7 +14,7 @@ import {
 import { EvaluationResultsClient } from '../clients/evaluationResults.client';
 import { EvaluationRequestsClient } from '../clients/evaluationRequests.client';
 
-export const createClientsPlugin = (
+export const createClientsPlugin = async (
   openRouterApiKey: string,
   openRouterBaseUrl: string,
   rwaServiceUrl: string,
@@ -74,6 +74,14 @@ export const createClientsPlugin = (
     () => new EvaluationRequestsClient(rabbitMQClient),
   );
 
+  await withTraceAsync('ai-evaluator.init.clients.rabbitmq_connect', async () => {
+    logger.debug('Initializing RabbitMQ client');
+    await rabbitMQClient.connect();
+    await evaluationResultsClient.initialize();
+    await evaluationRequestsClient.initialize();
+    logger.info('RabbitMQ client connected, queues initialized');
+  });
+
   const plugin = withTraceSync('ai-evaluator.init.clients.plugin', () =>
     new Elysia({ name: 'Clients' })
       .decorate('openRouterClient', openRouterClient)
@@ -97,4 +105,4 @@ export const createClientsPlugin = (
   return plugin;
 };
 
-export type ClientsPlugin = ReturnType<typeof createClientsPlugin>;
+export type ClientsPlugin = Awaited<ReturnType<typeof createClientsPlugin>>;

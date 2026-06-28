@@ -250,9 +250,8 @@ Example response:
       riskScoreEvaluationProcess: true,
     });
 
-    await this.evaluationRequestsClient.publishEvaluationRequest({
-      entityType: 'pool',
-      entityId: id,
+    await this.evaluationRequestsClient.publishEvaluationRequest('evaluatePool', {
+      poolId: id,
       ownerId: pool.ownerId,
       ownerType: pool.ownerType,
     });

@@ -41,7 +41,26 @@ export const GET_EVALUATIONS = `
       parentId
       status
       riskScore
+      reasoning
+      factors {
+        name
+        impact
+        detail
+      }
+      stage1Response
+      stage2Response
+      evaluatedDocuments {
+        id
+        name
+        mimeType
+      }
+      evaluatedImages {
+        id
+        name
+      }
+      modelUsed
       createdAt
+      updatedAt
     }
   }
 `;

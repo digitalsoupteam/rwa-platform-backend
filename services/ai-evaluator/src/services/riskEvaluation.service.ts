@@ -18,37 +18,11 @@ import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 import type { SortOrder } from 'mongoose';
 
-type SiblingPoolMeta = {
-  name: string;
-  riskScore: number | undefined;
-  poolAddress: string | undefined;
-  deployed: boolean;
-};
-
-type DocumentMeta = {
+type FileMeta = {
   id: string;
   name: string;
   mimeType: string;
   url: string;
-};
-
-type ImageMeta = {
-  id: string;
-  name: string;
-  url: string;
-};
-
-type Stage1Result = {
-  stage1Response: string;
-  requestedDocuments: string[];
-  requestedImages: string[];
-};
-
-type Stage2Result = {
-  riskScore: number;
-  reasoning: string;
-  factors: Array<{ name: string; impact: string; detail: string }>;
-  stage2Response: string;
 };
 
 export class RiskEvaluationService {
@@ -64,30 +38,24 @@ export class RiskEvaluationService {
     private readonly evaluationResultsClient: EvaluationResultsClient,
     private readonly openRouterModel: string,
     private readonly maxFilesPerRequest: number,
+    private readonly useBase64Files: boolean = true,
   ) {}
-
-  // ========== Public orchestrators ==========
 
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({
-    args: (a) => ({ entityType: a[0].entityType, entityId: a[0].entityId }),
+    args: (a) => ({ poolId: a[0].poolId, ownerId: a[0].ownerId, ownerType: a[0].ownerType }),
   })
-  async startEvaluation(params: {
-    entityType: 'pool' | 'business';
-    entityId: string;
-    ownerId: string;
-    ownerType: string;
-  }): Promise<{ evaluationId: string }> {
-    setSpanAttributes({ entityId: params.entityId, entityType: params.entityType });
+  async evaluatePool(params: { poolId: string; ownerId: string; ownerType: string }) {
+    setSpanAttributes({ entityId: params.poolId, entityType: 'pool' });
 
-    const grandParentId =
-      params.entityType === 'pool' ? await this.resolvePoolBusinessId(params.entityId) : params.entityId;
+    const pool = await this.fetchPool({ poolId: params.poolId });
+    const business = await this.fetchBusiness({ businessId: pool.businessId });
 
     const evaluation = await this.evaluationRepository.create({
-      entityType: params.entityType,
-      parentId: params.entityId,
-      grandParentId,
+      entityType: 'pool',
+      parentId: params.poolId,
+      grandParentId: pool.businessId,
       ownerId: params.ownerId,
       ownerType: params.ownerType,
       status: 'pending',
@@ -98,12 +66,64 @@ export class RiskEvaluationService {
 
     const evaluationId = evaluation._id.toString();
 
-    // Fire-and-forget: run the full pipeline without awaiting
-    this.runEvaluation(evaluationId, params.entityType, params.entityId).catch((error) => {
-      logger.error(`Evaluation ${evaluationId} failed:`, error);
+    try {
+      const result = await this.evaluate([
+        this.poolModule(pool),
+        this.businessModule(business),
+        this.siblingPoolsModule({ businessId: pool.businessId, excludeId: params.poolId }),
+        this.documentsModule({ parentId: params.poolId }),
+        this.galleryModule({ parentId: params.poolId }),
+        this.reactionsModule({ parentId: params.poolId, parentType: 'pool' }),
+        this.questionsModule({ parentId: params.poolId }),
+        pool.poolAddress ? this.portfolioModule({ poolAddress: pool.poolAddress }) : null,
+      ]);
+
+      await this.saveResult(evaluationId, 'pool', params.poolId, result);
+    } catch (error) {
+      logger.error(`Pool evaluation ${evaluationId} failed:`, error);
+      await this.evaluationRepository.updateById(evaluationId, { status: 'failed' }).catch(() => {});
+    }
+  }
+
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ businessId: a[0].businessId, ownerId: a[0].ownerId, ownerType: a[0].ownerType }),
+  })
+  async evaluateBusiness(params: { businessId: string; ownerId: string; ownerType: string }) {
+    setSpanAttributes({ entityId: params.businessId, entityType: 'business' });
+
+    const business = await this.fetchBusiness({ businessId: params.businessId });
+
+    const evaluation = await this.evaluationRepository.create({
+      entityType: 'business',
+      parentId: params.businessId,
+      grandParentId: params.businessId,
+      ownerId: params.ownerId,
+      ownerType: params.ownerType,
+      status: 'pending',
+      factors: [],
+      evaluatedDocuments: [],
+      evaluatedImages: [],
     });
 
-    return { evaluationId };
+    const evaluationId = evaluation._id.toString();
+
+    try {
+      const result = await this.evaluate([
+        this.businessModule(business),
+        this.poolsModule({ businessId: params.businessId }),
+        this.documentsModule({ parentId: params.businessId }),
+        this.galleryModule({ parentId: params.businessId }),
+        this.reactionsModule({ parentId: params.businessId, parentType: 'business' }),
+        this.questionsModule({ parentId: params.businessId }),
+      ]);
+
+      await this.saveResult(evaluationId, 'business', params.businessId, result);
+    } catch (error) {
+      logger.error(`Business evaluation ${evaluationId} failed:`, error);
+      await this.evaluationRepository.updateById(evaluationId, { status: 'failed' }).catch(() => {});
+    }
   }
 
   @TraceDecorator()
@@ -111,9 +131,9 @@ export class RiskEvaluationService {
   @LogDecorator({
     args: (a) => ({ evaluationId: a[0].id }),
   })
-  async getEvaluation({ id }: { id: string }) {
-    setSpanAttributes({ evaluationId: id });
-    const evaluation = await this.evaluationRepository.findById(id);
+  async getEvaluation(params: { id: string }) {
+    setSpanAttributes({ evaluationId: params.id });
+    const evaluation = await this.evaluationRepository.findById(params.id);
     return this.mapEvaluation(evaluation);
   }
 
@@ -122,523 +142,120 @@ export class RiskEvaluationService {
   @LogDecorator({
     args: (a) => ({ filterKeys: Object.keys(a[0].filter).join(',') }),
   })
-  async getEvaluations({
-    filter,
-    sort,
-    limit,
-    offset,
-  }: {
+  async getEvaluations(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
     limit?: number;
     offset?: number;
   }) {
-    setSpanAttributes({ filterKeys: Object.keys(filter).join(',') });
-    const evaluations = await this.evaluationRepository.findAll(filter, sort, limit, offset);
+    setSpanAttributes({ filterKeys: Object.keys(params.filter).join(',') });
+    const evaluations = await this.evaluationRepository.findAll(params.filter, params.sort, params.limit, params.offset);
     return evaluations.map((e) => this.mapEvaluation(e));
   }
 
-  // ========== Async pipeline ==========
+  private async evaluate(modules: (Promise<{ text: string; files?: FileMeta[] }> | null)[]) {
+    const results = (await Promise.all(modules)).filter(Boolean);
 
-  @TraceDecorator({ root: true })
-  @LogDecorator()
-  private async runEvaluation(evaluationId: string, entityType: 'pool' | 'business', entityId: string) {
-    try {
-      if (entityType === 'pool') {
-        await this.runPoolEvaluation(evaluationId, entityId);
-      } else {
-        await this.runBusinessEvaluation(evaluationId, entityId);
+    const summary = results.map((r) => r!.text).join('\n\n');
+    const allFiles = results.flatMap((r) => r!.files ?? []);
+
+    let selectedFiles = allFiles;
+    let selectionResponse: string | undefined;
+
+    if (allFiles.length > 0) {
+      const selection = await this.selectFiles(summary, allFiles);
+      selectionResponse = selection.llmResponse;
+      selectedFiles = selection.selectedFiles;
+    }
+
+    const evaluation = await this.evaluateRisk(summary, selectedFiles);
+
+    return {
+      riskScore: evaluation.riskScore,
+      reasoning: evaluation.reasoning,
+      factors: evaluation.factors,
+      llmResponse: evaluation.llmResponse,
+      selectionResponse,
+      selectedFiles,
+    };
+  }
+
+  private async selectFiles(summary: string, files: FileMeta[]) {
+    const documents = files.filter((f) => !f.mimeType.startsWith('image/'));
+    const images = files.filter((f) => f.mimeType.startsWith('image/'));
+
+    const hasDocuments = documents.length > 0;
+    const hasImages = images.length > 0;
+    const fileTypes = hasDocuments && hasImages ? 'documents and images' : hasDocuments ? 'documents' : 'images';
+
+    const systemMessage = `You are a risk assessment expert. Analyze the following summary and decide which ${fileTypes} you need to study for a detailed risk evaluation.
+
+${summary}
+
+Available documents:
+${documents.map((d) => `- id=${d.id}, name=${d.name}, mimeType=${d.mimeType}`).join('\n')}
+
+Available images:
+${images.map((i) => `- id=${i.id}, name=${i.name}`).join('\n')}
+
+Return JSON with the IDs of ${fileTypes} you want to examine:
+{
+${hasDocuments ? `  "requestedDocuments": ["docId1", "docId3"],\n` : ''}${hasImages ? `  "requestedImages": ["imgId2"]\n` : ''}}
+If you don't need any ${fileTypes}, return empty arrays.`;
+
+    const completion = await this.openRouterClient.chatCompletion({
+      model: this.openRouterModel,
+      messages: [
+        { role: 'system', content: systemMessage },
+        { role: 'user', content: `Which ${fileTypes} do you need for risk evaluation? Return JSON only.` },
+      ],
+    });
+
+    const llmResponse = completion.choices[0]?.message?.content ?? '';
+    const parsed = this.parseLLMJsonResponse(llmResponse);
+
+    const requestedDocIds: string[] = parsed.requestedDocuments ?? [];
+    const requestedImgIds: string[] = parsed.requestedImages ?? [];
+
+    for (const docId of requestedDocIds) {
+      if (!documents.find((d) => d.id === docId)) {
+        throw new AppError({
+          message: `LLM requested document ${docId} but it was not found`,
+          statusCode: 400,
+          code: 'NOT_FOUND',
+        });
       }
-    } catch (error) {
-      logger.error(`Evaluation ${evaluationId} pipeline failed:`, error);
-      await this.evaluationRepository.updateById(evaluationId, { status: 'failed' }).catch(() => {});
     }
-  }
 
-  @TraceDecorator()
-  private async runPoolEvaluation(evaluationId: string, poolId: string) {
-    const pool = await this.fetchPool({ poolId });
-    const business = await this.fetchBusiness({ businessId: pool.businessId });
-    const siblingPools = await this.fetchSiblingPools({
-      businessId: pool.businessId,
-      excludeId: poolId,
-    });
-
-    const [documents, gallery, reactions, questions] = await Promise.all([
-      this.fetchDocuments({ parentId: poolId }),
-      this.fetchGallery({ parentId: poolId }),
-      this.fetchReactions({ parentId: poolId, parentType: 'pool' }),
-      this.fetchQuestions({ parentId: poolId }),
-    ]);
-
-    const portfolio = pool.poolAddress ? await this.fetchPortfolio({ poolAddress: pool.poolAddress }) : null;
-
-    const stage1 = await this.assemblePoolSummary({
-      pool,
-      business,
-      siblingPools,
-      documents,
-      gallery,
-      reactions,
-      questions,
-      portfolio,
-    });
-
-    const { fetchedDocuments, fetchedImages } = await this.fetchRequestedFiles({
-      documents,
-      gallery,
-      requestedDocuments: stage1.requestedDocuments,
-      requestedImages: stage1.requestedImages,
-    });
-
-    const stage2 = await this.evaluateWithRequestedData({
-      summary: stage1.stage1Response,
-      fetchedDocuments,
-      fetchedImages,
-    });
-
-    await this.evaluationRepository.updateById(evaluationId, {
-      status: 'completed',
-      riskScore: stage2.riskScore,
-      reasoning: stage2.reasoning,
-      factors: stage2.factors,
-      stage1Response: stage1.stage1Response,
-      stage2Response: stage2.stage2Response,
-      evaluatedDocuments: fetchedDocuments.map((d) => ({ id: d.id, name: d.name, mimeType: d.mimeType })),
-      evaluatedImages: fetchedImages.map((i) => ({ id: i.id, name: i.name })),
-      modelUsed: this.openRouterModel,
-    });
-
-    await this.evaluationResultsClient.publishEvaluationResult({
-      evaluationId,
-      entityType: 'pool',
-      entityId: poolId,
-      riskScore: stage2.riskScore,
-    });
-  }
-
-  @TraceDecorator()
-  private async runBusinessEvaluation(evaluationId: string, businessId: string) {
-    const business = await this.fetchBusiness({ businessId });
-    const pools = await this.fetchBusinessPools({ businessId });
-
-    const [documents, gallery, reactions, questions] = await Promise.all([
-      this.fetchDocuments({ parentId: businessId }),
-      this.fetchGallery({ parentId: businessId }),
-      this.fetchReactions({ parentId: businessId, parentType: 'business' }),
-      this.fetchQuestions({ parentId: businessId }),
-    ]);
-
-    const stage1 = await this.assembleBusinessSummary({
-      business,
-      pools,
-      documents,
-      gallery,
-      reactions,
-      questions,
-    });
-
-    const { fetchedDocuments, fetchedImages } = await this.fetchRequestedFiles({
-      documents,
-      gallery,
-      requestedDocuments: stage1.requestedDocuments,
-      requestedImages: stage1.requestedImages,
-    });
-
-    const stage2 = await this.evaluateWithRequestedData({
-      summary: stage1.stage1Response,
-      fetchedDocuments,
-      fetchedImages,
-    });
-
-    await this.evaluationRepository.updateById(evaluationId, {
-      status: 'completed',
-      riskScore: stage2.riskScore,
-      reasoning: stage2.reasoning,
-      factors: stage2.factors,
-      stage1Response: stage1.stage1Response,
-      stage2Response: stage2.stage2Response,
-      evaluatedDocuments: fetchedDocuments.map((d) => ({ id: d.id, name: d.name, mimeType: d.mimeType })),
-      evaluatedImages: fetchedImages.map((i) => ({ id: i.id, name: i.name })),
-      modelUsed: this.openRouterModel,
-    });
-
-    await this.evaluationResultsClient.publishEvaluationResult({
-      evaluationId,
-      entityType: 'business',
-      entityId: businessId,
-      riskScore: stage2.riskScore,
-    });
-  }
-
-  @TraceDecorator()
-  @LogDecorator({ args: (a) => ({ poolId: a[0] }) })
-  private async resolvePoolBusinessId(poolId: string): Promise<string> {
-    const pool = await this.fetchPool({ poolId });
-    return pool.businessId;
-  }
-
-  // ========== Private fetch methods ==========
-
-  @TraceDecorator()
-  @LogDecorator({ args: (a) => ({ poolId: a[0].poolId }) })
-  private async fetchPool({ poolId }: { poolId: string }) {
-    const response = await this.rwaClient.getPool.post({ id: poolId });
-    if (response.error || !response.data) {
-      throw new AppError({
-        message: 'Failed to fetch pool from rwa service',
-        statusCode: 502,
-        code: 'UPSTREAM_ERROR',
-      });
+    for (const imgId of requestedImgIds) {
+      if (!images.find((i) => i.id === imgId)) {
+        throw new AppError({
+          message: `LLM requested image ${imgId} but it was not found`,
+          statusCode: 400,
+          code: 'NOT_FOUND',
+        });
+      }
     }
-    return response.data;
+
+    const selectedFiles = files.filter(
+      (f) => requestedDocIds.includes(f.id) || requestedImgIds.includes(f.id),
+    );
+
+    return { llmResponse, selectedFiles };
   }
 
-  @TraceDecorator()
-  @LogDecorator({ args: (a) => ({ businessId: a[0].businessId }) })
-  private async fetchBusiness({ businessId }: { businessId: string }) {
-    const response = await this.rwaClient.getBusiness.post({ id: businessId });
-    if (response.error || !response.data) {
-      throw new AppError({
-        message: 'Failed to fetch business from rwa service',
-        statusCode: 502,
-        code: 'UPSTREAM_ERROR',
-      });
-    }
-    return response.data;
-  }
-
-  @TraceDecorator()
-  @LogDecorator({ args: (a) => ({ businessId: a[0].businessId, excludeId: a[0].excludeId }) })
-  private async fetchSiblingPools({
-    businessId,
-    excludeId,
-  }: {
-    businessId: string;
-    excludeId: string;
-  }): Promise<SiblingPoolMeta[]> {
-    const response = await this.rwaClient.getPools.post({ filter: { businessId } });
-    if (response.error || !response.data) {
-      throw new AppError({
-        message: 'Failed to fetch pools from rwa service',
-        statusCode: 502,
-        code: 'UPSTREAM_ERROR',
-      });
-    }
-    return response.data
-      .filter((p) => p.id !== excludeId)
-      .map((p) => ({
-        name: p.name,
-        riskScore: p.riskScore ?? undefined,
-        poolAddress: p.poolAddress ?? undefined,
-        deployed: !!p.poolAddress,
-      }));
-  }
-
-  @TraceDecorator()
-  @LogDecorator({ args: (a) => ({ businessId: a[0].businessId }) })
-  private async fetchBusinessPools({ businessId }: { businessId: string }): Promise<SiblingPoolMeta[]> {
-    const response = await this.rwaClient.getPools.post({ filter: { businessId } });
-    if (response.error || !response.data) {
-      throw new AppError({
-        message: 'Failed to fetch pools from rwa service',
-        statusCode: 502,
-        code: 'UPSTREAM_ERROR',
-      });
-    }
-    return response.data.map((p) => ({
-      name: p.name,
-      riskScore: p.riskScore ?? undefined,
-      poolAddress: p.poolAddress ?? undefined,
-      deployed: !!p.poolAddress,
-    }));
-  }
-
-  @TraceDecorator()
-  @LogDecorator({ args: (a) => ({ parentId: a[0].parentId }) })
-  private async fetchDocuments({ parentId }: { parentId: string }): Promise<DocumentMeta[]> {
-    const response = await this.documentsClient.getDocuments.post({ filter: { parentId } });
-    if (response.error || !response.data) {
-      throw new AppError({
-        message: 'Failed to fetch documents from documents service',
-        statusCode: 502,
-        code: 'UPSTREAM_ERROR',
-      });
-    }
-    return response.data.map((d) => ({ id: d.id, name: d.name, mimeType: d.mimeType, url: d.url }));
-  }
-
-  @TraceDecorator()
-  @LogDecorator({ args: (a) => ({ parentId: a[0].parentId }) })
-  private async fetchGallery({ parentId }: { parentId: string }): Promise<ImageMeta[]> {
-    const response = await this.galleryClient.getImages.post({ filter: { parentId } });
-    if (response.error || !response.data) {
-      throw new AppError({
-        message: 'Failed to fetch images from gallery service',
-        statusCode: 502,
-        code: 'UPSTREAM_ERROR',
-      });
-    }
-    return response.data.map((i) => ({ id: i.id, name: i.name, url: i.url }));
-  }
-
-  @TraceDecorator()
-  @LogDecorator({ args: (a) => ({ parentId: a[0].parentId, parentType: a[0].parentType }) })
-  private async fetchReactions({ parentId, parentType }: { parentId: string; parentType: string }) {
-    const response = await this.reactionsClient.getEntityReactions.post({ parentId, parentType });
-    if (response.error || !response.data) {
-      throw new AppError({
-        message: 'Failed to fetch reactions from reactions service',
-        statusCode: 502,
-        code: 'UPSTREAM_ERROR',
-      });
-    }
-    return response.data;
-  }
-
-  @TraceDecorator()
-  @LogDecorator({ args: (a) => ({ parentId: a[0].parentId }) })
-  private async fetchQuestions({ parentId }: { parentId: string }) {
-    const response = await this.questionsClient.getQuestions.post({ filter: { parentId } });
-    if (response.error || !response.data) {
-      throw new AppError({
-        message: 'Failed to fetch questions from questions service',
-        statusCode: 502,
-        code: 'UPSTREAM_ERROR',
-      });
-    }
-    return response.data;
-  }
-
-  @TraceDecorator()
-  @LogDecorator({ args: (a) => ({ poolAddress: a[0].poolAddress }) })
-  private async fetchPortfolio({ poolAddress }: { poolAddress: string }) {
-    const response = await this.portfolioClient.getBalances.post({ filter: { poolAddress } });
-    if (response.error || !response.data) {
-      throw new AppError({
-        message: 'Failed to fetch portfolio from portfolio service',
-        statusCode: 502,
-        code: 'UPSTREAM_ERROR',
-      });
-    }
-    return response.data;
-  }
-
-  // ========== Private LLM methods ==========
-
-  @TraceDecorator()
-  @LogDecorator()
-  private async assemblePoolSummary(params: {
-    pool: any;
-    business: any;
-    siblingPools: SiblingPoolMeta[];
-    documents: DocumentMeta[];
-    gallery: ImageMeta[];
-    reactions: any;
-    questions: any[];
-    portfolio: any[] | null;
-  }): Promise<Stage1Result> {
-    const siblingText =
-      params.siblingPools.length > 0
-        ? params.siblingPools
-            .map((p) => `- ${p.name}: riskScore=${p.riskScore ?? 'not yet evaluated'}, deployed=${p.deployed}`)
-            .join('\n')
-        : 'No sibling pools';
-
-    const documentsText =
-      params.documents.length > 0
-        ? params.documents.map((d) => `- id=${d.id}, name=${d.name}, mimeType=${d.mimeType}, url=${d.url}`).join('\n')
-        : 'No documents available';
-
-    const imagesText =
-      params.gallery.length > 0
-        ? params.gallery.map((i) => `- id=${i.id}, name=${i.name}, url=${i.url}`).join('\n')
-        : 'No images available';
-
-    const reactionsText =
-      Object.keys(params.reactions.reactions).length > 0
-        ? Object.entries(params.reactions.reactions)
-            .map(([type, count]) => `${type}: ${count}`)
-            .join(', ')
-        : 'No reactions';
-
-    const questionsTotal = params.questions.length;
-    const questionsAnswered = params.questions.filter((q) => q.answered).length;
-
-    const portfolioText =
-      params.portfolio && params.portfolio.length > 0
-        ? `Investors: ${params.portfolio.length}`
-        : 'No portfolio data (pool not deployed or no investors)';
-
-    const summary = `Entity type: pool
-Pool name: ${params.pool.name}
-Pool description: ${params.pool.description ?? 'N/A'}
-Pool tags: ${params.pool.tags?.join(', ') ?? 'N/A'}
-
-Financial parameters:
-- Entry fee: ${params.pool.entryFeePercent ?? 'N/A'}
-- Exit fee: ${params.pool.exitFeePercent ?? 'N/A'}
-- Expected HOLD amount: ${params.pool.expectedHoldAmount ?? 'N/A'}
-- Expected RWA amount: ${params.pool.expectedRwaAmount ?? 'N/A'}
-- Reward percent: ${params.pool.rewardPercent ?? 'N/A'}
-
-Parent business:
-- Name: ${params.business.name}
-- Type: ${params.business.businessType ?? 'N/A'}
-- Country: ${params.business.country ?? 'N/A'}
-- Tags: ${params.business.tags?.join(', ') ?? 'N/A'}
-
-Sibling pools of this business:
-${siblingText}
-
-Available documents (no content, metadata only):
-${documentsText}
-
-Available images (no content, metadata only):
-${imagesText}
-
-Reactions: ${reactionsText}
-
-Q&A: ${questionsTotal} questions, ${questionsAnswered} answered
-
-Portfolio: ${portfolioText}`;
-
-    const systemMessage = `You are a risk assessment expert. Analyze the following pool summary and decide which documents and images you need to study for a detailed risk evaluation.
-
-${summary}
-
-Return JSON with the IDs of documents and images you want to examine:
-{
-  "requestedDocuments": ["docId1", "docId3"],
-  "requestedImages": ["imgId2"]
-}
-
-If you don't need any documents or images, return empty arrays.`;
-
-    const completion = await this.openRouterClient.chatCompletion({
-      model: this.openRouterModel,
-      messages: [
-        { role: 'system', content: systemMessage },
-        { role: 'user', content: 'Which documents and images do you need for risk evaluation? Return JSON only.' },
-      ],
-    });
-
-    const stage1Response = completion.choices[0]?.message?.content ?? '';
-    const parsed = this.parseLLMJsonResponse(stage1Response);
-
-    return {
-      stage1Response,
-      requestedDocuments: parsed.requestedDocuments ?? [],
-      requestedImages: parsed.requestedImages ?? [],
-    };
-  }
-
-  @TraceDecorator()
-  @LogDecorator()
-  private async assembleBusinessSummary(params: {
-    business: any;
-    pools: SiblingPoolMeta[];
-    documents: DocumentMeta[];
-    gallery: ImageMeta[];
-    reactions: any;
-    questions: any[];
-  }): Promise<Stage1Result> {
-    const poolsText =
-      params.pools.length > 0
-        ? params.pools
-            .map((p) => `- ${p.name}: riskScore=${p.riskScore ?? 'not yet evaluated'}, deployed=${p.deployed}`)
-            .join('\n')
-        : 'No pools';
-
-    const documentsText =
-      params.documents.length > 0
-        ? params.documents.map((d) => `- id=${d.id}, name=${d.name}, mimeType=${d.mimeType}, url=${d.url}`).join('\n')
-        : 'No documents available';
-
-    const imagesText =
-      params.gallery.length > 0
-        ? params.gallery.map((i) => `- id=${i.id}, name=${i.name}, url=${i.url}`).join('\n')
-        : 'No images available';
-
-    const reactionsText =
-      Object.keys(params.reactions.reactions).length > 0
-        ? Object.entries(params.reactions.reactions)
-            .map(([type, count]) => `${type}: ${count}`)
-            .join(', ')
-        : 'No reactions';
-
-    const questionsTotal = params.questions.length;
-    const questionsAnswered = params.questions.filter((q) => q.answered).length;
-
-    const summary = `Entity type: business
-Business name: ${params.business.name}
-Business description: ${params.business.description ?? 'N/A'}
-Business tags: ${params.business.tags?.join(', ') ?? 'N/A'}
-Country: ${params.business.country ?? 'N/A'}
-Business type: ${params.business.businessType ?? 'N/A'}
-Socials: ${params.business.socials?.map((s: any) => `${s.type}: ${s.url}`).join(', ') ?? 'N/A'}
-
-Pools of this business:
-${poolsText}
-
-Available documents (no content, metadata only):
-${documentsText}
-
-Available images (no content, metadata only):
-${imagesText}
-
-Reactions: ${reactionsText}
-
-Q&A: ${questionsTotal} questions, ${questionsAnswered} answered`;
-
-    const systemMessage = `You are a risk assessment expert. Analyze the following business summary and decide which documents and images you need to study for a detailed risk evaluation.
-
-${summary}
-
-Return JSON with the IDs of documents and images you want to examine:
-{
-  "requestedDocuments": ["docId1", "docId3"],
-  "requestedImages": ["imgId2"]
-}
-
-If you don't need any documents or images, return empty arrays.`;
-
-    const completion = await this.openRouterClient.chatCompletion({
-      model: this.openRouterModel,
-      messages: [
-        { role: 'system', content: systemMessage },
-        { role: 'user', content: 'Which documents and images do you need for risk evaluation? Return JSON only.' },
-      ],
-    });
-
-    const stage1Response = completion.choices[0]?.message?.content ?? '';
-    const parsed = this.parseLLMJsonResponse(stage1Response);
-
-    return {
-      stage1Response,
-      requestedDocuments: parsed.requestedDocuments ?? [],
-      requestedImages: parsed.requestedImages ?? [],
-    };
-  }
-
-  @TraceDecorator()
-  @LogDecorator()
-  private async evaluateWithRequestedData(params: {
-    summary: string;
-    fetchedDocuments: DocumentMeta[];
-    fetchedImages: ImageMeta[];
-  }): Promise<Stage2Result> {
-    const totalFiles = params.fetchedDocuments.length + params.fetchedImages.length;
+  private async evaluateRisk(summary: string, files: FileMeta[]) {
+    const totalFiles = files.length;
     if (totalFiles > this.maxFilesPerRequest) {
       throw new AppError({
-        message: `Too many files for OpenRouter request: ${totalFiles} (documents=${params.fetchedDocuments.length}, images=${params.fetchedImages.length}). Maximum allowed: ${this.maxFilesPerRequest}`,
+        message: `Too many files for OpenRouter request: ${totalFiles}. Maximum allowed: ${this.maxFilesPerRequest}`,
         statusCode: 400,
         code: 'VALIDATION_ERROR',
       });
     }
 
     const contentParts: Array<TextContentPart | FileContentPart | ImageContentPart> = [
-      { type: 'text', text: params.summary },
+      { type: 'text', text: summary },
       {
         type: 'text',
         text: `\n\nPlease evaluate the risk of this entity based on the summary above and the attached documents/images. Return JSON:
@@ -652,21 +269,21 @@ riskScore must be an integer between 1 and 100. 0 is not allowed.`,
       },
     ];
 
-    for (const doc of params.fetchedDocuments) {
-      contentParts.push({
-        type: 'file',
-        file: {
-          filename: doc.name,
-          fileData: doc.url,
-        },
-      });
-    }
-
-    for (const img of params.fetchedImages) {
-      contentParts.push({
-        type: 'image_url',
-        imageUrl: { url: img.url },
-      });
+    for (const file of files) {
+      if (file.mimeType.startsWith('image/')) {
+        contentParts.push({
+          type: 'image_url',
+          imageUrl: { url: this.useBase64Files ? await this.urlToBase64(file.url) : file.url },
+        });
+      } else {
+        contentParts.push({
+          type: 'file',
+          file: {
+            filename: file.name,
+            fileData: this.useBase64Files ? await this.urlToBase64(file.url) : file.url,
+          },
+        });
+      }
     }
 
     const messages: ChatMessage[] = [{ role: 'user', content: contentParts }];
@@ -676,8 +293,8 @@ riskScore must be an integer between 1 and 100. 0 is not allowed.`,
       messages,
     });
 
-    const stage2Response = completion.choices[0]?.message?.content ?? '';
-    const parsed = this.parseLLMJsonResponse(stage2Response);
+    const llmResponse = completion.choices[0]?.message?.content ?? '';
+    const parsed = this.parseLLMJsonResponse(llmResponse);
 
     const riskScore = Number(parsed.riskScore);
     if (!Number.isInteger(riskScore) || riskScore < 1 || riskScore > 100) {
@@ -692,50 +309,243 @@ riskScore must be an integer between 1 and 100. 0 is not allowed.`,
       riskScore,
       reasoning: String(parsed.reasoning ?? ''),
       factors: Array.isArray(parsed.factors) ? parsed.factors : [],
-      stage2Response,
+      llmResponse,
+    };
+  }
+
+  private async saveResult(evaluationId: string, entityType: 'pool' | 'business', entityId: string, result: Awaited<ReturnType<typeof this.evaluate>>) {
+    const { riskScore, reasoning, factors, llmResponse, selectionResponse, selectedFiles } = result;
+
+    const evaluatedDocuments = selectedFiles
+      .filter((f) => !f.mimeType.startsWith('image/'))
+      .map((d) => ({ id: d.id, name: d.name, mimeType: d.mimeType }));
+
+    const evaluatedImages = selectedFiles
+      .filter((f) => f.mimeType.startsWith('image/'))
+      .map((i) => ({ id: i.id, name: i.name }));
+
+    await this.evaluationRepository.updateById(evaluationId, {
+      status: 'completed',
+      riskScore,
+      reasoning,
+      factors,
+      stage1Response: selectionResponse,
+      stage2Response: llmResponse,
+      evaluatedDocuments,
+      evaluatedImages,
+      modelUsed: this.openRouterModel,
+    });
+
+    await this.evaluationResultsClient.publishEvaluationResult({
+      evaluationId,
+      entityType,
+      entityId,
+      riskScore,
+    });
+  }
+
+  private async poolModule(pool: any) {
+    return {
+      text: `Entity type: pool
+Pool name: ${pool.name}
+Pool description: ${pool.description ?? 'N/A'}
+Pool tags: ${pool.tags?.join(', ') ?? 'N/A'}
+Entry fee: ${pool.entryFeePercent ?? 'N/A'}
+Exit fee: ${pool.exitFeePercent ?? 'N/A'}
+Expected HOLD amount: ${pool.expectedHoldAmount ?? 'N/A'}
+Expected RWA amount: ${pool.expectedRwaAmount ?? 'N/A'}
+Reward percent: ${pool.rewardPercent ?? 'N/A'}`,
+    };
+  }
+
+  private async businessModule(business: any) {
+    return {
+      text: `Business name: ${business.name}
+Business type: ${business.businessType ?? 'N/A'}
+Country: ${business.country ?? 'N/A'}
+Tags: ${business.tags?.join(', ') ?? 'N/A'}`,
+    };
+  }
+
+  private async siblingPoolsModule(params: { businessId: string; excludeId: string }) {
+    const response = await this.rwaClient.getPools.post({ filter: { businessId: params.businessId } });
+    if (response.error || !response.data) {
+      throw new AppError({
+        message: 'Failed to fetch pools from rwa service',
+        statusCode: 502,
+        code: 'UPSTREAM_ERROR',
+      });
+    }
+    const siblings = response.data
+      .filter((p: any) => p.id !== params.excludeId)
+      .map((p: any) => `- ${p.name}: riskScore=${p.riskScore ?? 'not yet evaluated'}, deployed=${!!p.poolAddress}`);
+
+    return {
+      text: siblings.length > 0
+        ? `Sibling pools:\n${siblings.join('\n')}`
+        : 'Sibling pools: none',
+    };
+  }
+
+  private async poolsModule(params: { businessId: string }) {
+    const response = await this.rwaClient.getPools.post({ filter: { businessId: params.businessId } });
+    if (response.error || !response.data) {
+      throw new AppError({
+        message: 'Failed to fetch pools from rwa service',
+        statusCode: 502,
+        code: 'UPSTREAM_ERROR',
+      });
+    }
+    const pools = response.data.map((p: any) =>
+      `- ${p.name}: riskScore=${p.riskScore ?? 'not yet evaluated'}, deployed=${!!p.poolAddress}`);
+
+    return {
+      text: pools.length > 0
+        ? `Pools of this business:\n${pools.join('\n')}`
+        : 'Pools: none',
+    };
+  }
+
+  private async documentsModule(params: { parentId: string }) {
+    const response = await this.documentsClient.getDocuments.post({ filter: { parentId: params.parentId } });
+    if (response.error || !response.data) {
+      throw new AppError({
+        message: 'Failed to fetch documents from documents service',
+        statusCode: 502,
+        code: 'UPSTREAM_ERROR',
+      });
+    }
+    const files = response.data.map((d: any) => ({
+      id: d.id, name: d.name, mimeType: d.mimeType, url: d.url,
+    }));
+
+    return {
+      text: files.length > 0
+        ? `Documents:\n${files.map((f) => `- id=${f.id}, name=${f.name}, mimeType=${f.mimeType}`).join('\n')}`
+        : 'Documents: none exist',
+      files,
+    };
+  }
+
+  private async galleryModule(params: { parentId: string }) {
+    const response = await this.galleryClient.getImages.post({ filter: { parentId: params.parentId } });
+    if (response.error || !response.data) {
+      throw new AppError({
+        message: 'Failed to fetch images from gallery service',
+        statusCode: 502,
+        code: 'UPSTREAM_ERROR',
+      });
+    }
+    const files = response.data.map((i: any) => ({
+      id: i.id, name: i.name, mimeType: 'image/jpeg', url: i.url,
+    }));
+
+    return {
+      text: files.length > 0
+        ? `Images:\n${files.map((f) => `- id=${f.id}, name=${f.name}`).join('\n')}`
+        : 'Images: none exist',
+      files,
+    };
+  }
+
+  private async reactionsModule(params: { parentId: string; parentType: string }) {
+    const response = await this.reactionsClient.getEntityReactions.post({
+      parentId: params.parentId,
+      parentType: params.parentType,
+    });
+    if (response.error || !response.data) {
+      throw new AppError({
+        message: 'Failed to fetch reactions from reactions service',
+        statusCode: 502,
+        code: 'UPSTREAM_ERROR',
+      });
+    }
+    const entries = Object.entries(response.data.reactions ?? {});
+    return {
+      text: entries.length > 0
+        ? `Reactions: ${entries.map(([t, c]) => `${t}: ${c}`).join(', ')}`
+        : 'Reactions: none',
+    };
+  }
+
+  private async questionsModule(params: { parentId: string }) {
+    const response = await this.questionsClient.getQuestions.post({ filter: { parentId: params.parentId } });
+    if (response.error || !response.data) {
+      throw new AppError({
+        message: 'Failed to fetch questions from questions service',
+        statusCode: 502,
+        code: 'UPSTREAM_ERROR',
+      });
+    }
+    const total = response.data.length;
+    const answered = response.data.filter((q: any) => q.answered).length;
+    return {
+      text: `Q&A: ${total} questions, ${answered} answered`,
+    };
+  }
+
+  private async portfolioModule(params: { poolAddress: string }) {
+    const response = await this.portfolioClient.getBalances.post({ filter: { poolAddress: params.poolAddress } });
+    if (response.error || !response.data) {
+      throw new AppError({
+        message: 'Failed to fetch portfolio from portfolio service',
+        statusCode: 502,
+        code: 'UPSTREAM_ERROR',
+      });
+    }
+    return {
+      text: response.data.length > 0
+        ? `Portfolio: ${response.data.length} investors`
+        : 'Portfolio: none',
     };
   }
 
   @TraceDecorator()
-  @LogDecorator()
-  private async fetchRequestedFiles(params: {
-    documents: DocumentMeta[];
-    gallery: ImageMeta[];
-    requestedDocuments: string[];
-    requestedImages: string[];
-  }): Promise<{ fetchedDocuments: DocumentMeta[]; fetchedImages: ImageMeta[] }> {
-    const fetchedDocuments: DocumentMeta[] = [];
-    for (const docId of params.requestedDocuments) {
-      const doc = params.documents.find((d) => d.id === docId);
-      if (!doc) {
-        throw new AppError({
-          message: `LLM requested document ${docId} but it was not found in the available documents`,
-          statusCode: 400,
-          code: 'NOT_FOUND',
-        });
-      }
-      fetchedDocuments.push(doc);
+  @LogDecorator({ args: (a) => ({ poolId: a[0].poolId }) })
+  private async fetchPool(params: { poolId: string }) {
+    const response = await this.rwaClient.getPool.post({ id: params.poolId });
+    if (response.error || !response.data) {
+      throw new AppError({
+        message: 'Failed to fetch pool from rwa service',
+        statusCode: 502,
+        code: 'UPSTREAM_ERROR',
+      });
     }
+    return response.data;
+  }
 
-    const fetchedImages: ImageMeta[] = [];
-    for (const imgId of params.requestedImages) {
-      const img = params.gallery.find((i) => i.id === imgId);
-      if (!img) {
-        throw new AppError({
-          message: `LLM requested image ${imgId} but it was not found in the available images`,
-          statusCode: 400,
-          code: 'NOT_FOUND',
-        });
-      }
-      fetchedImages.push(img);
+  @TraceDecorator()
+  @LogDecorator({ args: (a) => ({ businessId: a[0].businessId }) })
+  private async fetchBusiness(params: { businessId: string }) {
+    const response = await this.rwaClient.getBusiness.post({ id: params.businessId });
+    if (response.error || !response.data) {
+      throw new AppError({
+        message: 'Failed to fetch business from rwa service',
+        statusCode: 502,
+        code: 'UPSTREAM_ERROR',
+      });
     }
+    return response.data;
+  }
 
-    return { fetchedDocuments, fetchedImages };
+  private async urlToBase64(url: string) {
+    const internalUrl = url.replace('https://rwa.local', 'https://nginx');
+    const response = await fetch(internalUrl, { tls: { rejectUnauthorized: false } });
+    if (!response.ok) {
+      throw new AppError({
+        message: `Failed to fetch file for base64 conversion: ${response.status} ${response.statusText}`,
+        statusCode: 502,
+        code: 'UPSTREAM_ERROR',
+      });
+    }
+    const buffer = await response.arrayBuffer();
+    const base64 = Buffer.from(buffer).toString('base64');
+    const contentType = response.headers.get('content-type') ?? 'application/octet-stream';
+    return `data:${contentType};base64,${base64}`;
   }
 
   private parseLLMJsonResponse(response: string): any {
     let cleaned = response.trim();
-    // Strip markdown code block ```json ... ``` or ``` ... ```
     const codeBlockMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (codeBlockMatch) {
       cleaned = codeBlockMatch[1].trim();

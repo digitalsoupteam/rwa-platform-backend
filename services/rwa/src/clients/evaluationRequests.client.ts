@@ -1,13 +1,6 @@
 import { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
 import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
-export interface EvaluationRequestMessage {
-  entityType: 'pool' | 'business';
-  entityId: string;
-  ownerId: string;
-  ownerType: string;
-}
-
 export class EvaluationRequestsClient {
   private readonly EVALUATION_REQUESTS_QUEUE = 'evaluation.requests';
 
@@ -21,7 +14,7 @@ export class EvaluationRequestsClient {
   }
 
   @TraceDecorator()
-  async publishEvaluationRequest(request: EvaluationRequestMessage): Promise<void> {
-    await this.rabbitClient.sendToQueue(this.EVALUATION_REQUESTS_QUEUE, request);
+  async publishEvaluationRequest(method: 'evaluatePool' | 'evaluateBusiness', args: Record<string, unknown>): Promise<void> {
+    await this.rabbitClient.sendToQueue(this.EVALUATION_REQUESTS_QUEUE, { method, args });
   }
 }
