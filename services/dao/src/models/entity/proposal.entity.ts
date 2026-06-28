@@ -1,5 +1,6 @@
 import mongoose, { Schema, Types } from 'mongoose';
 import type { InferRawDocType } from 'mongoose';
+import { ProposalStateList } from '../shared/enums.model';
 
 const proposalSchemaDefinition = {
   proposalId: {
@@ -35,7 +36,7 @@ const proposalSchemaDefinition = {
   },
   state: {
     type: String,
-    enum: ['pending', 'executed', 'canceled'],
+    enum: ProposalStateList,
     default: 'pending',
   },
   chainId: {

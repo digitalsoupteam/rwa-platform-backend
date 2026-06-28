@@ -12,7 +12,16 @@ export class DocumentRepository {
   async create(
     data: { folderId: Types.ObjectId | string } & Pick<
       IDocumentEntity,
-      'name' | 'fileId' | 'path' | 'mimeType' | 'size' | 'ownerId' | 'ownerType' | 'creator' | 'parentId' | 'grandParentId'
+      | 'name'
+      | 'fileId'
+      | 'path'
+      | 'mimeType'
+      | 'size'
+      | 'ownerId'
+      | 'ownerType'
+      | 'creator'
+      | 'parentId'
+      | 'grandParentId'
     >,
   ) {
     const doc = await this.model.create(data);

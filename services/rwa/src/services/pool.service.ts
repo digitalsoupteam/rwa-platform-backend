@@ -227,82 +227,18 @@ Example response:
 
   @TraceDecorator()
   @MetricsDecorator()
-  @LogDecorator({ args: (a) => ({ id: a[0] }) })
-  async updateRiskScore(id: string) {
-    setSpanAttributes({ entityId: id, entityType: 'pool' });
-    const pool = await this.poolRepository.findById(id);
-
-    if (!pool.description || !pool.tags?.length) {
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, riskScore: a[0].riskScore }),
+  })
+  async setRiskScore({ id, riskScore }: { id: string; riskScore: number }) {
+    setSpanAttributes({ entityId: id, entityType: 'pool', riskScore });
+    if (riskScore < 1 || riskScore > 100) {
       throw new AppError({
-        message: 'Pool description and tags are required for risk assessment',
+        message: 'riskScore must be between 1 and 100',
         statusCode: 400,
         code: 'VALIDATION_ERROR',
       });
     }
-
-    const systemMessage = `You are a risk assessment expert. Analyze the pool information and provide a risk score from 1 to 100.
-
-Description: ${pool.description}
-Tags: ${pool.tags.join(', ')}
-
-Consider these factors:
-- Pool model viability
-- Market competition and conditions
-- Regulatory compliance risks
-- Financial stability indicators
-- Operational risks and scalability
-- Management team experience
-- Industry-specific challenges
-- Market positioning and branding
-- Technology and innovation potential
-- Target market size and accessibility
-
-Provide your response in EXACTLY this format:
-RISK_SCORE: [number between 1-100]
-REASONING: [brief explanation]
-
-Example response:
-RISK_SCORE: 45
-REASONING: Moderate risk due to competitive market, but strong pool model and experienced team`;
-
-    const response = await this.openRouterClient.chatCompletion({
-      model: this.openRouterModel,
-      messages: [
-        { role: 'system', content: systemMessage },
-        {
-          role: 'user',
-          content: 'Please analyze the provided pool information and assess its risk score.',
-        },
-      ],
-    });
-
-    const aiResponse = response.choices[0]?.message?.content;
-    if (!aiResponse) {
-      throw new AppError({
-        message: 'Failed to get AI response for risk assessment',
-        statusCode: 502,
-        code: 'AI_ERROR',
-      });
-    }
-
-    const match = aiResponse.match(/RISK_SCORE:\s*(\d+)/);
-    if (!match) {
-      throw new AppError({
-        message: 'Failed to parse risk score from AI response',
-        statusCode: 502,
-        code: 'AI_ERROR',
-      });
-    }
-
-    const riskScore = parseInt(match[1]);
-    if (isNaN(riskScore) || riskScore < 1 || riskScore > 100) {
-      throw new AppError({
-        message: 'Invalid risk score received from AI assessment',
-        statusCode: 502,
-        code: 'AI_ERROR',
-      });
-    }
-
     const updated = await this.poolRepository.updatePool(id, { riskScore });
     return this.mapPool(updated);
   }
@@ -634,7 +570,7 @@ REASONING: Moderate risk due to competitive market, but strong pool model and ex
       paused: pool.paused ?? false,
       description: pool.description,
       tags: pool.tags ?? [],
-      riskScore: pool.riskScore ?? 0,
+      riskScore: pool.riskScore ?? undefined,
       approvalSignaturesTaskId: pool.approvalSignaturesTaskId ?? undefined,
       approvalSignaturesTaskExpired: pool.approvalSignaturesTaskExpired ?? undefined,
       createdAt: pool.createdAt,

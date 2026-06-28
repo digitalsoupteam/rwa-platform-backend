@@ -10,7 +10,7 @@ export const poolSchema = t.Object({
   description: t.String(),
   chainId: t.String(),
   tags: t.Array(t.String()),
-  riskScore: t.Number(),
+  riskScore: t.Optional(t.Number()),
   image: t.Optional(t.String()),
 
   // Contract Addresses
@@ -154,8 +154,11 @@ export const editPoolRequest = t.Object({
 });
 export const editPoolResponse = poolSchema;
 
-export const updatePoolRiskScoreRequest = t.Pick(poolSchema, ['id']);
-export const updatePoolRiskScoreResponse = poolSchema;
+export const setPoolRiskScoreRequest = t.Object({
+  id: t.String(),
+  riskScore: t.Number({ minimum: 1, maximum: 100 }),
+});
+export const setPoolRiskScoreResponse = poolSchema;
 
 export const requestPoolApprovalSignaturesRequest = t.Object({
   id: t.String(),

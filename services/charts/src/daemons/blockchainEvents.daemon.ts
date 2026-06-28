@@ -3,7 +3,7 @@ import type { BlockchainEvent, EventRouting } from '@shared/blockchain-daemon/sr
 import { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
 import { ChartsService } from '../services/charts.service';
 import { TransactionsService } from '../services/transactions.service';
-import { PoolTransactionType } from '../models/entity/poolTransaction.entity';
+import { PoolTransactionType } from '../models/shared/enums.model';
 
 export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
   constructor(

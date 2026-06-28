@@ -10,7 +10,17 @@ export class ImageRepository {
   async create(
     data: { galleryId: Types.ObjectId | string } & Pick<
       IImageEntity,
-      'name' | 'description' | 'fileId' | 'path' | 'mimeType' | 'size' | 'ownerId' | 'ownerType' | 'creator' | 'parentId' | 'grandParentId'
+      | 'name'
+      | 'description'
+      | 'fileId'
+      | 'path'
+      | 'mimeType'
+      | 'size'
+      | 'ownerId'
+      | 'ownerType'
+      | 'creator'
+      | 'parentId'
+      | 'grandParentId'
     >,
   ) {
     const doc = await this.model.create(data);

@@ -47,6 +47,33 @@ services:
       mongodb:
         condition: service_healthy
 
+  ai-evaluator:
+    container_name: ai-evaluator
+    #restart: unless-stopped
+    build:
+      context: ../..
+      dockerfile: services/ai-evaluator/Dockerfile
+    environment:
+      <<: [*mongo-env, *monitoring-env, *openrouter-env]
+      SERVICE_NAME: ${AI_EVALUATOR_SERVICE_NAME}
+      SERVICE_VERSION: ${AI_EVALUATOR_SERVICE_VERSION}
+      MONGODB_DBNAME: ${AI_EVALUATOR_MONGODB_DBNAME}
+      OTEL_SERVICE_NAME: ${AI_EVALUATOR_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${AI_EVALUATOR_SERVICE_NAME},service.version=${AI_EVALUATOR_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
+      PORT: ${AI_EVALUATOR_PORT}
+      RWA_SERVICE_URL: ${RWA_SERVICE_URL}
+      DOCUMENTS_SERVICE_URL: ${DOCUMENTS_SERVICE_URL}
+      GALLERY_SERVICE_URL: ${GALLERY_SERVICE_URL}
+      REACTIONS_SERVICE_URL: ${REACTIONS_SERVICE_URL}
+      QUESTIONS_SERVICE_URL: ${QUESTIONS_SERVICE_URL}
+      PORTFOLIO_SERVICE_URL: ${PORTFOLIO_SERVICE_URL}
+    volumes: *monitoring-volumes
+    networks:
+      - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
   auth:
     container_name: auth
     #restart: unless-stopped
@@ -351,6 +378,7 @@ services:
       REACTIONS_SERVICE_URL: ${REACTIONS_SERVICE_URL}
       LOYALTY_SERVICE_URL: ${LOYALTY_SERVICE_URL}
       DAO_SERVICE_URL: ${DAO_SERVICE_URL}
+      AI_EVALUATOR_SERVICE_URL: ${AI_EVALUATOR_SERVICE_URL}
       PROMETHEUS_URL: ${PROMETHEUS_URL}
       LOKI_URL: ${LOKI_URL}
       REDIS_URL: ${REDIS_URL}
@@ -365,6 +393,8 @@ services:
       auth:
         condition: service_started
       rwa:
+        condition: service_started
+      ai-evaluator:
         condition: service_started
 
   portfolio:

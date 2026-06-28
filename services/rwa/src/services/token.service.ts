@@ -48,7 +48,7 @@ export class TokenService {
         business: {
           id: business._id.toString(),
           name: business.name,
-          riskScore: business.riskScore,
+          riskScore: business.riskScore ?? undefined,
         },
         pool: {
           address: pool.poolAddress || undefined,

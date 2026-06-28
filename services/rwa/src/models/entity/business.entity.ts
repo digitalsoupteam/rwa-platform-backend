@@ -1,5 +1,6 @@
 import mongoose, { Schema, Types } from 'mongoose';
 import type { InferRawDocType } from 'mongoose';
+import { BusinessTypeList } from '../shared/enums.model';
 
 const businessSchemaDefinition = {
   ownerId: {
@@ -40,8 +41,7 @@ const businessSchemaDefinition = {
   },
   riskScore: {
     type: Number,
-    default: 100,
-    min: 0,
+    min: 1,
     max: 100,
   },
   image: {
@@ -60,7 +60,7 @@ const businessSchemaDefinition = {
   },
   businessType: {
     type: String,
-    enum: ['growth', 'startup', 'franchise'],
+    enum: BusinessTypeList,
     trim: true,
   },
   socials: {

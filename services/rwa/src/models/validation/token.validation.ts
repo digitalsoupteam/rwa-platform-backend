@@ -3,7 +3,7 @@ import { t } from 'elysia';
 const businessPropertiesSchema = t.Object({
   id: t.String(),
   name: t.String(),
-  riskScore: t.Number(),
+  riskScore: t.Optional(t.Number()),
 });
 
 const poolPropertiesSchema = t.Object({

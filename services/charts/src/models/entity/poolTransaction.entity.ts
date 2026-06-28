@@ -1,10 +1,6 @@
 import mongoose, { Schema, Types } from 'mongoose';
 import type { InferRawDocType } from 'mongoose';
-
-export enum PoolTransactionType {
-  MINT = 'MINT',
-  BURN = 'BURN',
-}
+import { PoolTransactionTypeList } from '../shared/enums.model';
 
 const poolTransactionSchemaDefinition = {
   poolAddress: {
@@ -14,7 +10,7 @@ const poolTransactionSchemaDefinition = {
   },
   transactionType: {
     type: String,
-    enum: Object.values(PoolTransactionType),
+    enum: PoolTransactionTypeList,
     required: true,
   },
   userAddress: {

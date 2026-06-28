@@ -1,9 +1,10 @@
 import { t } from 'elysia';
+import { poolTransactionTypeSchema } from '../shared/enums.model';
 
 export const poolTransactionSchema = t.Object({
   id: t.String(),
   poolAddress: t.String(),
-  transactionType: t.Union([t.Literal('MINT'), t.Literal('BURN')]),
+  transactionType: poolTransactionTypeSchema,
   userAddress: t.String(),
   timestamp: t.Number(),
   rwaAmount: t.String(),

@@ -1,4 +1,5 @@
 import { t } from 'elysia';
+import { businessTypeSchema } from '../shared/enums.model';
 
 /*
  * Shared schemas
@@ -21,12 +22,12 @@ export const businessSchema = t.Object({
   tokenAddress: t.Optional(t.String()),
   description: t.Optional(t.String()),
   tags: t.Optional(t.Array(t.String())),
-  riskScore: t.Number(),
+  riskScore: t.Optional(t.Number()),
   image: t.Optional(t.String()),
   approvalSignaturesTaskId: t.Optional(t.String()),
   approvalSignaturesTaskExpired: t.Optional(t.Number()),
   country: t.Optional(t.String()),
-  businessType: t.Optional(t.String()),
+  businessType: t.Optional(businessTypeSchema),
   socials: t.Array(socialLinkSchema),
   paused: t.Boolean(),
   createdAt: t.Number(),
@@ -67,8 +68,11 @@ export const editBusinessResponse = businessSchema;
 /*
  * Update Risk Score
  */
-export const updateBusinessRiskScoreRequest = t.Pick(businessSchema, ['id']);
-export const updateBusinessRiskScoreResponse = businessSchema;
+export const setBusinessRiskScoreRequest = t.Object({
+  id: t.String(),
+  riskScore: t.Number({ minimum: 1, maximum: 100 }),
+});
+export const setBusinessRiskScoreResponse = businessSchema;
 
 /*
  * Request Approval Signatures

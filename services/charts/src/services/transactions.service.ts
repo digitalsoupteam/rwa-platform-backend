@@ -1,6 +1,6 @@
 import { AppError } from '@shared/errors/app-errors';
 import { PoolTransactionRepository } from '../repositories/poolTransaction.repository';
-import { PoolTransactionType } from '../models/entity/poolTransaction.entity';
+import { PoolTransactionType } from '../models/shared/enums.model';
 import type { SortOrder } from 'mongoose';
 import { ChartEventsClient } from '../clients/redis.client';
 import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';

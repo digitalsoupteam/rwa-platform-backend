@@ -58,6 +58,9 @@ export const CONFIG = {
     DAO: {
       URL: String(process.env.DAO_SERVICE_URL),
     },
+    AI_EVALUATOR: {
+      URL: String(process.env.AI_EVALUATOR_SERVICE_URL),
+    },
   },
 
   MONITORING: {

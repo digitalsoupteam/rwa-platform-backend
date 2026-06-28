@@ -21,7 +21,7 @@ type Business {
   tokenAddress: String
   description: String
   tags: [String!]
-  riskScore: Float!
+  riskScore: Int
   image: String
   approvalSignaturesTaskId: String
   approvalSignaturesTaskExpired: Float
@@ -43,7 +43,7 @@ type Pool {
   description: String
   chainId: String!
   tags: [String!]
-  riskScore: Float!
+  riskScore: Int
   image: String
 
   # Contract Addresses
@@ -261,7 +261,6 @@ extend type Mutation {
   createBusinessWithAI(input: CreateBusinessWithAIInput!): Business!
   createBusiness(input: CreateBusinessInput!): Business!
   editBusiness(input: EditBusinessInput!): Business!
-  updateBusinessRiskScore(id: ID!): Business!
   requestBusinessApprovalSignatures(input: RequestBusinessApprovalSignaturesInput!): ApprovalSignaturesResponse!
   rejectBusinessApprovalSignatures(id: ID!): Boolean!
 
@@ -269,7 +268,6 @@ extend type Mutation {
   createPoolWithAI(input: CreatePoolWithAIInput!): Pool!
   createPool(input: CreatePoolInput!): Pool!
   editPool(input: EditPoolInput!): Pool!
-  updatePoolRiskScore(id: ID!): Pool!
   requestPoolApprovalSignatures(input: RequestPoolApprovalSignaturesInput!): ApprovalSignaturesResponse!
   rejectPoolApprovalSignatures(id: ID!): Boolean!
 }

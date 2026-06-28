@@ -1,0 +1,16 @@
+import { Elysia } from 'elysia';
+import type { ServicesPlugin } from '../plugins/services.plugin';
+import { getEvaluationRequest, getEvaluationResponse } from '../models/validation/evaluation.validation';
+
+export const getEvaluationController = (servicesPlugin: ServicesPlugin) => {
+  return new Elysia({ name: 'GetEvaluationController' }).use(servicesPlugin).post(
+    '/getEvaluation',
+    async ({ body, riskEvaluationService }) => {
+      return await riskEvaluationService.getEvaluation(body);
+    },
+    {
+      body: getEvaluationRequest,
+      response: getEvaluationResponse,
+    },
+  );
+};

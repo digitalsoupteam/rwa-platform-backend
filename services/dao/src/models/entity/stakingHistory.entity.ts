@@ -1,5 +1,6 @@
 import mongoose, { Schema, Types } from 'mongoose';
 import type { InferRawDocType } from 'mongoose';
+import { StakingOperationList } from '../shared/enums.model';
 
 const stakingHistorySchemaDefinition = {
   staker: {
@@ -14,7 +15,7 @@ const stakingHistorySchemaDefinition = {
   operation: {
     type: String,
     required: true,
-    enum: ['staked', 'unstaked'],
+    enum: StakingOperationList,
   },
 
   // Blockchain metadata

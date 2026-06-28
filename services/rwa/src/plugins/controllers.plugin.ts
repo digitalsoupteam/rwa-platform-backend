@@ -3,7 +3,7 @@ import { Elysia } from 'elysia';
 import { createBusinessController } from '../controllers/business/createBusiness.controller';
 import { getTokenMetadataController } from '../controllers/token/getTokenMetadata.controller';
 import { editBusinessController } from '../controllers/business/editBusiness.controller';
-import { updateBusinessRiskScoreController } from '../controllers/business/updateBusinessRiskScore.controller';
+import { setBusinessRiskScoreController } from '../controllers/business/setBusinessRiskScore.controller';
 import { requestBusinessApprovalSignaturesController } from '../controllers/business/requestBusinessApprovalSignatures.controller';
 import { rejectBusinessApprovalSignaturesController } from '../controllers/business/rejectBusinessApprovalSignatures.controller';
 import { getBusinessController } from '../controllers/business/getBusiness.controller';
@@ -12,7 +12,7 @@ import { createBusinessWithAIController } from '../controllers/business/createBu
 
 import { createPoolController } from '../controllers/pool/createPool.controller';
 import { editPoolController } from '../controllers/pool/editPool.controller';
-import { updatePoolRiskScoreController } from '../controllers/pool/updatePoolRiskScore.controller';
+import { setPoolRiskScoreController } from '../controllers/pool/setPoolRiskScore.controller';
 import { requestPoolApprovalSignaturesController } from '../controllers/pool/requestPoolApprovalSignatures.controller';
 import { rejectPoolApprovalSignaturesController } from '../controllers/pool/rejectPoolApprovalSignatures.controller';
 import { getPoolController } from '../controllers/pool/getPool.controller';
@@ -30,8 +30,8 @@ export const createControllersPlugin = (servicesPlugin: ServicesPlugin) => {
     editBusinessController(servicesPlugin),
   );
 
-  const updateBusinessRiskScoreCtrl = withTraceSync('rwa.init.controllers.update_business_risk_score', () =>
-    updateBusinessRiskScoreController(servicesPlugin),
+  const setBusinessRiskScoreCtrl = withTraceSync('rwa.init.controllers.set_business_risk_score', () =>
+    setBusinessRiskScoreController(servicesPlugin),
   );
 
   const requestBusinessApprovalSignaturesCtrl = withTraceSync(
@@ -60,8 +60,8 @@ export const createControllersPlugin = (servicesPlugin: ServicesPlugin) => {
 
   const editPoolCtrl = withTraceSync('rwa.init.controllers.edit_pool', () => editPoolController(servicesPlugin));
 
-  const updatePoolRiskScoreCtrl = withTraceSync('rwa.init.controllers.update_pool_risk_score', () =>
-    updatePoolRiskScoreController(servicesPlugin),
+  const setPoolRiskScoreCtrl = withTraceSync('rwa.init.controllers.set_pool_risk_score', () =>
+    setPoolRiskScoreController(servicesPlugin),
   );
 
   const requestPoolApprovalSignaturesCtrl = withTraceSync('rwa.init.controllers.request_pool_approval_signatures', () =>
@@ -89,7 +89,7 @@ export const createControllersPlugin = (servicesPlugin: ServicesPlugin) => {
       // Business controllers
       .use(createBusinessCtrl)
       .use(editBusinessCtrl)
-      .use(updateBusinessRiskScoreCtrl)
+      .use(setBusinessRiskScoreCtrl)
       .use(requestBusinessApprovalSignaturesCtrl)
       .use(rejectBusinessApprovalSignaturesCtrl)
       .use(getBusinessCtrl)
@@ -98,7 +98,7 @@ export const createControllersPlugin = (servicesPlugin: ServicesPlugin) => {
       // Pool controllers
       .use(createPoolCtrl)
       .use(editPoolCtrl)
-      .use(updatePoolRiskScoreCtrl)
+      .use(setPoolRiskScoreCtrl)
       .use(requestPoolApprovalSignaturesCtrl)
       .use(rejectPoolApprovalSignaturesCtrl)
       .use(getPoolCtrl)

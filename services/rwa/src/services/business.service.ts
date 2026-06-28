@@ -249,84 +249,17 @@ Response format:
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({
-    args: (a) => ({ id: a[0] }),
+    args: (a) => ({ id: a[0].id, riskScore: a[0].riskScore }),
   })
-  async updateRiskScore(id: string) {
-    setSpanAttributes({ entityId: id, entityType: 'business' });
-    const business = await this.businessRepository.findById(id);
-
-    if (!business.name || !business.description || !business.tags?.length) {
+  async setRiskScore({ id, riskScore }: { id: string; riskScore: number }) {
+    setSpanAttributes({ entityId: id, entityType: 'business', riskScore });
+    if (riskScore < 1 || riskScore > 100) {
       throw new AppError({
-        message: 'Business name, description and tags are required for risk assessment',
+        message: 'riskScore must be between 1 and 100',
         statusCode: 400,
         code: 'VALIDATION_ERROR',
       });
     }
-
-    const systemMessage = `You are a risk assessment expert. Analyze the business information and provide a risk score from 1 to 100.
-
-Business Name: ${business.name}"
-Description: ${business.description}
-Tags: ${business.tags.join(', ')}
-
-Consider these factors:
-- Business model viability
-- Market competition and conditions
-- Regulatory compliance risks
-- Financial stability indicators
-- Operational risks and scalability
-- Management team experience
-- Industry-specific challenges
-- Market positioning and branding
-- Technology and innovation potential
-- Target market size and accessibility
-
-Provide your response in EXACTLY this format:
-RISK_SCORE: [number between 1-100]
-REASONING: [brief explanation]
-
-Example response:
-RISK_SCORE: 45
-REASONING: Moderate risk due to competitive market, but strong business model and experienced team`;
-
-    const response = await this.openRouterClient.chatCompletion({
-      model: this.openRouterModel,
-      messages: [
-        { role: 'system', content: systemMessage },
-        {
-          role: 'user',
-          content: 'Please analyze the provided business information and assess its risk score.',
-        },
-      ],
-    });
-
-    const aiResponse = response.choices[0]?.message?.content;
-    if (!aiResponse) {
-      throw new AppError({
-        message: 'Failed to get AI response for risk assessment',
-        statusCode: 502,
-        code: 'AI_ERROR',
-      });
-    }
-
-    const match = aiResponse.match(/RISK_SCORE:\s*(\d+)/);
-    if (!match) {
-      throw new AppError({
-        message: 'Failed to parse risk score from AI response',
-        statusCode: 502,
-        code: 'AI_ERROR',
-      });
-    }
-
-    const riskScore = parseInt(match[1]);
-    if (isNaN(riskScore) || riskScore < 1 || riskScore > 100) {
-      throw new AppError({
-        message: 'Invalid risk score received from AI assessment',
-        statusCode: 502,
-        code: 'AI_ERROR',
-      });
-    }
-
     const updated = await this.businessRepository.updateBusiness(id, {
       riskScore,
     });
@@ -474,7 +407,7 @@ REASONING: Moderate risk due to competitive market, but strong business model an
       tokenAddress: business.tokenAddress ?? undefined,
       description: business.description,
       tags: business.tags,
-      riskScore: business.riskScore,
+      riskScore: business.riskScore ?? undefined,
       image: business.image ?? undefined,
       approvalSignaturesTaskId: business.approvalSignaturesTaskId ?? undefined,
       approvalSignaturesTaskExpired: business.approvalSignaturesTaskExpired ?? undefined,

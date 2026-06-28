@@ -1,4 +1,5 @@
 import { t } from 'elysia';
+import { proposalStateSchema, stakingOperationSchema } from '../shared/enums.model';
 
 /*
  * Entity schemas
@@ -12,7 +13,7 @@ export const proposalSchema = t.Object({
   description: t.String(),
   startTime: t.Number(),
   endTime: t.Number(),
-  state: t.String(),
+  state: proposalStateSchema,
   chainId: t.String(),
   transactionHash: t.String(),
   logIndex: t.Number(),
@@ -40,7 +41,7 @@ export const stakingHistorySchema = t.Object({
   id: t.String(),
   staker: t.String(),
   amount: t.String(),
-  operation: t.String(),
+  operation: stakingOperationSchema,
   chainId: t.String(),
   transactionHash: t.String(),
   logIndex: t.Number(),
