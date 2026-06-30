@@ -7,6 +7,7 @@ import type { SortOrder } from 'mongoose';
 import { PoolEventsClient } from '../clients/poolEvents.client';
 import type { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
 import type { EvaluationRequestsClient } from '../clients/evaluationRequests.client';
+import type { WebhookEventsPublisher } from '@shared/webhooks/src';
 import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
 import { LogDecorator } from '@shared/monitoring/src/logDecorator';
@@ -20,6 +21,7 @@ export class PoolService {
     private readonly poolEventsClient: PoolEventsClient,
     private readonly rabbitMQClient: RabbitMQClient,
     private readonly evaluationRequestsClient: EvaluationRequestsClient,
+    private readonly webhookEventsPublisher: WebhookEventsPublisher,
     private readonly supportedNetworks: {
       chainId: string;
       name: string;
@@ -690,7 +692,19 @@ Example response:
     }
 
     const pool = await this.poolRepository.createPool(data);
-    return this.mapPool(pool);
+    const poolDto = this.mapPool(pool);
+
+    await this.webhookEventsPublisher.publish('pool.created', {
+      poolId: poolDto.id,
+      ownerId: poolDto.ownerId,
+      ownerType: poolDto.ownerType,
+      name: poolDto.name,
+      chainId: poolDto.chainId,
+      businessId: poolDto.businessId,
+      rwaAddress: poolDto.rwaAddress,
+    });
+
+    return poolDto;
   }
 
   @TraceDecorator()
@@ -870,6 +884,18 @@ Example response:
     const poolDto = this.mapPool(updated);
 
     await this.poolEventsClient.publishPoolDeployed(poolDto);
+
+    await this.webhookEventsPublisher.publish('pool.staked', {
+      poolId: poolDto.id,
+      poolAddress: poolDto.poolAddress,
+      ownerId: poolDto.ownerId,
+      ownerWallet: event.owner,
+      holdToken: poolDto.holdToken,
+      rwaAddress: poolDto.rwaAddress,
+      tokenId: poolDto.tokenId,
+      expectedHoldAmount: poolDto.expectedHoldAmount,
+      expectedRwaAmount: poolDto.expectedRwaAmount,
+    });
 
     return poolDto;
   }

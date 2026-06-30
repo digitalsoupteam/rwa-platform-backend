@@ -97,6 +97,36 @@ services:
       mongodb:
         condition: service_healthy
 
+  webhooks:
+    container_name: webhooks
+    #restart: unless-stopped
+    build:
+      context: ../..
+      dockerfile: services/webhooks/Dockerfile
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      <<: [*mongo-env, *monitoring-env, *rabbit-env]
+      SERVICE_NAME: ${WEBHOOKS_SERVICE_NAME}
+      SERVICE_VERSION: ${WEBHOOKS_SERVICE_VERSION}
+      MONGODB_DBNAME: ${WEBHOOKS_MONGODB_DBNAME}
+      OTEL_SERVICE_NAME: ${WEBHOOKS_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${WEBHOOKS_SERVICE_NAME},service.version=${WEBHOOKS_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
+      PORT: ${WEBHOOKS_PORT}
+      REDIS_URL: ${REDIS_URL}
+      WEBHOOKS_ENCRYPTION_KEY: ${WEBHOOKS_ENCRYPTION_KEY}
+      NODE_TLS_REJECT_UNAUTHORIZED: ${NODE_TLS_REJECT_UNAUTHORIZED:-0}
+    volumes: *monitoring-volumes
+    networks:
+      - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   auth:
     container_name: auth
     #restart: unless-stopped
@@ -403,6 +433,7 @@ services:
       DAO_SERVICE_URL: ${DAO_SERVICE_URL}
       AI_EVALUATOR_SERVICE_URL: ${AI_EVALUATOR_SERVICE_URL}
       API_KEYS_SERVICE_URL: ${API_KEYS_SERVICE_URL}
+      WEBHOOKS_SERVICE_URL: ${WEBHOOKS_SERVICE_URL}
       PROMETHEUS_URL: ${PROMETHEUS_URL}
       LOKI_URL: ${LOKI_URL}
       REDIS_URL: ${REDIS_URL}

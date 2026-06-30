@@ -8,6 +8,7 @@ import type { SortOrder } from 'mongoose';
 import type { SignersManagerClient } from '../clients/eden.clients';
 import type { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
 import type { EvaluationRequestsClient } from '../clients/evaluationRequests.client';
+import type { WebhookEventsPublisher } from '@shared/webhooks/src';
 import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
 import { LogDecorator } from '@shared/monitoring/src/logDecorator';
@@ -26,6 +27,7 @@ export class BusinessService {
     private readonly signersManagerClient: SignersManagerClient,
     private readonly rabbitMQClient: RabbitMQClient,
     private readonly evaluationRequestsClient: EvaluationRequestsClient,
+    private readonly webhookEventsPublisher: WebhookEventsPublisher,
     private readonly supportedNetworks: NetworkConfig[],
     private readonly openRouterModel: string,
   ) {}
@@ -441,7 +443,19 @@ Response format:
       ownerWallet: eventData.owner,
     });
 
-    return this.mapBusiness(updated);
+    const businessDto = this.mapBusiness(updated);
+
+    await this.webhookEventsPublisher.publish('business.created', {
+      businessId: businessDto.id,
+      ownerId: businessDto.ownerId,
+      ownerType: businessDto.ownerType,
+      ownerWallet: businessDto.ownerWallet,
+      tokenAddress: businessDto.tokenAddress,
+      chainId: businessDto.chainId,
+      name: businessDto.name,
+    });
+
+    return businessDto;
   }
 
   private mapBusiness(business: IBusinessEntity) {

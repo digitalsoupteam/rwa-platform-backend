@@ -17,6 +17,7 @@ import { loyaltyResolvers } from './loyalty/resolvers';
 import { daoResolvers } from './dao/resolvers';
 import { aiEvaluatorResolvers } from './ai-evaluator/resolvers';
 import { apiKeysResolvers } from './api-keys/resolvers';
+import { webhooksResolvers } from './webhooks/resolvers';
 
 export const resolvers = mergeResolvers([
   authResolvers,
@@ -37,4 +38,5 @@ export const resolvers = mergeResolvers([
   daoResolvers,
   aiEvaluatorResolvers,
   apiKeysResolvers,
+  webhooksResolvers,
 ]);

@@ -7,6 +7,7 @@ import { RedisEventsClient } from '@shared/redis-events/src/redis-events.client'
 import { PoolEventsClient } from '../clients/poolEvents.client';
 import { EvaluationResultsClient } from '../clients/evaluationResults.client';
 import { EvaluationRequestsClient } from '../clients/evaluationRequests.client';
+import { WebhookEventsPublisher } from '@shared/webhooks/src';
 import { withTraceSync, withTraceAsync } from '@shared/monitoring/src/tracing';
 
 export const createClientsPlugin = async (
@@ -55,11 +56,17 @@ export const createClientsPlugin = async (
     () => new EvaluationRequestsClient(rabbitMQClient),
   );
 
+  const webhookEventsPublisher = withTraceSync(
+    'rwa.init.clients.webhook_events',
+    () => new WebhookEventsPublisher(rabbitMQClient),
+  );
+
   await withTraceAsync('rwa.init.clients.rabbitmq_connect', async () => {
     logger.debug('Initializing clients');
     await rabbitMQClient.connect();
     await evaluationResultsClient.initialize();
     await evaluationRequestsClient.initialize();
+    await webhookEventsPublisher.initialize();
     logger.info('RabbitMQ client connected, evaluation results and requests queues initialized');
   });
 
@@ -72,6 +79,7 @@ export const createClientsPlugin = async (
       .decorate('rabbitMQClient', rabbitMQClient)
       .decorate('evaluationResultsClient', evaluationResultsClient)
       .decorate('evaluationRequestsClient', evaluationRequestsClient)
+      .decorate('webhookEventsPublisher', webhookEventsPublisher)
       .onStop(async () => {
         await withTraceAsync('rwa.stop.clients', async () => {
           await rabbitMQClient.disconnect();
