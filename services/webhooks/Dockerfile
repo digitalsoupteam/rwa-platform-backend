@@ -8,6 +8,7 @@ COPY package.json .
 COPY shared/monitoring/package.json ./shared/monitoring/
 COPY shared/errors/package.json ./shared/errors/
 COPY shared/rabbitmq/package.json ./shared/rabbitmq/
+COPY shared/webhooks/package.json ./shared/webhooks/
 
 COPY services/webhooks/package.json ./services/webhooks/
 

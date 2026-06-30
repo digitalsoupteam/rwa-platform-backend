@@ -6,8 +6,8 @@ type WebhookEndpoint {
   description: String
   active: Boolean!
   rateLimitPerMinute: Int!
-  createdAt: String!
-  updatedAt: String!
+  createdAt: Float!
+  updatedAt: Float!
 }
 
 type CreateWebhookEndpointResult {
@@ -18,7 +18,7 @@ type CreateWebhookEndpointResult {
   active: Boolean!
   rateLimitPerMinute: Int!
   secret: String!
-  createdAt: String!
+  createdAt: Float!
 }
 
 input CreateWebhookEndpointInput {

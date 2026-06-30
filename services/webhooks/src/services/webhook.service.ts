@@ -66,6 +66,8 @@ export class WebhookService {
 
     return {
       id: doc._id.toString(),
+      userId: doc.userId,
+      wallet: doc.wallet,
       url: doc.url,
       events: doc.events,
       description: doc.description,
@@ -73,6 +75,7 @@ export class WebhookService {
       rateLimitPerMinute: doc.rateLimitPerMinute,
       secret: rawSecret,
       createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
     };
   }
 
@@ -86,6 +89,8 @@ export class WebhookService {
     const docs = await this.endpointRepository.findAll({ userId: data.userId });
     return docs.map((doc) => ({
       id: doc._id.toString(),
+      userId: doc.userId,
+      wallet: doc.wallet,
       url: doc.url,
       events: doc.events,
       description: doc.description,
@@ -174,6 +179,8 @@ export class WebhookService {
 
     return {
       id: doc._id.toString(),
+      userId: doc.userId,
+      wallet: doc.wallet,
       url: doc.url,
       events: doc.events,
       description: doc.description,

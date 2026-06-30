@@ -11,6 +11,7 @@ COPY shared/rabbitmq/package.json ./shared/rabbitmq/
 COPY shared/blockchain-daemon/package.json ./shared/blockchain-daemon/
 COPY shared/redis-events/package.json ./shared/redis-events/
 COPY shared/errors/package.json ./shared/errors/
+COPY shared/webhooks/package.json ./shared/webhooks/
 
 COPY services/rwa/package.json ./services/rwa/
 
