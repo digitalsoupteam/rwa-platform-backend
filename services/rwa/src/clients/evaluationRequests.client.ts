@@ -14,7 +14,10 @@ export class EvaluationRequestsClient {
   }
 
   @TraceDecorator()
-  async publishEvaluationRequest(method: 'evaluatePool' | 'evaluateBusiness', args: Record<string, unknown>): Promise<void> {
+  async publishEvaluationRequest(
+    method: 'evaluatePool' | 'evaluateBusiness',
+    args: Record<string, unknown>,
+  ): Promise<void> {
     await this.rabbitClient.sendToQueue(this.EVALUATION_REQUESTS_QUEUE, { method, args });
   }
 }

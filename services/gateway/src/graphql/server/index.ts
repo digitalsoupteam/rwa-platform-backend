@@ -4,7 +4,7 @@ import { loadFilesSync } from '@graphql-tools/load-files';
 import { mergeTypeDefs } from '@graphql-tools/merge';
 import { join } from 'path';
 import { resolvers } from '../modules';
-import { extractFromToken } from '../../utils/jwt.utils';
+import { userResolverService } from '../../services/services.init';
 import {
   authClient,
   aiAssistantClient,
@@ -24,6 +24,7 @@ import {
   loyaltyClient,
   daoClient,
   aiEvaluatorClient,
+  apiKeysClient,
 } from '../../clients/eden.clients';
 import type { GraphQLContext, User } from '../context/types';
 import { cacheService, ownershipService, parentService, validationService } from '../../services/services.init';
@@ -66,7 +67,7 @@ export const yogaServer = createYoga({
     error: (...args: any[]) => logger.error(String(args[0]), args[1]),
   },
   maskedErrors: false,
-  context({ request }) {
+  async context({ request }) {
     const traceparent = request.headers.get('traceparent');
     const tracestate = request.headers.get('tracestate');
 
@@ -83,7 +84,7 @@ export const yogaServer = createYoga({
 
     let user: User | null = null;
     if (token) {
-      const userData = extractFromToken(token);
+      const userData = await userResolverService.resolveUser(token);
       if (userData) {
         user = {
           id: userData.userId,
@@ -112,6 +113,7 @@ export const yogaServer = createYoga({
         loyaltyClient,
         daoClient,
         aiEvaluatorClient,
+        apiKeysClient,
       },
       services: {
         cache: cacheService,

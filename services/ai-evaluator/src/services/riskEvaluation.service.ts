@@ -149,7 +149,12 @@ export class RiskEvaluationService {
     offset?: number;
   }) {
     setSpanAttributes({ filterKeys: Object.keys(params.filter).join(',') });
-    const evaluations = await this.evaluationRepository.findAll(params.filter, params.sort, params.limit, params.offset);
+    const evaluations = await this.evaluationRepository.findAll(
+      params.filter,
+      params.sort,
+      params.limit,
+      params.offset,
+    );
     return evaluations.map((e) => this.mapEvaluation(e));
   }
 
@@ -237,9 +242,7 @@ If you don't need any ${fileTypes}, return empty arrays.`;
       }
     }
 
-    const selectedFiles = files.filter(
-      (f) => requestedDocIds.includes(f.id) || requestedImgIds.includes(f.id),
-    );
+    const selectedFiles = files.filter((f) => requestedDocIds.includes(f.id) || requestedImgIds.includes(f.id));
 
     return { llmResponse, selectedFiles };
   }
@@ -313,7 +316,12 @@ riskScore must be an integer between 1 and 100. 0 is not allowed.`,
     };
   }
 
-  private async saveResult(evaluationId: string, entityType: 'pool' | 'business', entityId: string, result: Awaited<ReturnType<typeof this.evaluate>>) {
+  private async saveResult(
+    evaluationId: string,
+    entityType: 'pool' | 'business',
+    entityId: string,
+    result: Awaited<ReturnType<typeof this.evaluate>>,
+  ) {
     const { riskScore, reasoning, factors, llmResponse, selectionResponse, selectedFiles } = result;
 
     const evaluatedDocuments = selectedFiles
@@ -381,9 +389,7 @@ Tags: ${business.tags?.join(', ') ?? 'N/A'}`,
       .map((p: any) => `- ${p.name}: riskScore=${p.riskScore ?? 'not yet evaluated'}, deployed=${!!p.poolAddress}`);
 
     return {
-      text: siblings.length > 0
-        ? `Sibling pools:\n${siblings.join('\n')}`
-        : 'Sibling pools: none',
+      text: siblings.length > 0 ? `Sibling pools:\n${siblings.join('\n')}` : 'Sibling pools: none',
     };
   }
 
@@ -396,13 +402,12 @@ Tags: ${business.tags?.join(', ') ?? 'N/A'}`,
         code: 'UPSTREAM_ERROR',
       });
     }
-    const pools = response.data.map((p: any) =>
-      `- ${p.name}: riskScore=${p.riskScore ?? 'not yet evaluated'}, deployed=${!!p.poolAddress}`);
+    const pools = response.data.map(
+      (p: any) => `- ${p.name}: riskScore=${p.riskScore ?? 'not yet evaluated'}, deployed=${!!p.poolAddress}`,
+    );
 
     return {
-      text: pools.length > 0
-        ? `Pools of this business:\n${pools.join('\n')}`
-        : 'Pools: none',
+      text: pools.length > 0 ? `Pools of this business:\n${pools.join('\n')}` : 'Pools: none',
     };
   }
 
@@ -416,13 +421,17 @@ Tags: ${business.tags?.join(', ') ?? 'N/A'}`,
       });
     }
     const files = response.data.map((d: any) => ({
-      id: d.id, name: d.name, mimeType: d.mimeType, url: d.url,
+      id: d.id,
+      name: d.name,
+      mimeType: d.mimeType,
+      url: d.url,
     }));
 
     return {
-      text: files.length > 0
-        ? `Documents:\n${files.map((f) => `- id=${f.id}, name=${f.name}, mimeType=${f.mimeType}`).join('\n')}`
-        : 'Documents: none exist',
+      text:
+        files.length > 0
+          ? `Documents:\n${files.map((f) => `- id=${f.id}, name=${f.name}, mimeType=${f.mimeType}`).join('\n')}`
+          : 'Documents: none exist',
       files,
     };
   }
@@ -437,13 +446,17 @@ Tags: ${business.tags?.join(', ') ?? 'N/A'}`,
       });
     }
     const files = response.data.map((i: any) => ({
-      id: i.id, name: i.name, mimeType: 'image/jpeg', url: i.url,
+      id: i.id,
+      name: i.name,
+      mimeType: 'image/jpeg',
+      url: i.url,
     }));
 
     return {
-      text: files.length > 0
-        ? `Images:\n${files.map((f) => `- id=${f.id}, name=${f.name}`).join('\n')}`
-        : 'Images: none exist',
+      text:
+        files.length > 0
+          ? `Images:\n${files.map((f) => `- id=${f.id}, name=${f.name}`).join('\n')}`
+          : 'Images: none exist',
       files,
     };
   }
@@ -462,9 +475,7 @@ Tags: ${business.tags?.join(', ') ?? 'N/A'}`,
     }
     const entries = Object.entries(response.data.reactions ?? {});
     return {
-      text: entries.length > 0
-        ? `Reactions: ${entries.map(([t, c]) => `${t}: ${c}`).join(', ')}`
-        : 'Reactions: none',
+      text: entries.length > 0 ? `Reactions: ${entries.map(([t, c]) => `${t}: ${c}`).join(', ')}` : 'Reactions: none',
     };
   }
 
@@ -494,9 +505,7 @@ Tags: ${business.tags?.join(', ') ?? 'N/A'}`,
       });
     }
     return {
-      text: response.data.length > 0
-        ? `Portfolio: ${response.data.length} investors`
-        : 'Portfolio: none',
+      text: response.data.length > 0 ? `Portfolio: ${response.data.length} investors` : 'Portfolio: none',
     };
   }
 

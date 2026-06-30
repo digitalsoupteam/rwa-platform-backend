@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
 import { AppError } from '@shared/errors/app-errors';
 import { ErrorHandlerPlugin } from '@shared/errors/error-handler.plugin';
-import { extractFromToken } from '../utils/jwt.utils';
+import { userResolverService } from '../services/services.init';
 import { filesClient, rwaClient } from '../clients/eden.clients';
 import { ownershipService } from '../services/services.init';
 import { CONFIG } from '../config';
@@ -18,7 +18,7 @@ export const uploadBusinessImageController = new Elysia({ name: 'UploadBusinessI
         throw new AppError({ message: 'Authentication required', statusCode: 401, code: 'UNAUTHORIZED' });
       }
 
-      const extracted = extractFromToken(token);
+      const extracted = await userResolverService.resolveUser(token);
       if (!extracted) {
         throw new AppError({ message: 'Authentication required', statusCode: 401, code: 'UNAUTHORIZED' });
       }

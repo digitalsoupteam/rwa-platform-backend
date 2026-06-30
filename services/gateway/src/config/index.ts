@@ -61,6 +61,9 @@ export const CONFIG = {
     AI_EVALUATOR: {
       URL: String(process.env.AI_EVALUATOR_SERVICE_URL),
     },
+    API_KEYS: {
+      URL: String(process.env.API_KEYS_SERVICE_URL),
+    },
   },
 
   MONITORING: {
@@ -77,7 +80,9 @@ export const CONFIG = {
     DOCUMENTS_MAX_FILE_SIZE: Number(process.env.DOCUMENTS_MAX_FILE_SIZE) || 26214400,
     GALLERY_ALLOWED_MIME_TYPES: (process.env.GALLERY_ALLOWED_MIME_TYPES || '').split(',').filter(Boolean),
     GALLERY_MAX_FILE_SIZE: Number(process.env.GALLERY_MAX_FILE_SIZE) || 5242880,
-    TOKEN_IMAGE_ALLOWED_MIME_TYPES: (process.env.TOKEN_IMAGE_ALLOWED_MIME_TYPES || 'image/png,image/jpeg,image/webp').split(',').filter(Boolean),
+    TOKEN_IMAGE_ALLOWED_MIME_TYPES: (process.env.TOKEN_IMAGE_ALLOWED_MIME_TYPES || 'image/png,image/jpeg,image/webp')
+      .split(',')
+      .filter(Boolean),
     TOKEN_IMAGE_MAX_FILE_SIZE: Number(process.env.TOKEN_IMAGE_MAX_FILE_SIZE) || 10485760,
   },
 };
