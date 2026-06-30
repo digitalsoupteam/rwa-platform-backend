@@ -1,7 +1,10 @@
 ---
-title: "RWA Platform Admin"
+title: "Slices"
 subtitle: "Infrastructure Dashboard"
 logo: "assets/logo.svg"
+header: false
+footer: '<p>Slices Platform — Infrastructure Dashboard</p>'
+theme: neon
 
 links:
   - name: "GitHub"
@@ -14,17 +17,31 @@ links:
 
 colors:
   light:
-    highlight-primary: "#0366d6"
-    highlight-secondary: "#0366d6"
-    highlight-hover: "#024ea3"
-    background: "#f0f2f5"
-    card-background: "#ffffff"
-    text: "#24292e"
-    text-header: "#1c1e21"
-    text-subtitle: "#6a737d"
-    card-shadow: "rgba(0,0,0,0.1)"
-    link: "#0366d6"
-    link-hover: "#024ea3"
+    highlight-primary: "#333333"
+    highlight-secondary: "#333333"
+    highlight-hover: "#2196F3"
+    background: "#333333"
+    card-background: "#3c3c3c"
+    text: "#ffffff"
+    text-header: "#ffffff"
+    text-title: "#ffffff"
+    text-subtitle: "#aaaaaa"
+    card-shadow: "rgba(0,0,0,0.4)"
+    link: "#2196F3"
+    link-hover: "#42a5f5"
+  dark:
+    highlight-primary: "#333333"
+    highlight-secondary: "#333333"
+    highlight-hover: "#2196F3"
+    background: "#333333"
+    card-background: "#3c3c3c"
+    text: "#ffffff"
+    text-header: "#ffffff"
+    text-title: "#ffffff"
+    text-subtitle: "#aaaaaa"
+    card-shadow: "rgba(0,0,0,0.4)"
+    link: "#2196F3"
+    link-hover: "#42a5f5"
 
 services:
   - name: "Access & Identity"
