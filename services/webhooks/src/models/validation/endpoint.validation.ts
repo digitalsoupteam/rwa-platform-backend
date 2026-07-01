@@ -26,7 +26,18 @@ export const createEndpointRequest = t.Composite([
   t.Partial(t.Pick(endpointSchema, ['description', 'rateLimitPerMinute'])),
 ]);
 export const createEndpointResponse = t.Composite([
-  t.Pick(endpointSchema, ['id', 'userId', 'wallet', 'url', 'events', 'description', 'active', 'rateLimitPerMinute', 'createdAt', 'updatedAt']),
+  t.Pick(endpointSchema, [
+    'id',
+    'userId',
+    'wallet',
+    'url',
+    'events',
+    'description',
+    'active',
+    'rateLimitPerMinute',
+    'createdAt',
+    'updatedAt',
+  ]),
   t.Object({ secret: t.String() }),
 ]);
 

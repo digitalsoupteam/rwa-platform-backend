@@ -12,7 +12,8 @@ interface EvaluationResult {
   evaluationId: string;
   entityType: string;
   entityId: string;
-  riskScore: number;
+  status: 'completed' | 'failed';
+  riskScore?: number;
 }
 
 export class EvaluationResultsDaemon {
@@ -38,7 +39,7 @@ export class EvaluationResultsDaemon {
     try {
       const result = JSON.parse(message.content.toString()) as EvaluationResult;
 
-      if (!result.evaluationId || !result.entityType || !result.entityId || !result.riskScore) {
+      if (!result.evaluationId || !result.entityType || !result.entityId || !result.status) {
         throw new AppError({
           message: 'Invalid evaluation result format',
           statusCode: 400,
@@ -46,22 +47,36 @@ export class EvaluationResultsDaemon {
         });
       }
 
-      if (result.entityType === 'pool') {
-        await this.poolService.setRiskScore({
-          id: result.entityId,
-          riskScore: result.riskScore,
-        });
-      } else if (result.entityType === 'business') {
-        await this.businessService.setRiskScore({
-          id: result.entityId,
-          riskScore: result.riskScore,
-        });
+      if (result.status === 'failed') {
+        if (result.entityType === 'pool') {
+          await this.poolService.resetEvaluation({ id: result.entityId });
+        } else if (result.entityType === 'business') {
+          await this.businessService.resetEvaluation({ id: result.entityId });
+        } else {
+          throw new AppError({
+            message: `Unknown entityType: ${result.entityType}`,
+            statusCode: 400,
+            code: 'VALIDATION_ERROR',
+          });
+        }
       } else {
-        throw new AppError({
-          message: `Unknown entityType: ${result.entityType}`,
-          statusCode: 400,
-          code: 'VALIDATION_ERROR',
-        });
+        if (result.entityType === 'pool') {
+          await this.poolService.setRiskScore({
+            id: result.entityId,
+            riskScore: result.riskScore!,
+          });
+        } else if (result.entityType === 'business') {
+          await this.businessService.setRiskScore({
+            id: result.entityId,
+            riskScore: result.riskScore!,
+          });
+        } else {
+          throw new AppError({
+            message: `Unknown entityType: ${result.entityType}`,
+            statusCode: 400,
+            code: 'VALIDATION_ERROR',
+          });
+        }
       }
 
       await this.evaluationResultsClient.ackMessage(message);

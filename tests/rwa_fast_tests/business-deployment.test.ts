@@ -7,6 +7,7 @@ import { CREATE_COMPANY } from "../utils/graphql/schema/company";
 import {
   CREATE_BUSINESS,
   GET_BUSINESS,
+  UPDATE_BUSINESS_RISK_SCORE,
   REQUEST_BUSINESS_APPROVAL_SIGNATURES,
 } from "../utils/graphql/schema/rwa";
 import { GET_SIGNATURE_TASK } from "../utils/graphql/schema/signers-manager";
@@ -69,6 +70,33 @@ describe("RWA Business Deployment", () => {
     expect(createResult.data.createBusiness).toBeDefined();
     businessId = createResult.data.createBusiness.id;
 
+    // Update risk score and wait for async evaluation to complete
+    const riskScoreResult = await makeGraphQLRequest(
+      UPDATE_BUSINESS_RISK_SCORE,
+      {
+        id: businessId,
+      },
+      accessToken
+    );
+
+    expect(riskScoreResult.errors).toBeUndefined();
+
+    // Poll until riskScore appears (async evaluation via RabbitMQ)
+    let businessRiskScore: number | undefined;
+    for (let i = 0; i < 10; i++) {
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      const riskPoll = await makeGraphQLRequest(
+        GET_BUSINESS,
+        { id: businessId },
+        accessToken
+      );
+      businessRiskScore = riskPoll.data.getBusiness.riskScore;
+      if (typeof businessRiskScore === 'number') break;
+    }
+    expect(businessRiskScore).toBeDefined();
+    expect(businessRiskScore).toBeGreaterThanOrEqual(1);
+    expect(businessRiskScore).toBeLessThanOrEqual(100);
+
     // Request signatures
     const sigResult = await makeGraphQLRequest(
       REQUEST_BUSINESS_APPROVAL_SIGNATURES,
@@ -87,7 +115,7 @@ describe("RWA Business Deployment", () => {
     businessApprovalSignaturesTaskId = sigResult.data.requestBusinessApprovalSignatures.taskId;
 
     // Wait for signatures
-    await new Promise(resolve => setTimeout(resolve, 10000));
+    await new Promise(resolve => setTimeout(resolve, 30000));
 
     // Get signatures
     const taskResult = await makeGraphQLRequest(

@@ -15,7 +15,6 @@ import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
 import { LogDecorator } from '@shared/monitoring/src/logDecorator';
 import { setSpanAttributes } from '@shared/monitoring/src/tracing';
-import { logger } from '@shared/monitoring/src/monitoring.plugin';
 import type { SortOrder } from 'mongoose';
 
 type FileMeta = {
@@ -80,8 +79,16 @@ export class RiskEvaluationService {
 
       await this.saveResult(evaluationId, 'pool', params.poolId, result);
     } catch (error) {
-      logger.error(`Pool evaluation ${evaluationId} failed:`, error);
+      await this.evaluationResultsClient
+        .publishEvaluationResult({
+          evaluationId,
+          entityType: 'pool',
+          entityId: params.poolId,
+          status: 'failed',
+        })
+        .catch(() => {});
       await this.evaluationRepository.updateById(evaluationId, { status: 'failed' }).catch(() => {});
+      throw error;
     }
   }
 
@@ -121,8 +128,16 @@ export class RiskEvaluationService {
 
       await this.saveResult(evaluationId, 'business', params.businessId, result);
     } catch (error) {
-      logger.error(`Business evaluation ${evaluationId} failed:`, error);
+      await this.evaluationResultsClient
+        .publishEvaluationResult({
+          evaluationId,
+          entityType: 'business',
+          entityId: params.businessId,
+          status: 'failed',
+        })
+        .catch(() => {});
       await this.evaluationRepository.updateById(evaluationId, { status: 'failed' }).catch(() => {});
+      throw error;
     }
   }
 
@@ -348,6 +363,7 @@ riskScore must be an integer between 1 and 100. 0 is not allowed.`,
       evaluationId,
       entityType,
       entityId,
+      status: 'completed',
       riskScore,
     });
   }

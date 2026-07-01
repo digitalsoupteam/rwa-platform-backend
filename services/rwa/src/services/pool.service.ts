@@ -284,6 +284,19 @@ Example response:
     return this.mapPool(updated);
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id }),
+  })
+  async resetEvaluation({ id }: { id: string }) {
+    setSpanAttributes({ entityId: id, entityType: 'pool' });
+    const updated = await this.poolRepository.updatePool(id, {
+      riskScoreEvaluationProcess: false,
+    });
+    return this.mapPool(updated);
+  }
+
   private generatePoolMessageHash(
     chainId: string,
     factoryAddress: string,

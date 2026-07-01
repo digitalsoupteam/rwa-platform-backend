@@ -6,6 +6,7 @@ import {
   CREATE_POOL,
   EDIT_POOL,
   GET_POOL,
+  UPDATE_POOL_RISK_SCORE,
   REQUEST_POOL_APPROVAL_SIGNATURES,
 } from "../utils/graphql/schema/rwa";
 import { GET_SIGNATURE_TASK } from "../utils/graphql/schema/signers-manager";
@@ -127,6 +128,33 @@ describe("RWA Pool Operations", () => {
     expect(editResult.errors).toBeUndefined();
     expect(editResult.data.editPool).toBeDefined();
 
+    // Update pool risk score and wait for async evaluation to complete
+    const riskScoreResult = await makeGraphQLRequest(
+      UPDATE_POOL_RISK_SCORE,
+      {
+        id: poolId,
+      },
+      accessToken
+    );
+
+    expect(riskScoreResult.errors).toBeUndefined();
+
+    // Poll until riskScore appears (async evaluation via RabbitMQ)
+    let poolRiskScore: number | undefined;
+    for (let i = 0; i < 10; i++) {
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      const riskPoll = await makeGraphQLRequest(
+        GET_POOL,
+        { id: poolId },
+        accessToken
+      );
+      poolRiskScore = riskPoll.data.getPool.riskScore;
+      if (typeof poolRiskScore === 'number') break;
+    }
+    expect(poolRiskScore).toBeDefined();
+    expect(poolRiskScore).toBeGreaterThanOrEqual(1);
+    expect(poolRiskScore).toBeLessThanOrEqual(100);
+
     // Request signatures for deployment
     const sigResult = await makeGraphQLRequest(
       REQUEST_POOL_APPROVAL_SIGNATURES,
@@ -223,7 +251,7 @@ describe("RWA Pool Operations", () => {
     await deployTx.wait(20);
 
     // Wait for backend to process the event
-    await new Promise(resolve => setTimeout(resolve, 10000));
+    await new Promise(resolve => setTimeout(resolve, 30000));
 
     // Get final pool data
     const updatedPool = await makeGraphQLRequest(

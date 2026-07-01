@@ -5,7 +5,8 @@ export interface EvaluationResultMessage {
   evaluationId: string;
   entityType: string;
   entityId: string;
-  riskScore: number;
+  status: 'completed' | 'failed';
+  riskScore?: number;
 }
 
 export class EvaluationResultsClient {

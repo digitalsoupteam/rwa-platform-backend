@@ -320,6 +320,19 @@ Response format:
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({
+    args: (a) => ({ id: a[0].id }),
+  })
+  async resetEvaluation({ id }: { id: string }) {
+    setSpanAttributes({ entityId: id, entityType: 'business' });
+    const updated = await this.businessRepository.updateBusiness(id, {
+      riskScoreEvaluationProcess: false,
+    });
+    return this.mapBusiness(updated);
+  }
+
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
     args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
   })
   async requestApprovalSignatures(params: {

@@ -328,20 +328,24 @@ describe("RWA Flow", () => {
       expect(result.data.updateBusinessRiskScore.id).toBe(businessId);
 
       // Wait for async evaluation to complete — poll until riskScore appears
+      // Poll until riskScore appears (async evaluation via RabbitMQ)
       let riskScore: number | undefined;
-      await new Promise(resolve => setTimeout(resolve, 5000));
-      const poll = await makeGraphQLRequest(
-        GET_BUSINESS,
-        { id: businessId },
-        accessToken
-      );
-      riskScore = poll.data.getBusiness.riskScore;
+      for (let i = 0; i < 10; i++) {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        const riskPoll = await makeGraphQLRequest(
+          GET_BUSINESS,
+          { id: businessId },
+          accessToken
+        );
+        riskScore = riskPoll.data.getBusiness.riskScore;
+        if (typeof riskScore === 'number') break;
+      }
+
       expect(riskScore).toBeDefined();
       expect(riskScore).toBeGreaterThanOrEqual(1);
       expect(riskScore).toBeLessThanOrEqual(100);
     });
 
-    return
 
     test("should deploy business contract", async () => {
       // Request signatures
@@ -365,7 +369,7 @@ describe("RWA Flow", () => {
       businessApprovalSignaturesTaskId = sigResult.data.requestBusinessApprovalSignatures.taskId;
 
       // Wait for signatures to be processed
-      await new Promise(resolve => setTimeout(resolve, 10000));
+      await new Promise(resolve => setTimeout(resolve, 30000));
       const updatedBusiness2 = await makeGraphQLRequest(
         GET_BUSINESS,
         {
@@ -461,7 +465,7 @@ describe("RWA Flow", () => {
       tokenAddress = updatedBusiness.data.getBusiness.tokenAddress
     });
   });
-  return
+
   describe("Pool Operations", () => {
     test("should require authentication for creating pool", async () => {
       const result = await makeGraphQLRequest(
@@ -689,14 +693,20 @@ describe("RWA Flow", () => {
       expect(result.data.updatePoolRiskScore.id).toBe(poolId);
 
       // Wait for async evaluation to complete — poll until riskScore appears
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      const poll = await makeGraphQLRequest(
-        GET_POOL,
-        { id: poolId },
-        accessToken
-      );
-      const riskScore = poll.data.getPool.riskScore;
+      // Poll until riskScore appears (async evaluation via RabbitMQ)
+      let riskScore: number | undefined;
+      for (let i = 0; i < 10; i++) {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        const riskPoll = await makeGraphQLRequest(
+          GET_POOL,
+          { id: poolId },
+          accessToken
+        );
+        riskScore = riskPoll.data.getPool.riskScore;
+        if (typeof riskScore === 'number') break;
+      }
 
+      console.log('riskScore', riskScore)
       expect(riskScore).toBeDefined();
       expect(riskScore).toBeGreaterThanOrEqual(1);
       expect(riskScore).toBeLessThanOrEqual(100);
@@ -800,7 +810,7 @@ describe("RWA Flow", () => {
       await deployTx.wait(20);
 
       // Wait for backend to process the event
-      await new Promise(resolve => setTimeout(resolve, 10000));
+      await new Promise(resolve => setTimeout(resolve, 30000));
 
       // Verify pool was deployed
       const updatedPool = await makeGraphQLRequest(
@@ -884,7 +894,7 @@ describe("RWA Flow", () => {
       await mintTx.wait();
 
       // Wait for backend to process events
-      await new Promise(resolve => setTimeout(resolve, 10000));
+      await new Promise(resolve => setTimeout(resolve, 30000));
 
       // Check pool state after mint
       const poolAfterMint = await makeGraphQLRequest(
@@ -916,7 +926,7 @@ describe("RWA Flow", () => {
       await burnTx.wait();
 
       // Wait for backend to process events
-      await new Promise(resolve => setTimeout(resolve, 10000));
+      await new Promise(resolve => setTimeout(resolve, 30000));
 
       // Check pool state after burn
       const poolAfterBurn = await makeGraphQLRequest(
