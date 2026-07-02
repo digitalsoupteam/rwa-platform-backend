@@ -162,6 +162,21 @@ export class PoolRepository {
   }
 
   @TraceDecorator()
+  async findByRwaAddressAndTokenId(rwaAddress: string, tokenId: string) {
+    const doc = await this.model.findOne({ rwaAddress, tokenId }).lean();
+
+    if (!doc) {
+      throw new AppError({
+        message: `Pool with rwaAddress ${rwaAddress} and tokenId ${tokenId} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
+    }
+
+    return doc;
+  }
+
+  @TraceDecorator()
   async findByAddress(poolAddress: string) {
     const doc = await this.model.findOne({ poolAddress }).lean();
 

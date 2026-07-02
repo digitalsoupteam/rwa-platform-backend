@@ -6,7 +6,7 @@ export const getTokenMetadataController = (servicesPlugin: ServicesPlugin) => {
   return new Elysia({ name: 'GetTokenMetadataController' }).use(servicesPlugin).post(
     '/getTokenMetadata',
     async ({ body, tokenService }) => {
-      return await tokenService.getTokenMetadata(body.tokenId);
+      return await tokenService.getTokenMetadata(body);
     },
     {
       body: getTokenMetadataRequest,

@@ -6,6 +6,7 @@ import { uploadDocumentController } from './controllers/uploadDocument.controlle
 import { uploadImageController } from './controllers/uploadImage.controller';
 import { uploadPoolImageController } from './controllers/uploadPoolImage.controller';
 import { uploadBusinessImageController } from './controllers/uploadBusinessImage.controller';
+import { getTokenMetadataController } from './controllers/getTokenMetadata.controller';
 
 new Elysia({
   serve: {
@@ -19,6 +20,7 @@ new Elysia({
   .use(uploadImageController)
   .use(uploadPoolImageController)
   .use(uploadBusinessImageController)
+  .use(getTokenMetadataController)
   .all('/graphql', (context) => yogaServer.handle(context.request))
   .all('/graphql/stream', (context) => yogaServer.handle(context.request))
   .listen(3000);

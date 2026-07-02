@@ -27,6 +27,28 @@ server {
     }
 
     location /gateway/graphql/stream {
+        # CORS for localhost dev
+        set $cors_origin "";
+        if ($http_origin ~* (https?://localhost(:[0-9]+)?$)) {
+            set $cors_origin $http_origin;
+        }
+
+        if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' $cors_origin always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
+            add_header 'Access-Control-Max-Age' 1728000;
+            add_header 'Content-Type' 'text/plain; charset=utf-8';
+            add_header 'Content-Length' 0;
+            return 204;
+        }
+
+        add_header 'Access-Control-Allow-Origin' $cors_origin always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization' always;
+        add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range' always;
+        add_header 'Access-Control-Allow-Credentials' 'true' always;
+
         set $gateway_stream_upstream "http://gateway:3000/graphql/stream";
         proxy_pass $gateway_stream_upstream;
         proxy_http_version 1.1;
@@ -55,6 +77,15 @@ server {
         add_header Cache-Control "public, immutable";
     }
 
+    location /storage/rwa/metadata/ {
+        proxy_pass http://gateway:3000/storage/rwa/metadata/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
     location /api/documents/createDocument {
         client_max_body_size ${DOCUMENTS_MAX_FILE_SIZE};
 
@@ -71,6 +102,30 @@ server {
         client_max_body_size ${GALLERY_MAX_FILE_SIZE};
 
         set $gateway_upstream "http://gateway:3000/api/gallery/createImage";
+        proxy_pass $gateway_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /api/pool/uploadImage {
+        client_max_body_size ${TOKEN_IMAGE_MAX_FILE_SIZE};
+
+        set $gateway_upstream "http://gateway:3000/api/pool/uploadImage";
+        proxy_pass $gateway_upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /api/business/uploadImage {
+        client_max_body_size ${TOKEN_IMAGE_MAX_FILE_SIZE};
+
+        set $gateway_upstream "http://gateway:3000/api/business/uploadImage";
         proxy_pass $gateway_upstream;
         proxy_http_version 1.1;
         proxy_set_header Host $host;

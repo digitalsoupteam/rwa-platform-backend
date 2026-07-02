@@ -1,6 +1,6 @@
 import { expect, test, describe, beforeAll } from "bun:test";
 import { ethers, HDNodeWallet, JsonRpcProvider } from "ethers";
-import { FACTORY_ADDRESS, HOLD_TOKEN_ADDRESS, TESTNET_RPC } from "./utils/config";
+import { FACTORY_ADDRESS, HOLD_TOKEN_ADDRESS, TESTNET_RPC, GATEWAY_REST_URL } from "./utils/config";
 import { makeGraphQLRequest } from "./utils/graphql/makeGraphQLRequest";
 import { makeRestRequest } from "./utils/makeRestRequest";
 import { authenticate } from "./utils/authenticate";
@@ -38,6 +38,8 @@ describe("RWA Flow", () => {
   let businessApprovalSignaturesTaskId: string;
   let poolApprovalSignaturesTaskId: string;
   let tokenAddress: string;
+  let businessImageUrl: string;
+  let poolImageUrl: string;
 
   beforeAll(async () => {
     chainId = "97";
@@ -464,6 +466,33 @@ describe("RWA Flow", () => {
 
       tokenAddress = updatedBusiness.data.getBusiness.tokenAddress
     });
+
+    test("should upload business image", async () => {
+      const file = new File(["fake image content"], "business.png", { type: "image/png" });
+
+      const result = await makeRestRequest(
+        "/api/business/uploadImage",
+        { file, businessId },
+        accessToken,
+      );
+
+      expect(result.error).toBeUndefined();
+      expect(result.id).toBe(businessId);
+      expect(result.url).toBeDefined();
+      expect(result.url).toBeTruthy();
+
+      // Verify business image was updated
+      const businessResult = await makeGraphQLRequest(
+        GET_BUSINESS,
+        { id: businessId },
+        accessToken,
+      );
+
+      expect(businessResult.errors).toBeUndefined();
+      expect(businessResult.data.getBusiness.image).toBe(result.url);
+
+      businessImageUrl = result.url;
+    });
   });
 
   describe("Pool Operations", () => {
@@ -828,6 +857,47 @@ describe("RWA Flow", () => {
     });
   });
 
+  describe("Token Metadata", () => {
+    test("should return ERC-1155 metadata with business image fallback", async () => {
+      // Get pool to find tokenId and rwaAddress
+      const poolData = await makeGraphQLRequest(
+        GET_POOL,
+        {
+          id: poolId,
+        },
+        accessToken
+      );
+
+      expect(poolData.errors).toBeUndefined();
+      const pool = poolData.data.getPool;
+      expect(pool.tokenId).toBeDefined();
+      expect(pool.rwaAddress).toBeDefined();
+      // Pool should NOT have its own image yet
+      expect(pool.image).toBeNull();
+
+      const metadataUrl = `${GATEWAY_REST_URL}/storage/rwa/metadata/${pool.rwaAddress}/${pool.tokenId}`;
+      const response = await fetch(metadataUrl);
+      expect(response.status).toBe(200);
+
+      const metadata = await response.json();
+      expect(metadata).toBeDefined();
+      expect(metadata.name).toBe(pool.name);
+      expect(metadata.description).toBeDefined();
+      expect(metadata.decimals).toBe(18);
+      expect(metadata.properties).toBeDefined();
+      expect(metadata.properties.business).toBeDefined();
+      expect(metadata.properties.pool).toBeDefined();
+      expect(metadata.properties.pool.riskScore).toBeDefined();
+      expect(metadata.properties.pool.riskScore).toBeGreaterThanOrEqual(1);
+      expect(metadata.properties.pool.riskScore).toBeLessThanOrEqual(100);
+      expect(metadata.properties.status).toBeDefined();
+      expect(metadata.properties.tags).toBeArray();
+
+      // Image should fallback to business image (pool has no image yet)
+      expect(metadata.image).toBe(businessImageUrl);
+    });
+  });
+
   describe("Pool Trading Tests", () => {
     test("should mint and burn RWA tokens", async () => {
       // Request HOLD tokens and gas for second wallet
@@ -1119,34 +1189,25 @@ describe("RWA Flow", () => {
 
       expect(poolResult.errors).toBeUndefined();
       expect(poolResult.data.getPool.image).toBe(result.url);
-    });
 
-    test("should upload business image successfully", async () => {
-      const file = new File(["fake image content"], "business.png", { type: "image/png" });
+      poolImageUrl = result.url;
 
-      const result = await makeRestRequest(
-        "/api/business/uploadImage",
-        { file, businessId },
+      // Verify metadata now returns pool image (overrides business fallback)
+      const poolData = await makeGraphQLRequest(
+        GET_POOL,
+        { id: poolId },
         accessToken,
       );
 
-      expect(result.error).toBeUndefined();
-      expect(result.id).toBe(businessId);
-      expect(result.url).toBeDefined();
-      expect(result.url).toBeTruthy();
+      const metadataUrl = `${GATEWAY_REST_URL}/storage/rwa/metadata/${poolData.data.getPool.rwaAddress}/${poolData.data.getPool.tokenId}`;
+      const metadataResponse = await fetch(metadataUrl);
+      expect(metadataResponse.status).toBe(200);
 
-      // Verify business image was updated
-      const businessResult = await makeGraphQLRequest(
-        GET_BUSINESS,
-        { id: businessId },
-        accessToken,
-      );
-
-      expect(businessResult.errors).toBeUndefined();
-      expect(businessResult.data.getBusiness.image).toBe(result.url);
+      const metadata = await metadataResponse.json();
+      expect(metadata.image).toBe(poolImageUrl);
     });
   });
-
+return
   describe("Cleanup", () => {
     test("should reject pool approval signatures", async () => {
       const result = await makeGraphQLRequest(

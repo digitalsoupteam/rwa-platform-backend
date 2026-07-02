@@ -1,4 +1,7 @@
-import { t } from 'elysia';
+import { Elysia, t } from 'elysia';
+import { AppError } from '@shared/errors/app-errors';
+import { ErrorHandlerPlugin } from '@shared/errors/error-handler.plugin';
+import { rwaClient } from '../clients/eden.clients';
 
 const businessPropertiesSchema = t.Object({
   id: t.String(),
@@ -23,7 +26,7 @@ const statusPropertiesSchema = t.Object({
   paused: t.Boolean(),
 });
 
-export const tokenMetadataSchema = t.Object({
+const tokenMetadataResponseSchema = t.Object({
   name: t.String(),
   description: t.String(),
   image: t.Optional(t.String()),
@@ -36,9 +39,24 @@ export const tokenMetadataSchema = t.Object({
   }),
 });
 
-export const getTokenMetadataRequest = t.Object({
-  rwaAddress: t.String(),
-  tokenId: t.String(),
-});
+export const getTokenMetadataController = new Elysia({ name: 'GetTokenMetadataController' })
+  .onError(ErrorHandlerPlugin)
+  .get(
+    '/storage/rwa/metadata/:tokenAddress/:tokenId',
+    async ({ params: { tokenAddress, tokenId } }) => {
+      const response = await rwaClient.getTokenMetadata.post({ rwaAddress: tokenAddress, tokenId });
 
-export const getTokenMetadataResponse = tokenMetadataSchema;
+      if (response.error) {
+        throw new AppError({
+          message: 'Failed to get token metadata',
+          statusCode: 502,
+          code: 'BAD_GATEWAY',
+        });
+      }
+
+      return response.data;
+    },
+    {
+      response: tokenMetadataResponseSchema,
+    },
+  );

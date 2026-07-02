@@ -16,16 +16,12 @@ export class TokenService {
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({
-    args: (a) => ({ tokenId: a[0] }),
+    args: (a) => ({ rwaAddress: a[0].rwaAddress, tokenId: a[0].tokenId }),
   })
-  async getTokenMetadata(tokenId: string) {
-    setSpanAttributes({ tokenId });
-    // Find pool by tokenId
-    const pools = await this.poolRepository.findAll({ tokenId }, { createdAt: 'asc' }, 1);
-    if (!pools.length) {
-      throw new AppError({ message: 'Pool not found', statusCode: 404, code: 'NOT_FOUND' });
-    }
-    const pool = pools[0];
+  async getTokenMetadata(params: { rwaAddress: string; tokenId: string }) {
+    setSpanAttributes({ rwaAddress: params.rwaAddress, tokenId: params.tokenId });
+    // Find pool by rwaAddress and tokenId
+    const pool = await this.poolRepository.findByRwaAddressAndTokenId(params.rwaAddress, params.tokenId);
 
     // Find associated business
     const business = await this.businessRepository.findById(pool.businessId);
@@ -59,6 +55,7 @@ export class TokenService {
           rewardPercent: pool.rewardPercent?.toString() || undefined,
           entryFeePercent: pool.entryFeePercent?.toString() || undefined,
           exitFeePercent: pool.exitFeePercent?.toString() || undefined,
+          riskScore: pool.riskScore ?? undefined,
         },
         status: {
           isTargetReached: Boolean(pool.isTargetReached),

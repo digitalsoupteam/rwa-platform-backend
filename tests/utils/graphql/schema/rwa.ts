@@ -194,6 +194,7 @@ export const GET_POOL = gql`
       poolAddress
       holdToken
       tokenId
+      image
 
       # Pool Configuration
       entryFeePercent
@@ -278,6 +279,7 @@ export const GET_POOLS = gql`
       poolAddress
       holdToken
       tokenId
+      image
 
       # Pool Configuration
       entryFeePercent
