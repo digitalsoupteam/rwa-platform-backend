@@ -12,6 +12,7 @@ export const createServicesPlugin = (
   supportedNetworks: any[],
   openRouterModel: string,
   placeholderImageUrl: string,
+  filesBaseUrl: string,
 ) => {
   const businessService = withTraceSync(
     'rwa.init.services.business',
@@ -25,6 +26,7 @@ export const createServicesPlugin = (
         clientsPlugin.decorator.webhookEventsPublisher,
         supportedNetworks,
         openRouterModel,
+        filesBaseUrl,
       ),
   );
 
@@ -41,6 +43,7 @@ export const createServicesPlugin = (
         clientsPlugin.decorator.webhookEventsPublisher,
         supportedNetworks,
         openRouterModel,
+        filesBaseUrl,
       ),
   );
 
@@ -51,6 +54,7 @@ export const createServicesPlugin = (
         repositoriesPlugin.decorator.poolRepository,
         repositoriesPlugin.decorator.businessRepository,
         placeholderImageUrl,
+        filesBaseUrl,
       ),
   );
 

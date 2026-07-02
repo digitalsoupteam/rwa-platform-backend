@@ -31,6 +31,7 @@ export class PoolRepository {
           | 'description'
           | 'tags'
           | 'image'
+          | 'fileId'
         >
       >,
   ) {
@@ -89,6 +90,7 @@ export class PoolRepository {
         | 'approvalSignaturesTaskExpired'
         | 'riskScoreEvaluationProcess'
         | 'image'
+        | 'fileId'
       >
     >,
   ) {

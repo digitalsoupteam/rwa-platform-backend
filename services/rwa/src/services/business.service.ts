@@ -13,6 +13,7 @@ import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
 import { LogDecorator } from '@shared/monitoring/src/logDecorator';
 import { setSpanAttributes } from '@shared/monitoring/src/tracing';
+import { buildFileUrl } from '@shared/files/src/index';
 
 interface NetworkConfig {
   chainId: string;
@@ -30,6 +31,7 @@ export class BusinessService {
     private readonly webhookEventsPublisher: WebhookEventsPublisher,
     private readonly supportedNetworks: NetworkConfig[],
     private readonly openRouterModel: string,
+    private readonly filesBaseUrl: string,
   ) {}
 
   private isChainIdSupported(chainId: string): boolean {
@@ -210,9 +212,9 @@ Response format:
   @LogDecorator({
     args: (a) => ({ id: a[0].id }),
   })
-  async updateBusinessImage(params: { id: string; image: string }) {
+  async updateBusinessImage(params: { id: string; image: string; fileId: string }) {
     setSpanAttributes({ entityId: params.id, entityType: 'business' });
-    const updated = await this.businessRepository.updateBusiness(params.id, { image: params.image });
+    const updated = await this.businessRepository.updateBusiness(params.id, { image: params.image, fileId: params.fileId });
     return this.mapBusiness(updated);
   }
 
@@ -484,6 +486,8 @@ Response format:
       tags: business.tags,
       riskScore: business.riskScore ?? undefined,
       image: business.image ?? undefined,
+      imageUrl: business.image ? buildFileUrl(business.image, this.filesBaseUrl) : undefined,
+      fileId: business.fileId ?? undefined,
       approvalSignaturesTaskId: business.approvalSignaturesTaskId ?? undefined,
       approvalSignaturesTaskExpired: business.approvalSignaturesTaskExpired ?? undefined,
       riskScoreEvaluationProcess: business.riskScoreEvaluationProcess,

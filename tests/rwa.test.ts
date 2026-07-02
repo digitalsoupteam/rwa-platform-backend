@@ -478,8 +478,8 @@ describe("RWA Flow", () => {
 
       expect(result.error).toBeUndefined();
       expect(result.id).toBe(businessId);
-      expect(result.url).toBeDefined();
-      expect(result.url).toBeTruthy();
+      expect(result.imageUrl).toBeDefined();
+      expect(result.imageUrl).toBeTruthy();
 
       // Verify business image was updated
       const businessResult = await makeGraphQLRequest(
@@ -489,9 +489,9 @@ describe("RWA Flow", () => {
       );
 
       expect(businessResult.errors).toBeUndefined();
-      expect(businessResult.data.getBusiness.image).toBe(result.url);
+      expect(businessResult.data.getBusiness.imageUrl).toBe(result.imageUrl);
 
-      businessImageUrl = result.url;
+      businessImageUrl = result.imageUrl;
     });
   });
 
@@ -1177,8 +1177,8 @@ describe("RWA Flow", () => {
 
       expect(result.error).toBeUndefined();
       expect(result.id).toBe(poolId);
-      expect(result.url).toBeDefined();
-      expect(result.url).toBeTruthy();
+      expect(result.imageUrl).toBeDefined();
+      expect(result.imageUrl).toBeTruthy();
 
       // Verify pool image was updated
       const poolResult = await makeGraphQLRequest(
@@ -1188,9 +1188,9 @@ describe("RWA Flow", () => {
       );
 
       expect(poolResult.errors).toBeUndefined();
-      expect(poolResult.data.getPool.image).toBe(result.url);
+      expect(poolResult.data.getPool.imageUrl).toBe(result.imageUrl);
 
-      poolImageUrl = result.url;
+      poolImageUrl = result.imageUrl;
 
       // Verify metadata now returns pool image (overrides business fallback)
       const poolData = await makeGraphQLRequest(

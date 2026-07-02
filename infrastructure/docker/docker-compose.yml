@@ -540,6 +540,7 @@ services:
       AI_EVALUATOR_URL: ${AI_EVALUATOR_SERVICE_URL}
       BASE_DOMAIN: ${BASE_DOMAIN}
       PLACEHOLDER_IMAGE_PATH: ${PLACEHOLDER_IMAGE_PATH}
+      FILES_URL_PATH: ${FILES_URL_PATH}
     volumes: *monitoring-volumes
     networks:
       - app-network

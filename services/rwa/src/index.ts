@@ -1,5 +1,6 @@
 import { createApp } from './app';
 import { tracer } from '@shared/monitoring/src/tracing';
+import { buildFilesBaseUrl } from '@shared/files/src/index';
 
 const app = await tracer.startActiveSpan('rwa.init.main', async (span) => {
   const appInstance = await createApp(
@@ -22,6 +23,7 @@ const app = await tracer.startActiveSpan('rwa.init.main', async (span) => {
       },
     ],
     `https://${String(process.env.BASE_DOMAIN)}${String(process.env.PLACEHOLDER_IMAGE_PATH)}`,
+    buildFilesBaseUrl(String(process.env.BASE_DOMAIN), String(process.env.FILES_URL_PATH)),
   );
 
   span.end();

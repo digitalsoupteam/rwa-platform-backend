@@ -23,6 +23,7 @@ export async function createApp(
   signersManagerUrl: string,
   supportedNetworks: any[],
   placeholderImageUrl: string,
+  filesBaseUrl: string,
 ) {
   const repositoriesPlugin = await withTraceAsync(
     'rwa.init.repositories_plugin',
@@ -45,7 +46,7 @@ export async function createApp(
   );
 
   const servicesPlugin = withTraceSync('rwa.init.services_plugin', () =>
-    createServicesPlugin(repositoriesPlugin, clientsPlugin, supportedNetworks, openRouterModel, placeholderImageUrl),
+    createServicesPlugin(repositoriesPlugin, clientsPlugin, supportedNetworks, openRouterModel, placeholderImageUrl, filesBaseUrl),
   );
 
   const controllersPlugin = withTraceSync('rwa.init.controllers_plugin', () => createControllersPlugin(servicesPlugin));

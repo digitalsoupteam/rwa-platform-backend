@@ -23,6 +23,8 @@ type Business {
   tags: [String!]
   riskScore: Int
   image: String
+  imageUrl: String
+  fileId: String
   approvalSignaturesTaskId: String
   approvalSignaturesTaskExpired: Float
   riskScoreEvaluationProcess: Boolean!
@@ -46,6 +48,8 @@ type Pool {
   tags: [String!]
   riskScore: Int
   image: String
+  imageUrl: String
+  fileId: String
 
   # Contract Addresses
   rwaAddress: String!

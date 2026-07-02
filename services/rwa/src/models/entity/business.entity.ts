@@ -48,6 +48,10 @@ const businessSchemaDefinition = {
     type: String,
     trim: true,
   },
+  fileId: {
+    type: String,
+    trim: true,
+  },
   approvalSignaturesTaskId: {
     type: String,
   },

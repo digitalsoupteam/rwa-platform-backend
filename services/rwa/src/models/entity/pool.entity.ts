@@ -49,6 +49,10 @@ const poolSchemaDefinition = {
     type: String,
     trim: true,
   },
+  fileId: {
+    type: String,
+    trim: true,
+  },
 
   // Contract Addresses
   rwaAddress: {

@@ -15,6 +15,7 @@ export const GET_BUSINESS = gql`
       tags
       riskScore
       image
+      imageUrl
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
       riskScoreEvaluationProcess
@@ -45,6 +46,7 @@ export const GET_BUSINESSES = gql`
       tags
       riskScore
       image
+      imageUrl
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
       riskScoreEvaluationProcess
@@ -76,6 +78,7 @@ export const CREATE_BUSINESS_WITH_AI = gql`
       tags
       riskScore
       image
+      imageUrl
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
       country
@@ -105,6 +108,7 @@ export const CREATE_BUSINESS = gql`
       tags
       riskScore
       image
+      imageUrl
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
       country
@@ -134,6 +138,7 @@ export const EDIT_BUSINESS = gql`
       tags
       riskScore
       image
+      imageUrl
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
       country
@@ -195,6 +200,7 @@ export const GET_POOL = gql`
       holdToken
       tokenId
       image
+      imageUrl
 
       # Pool Configuration
       entryFeePercent
@@ -280,6 +286,7 @@ export const GET_POOLS = gql`
       holdToken
       tokenId
       image
+      imageUrl
 
       # Pool Configuration
       entryFeePercent

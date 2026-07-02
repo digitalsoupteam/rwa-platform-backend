@@ -24,6 +24,8 @@ export const businessSchema = t.Object({
   tags: t.Optional(t.Array(t.String())),
   riskScore: t.Optional(t.Number()),
   image: t.Optional(t.String()),
+  imageUrl: t.Optional(t.String()),
+  fileId: t.Optional(t.String()),
   approvalSignaturesTaskId: t.Optional(t.String()),
   approvalSignaturesTaskExpired: t.Optional(t.Number()),
   riskScoreEvaluationProcess: t.Boolean(),
@@ -111,5 +113,6 @@ export const getBusinessesResponse = t.Array(businessSchema);
 export const updateBusinessImageRequest = t.Object({
   id: t.String(),
   image: t.String(),
+  fileId: t.String(),
 });
 export const updateBusinessImageResponse = businessSchema;

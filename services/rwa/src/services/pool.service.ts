@@ -12,6 +12,7 @@ import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
 import { LogDecorator } from '@shared/monitoring/src/logDecorator';
 import { setSpanAttributes } from '@shared/monitoring/src/tracing';
+import { buildFileUrl } from '@shared/files/src/index';
 
 export class PoolService {
   constructor(
@@ -28,6 +29,7 @@ export class PoolService {
       factoryAddress: string;
     }[],
     private readonly openRouterModel: string,
+    private readonly filesBaseUrl: string,
   ) {}
 
   private async generatePoolFields(description: string) {
@@ -582,6 +584,8 @@ Example response:
       chainId: pool.chainId,
       name: pool.name,
       image: pool.image ?? undefined,
+      imageUrl: pool.image ? buildFileUrl(pool.image, this.filesBaseUrl) : undefined,
+      fileId: pool.fileId ?? undefined,
       ownerId: pool.ownerId,
       ownerType: pool.ownerType,
       businessId: pool.businessId,
@@ -725,9 +729,9 @@ Example response:
   @LogDecorator({
     args: (a) => ({ id: a[0].id }),
   })
-  async updatePoolImage(params: { id: string; image: string }) {
+  async updatePoolImage(params: { id: string; image: string; fileId: string }) {
     setSpanAttributes({ entityId: params.id, entityType: 'pool' });
-    const updated = await this.poolRepository.updatePool(params.id, { image: params.image });
+    const updated = await this.poolRepository.updatePool(params.id, { image: params.image, fileId: params.fileId });
     return this.mapPool(updated);
   }
 

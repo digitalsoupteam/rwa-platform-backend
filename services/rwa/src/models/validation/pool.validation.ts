@@ -12,6 +12,8 @@ export const poolSchema = t.Object({
   tags: t.Array(t.String()),
   riskScore: t.Optional(t.Number()),
   image: t.Optional(t.String()),
+  imageUrl: t.Optional(t.String()),
+  fileId: t.Optional(t.String()),
 
   // Contract Addresses
   rwaAddress: t.String(),
@@ -192,5 +194,6 @@ export const getPoolsResponse = t.Array(poolSchema);
 export const updatePoolImageRequest = t.Object({
   id: t.String(),
   image: t.String(),
+  fileId: t.String(),
 });
 export const updatePoolImageResponse = poolSchema;

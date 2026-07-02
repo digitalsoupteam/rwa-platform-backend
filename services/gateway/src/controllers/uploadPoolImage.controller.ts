@@ -58,12 +58,13 @@ export const uploadPoolImageController = new Elysia({ name: 'UploadPoolImageCont
         throw new AppError({ message: 'Failed to upload file', statusCode: 502, code: 'BAD_GATEWAY' });
       }
 
-      // Update pool image
-      const imageUrl = fileResponse.data.path;
+      // Save relative path in DB, RWA service returns full URL via mapPool
+      const imagePath = fileResponse.data.path;
 
       const response = await rwaClient.updatePoolImage.post({
         id: poolId,
-        image: imageUrl,
+        image: imagePath,
+        fileId: fileResponse.data.id,
       });
 
       if (response.error) {
@@ -75,7 +76,7 @@ export const uploadPoolImageController = new Elysia({ name: 'UploadPoolImageCont
       return {
         id: response.data.id,
         image: response.data.image,
-        url: imageUrl,
+        imageUrl: response.data.imageUrl ?? '',
       };
     },
     {
@@ -86,7 +87,7 @@ export const uploadPoolImageController = new Elysia({ name: 'UploadPoolImageCont
       response: t.Object({
         id: t.String(),
         image: t.Optional(t.String()),
-        url: t.String(),
+        imageUrl: t.String(),
       }),
     },
   );

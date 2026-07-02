@@ -12,6 +12,7 @@ COPY shared/blockchain-daemon/package.json ./shared/blockchain-daemon/
 COPY shared/redis-events/package.json ./shared/redis-events/
 COPY shared/errors/package.json ./shared/errors/
 COPY shared/webhooks/package.json ./shared/webhooks/
+COPY shared/files/package.json ./shared/files/
 
 COPY services/rwa/package.json ./services/rwa/
 
