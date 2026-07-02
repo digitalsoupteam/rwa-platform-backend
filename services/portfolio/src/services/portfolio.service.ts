@@ -42,7 +42,7 @@ export class PortfolioService {
 
     const balances = await this.tokenBalanceRepository.findAll(params.filter, params.sort, params.limit, params.offset);
 
-    return balances.map(this.mapBalance);
+    return balances.map(b => this.mapBalance(b));
   }
 
   /**
@@ -76,7 +76,7 @@ export class PortfolioService {
       params.offset,
     );
 
-    return transactions.map(this.mapTransaction);
+    return transactions.map(tx => this.mapTransaction(tx));
   }
 
   /**

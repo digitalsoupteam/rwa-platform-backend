@@ -530,6 +530,6 @@ Response format:
       ...(params.offset !== undefined && { offset: params.offset }),
     });
     const businesses = await this.businessRepository.findAll(params.filter, params.sort, params.limit, params.offset);
-    return businesses.map(this.mapBusiness);
+    return businesses.map(b => this.mapBusiness(b));
   }
 }
