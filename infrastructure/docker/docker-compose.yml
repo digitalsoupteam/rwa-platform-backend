@@ -26,7 +26,7 @@ x-configs:
 services:
   ai-assistant:
     container_name: ai-assistant
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/ai-assistant/Dockerfile
@@ -49,7 +49,7 @@ services:
 
   ai-evaluator:
     container_name: ai-evaluator
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/ai-evaluator/Dockerfile
@@ -78,7 +78,7 @@ services:
 
   api-keys:
     container_name: api-keys
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/api-keys/Dockerfile
@@ -99,7 +99,7 @@ services:
 
   webhooks:
     container_name: webhooks
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/webhooks/Dockerfile
@@ -129,7 +129,7 @@ services:
 
   auth:
     container_name: auth
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/auth/Dockerfile
@@ -155,7 +155,7 @@ services:
 
   blockchain-scanner:
     container_name: blockchain-scanner
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/blockchain-scanner/Dockerfile
@@ -185,7 +185,7 @@ services:
 
   blog:
     container_name: blog
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/blog/Dockerfile
@@ -206,7 +206,7 @@ services:
 
   charts:
     container_name: charts
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/charts/Dockerfile
@@ -234,7 +234,7 @@ services:
 
   company:
     container_name: company
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/company/Dockerfile
@@ -255,7 +255,7 @@ services:
 
   dao:
     container_name: dao
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/dao/Dockerfile
@@ -279,7 +279,7 @@ services:
 
   documents:
     container_name: documents
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/documents/Dockerfile
@@ -302,7 +302,7 @@ services:
 
   faq:
     container_name: faq
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/faq/Dockerfile
@@ -323,7 +323,7 @@ services:
 
   files:
     container_name: files
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/files/Dockerfile
@@ -348,7 +348,7 @@ services:
 
   gallery:
     container_name: gallery
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/gallery/Dockerfile
@@ -371,7 +371,7 @@ services:
 
   loyalty:
     container_name: loyalty
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/loyalty/Dockerfile
@@ -397,7 +397,7 @@ services:
 
   gateway:
     container_name: gateway
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/gateway/Dockerfile
@@ -458,7 +458,7 @@ services:
 
   portfolio:
     container_name: portfolio
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/portfolio/Dockerfile
@@ -482,7 +482,7 @@ services:
 
   questions:
     container_name: questions
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/questions/Dockerfile
@@ -503,7 +503,7 @@ services:
 
   reactions:
     container_name: reactions
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/reactions/Dockerfile
@@ -524,7 +524,7 @@ services:
 
   rwa:
     container_name: rwa
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/rwa/Dockerfile
@@ -553,7 +553,7 @@ services:
         condition: service_healthy
 
   signer-1:
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/signer/Dockerfile
@@ -571,7 +571,7 @@ services:
         condition: service_healthy
 
   signer-2:
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/signer/Dockerfile
@@ -589,7 +589,7 @@ services:
         condition: service_healthy
 
   signer-3:
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/signer/Dockerfile
@@ -608,7 +608,7 @@ services:
 
   signers-manager:
     container_name: signers-manager
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/signers-manager/Dockerfile
@@ -630,7 +630,7 @@ services:
 
   testnet-faucet:
     container_name: testnet-faucet
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: services/testnet-faucet/Dockerfile
@@ -658,7 +658,7 @@ services:
         condition: service_healthy
 
   nginx:
-    #restart: unless-stopped
+    restart: unless-stopped
     build:
       context: ../..
       dockerfile: infrastructure/docker/nginx/Dockerfile
@@ -689,7 +689,7 @@ services:
       - app-network
 
   mongodb:
-    #restart: unless-stopped
+    restart: unless-stopped
     image: mongo:latest
     volumes:
       - mongodb_data:/data/db
@@ -719,7 +719,7 @@ services:
         condition: service_healthy
 
   mongo_express:
-    #restart: unless-stopped
+    restart: unless-stopped
     image: mongo-express:latest
     environment:
       ME_CONFIG_MONGODB_SERVER: "mongodb"
@@ -732,7 +732,7 @@ services:
       - app-network
 
   redis:
-    #restart: unless-stopped
+    restart: unless-stopped
     image: redis:latest
     volumes:
       - redis_data:/data
@@ -757,7 +757,7 @@ services:
         condition: service_healthy
 
   redisinsight:
-    #restart: unless-stopped
+    restart: unless-stopped
     image: redis/redisinsight:latest
     environment:
       - REDISINSIGHT_HOST=0.0.0.0
@@ -770,7 +770,7 @@ services:
       - redis
 
   rabbitmq:
-    #restart: unless-stopped
+    restart: unless-stopped
     image: rabbitmq:management
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
@@ -787,7 +787,7 @@ services:
 
   # Monitoring Stack
   prometheus:
-    #restart: unless-stopped
+    restart: unless-stopped
     image: prom/prometheus:latest
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
@@ -806,7 +806,7 @@ services:
       - app-network
 
   loki:
-    #restart: unless-stopped
+    restart: unless-stopped
     image: grafana/loki:latest
     volumes:
       - ./loki/loki.yml:/etc/loki/local-config.yaml
@@ -816,7 +816,7 @@ services:
       - app-network
 
   tempo:
-    #restart: unless-stopped
+    restart: unless-stopped
     image: grafana/tempo:3.0.2
     volumes:
       - ./tempo/tempo.yml:/etc/tempo/tempo.yaml
@@ -826,7 +826,7 @@ services:
       - app-network
 
   grafana:
-    #restart: unless-stopped
+    restart: unless-stopped
     image: grafana/grafana:latest
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
@@ -849,7 +849,7 @@ services:
       - tempo
 
   alloy:
-    #restart: unless-stopped
+    restart: unless-stopped
     image: grafana/alloy:latest
     volumes:
       - ./alloy/config.alloy:/etc/alloy/config.alloy
@@ -865,7 +865,7 @@ services:
 
   # System monitoring
   node-exporter:
-    #restart: unless-stopped
+    restart: unless-stopped
     image: prom/node-exporter:latest
     volumes:
       - /proc:/host/proc:ro
@@ -880,7 +880,7 @@ services:
       - app-network
 
   cadvisor:
-    #restart: unless-stopped
+    restart: unless-stopped
     image: gcr.io/cadvisor/cadvisor:latest
     volumes:
       - /:/rootfs:ro
@@ -897,7 +897,7 @@ services:
   portainer:
     image: portainer/portainer-ce:latest
     container_name: portainer
-    #restart: unless-stopped
+    restart: unless-stopped
     security_opt:
       - no-new-privileges:true
     volumes:
@@ -911,7 +911,7 @@ services:
     container_name: uptime-kuma
     volumes:
       - uptime_kuma_data:/app/data
-    #restart: unless-stopped
+    restart: unless-stopped
     networks:
       - app-network
 
@@ -930,7 +930,7 @@ services:
     entrypoint: /bin/sh -c "sed \"s|\\$$BASE_DOMAIN|$$BASE_DOMAIN|g; s|\\$$LLDAP_USER_PASS|$$LLDAP_USER_PASS|g; s|\\$$LLDAP_BASE_DN|$$LLDAP_BASE_DN|g\" /config/configuration.yml.template > /config/configuration.yml && authelia --config /config/configuration.yml"
     networks:
       - app-network
-    #restart: unless-stopped
+    restart: unless-stopped
     depends_on:
       redis:
         condition: service_started
@@ -949,13 +949,7 @@ services:
       - ./authelia/secrets:/secrets:ro
     networks:
       - app-network
-    #restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "nc -z localhost 3890 || exit 1"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
+    restart: unless-stopped
 
   homer:
     image: b4bz/homer:latest
@@ -969,7 +963,7 @@ services:
     networks:
       - app-network
     user: "1000:1000"
-    #restart: unless-stopped
+    restart: unless-stopped
 
 volumes:
   redis_data:
