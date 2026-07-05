@@ -1177,6 +1177,6 @@ Example response:
       ...(params.offset !== undefined && { offset: params.offset }),
     });
     const pools = await this.poolRepository.findAll(params.filter, params.sort, params.limit, params.offset);
-    return pools.map(pool => this.mapPool(pool));
+    return pools.map((pool) => this.mapPool(pool));
   }
 }

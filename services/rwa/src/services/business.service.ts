@@ -214,7 +214,10 @@ Response format:
   })
   async updateBusinessImage(params: { id: string; image: string; fileId: string }) {
     setSpanAttributes({ entityId: params.id, entityType: 'business' });
-    const updated = await this.businessRepository.updateBusiness(params.id, { image: params.image, fileId: params.fileId });
+    const updated = await this.businessRepository.updateBusiness(params.id, {
+      image: params.image,
+      fileId: params.fileId,
+    });
     return this.mapBusiness(updated);
   }
 
@@ -530,6 +533,6 @@ Response format:
       ...(params.offset !== undefined && { offset: params.offset }),
     });
     const businesses = await this.businessRepository.findAll(params.filter, params.sort, params.limit, params.offset);
-    return businesses.map(b => this.mapBusiness(b));
+    return businesses.map((b) => this.mapBusiness(b));
   }
 }
