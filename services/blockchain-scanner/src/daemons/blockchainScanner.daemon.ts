@@ -212,7 +212,13 @@ export class BlockchainScannerDaemon {
     this.isRunning = true;
 
     this.runLoop().catch((err) => {
-      this.isRunning = false;
+      logger.error('runLoop fatal error, killing process for Docker restart', err, {
+        lastProcessedBlock: this.lastProcessedBlock,
+        chainId: this.chainId,
+      });
+      setTimeout(() => {
+        process.exit(1)
+      }, 5000);
     });
   }
 
