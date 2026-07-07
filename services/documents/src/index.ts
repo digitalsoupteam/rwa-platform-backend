@@ -1,17 +1,17 @@
 import { createApp } from './app';
-import { tracer } from '@shared/monitoring/src/tracing';
+import { withTraceAsync } from '@shared/monitoring/src/tracing';
 import { buildFilesBaseUrl } from '@shared/files/src/index';
 
-const app = await tracer.startActiveSpan('documents.init.main', async (span) => {
-  const appInstance = await createApp(
+const app = await withTraceAsync('documents.init.main', async () => {
+  return await createApp(
     Number(process.env.PORT),
     String(process.env.MONGODB_URI) + '/' + String(process.env.MONGODB_DBNAME),
     buildFilesBaseUrl(String(process.env.BASE_DOMAIN), String(process.env.FILES_URL_PATH)),
   );
 
-  span.end();
-  return appInstance;
 });
+
+app.listen(Number(process.env.PORT));
 
 const shutdown = async () => {
   try {

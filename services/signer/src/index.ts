@@ -1,8 +1,8 @@
 import { createApp } from './app';
-import { tracer } from '@shared/monitoring/src/tracing';
+import { withTraceAsync } from '@shared/monitoring/src/tracing';
 
-const app = await tracer.startActiveSpan('signer.init.main', async (span) => {
-  const appInstance = await createApp(
+const app = await withTraceAsync('signer.init.main', async () => {
+  return await createApp(
     Number(process.env.PORT),
     String(process.env.RABBITMQ_URL),
     Number(process.env.RABBITMQ_MAX_RECONNECT_ATTEMPTS),
@@ -10,9 +10,9 @@ const app = await tracer.startActiveSpan('signer.init.main', async (span) => {
     String(process.env.SIGNER_PRIVATE_KEY),
   );
 
-  span.end();
-  return appInstance;
 });
+
+app.listen(Number(process.env.PORT));
 
 const shutdown = async () => {
   try {

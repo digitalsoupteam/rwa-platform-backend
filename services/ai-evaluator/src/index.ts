@@ -1,8 +1,8 @@
 import { createApp } from './app';
-import { tracer } from '@shared/monitoring/src/tracing';
+import { withTraceAsync } from '@shared/monitoring/src/tracing';
 
-const app = await tracer.startActiveSpan('ai-evaluator.init.main', async (span) => {
-  const appInstance = await createApp(
+const app = await withTraceAsync('ai-evaluator.init.main', async () => {
+  return await createApp(
     Number(process.env.PORT),
     String(process.env.MONGODB_URI) + '/' + String(process.env.MONGODB_DBNAME),
     String(process.env.OPENROUTER_API_KEY),
@@ -20,9 +20,9 @@ const app = await tracer.startActiveSpan('ai-evaluator.init.main', async (span) 
     Number(process.env.AI_EVALUATOR_MAX_FILES_PER_REQUEST) || 20,
   );
 
-  span.end();
-  return appInstance;
 });
+
+app.listen(Number(process.env.PORT));
 
 const shutdown = async () => {
   try {

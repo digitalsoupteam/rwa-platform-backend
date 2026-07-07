@@ -1,8 +1,8 @@
 import { createApp } from './app';
-import { tracer } from '@shared/monitoring/src/tracing';
+import { withTraceAsync } from '@shared/monitoring/src/tracing';
 
-const app = await tracer.startActiveSpan('ai-assistant.init.main', async (span) => {
-  const appInstance = await createApp(
+const app = await withTraceAsync('ai-assistant.init.main', async () => {
+  return await createApp(
     Number(process.env.PORT),
     String(process.env.MONGODB_URI) + '/' + String(process.env.MONGODB_DBNAME),
     String(process.env.OPENROUTER_API_KEY),
@@ -12,9 +12,9 @@ const app = await tracer.startActiveSpan('ai-assistant.init.main', async (span) 
     String(process.env.PORTFOLIO_SERVICE_URL),
   );
 
-  span.end();
-  return appInstance;
 });
+
+app.listen(Number(process.env.PORT));
 
 const shutdown = async () => {
   try {

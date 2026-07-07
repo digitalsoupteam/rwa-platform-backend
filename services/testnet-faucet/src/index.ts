@@ -1,8 +1,8 @@
 import { createApp } from './app';
-import { tracer } from '@shared/monitoring/src/tracing';
+import { withTraceAsync } from '@shared/monitoring/src/tracing';
 
-const app = await tracer.startActiveSpan('testnet-faucet.init.main', async (span) => {
-  const appInstance = await createApp(
+const app = await withTraceAsync('testnet-faucet.init.main', async () => {
+  return await createApp(
     Number(process.env.PORT),
     String(process.env.MONGODB_URI) + '/' + String(process.env.MONGODB_DBNAME),
     String(process.env.PROVIDER_URL),
@@ -17,9 +17,9 @@ const app = await tracer.startActiveSpan('testnet-faucet.init.main', async (span
     Number(process.env.REQUEST_PLATFORM_DELAY_MS),
   );
 
-  span.end();
-  return appInstance;
 });
+
+app.listen(Number(process.env.PORT));
 
 const shutdown = async () => {
   try {

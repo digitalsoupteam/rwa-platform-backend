@@ -54,8 +54,8 @@ export async function createApp(
       ),
   );
 
-  const app = withTraceSync('blockchain-scanner.init.elysia', (ctx) => {
-    const result = new Elysia()
+  const app = withTraceSync('blockchain-scanner.init.elysia', () => {
+    return new Elysia()
       .use(monitoringPlugin)
       .use(healthPlugin)
       .onError(ErrorHandlerPlugin)
@@ -63,11 +63,7 @@ export async function createApp(
       .use(clientsPlugin)
       .use(servicesPlugin)
       .use(daemonsPlugin)
-      .use(controllersPlugin)
-      .listen(port, () => {
-        ctx.end();
-      });
-    return result;
+      .use(controllersPlugin);
   });
 
   return app;

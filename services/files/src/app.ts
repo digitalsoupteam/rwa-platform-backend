@@ -24,19 +24,15 @@ export async function createApp(port: number, mongoUri: string, rootDir: string,
     createControllersPlugin(servicesPlugin, maxFileSize),
   );
 
-  const app = withTraceSync('files.init.elysia', (ctx) => {
-    const result = new Elysia()
+  const app = withTraceSync('files.init.elysia', () => {
+    return new Elysia()
       .use(monitoringPlugin)
       .use(healthPlugin)
       .onError(ErrorHandlerPlugin)
       .use(repositoriesPlugin)
       .use(clientsPlugin)
       .use(servicesPlugin)
-      .use(controllersPlugin)
-      .listen(port, () => {
-        ctx.end();
-      });
-    return result;
+      .use(controllersPlugin);
   });
 
   return app;

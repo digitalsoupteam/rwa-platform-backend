@@ -28,18 +28,14 @@ export async function createApp(
     async () => await createDaemonsPlugin(servicesPlugin),
   );
 
-  const app = withTraceSync('signer.init.elysia', (ctx) => {
-    const result = new Elysia()
+  const app = withTraceSync('signer.init.elysia', () => {
+    return new Elysia()
       .use(monitoringPlugin)
       .use(healthPlugin)
       .onError(ErrorHandlerPlugin)
       .use(clientsPlugin)
       .use(servicesPlugin)
-      .use(daemonsPlugin)
-      .listen(port, () => {
-        ctx.end();
-      });
-    return result;
+      .use(daemonsPlugin);
   });
 
   return app;

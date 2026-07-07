@@ -51,19 +51,15 @@ export async function createApp(
     createControllersPlugin(servicesPlugin),
   );
 
-  const app = withTraceSync('testnet-faucet.init.elysia', (ctx) => {
-    const result = new Elysia()
+  const app = withTraceSync('testnet-faucet.init.elysia', () => {
+    return new Elysia()
       .use(monitoringPlugin)
       .use(healthPlugin)
       .onError(ErrorHandlerPlugin)
       .use(repositoriesPlugin)
       .use(clientsPlugin)
       .use(servicesPlugin)
-      .use(controllersPlugin)
-      .listen(port, () => {
-        ctx.end();
-      });
-    return result;
+      .use(controllersPlugin);
   });
 
   return app;

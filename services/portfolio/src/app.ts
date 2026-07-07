@@ -39,8 +39,8 @@ export async function createApp(
     createControllersPlugin(servicesPlugin),
   );
 
-  const app = withTraceSync('portfolio.init.elysia', (ctx) => {
-    const result = new Elysia()
+  const app = withTraceSync('portfolio.init.elysia', () => {
+    return new Elysia()
       .use(monitoringPlugin)
       .use(healthPlugin)
       .onError(ErrorHandlerPlugin)
@@ -48,11 +48,7 @@ export async function createApp(
       .use(clientsPlugin)
       .use(servicesPlugin)
       .use(daemonsPlugin)
-      .use(controllersPlugin)
-      .listen(port, () => {
-        ctx.end();
-      });
-    return result;
+      .use(controllersPlugin);
   });
 
   return app;
