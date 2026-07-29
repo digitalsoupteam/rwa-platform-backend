@@ -1,7 +1,7 @@
 import { t } from 'elysia';
 
 /*
- * Assistant type enum
+ * Assistant context enum
  */
 export const AssistantContextList = [
   // Assistant types
@@ -24,3 +24,12 @@ export const assistantContextSchema = t.Array(
 );
 
 export type AssistantContext = typeof assistantContextSchema.static;
+
+/*
+ * Message sender enum
+ */
+export const MessageSenderList = ['user', 'assistant'] as const;
+
+export const messageSenderSchema = t.Union([t.Literal('user'), t.Literal('assistant')]);
+
+export type MessageSender = typeof messageSenderSchema.static;

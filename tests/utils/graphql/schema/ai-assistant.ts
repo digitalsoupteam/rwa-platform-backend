@@ -57,6 +57,7 @@ export const CREATE_MESSAGE = `
       id
       assistantId
       text
+      sender
     }
   }
 `;
@@ -67,6 +68,7 @@ export const GET_MESSAGE = `
       id
       assistantId
       text
+      sender
     }
   }
 `;
@@ -77,6 +79,7 @@ export const UPDATE_MESSAGE = `
       id
       assistantId
       text
+      sender
     }
   }
 `;
@@ -95,6 +98,7 @@ export const GET_MESSAGE_HISTORY = `
       id
       assistantId
       text
+      sender
     }
   }
 `;

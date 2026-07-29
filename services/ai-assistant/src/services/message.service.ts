@@ -37,6 +37,7 @@ export class MessageService {
     const userMessage = await this.messageRepository.create({
       assistantId: data.assistantId,
       text: data.text,
+      sender: 'user',
     });
 
     try {
@@ -57,7 +58,7 @@ export class MessageService {
           content: `You are ${assistant.name}, an AI assistant.\n\n${context || ''}`,
         },
         ...history.reverse().map((msg) => ({
-          role: 'user',
+          role: msg.sender,
           content: msg.text,
         })),
         {
@@ -77,6 +78,7 @@ export class MessageService {
       const aiMessage = await this.messageRepository.create({
         assistantId: data.assistantId,
         text: completion.choices[0].message.content,
+        sender: 'assistant',
       });
 
       return [
@@ -84,11 +86,13 @@ export class MessageService {
           id: userMessage._id.toString(),
           assistantId: userMessage.assistantId,
           text: userMessage.text,
+          sender: userMessage.sender,
         },
         {
           id: aiMessage._id.toString(),
           assistantId: aiMessage.assistantId,
           text: aiMessage.text,
+          sender: aiMessage.sender,
         },
       ];
     } catch (error) {
@@ -119,6 +123,7 @@ export class MessageService {
       id: msg._id.toString(),
       assistantId: msg.assistantId,
       text: msg.text,
+      sender: msg.sender,
     }));
   }
 
@@ -137,6 +142,7 @@ export class MessageService {
       id: message._id.toString(),
       assistantId: message.assistantId,
       text: message.text,
+      sender: message.sender,
     };
   }
 
@@ -171,6 +177,7 @@ export class MessageService {
       id: message._id.toString(),
       assistantId: message.assistantId,
       text: message.text,
+      sender: message.sender,
     };
   }
 }

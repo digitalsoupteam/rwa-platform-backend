@@ -49,5 +49,6 @@ export const getMessageHistory: QueryResolvers['getMessageHistory'] = async (
     id: message.id,
     assistantId: message.assistantId,
     text: message.text,
+    sender: message.sender,
   }));
 };

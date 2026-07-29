@@ -1,6 +1,7 @@
 import { t } from 'elysia';
 import { assistantSchema } from './assistant.validation';
 import { paginationSchema } from './shared.validation';
+import { messageSenderSchema } from '../shared/enums.model';
 
 /*
  * Base model schema
@@ -9,6 +10,7 @@ export const messageSchema = t.Object({
   id: t.String(),
   assistantId: assistantSchema.properties.id,
   text: t.String(),
+  sender: messageSenderSchema,
 });
 
 /*

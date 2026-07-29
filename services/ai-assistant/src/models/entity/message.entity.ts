@@ -1,5 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
 import type { InferRawDocType } from 'mongoose';
+import { MessageSenderList } from '../shared/enums.model';
 const messageSchemaDefinition = {
   assistantId: {
     type: String,
@@ -9,6 +10,11 @@ const messageSchemaDefinition = {
     type: String,
     required: true,
     trim: true,
+  },
+  sender: {
+    type: String,
+    enum: MessageSenderList,
+    required: true,
   },
 } as const;
 

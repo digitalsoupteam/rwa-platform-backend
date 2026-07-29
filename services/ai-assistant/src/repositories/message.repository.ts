@@ -8,7 +8,7 @@ export class MessageRepository {
   constructor(private readonly model = MessageEntity) {}
 
   @TraceDecorator()
-  async create(data: Pick<IMessageEntity, 'assistantId' | 'text'>) {
+  async create(data: Pick<IMessageEntity, 'assistantId' | 'text' | 'sender'>) {
     const doc = await this.model.create<typeof this.model>(data);
     return doc.toObject();
   }

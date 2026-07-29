@@ -37,5 +37,6 @@ export const getMessage: QueryResolvers['getMessage'] = async (_parent, { id }, 
     id: data.id,
     assistantId: data.assistantId,
     text: data.text,
+    sender: data.sender,
   };
 };

@@ -42,5 +42,6 @@ export const createMessage: MutationResolvers['createMessage'] = async (_parent,
     id: message.id,
     assistantId: message.assistantId,
     text: message.text,
+    sender: message.sender,
   }));
 };

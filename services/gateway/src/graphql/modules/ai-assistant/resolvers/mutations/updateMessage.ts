@@ -51,5 +51,6 @@ export const updateMessage: MutationResolvers['updateMessage'] = async (_parent,
     id: data.id,
     assistantId: data.assistantId,
     text: data.text,
+    sender: data.sender,
   };
 };
