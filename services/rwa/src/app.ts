@@ -46,7 +46,14 @@ export async function createApp(
   );
 
   const servicesPlugin = withTraceSync('rwa.init.services_plugin', () =>
-    createServicesPlugin(repositoriesPlugin, clientsPlugin, supportedNetworks, openRouterModel, placeholderImageUrl, filesBaseUrl),
+    createServicesPlugin(
+      repositoriesPlugin,
+      clientsPlugin,
+      supportedNetworks,
+      openRouterModel,
+      placeholderImageUrl,
+      filesBaseUrl,
+    ),
   );
 
   const controllersPlugin = withTraceSync('rwa.init.controllers_plugin', () => createControllersPlugin(servicesPlugin));

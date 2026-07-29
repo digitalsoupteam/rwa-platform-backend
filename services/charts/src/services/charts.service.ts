@@ -115,7 +115,7 @@ export class ChartsService {
       limit,
       offset,
     );
-    return docs.map(d => this.mapPriceDataToOutput(d));
+    return docs.map((d) => this.mapPriceDataToOutput(d));
   }
 
   private getMillisecondsForInterval(interval: OhlcInterval): number {

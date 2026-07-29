@@ -193,7 +193,7 @@ export class CompanyService {
       offset: params.offset ?? 0,
     });
     const companies = await this.companyRepository.findAll(params.filter, params.sort, params.limit, params.offset);
-    return companies.map(c => this.mapCompany(c));
+    return companies.map((c) => this.mapCompany(c));
   }
 
   /**

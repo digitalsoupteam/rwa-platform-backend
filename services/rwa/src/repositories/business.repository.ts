@@ -10,7 +10,9 @@ export class BusinessRepository {
   @TraceDecorator()
   async createBusiness(
     data: Pick<IBusinessEntity, 'ownerId' | 'ownerType' | 'name' | 'chainId'> &
-      Partial<Pick<IBusinessEntity, 'description' | 'tags' | 'image' | 'fileId' | 'country' | 'businessType' | 'socials'>>,
+      Partial<
+        Pick<IBusinessEntity, 'description' | 'tags' | 'image' | 'fileId' | 'country' | 'businessType' | 'socials'>
+      >,
   ) {
     const doc = await this.model.create(data);
     return doc.toObject();
