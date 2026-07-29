@@ -17,18 +17,14 @@ export async function createApp(port: number, mongoUri: string) {
 
   const controllersPlugin = withTraceSync('api-keys.init.controllers', () => createControllersPlugin(servicesPlugin));
 
-  const app = withTraceSync('api-keys.init.elysia', (ctx) => {
-    const result = new Elysia()
+  const app = withTraceSync('api-keys.init.elysia', () => {
+    return new Elysia()
       .use(monitoringPlugin)
       .use(healthPlugin)
       .onError(ErrorHandlerPlugin)
       .use(repositoriesPlugin)
       .use(servicesPlugin)
-      .use(controllersPlugin)
-      .listen(port, () => {
-        ctx.end();
-      });
-    return result;
+      .use(controllersPlugin);
   });
 
   return app;

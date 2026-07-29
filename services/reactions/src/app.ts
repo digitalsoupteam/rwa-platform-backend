@@ -21,18 +21,14 @@ export async function createApp(port: number, mongoUri: string) {
     createControllersPlugin(servicesPlugin),
   );
 
-  const app = withTraceSync('reactions.init.elysia', (ctx) => {
-    const result = new Elysia()
+  const app = withTraceSync('reactions.init.elysia', () => {
+    return new Elysia()
       .use(monitoringPlugin)
       .use(healthPlugin)
       .onError(ErrorHandlerPlugin)
       .use(repositoriesPlugin)
       .use(servicesPlugin)
-      .use(controllersPlugin)
-      .listen(port, () => {
-        ctx.end();
-      });
-    return result;
+      .use(controllersPlugin);
   });
 
   return app;

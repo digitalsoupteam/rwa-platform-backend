@@ -34,18 +34,14 @@ export async function createApp(
 
   const controllersPlugin = withTraceSync('auth.init.controllers', () => createControllersPlugin(servicesPlugin));
 
-  const app = withTraceSync('auth.init.elysia', (ctx) => {
-    const result = new Elysia()
+  const app = withTraceSync('auth.init.elysia', () => {
+    return new Elysia()
       .use(monitoringPlugin)
       .use(healthPlugin)
       .onError(ErrorHandlerPlugin)
       .use(repositoriesPlugin)
       .use(servicesPlugin)
-      .use(controllersPlugin)
-      .listen(port, () => {
-        ctx.end();
-      });
-    return result;
+      .use(controllersPlugin);
   });
 
   return app;

@@ -1,8 +1,8 @@
 import { createApp } from './app';
-import { tracer } from '@shared/monitoring/src/tracing';
+import { withTraceAsync } from '@shared/monitoring/src/tracing';
 
-const app = await tracer.startActiveSpan('webhooks.init.main', async (span) => {
-  const appInstance = await createApp(
+const app = await withTraceAsync('webhooks.init.main', async () => {
+  return await createApp(
     Number(process.env.PORT),
     String(process.env.MONGODB_URI) + '/' + String(process.env.MONGODB_DBNAME),
     String(process.env.RABBITMQ_URL),
@@ -12,9 +12,9 @@ const app = await tracer.startActiveSpan('webhooks.init.main', async (span) => {
     String(process.env.WEBHOOKS_ENCRYPTION_KEY),
   );
 
-  span.end();
-  return appInstance;
 });
+
+app.listen(Number(process.env.PORT));
 
 const shutdown = async () => {
   try {
