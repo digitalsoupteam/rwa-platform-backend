@@ -1,39 +1,44 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { FileRepository } from "../repositories/file.repository";
-import { StorageClient } from "../clients/storage.client";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { FileRepository } from '../repositories/file.repository';
+import { StorageClient } from '../clients/storage.client';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
+import { AppError } from '@shared/errors/app-errors';
+import { fileTypeFromBuffer } from 'file-type';
 
-@TracingDecorator()
 export class FileService {
   constructor(
     private readonly fileRepository: FileRepository,
-    private readonly storageClient: StorageClient
+    private readonly storageClient: StorageClient,
   ) {}
 
   /**
    * Creates a new file record and saves file to disk
    */
-  async createFile(data: {
-    file: File;
-  }) {
-    const buffer = await data.file.arrayBuffer();
-    const storagePath = this.storageClient.generatePath(data.file.name);
-
-    logger.debug("Creating new file", {
-      name: data.file.name,
-      size: data.file.size,
-      type: data.file.type
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator()
+  async createFile(data: { file: File }) {
+    setSpanAttributes({
+      mimeType: data.file.type,
     });
+    const buffer = await data.file.arrayBuffer();
+    const relativePath = this.storageClient.generatePath(data.file.name);
 
     // Save file to storage
-    await this.storageClient.saveFile(storagePath, Buffer.from(buffer));
+    await this.storageClient.saveFile(relativePath, Buffer.from(buffer));
 
-    console.log('file.metadata1')
+    // Determine MIME type from file content (magic bytes).
+    // Text files (.txt, .csv) have no magic bytes — fallback to client-provided type (stripped of parameters).
+    const detected = await fileTypeFromBuffer(Buffer.from(buffer));
+    const mimeType = detected?.mime ?? data.file.type.split(';')[0].trim();
+
     const file = await this.fileRepository.create({
       name: data.file.name,
-      path: storagePath,
+      path: relativePath,
       size: data.file.size,
-      mimeType: data.file.type,
+      mimeType,
     });
 
     return {
@@ -48,14 +53,23 @@ export class FileService {
   /**
    * Gets file by ID
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getFile(id: string) {
-    logger.debug("Getting file", { id });
-    
+    setSpanAttributes({
+      fileId: id,
+    });
     const file = await this.fileRepository.findById(id);
 
     if (!this.storageClient.fileExists(file.path)) {
-      logger.error("Physical file not found", { path: file.path });
-      throw new Error("Physical file not found");
+      throw new AppError({
+        message: 'Physical file not found',
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return {
@@ -70,14 +84,23 @@ export class FileService {
   /**
    * Gets file by path
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ path: a[0] }),
+  })
   async getFileByPath(path: string) {
-    logger.debug("Getting file by path", { path });
-    
+    setSpanAttributes({
+      path,
+    });
     const file = await this.fileRepository.findByPath(path);
 
     if (!this.storageClient.fileExists(file.path)) {
-      logger.error("Physical file not found", { path: file.path });
-      throw new Error("Physical file not found");
+      throw new AppError({
+        message: 'Physical file not found',
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return {
@@ -92,17 +115,29 @@ export class FileService {
   /**
    * Updates file metadata
    */
-  async updateFile(id: string, data: {
-    name?: string;
-    metadata?: Record<string, any>;
-  }) {
-    logger.debug("Updating file metadata", { id });
-
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0], name: a[1].name }),
+  })
+  async updateFile(
+    id: string,
+    data: {
+      name?: string;
+      metadata?: Record<string, any>;
+    },
+  ) {
+    setSpanAttributes({
+      fileId: id,
+    });
     const file = await this.fileRepository.update(id, data);
 
     if (!this.storageClient.fileExists(file.path)) {
-      logger.error("Physical file not found", { path: file.path });
-      throw new Error("Physical file not found");
+      throw new AppError({
+        message: 'Physical file not found',
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return {
@@ -117,13 +152,19 @@ export class FileService {
   /**
    * Deletes file record and physical file by ID
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async deleteFile(id: string) {
-    logger.debug("Deleting file", { id });
-    
+    setSpanAttributes({
+      fileId: id,
+    });
     const file = await this.fileRepository.findById(id);
     await this.storageClient.deleteFile(file.path);
     await this.fileRepository.delete(id);
-    
+
     return { id };
   }
 }

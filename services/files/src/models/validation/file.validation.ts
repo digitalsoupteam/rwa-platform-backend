@@ -1,4 +1,4 @@
-import { t } from "elysia";
+import { t } from 'elysia';
 
 /*
  * Base model schema
@@ -15,7 +15,7 @@ export const fileSchema = t.Object({
  * File upload schema
  */
 export const createFileRequest = t.Object({
-  file: t.File()
+  file: t.File(),
 });
 
 export const createFileResponse = fileSchema;
@@ -23,23 +23,20 @@ export const createFileResponse = fileSchema;
 /*
  * Update
  */
-export const updateFileRequest = t.Composite([
-  t.Pick(fileSchema, ["id"]),
-  t.Partial(t.Pick(fileSchema, ["name"])),
-]);
+export const updateFileRequest = t.Composite([t.Pick(fileSchema, ['id']), t.Partial(t.Pick(fileSchema, ['name']))]);
 
 export const updateFileResponse = fileSchema;
 
 /*
  * Delete
  */
-export const deleteFileRequest = t.Pick(fileSchema, ["id"]);
+export const deleteFileRequest = t.Pick(fileSchema, ['id']);
 
-export const deleteFileResponse = t.Pick(fileSchema, ["id"]);
+export const deleteFileResponse = t.Pick(fileSchema, ['id']);
 
 /*
  * Get
  */
-export const getFileRequest = t.Pick(fileSchema, ["id"]);
+export const getFileRequest = t.Pick(fileSchema, ['id']);
 
 export const getFileResponse = fileSchema;
