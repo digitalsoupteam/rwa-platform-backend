@@ -7,6 +7,7 @@ COPY package.json .
 
 COPY shared/monitoring/package.json ./shared/monitoring/
 COPY shared/errors/package.json ./shared/errors/
+COPY shared/files/package.json ./shared/files/
 
 COPY services/documents/package.json ./services/documents/
 
@@ -25,4 +26,6 @@ COPY services/documents ./services/documents
 EXPOSE ${PORT}
 
 
-CMD ["bun", "services/documents/src/index.ts"]
+WORKDIR /app/services/documents
+ENTRYPOINT ["bun"]
+CMD ["src/index.ts"]

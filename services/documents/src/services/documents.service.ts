@@ -1,21 +1,34 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { DocumentsFolderRepository } from "../repositories/documentsFolder.repository";
-import { DocumentRepository } from "../repositories/document.repository";
-import { FilterQuery, SortOrder, Types } from "mongoose";
-import { IDocumentEntity } from "../models/entity/document.entity";
-import { DocumentEntity } from "../models/entity/document.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { DocumentsFolderRepository } from '../repositories/documentsFolder.repository';
+import { DocumentRepository } from '../repositories/document.repository';
+import type { SortOrder } from 'mongoose';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
+import { buildFileUrl } from '@shared/files/src/index';
 
-@TracingDecorator()
 export class DocumentsService {
   constructor(
     private readonly documentsFolderRepository: DocumentsFolderRepository,
-    private readonly documentRepository: DocumentRepository
+    private readonly documentRepository: DocumentRepository,
+    private readonly filesBaseUrl: string,
   ) {}
 
   /**
    * Creates a new documents folder
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({
+      name: a[0].name,
+      parentId: a[0].parentId,
+      ownerId: a[0].ownerId,
+      ownerType: a[0].ownerType,
+      creator: a[0].creator,
+      grandParentId: a[0].grandParentId,
+    }),
+  })
   async createFolder(data: {
     name: string;
     parentId: string;
@@ -24,15 +37,15 @@ export class DocumentsService {
     creator: string;
     grandParentId: string;
   }) {
-    logger.debug("Creating new documents folder", { name: data.name });
-    
+    setSpanAttributes({ entityType: 'folder' });
+
     const folder = await this.documentsFolderRepository.create({
       name: data.name,
       parentId: data.parentId,
       ownerId: data.ownerId,
       ownerType: data.ownerType,
       creator: data.creator,
-      grandParentId: data.grandParentId
+      grandParentId: data.grandParentId,
     });
 
     return {
@@ -51,9 +64,14 @@ export class DocumentsService {
   /**
    * Updates folder name
    */
-  async updateFolder(params: { id: string, updateData: { name: string } }) {
-    logger.debug("Updating folder", params);
-    
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, name: a[0].updateData.name }),
+  })
+  async updateFolder(params: { id: string; updateData: { name: string } }) {
+    setSpanAttributes({ entityId: params.id, entityType: 'folder' });
+
     const folder = await this.documentsFolderRepository.update(params.id, params.updateData);
 
     return {
@@ -72,9 +90,14 @@ export class DocumentsService {
   /**
    * Deletes a folder and all its documents
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async deleteFolder(id: string) {
-    logger.debug("Deleting folder and its documents", { id });
-    
+    setSpanAttributes({ entityId: id, entityType: 'folder' });
+
     // First delete all documents in the folder
     const documents = await this.documentRepository.findAll({ folderIds: [id] });
     for (const doc of documents) {
@@ -90,9 +113,14 @@ export class DocumentsService {
   /**
    * Gets folder by ID
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getFolder(id: string) {
-    logger.debug("Getting folder", { id });
-    
+    setSpanAttributes({ entityId: id, entityType: 'folder' });
+
     const folder = await this.documentsFolderRepository.findById(id);
 
     return {
@@ -111,22 +139,27 @@ export class DocumentsService {
   /**
    * Gets folders list with filters, pagination and sorting
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
   async getFolders(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
     limit?: number;
     offset?: number;
   }) {
-    logger.debug("Getting folders list", params);
-    
+    setSpanAttributes({ entityType: 'folder' });
+
     const folders = await this.documentsFolderRepository.findAll(
       params.filter,
       params.sort,
       params.limit,
-      params.offset
+      params.offset,
     );
 
-    return folders.map(folder => ({
+    return folders.map((folder) => ({
       id: folder._id.toString(),
       name: folder.name,
       parentId: folder.parentId,
@@ -142,25 +175,44 @@ export class DocumentsService {
   /**
    * Creates a new document in a folder
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({
+      name: a[0].name,
+      parentId: a[0].parentId,
+      ownerId: a[0].ownerId,
+      ownerType: a[0].ownerType,
+      creator: a[0].creator,
+      grandParentId: a[0].grandParentId,
+    }),
+  })
   async createDocument(data: {
     folderId: string;
     name: string;
-    link: string;
+    fileId: string;
+    path: string;
+    mimeType: string;
+    size: number;
     ownerId: string;
     ownerType: string;
     creator: string;
     parentId: string;
     grandParentId: string;
   }) {
-    logger.debug("Creating new document", { name: data.name });
-    
+    setSpanAttributes({ entityType: 'document' });
+
     const document = await this.documentRepository.create(data);
 
     return {
       id: document._id.toString(),
       folderId: document.folderId.toString(),
       name: document.name,
-      link: document.link,
+      fileId: document.fileId,
+      path: document.path,
+      url: buildFileUrl(document.path, this.filesBaseUrl),
+      mimeType: document.mimeType,
+      size: document.size,
       ownerId: document.ownerId,
       ownerType: document.ownerType,
       creator: document.creator,
@@ -174,22 +226,30 @@ export class DocumentsService {
   /**
    * Updates document
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, name: a[0].updateData.name }),
+  })
   async updateDocument(params: {
     id: string;
     updateData: {
       name?: string;
-      link?: string;
-    }
+    };
   }) {
-    logger.debug("Updating document", params);
-    
+    setSpanAttributes({ entityId: params.id, entityType: 'document' });
+
     const document = await this.documentRepository.update(params.id, params.updateData);
 
     return {
       id: document._id.toString(),
       folderId: document.folderId.toString(),
       name: document.name,
-      link: document.link,
+      fileId: document.fileId,
+      path: document.path,
+      url: buildFileUrl(document.path, this.filesBaseUrl),
+      mimeType: document.mimeType,
+      size: document.size,
       ownerId: document.ownerId,
       ownerType: document.ownerType,
       creator: document.creator,
@@ -203,8 +263,14 @@ export class DocumentsService {
   /**
    * Deletes document
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async deleteDocument(id: string) {
-    logger.debug("Deleting document", { id });
+    setSpanAttributes({ entityId: id, entityType: 'document' });
+
     await this.documentRepository.delete(id);
     return { id };
   }
@@ -212,16 +278,25 @@ export class DocumentsService {
   /**
    * Gets document by ID
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getDocument(id: string) {
-    logger.debug("Getting document", { id });
-    
+    setSpanAttributes({ entityId: id, entityType: 'document' });
+
     const document = await this.documentRepository.findById(id);
 
     return {
       id: document._id.toString(),
       folderId: document.folderId.toString(),
       name: document.name,
-      link: document.link,
+      fileId: document.fileId,
+      path: document.path,
+      url: buildFileUrl(document.path, this.filesBaseUrl),
+      mimeType: document.mimeType,
+      size: document.size,
       ownerId: document.ownerId,
       ownerType: document.ownerType,
       creator: document.creator,
@@ -235,26 +310,30 @@ export class DocumentsService {
   /**
    * Gets documents list with filters, pagination and sorting
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
   async getDocuments(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
     limit?: number;
     offset?: number;
   }) {
-    logger.debug("Getting documents list", params);
-    
-    const documents = await this.documentRepository.findAll(
-      params.filter,
-      params.sort,
-      params.limit,
-      params.offset
-    );
+    setSpanAttributes({ entityType: 'document' });
 
-    return documents.map(doc => ({
+    const documents = await this.documentRepository.findAll(params.filter, params.sort, params.limit, params.offset);
+
+    return documents.map((doc) => ({
       id: doc._id.toString(),
       folderId: doc.folderId.toString(),
       name: doc.name,
-      link: doc.link,
+      fileId: doc.fileId,
+      path: doc.path,
+      url: buildFileUrl(doc.path, this.filesBaseUrl),
+      mimeType: doc.mimeType,
+      size: doc.size,
       ownerId: doc.ownerId,
       ownerType: doc.ownerType,
       creator: doc.creator,
