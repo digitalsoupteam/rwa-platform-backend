@@ -1,19 +1,27 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { GalleryRepository } from "../repositories/gallery.repository";
-import { ImageRepository } from "../repositories/image.repository";
-import { FilterQuery, SortOrder, Types } from "mongoose";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { GalleryRepository } from '../repositories/gallery.repository';
+import { ImageRepository } from '../repositories/image.repository';
+import { type SortOrder } from 'mongoose';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
+import { buildFileUrl } from '@shared/files/src/index';
 
-@TracingDecorator()
 export class ImagesService {
   constructor(
     private readonly galleryRepository: GalleryRepository,
-    private readonly imageRepository: ImageRepository
+    private readonly imageRepository: ImageRepository,
+    private readonly filesBaseUrl: string,
   ) {}
 
   /**
    * Creates a new gallery
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ name: a[0].name }),
+  })
   async createGallery(data: {
     name: string;
     parentId: string;
@@ -22,8 +30,11 @@ export class ImagesService {
     creator: string;
     grandParentId: string;
   }) {
-    logger.debug("Creating new gallery", { name: data.name });
-    
+    setSpanAttributes({
+      userId: data.creator,
+      parentId: data.parentId,
+    });
+
     const gallery = await this.galleryRepository.create(data);
 
     return {
@@ -35,16 +46,23 @@ export class ImagesService {
       creator: gallery.creator,
       grandParentId: gallery.grandParentId,
       createdAt: gallery.createdAt,
-      updatedAt: gallery.updatedAt
+      updatedAt: gallery.updatedAt,
     };
   }
 
   /**
    * Updates gallery name
    */
-  async updateGallery(params: { id: string, updateData: { name: string } }) {
-    logger.debug("Updating gallery", params);
-    
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
+  async updateGallery(params: { id: string; updateData: { name: string } }) {
+    setSpanAttributes({
+      entityId: params.id,
+    });
+
     const gallery = await this.galleryRepository.update(params.id, params.updateData);
 
     return {
@@ -56,16 +74,23 @@ export class ImagesService {
       creator: gallery.creator,
       grandParentId: gallery.grandParentId,
       createdAt: gallery.createdAt,
-      updatedAt: gallery.updatedAt
+      updatedAt: gallery.updatedAt,
     };
   }
 
   /**
    * Deletes a gallery and all its images
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async deleteGallery(id: string) {
-    logger.debug("Deleting gallery and its images", { id });
-    
+    setSpanAttributes({
+      entityId: id,
+    });
+
     // First delete all images in the gallery
     const images = await this.imageRepository.findAll({ galleryIds: [id] });
     for (const image of images) {
@@ -81,9 +106,16 @@ export class ImagesService {
   /**
    * Gets gallery by ID
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getGallery(id: string) {
-    logger.debug("Getting gallery", { id });
-    
+    setSpanAttributes({
+      entityId: id,
+    });
+
     const gallery = await this.galleryRepository.findById(id);
 
     return {
@@ -95,29 +127,29 @@ export class ImagesService {
       creator: gallery.creator,
       grandParentId: gallery.grandParentId,
       createdAt: gallery.createdAt,
-      updatedAt: gallery.updatedAt
+      updatedAt: gallery.updatedAt,
     };
   }
 
   /**
    * Gets galleries list with filters, pagination and sorting
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
   async getGalleries(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
     limit?: number;
     offset?: number;
   }) {
-    logger.debug("Getting galleries list", params);
-    
-    const galleries = await this.galleryRepository.findAll(
-      params.filter,
-      params.sort,
-      params.limit,
-      params.offset
-    );
+    setSpanAttributes({});
 
-    return galleries.map(gallery => ({
+    const galleries = await this.galleryRepository.findAll(params.filter, params.sort, params.limit, params.offset);
+
+    return galleries.map((gallery) => ({
       id: gallery._id.toString(),
       name: gallery.name,
       parentId: gallery.parentId,
@@ -126,26 +158,38 @@ export class ImagesService {
       creator: gallery.creator,
       grandParentId: gallery.grandParentId,
       createdAt: gallery.createdAt,
-      updatedAt: gallery.updatedAt
+      updatedAt: gallery.updatedAt,
     }));
   }
 
   /**
    * Creates a new image in a gallery
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ name: a[0].name }),
+  })
   async createImage(data: {
     galleryId: string;
     name: string;
     description: string;
-    link: string;
+    fileId: string;
+    path: string;
+    mimeType: string;
+    size: number;
     ownerId: string;
     ownerType: string;
     creator: string;
     parentId: string;
     grandParentId: string;
   }) {
-    logger.debug("Creating new image", { name: data.name });
-    
+    setSpanAttributes({
+      userId: data.creator,
+      galleryId: data.galleryId,
+      parentId: data.parentId,
+    });
+
     const image = await this.imageRepository.create(data);
 
     return {
@@ -153,30 +197,40 @@ export class ImagesService {
       galleryId: image.galleryId.toString(),
       name: image.name,
       description: image.description,
-      link: image.link,
+      fileId: image.fileId,
+      path: image.path,
+      url: buildFileUrl(image.path, this.filesBaseUrl),
+      mimeType: image.mimeType,
+      size: image.size,
       ownerId: image.ownerId,
       ownerType: image.ownerType,
       creator: image.creator,
       parentId: image.parentId,
       grandParentId: image.grandParentId,
       createdAt: image.createdAt,
-      updatedAt: image.updatedAt
+      updatedAt: image.updatedAt,
     };
   }
 
   /**
    * Updates image
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
   async updateImage(params: {
     id: string;
     updateData: {
       name?: string;
       description?: string;
-      link?: string;
-    }
+    };
   }) {
-    logger.debug("Updating image", params);
-    
+    setSpanAttributes({
+      imageId: params.id,
+    });
+
     const image = await this.imageRepository.update(params.id, params.updateData);
 
     return {
@@ -184,22 +238,33 @@ export class ImagesService {
       galleryId: image.galleryId.toString(),
       name: image.name,
       description: image.description,
-      link: image.link,
+      fileId: image.fileId,
+      path: image.path,
+      url: buildFileUrl(image.path, this.filesBaseUrl),
+      mimeType: image.mimeType,
+      size: image.size,
       ownerId: image.ownerId,
       ownerType: image.ownerType,
       creator: image.creator,
       parentId: image.parentId,
       grandParentId: image.grandParentId,
       createdAt: image.createdAt,
-      updatedAt: image.updatedAt
+      updatedAt: image.updatedAt,
     };
   }
 
   /**
    * Deletes image
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async deleteImage(id: string) {
-    logger.debug("Deleting image", { id });
+    setSpanAttributes({
+      imageId: id,
+    });
     await this.imageRepository.delete(id);
     return { id };
   }
@@ -207,9 +272,16 @@ export class ImagesService {
   /**
    * Gets image by ID
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getImage(id: string) {
-    logger.debug("Getting image", { id });
-    
+    setSpanAttributes({
+      imageId: id,
+    });
+
     const image = await this.imageRepository.findById(id);
 
     return {
@@ -217,48 +289,56 @@ export class ImagesService {
       galleryId: image.galleryId.toString(),
       name: image.name,
       description: image.description,
-      link: image.link,
+      fileId: image.fileId,
+      path: image.path,
+      url: buildFileUrl(image.path, this.filesBaseUrl),
+      mimeType: image.mimeType,
+      size: image.size,
       ownerId: image.ownerId,
       ownerType: image.ownerType,
       creator: image.creator,
       parentId: image.parentId,
       grandParentId: image.grandParentId,
       createdAt: image.createdAt,
-      updatedAt: image.updatedAt
+      updatedAt: image.updatedAt,
     };
   }
 
   /**
    * Gets images list with filters, pagination and sorting
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
   async getImages(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
     limit?: number;
     offset?: number;
   }) {
-    logger.debug("Getting images list", params);
-    
-    const images = await this.imageRepository.findAll(
-      params.filter,
-      params.sort,
-      params.limit,
-      params.offset
-    );
+    setSpanAttributes({});
 
-    return images.map(image => ({
+    const images = await this.imageRepository.findAll(params.filter, params.sort, params.limit, params.offset);
+
+    return images.map((image) => ({
       id: image._id.toString(),
       galleryId: image.galleryId.toString(),
       name: image.name,
       description: image.description,
-      link: image.link,
+      fileId: image.fileId,
+      path: image.path,
+      url: buildFileUrl(image.path, this.filesBaseUrl),
+      mimeType: image.mimeType,
+      size: image.size,
       ownerId: image.ownerId,
       ownerType: image.ownerType,
       creator: image.creator,
       parentId: image.parentId,
       grandParentId: image.grandParentId,
       createdAt: image.createdAt,
-      updatedAt: image.updatedAt
+      updatedAt: image.updatedAt,
     }));
   }
 }

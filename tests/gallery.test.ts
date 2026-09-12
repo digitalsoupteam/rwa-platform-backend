@@ -2,6 +2,7 @@ import { expect, test, describe, beforeAll } from "bun:test";
 import { ethers, HDNodeWallet, JsonRpcProvider } from "ethers";
 import { TESTNET_RPC } from "./utils/config";
 import { makeGraphQLRequest } from "./utils/graphql/makeGraphQLRequest";
+import { makeRestRequest } from "./utils/makeRestRequest";
 import { authenticate } from "./utils/authenticate";
 import {
   CREATE_GALLERY,
@@ -9,7 +10,6 @@ import {
   DELETE_GALLERY,
   GET_GALLERY,
   GET_GALLERIES,
-  CREATE_IMAGE,
   UPDATE_IMAGE,
   DELETE_IMAGE,
   GET_IMAGE,
@@ -92,21 +92,14 @@ describe("Gallery Flow", () => {
       const imageContent = "fake image content";
       const file = new File([imageContent], "test.jpg", { type: "image/jpeg" });
 
-      const result = await makeGraphQLRequest(
-        CREATE_IMAGE,
-        {
-          input: {
-            galleryId: "some-gallery-id",
-            name: "Test Image",
-            description: "Test Description",
-          },
-        },
-        undefined,
-        file
+      const result = await makeRestRequest(
+        "/api/gallery/createImage",
+        { file, galleryId: "some-gallery-id", name: "Test Image", description: "Test Description" },
+        undefined
       );
 
-      expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toBe("Authentication required");
+      expect(result.error).toBeDefined();
+      expect(result.error.message).toBe("Authentication required");
     });
   });
 
@@ -168,21 +161,14 @@ describe("Gallery Flow", () => {
       const imageContent = "fake image content";
       const file = new File([imageContent], "test.jpg", { type: "image/jpeg" });
 
-      const result = await makeGraphQLRequest(
-        CREATE_IMAGE,
-        {
-          input: {
-            galleryId,
-            name: "Test Image",
-            description: "Test Description",
-          },
-        },
-        accessToken2,
-        file
+      const result = await makeRestRequest(
+        "/api/gallery/createImage",
+        { file, galleryId, name: "Test Image", description: "Test Description" },
+        accessToken2
       );
 
-      expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toBe("User does not have required company permissions");
+      expect(result.error).toBeDefined();
+      expect(result.error.message).toBe("User does not have required company permissions");
     });
 
     test("should not allow non-owner to update image", async () => {
@@ -190,21 +176,14 @@ describe("Gallery Flow", () => {
       const imageContent = "fake image content";
       const file = new File([imageContent], "test.jpg", { type: "image/jpeg" });
 
-      const createResult = await makeGraphQLRequest(
-        CREATE_IMAGE,
-        {
-          input: {
-            galleryId,
-            name: "Test Image",
-            description: "Test Description",
-          },
-        },
-        accessToken,
-        file
+      const createResult = await makeRestRequest(
+        "/api/gallery/createImage",
+        { file, galleryId, name: "Test Image", description: "Test Description" },
+        accessToken
       );
 
-      expect(createResult.errors).toBeUndefined();
-      imageId = createResult.data.createImage.id;
+      expect(createResult.error).toBeUndefined();
+      imageId = createResult.id;
 
       // Try to update as non-owner
       const result = await makeGraphQLRequest(
@@ -215,7 +194,6 @@ describe("Gallery Flow", () => {
             updateData: {
               name: "Updated Test Image",
               description: "Updated Test Description",
-              link: "https://example.com/updated.jpg"
             }
           },
         },
@@ -347,30 +325,27 @@ describe("Gallery Flow", () => {
       const imageContent = "fake image content";
       const file = new File([imageContent], "test.jpg", { type: "image/jpeg" });
 
-      const result = await makeGraphQLRequest(
-        CREATE_IMAGE,
-        {
-          input: {
-            galleryId,
-            name: "Test Image",
-            description: "Test Description",
-          },
-        },
-        accessToken,
-        file
+      const result = await makeRestRequest(
+        "/api/gallery/createImage",
+        { file, galleryId, name: "Test Image", description: "Test Description" },
+        accessToken
       );
 
-      expect(result.errors).toBeUndefined();
-      expect(result.data.createImage).toBeDefined();
-      expect(result.data.createImage.name).toBe("Test Image");
-      expect(result.data.createImage.description).toBe("Test Description");
-      expect(result.data.createImage.link).toBeDefined(); // Path should be set by files service
-      expect(result.data.createImage.galleryId).toBe(galleryId);
-      expect(result.data.createImage.ownerId).toBe(companyId);
-      expect(result.data.createImage.ownerType).toBe("company");
-      expect(result.data.createImage.creator).toBe(userId);
+      expect(result.error).toBeUndefined();
+      expect(result.id).toBeDefined();
+      expect(result.name).toBe("Test Image");
+      expect(result.description).toBe("Test Description");
+      expect(result.url).toBeDefined();
+      expect(result.fileId).toBeDefined();
+      expect(result.path).toBeDefined();
+      expect(result.mimeType).toBe("image/jpeg");
+      expect(result.size).toBe(file.size);
+      expect(result.galleryId).toBe(galleryId);
+      expect(result.ownerId).toBe(companyId);
+      expect(result.ownerType).toBe("company");
+      expect(result.creator).toBe(userId);
 
-      imageId = result.data.createImage.id;
+      imageId = result.id;
     });
 
     test("should get image by id", async () => {
@@ -386,6 +361,8 @@ describe("Gallery Flow", () => {
       expect(result.data.getImage).toBeDefined();
       expect(result.data.getImage.id).toBe(imageId);
       expect(result.data.getImage.name).toBe("Test Image");
+      expect(result.data.getImage.mimeType).toBe("image/jpeg");
+      expect(result.data.getImage.size).toBeDefined();
       expect(result.data.getImage.ownerId).toBe(companyId);
       expect(result.data.getImage.ownerType).toBe("company");
     });
@@ -425,7 +402,6 @@ describe("Gallery Flow", () => {
             updateData: {
               name: "Updated Test Image",
               description: "Updated Test Description",
-              link: "https://example.com/updated.jpg"
             }
           },
         },
@@ -437,7 +413,8 @@ describe("Gallery Flow", () => {
       expect(result.data.updateImage.id).toBe(imageId);
       expect(result.data.updateImage.name).toBe("Updated Test Image");
       expect(result.data.updateImage.description).toBe("Updated Test Description");
-      expect(result.data.updateImage.link).toBe("https://example.com/updated.jpg");
+      expect(result.data.updateImage.mimeType).toBe("image/jpeg");
+      expect(result.data.updateImage.size).toBeDefined();
       expect(result.data.updateImage.ownerId).toBe(companyId);
       expect(result.data.updateImage.ownerType).toBe("company");
       expect(result.data.updateImage.galleryId).toBe(galleryId);
@@ -466,6 +443,37 @@ describe("Gallery Flow", () => {
 
       expect(getResult.errors).toBeDefined();
       expect(getResult.errors[0].message).toBeDefined();
+    });
+  });
+
+  describe("File Validation", () => {
+    test("should reject image with wrong MIME type", async () => {
+      const fileContent = "not an image";
+      const file = new File([fileContent], "test.txt", { type: "text/plain" });
+
+      const result = await makeRestRequest(
+        "/api/gallery/createImage",
+        { file, galleryId, name: "Should Fail", description: "Wrong type" },
+        accessToken
+      );
+
+      expect(result.error).toBeDefined();
+      expect(result.error.message).toContain("not allowed");
+    });
+
+    test("should reject image with oversized file", async () => {
+      // Create a file larger than 5MB (GALLERY_MAX_FILE_SIZE)
+      const oversizedContent = new Uint8Array(6 * 1024 * 1024);
+      const file = new File([oversizedContent], "big.jpg", { type: "image/jpeg" });
+
+      const result = await makeRestRequest(
+        "/api/gallery/createImage",
+        { file, galleryId, name: "Should Fail Oversized", description: "Too big" },
+        accessToken
+      );
+
+      expect(result.error).toBeDefined();
+      expect(result.error.message).toContain("exceeds maximum");
     });
   });
 

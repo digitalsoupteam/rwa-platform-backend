@@ -1,5 +1,4 @@
-import { t } from "elysia";
-import { paginationSchema } from "./shared.validation";
+import { t } from 'elysia';
 
 /*
  * Entity schemas
@@ -21,7 +20,11 @@ export const imageSchema = t.Object({
   galleryId: t.String(),
   name: t.String(),
   description: t.String(),
-  link: t.String(),
+  fileId: t.String(),
+  path: t.String(),
+  url: t.String(),
+  mimeType: t.String(),
+  size: t.Number(),
   ownerId: t.String(),
   ownerType: t.String(),
   creator: t.String(),
@@ -35,12 +38,12 @@ export const imageSchema = t.Object({
  * Create gallery
  */
 export const createGalleryRequest = t.Pick(gallerySchema, [
-  "name",
-  "parentId",
-  "ownerId",
-  "ownerType",
-  "creator",
-  "grandParentId",
+  'name',
+  'parentId',
+  'ownerId',
+  'ownerType',
+  'creator',
+  'grandParentId',
 ]);
 export const createGalleryResponse = gallerySchema;
 
@@ -50,21 +53,21 @@ export const createGalleryResponse = gallerySchema;
 export const updateGalleryRequest = t.Object({
   id: t.String(),
   updateData: t.Object({
-    name: t.String()
-  })
+    name: t.String(),
+  }),
 });
 export const updateGalleryResponse = gallerySchema;
 
 /*
  * Delete gallery
  */
-export const deleteGalleryRequest = t.Pick(gallerySchema, ["id"]);
-export const deleteGalleryResponse = t.Pick(gallerySchema, ["id"]);
+export const deleteGalleryRequest = t.Pick(gallerySchema, ['id']);
+export const deleteGalleryResponse = t.Pick(gallerySchema, ['id']);
 
 /*
  * Get gallery
  */
-export const getGalleryRequest = t.Pick(gallerySchema, ["id"]);
+export const getGalleryRequest = t.Pick(gallerySchema, ['id']);
 export const getGalleryResponse = gallerySchema;
 
 /*
@@ -72,9 +75,9 @@ export const getGalleryResponse = gallerySchema;
  */
 export const getGalleriesRequest = t.Object({
   filter: t.Record(t.String(), t.Any()),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
   limit: t.Optional(t.Number()),
-  offset: t.Optional(t.Number())
+  offset: t.Optional(t.Number()),
 });
 export const getGalleriesResponse = t.Array(gallerySchema);
 
@@ -82,15 +85,18 @@ export const getGalleriesResponse = t.Array(gallerySchema);
  * Create image
  */
 export const createImageRequest = t.Pick(imageSchema, [
-  "galleryId",
-  "name",
-  "description",
-  "link",
-  "ownerId",
-  "ownerType",
-  "creator",
-  "parentId",
-  "grandParentId",
+  'galleryId',
+  'name',
+  'description',
+  'fileId',
+  'path',
+  'mimeType',
+  'size',
+  'ownerId',
+  'ownerType',
+  'creator',
+  'parentId',
+  'grandParentId',
 ]);
 export const createImageResponse = imageSchema;
 
@@ -99,24 +105,25 @@ export const createImageResponse = imageSchema;
  */
 export const updateImageRequest = t.Object({
   id: t.String(),
-  updateData: t.Partial(t.Object({
-    name: t.String(),
-    description: t.String(),
-    link: t.String()
-  }))
+  updateData: t.Partial(
+    t.Object({
+      name: t.String(),
+      description: t.String(),
+    }),
+  ),
 });
 export const updateImageResponse = imageSchema;
 
 /*
  * Delete image
  */
-export const deleteImageRequest = t.Pick(imageSchema, ["id"]);
-export const deleteImageResponse = t.Pick(imageSchema, ["id"]);
+export const deleteImageRequest = t.Pick(imageSchema, ['id']);
+export const deleteImageResponse = t.Pick(imageSchema, ['id']);
 
 /*
  * Get image
  */
-export const getImageRequest = t.Pick(imageSchema, ["id"]);
+export const getImageRequest = t.Pick(imageSchema, ['id']);
 export const getImageResponse = imageSchema;
 
 /*
@@ -124,8 +131,8 @@ export const getImageResponse = imageSchema;
  */
 export const getImagesRequest = t.Object({
   filter: t.Record(t.String(), t.Any()),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
   limit: t.Optional(t.Number()),
-  offset: t.Optional(t.Number())
+  offset: t.Optional(t.Number()),
 });
 export const getImagesResponse = t.Array(imageSchema);
