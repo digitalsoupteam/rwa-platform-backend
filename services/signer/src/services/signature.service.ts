@@ -1,18 +1,21 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { ethers, Wallet } from "ethers";
-import { SignersManagerClient } from "../clients/signersManager.client";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { ethers, Wallet } from 'ethers';
+import { SignersManagerClient } from '../clients/signersManager.client';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
+import { AppError } from '@shared/errors/app-errors';
 
 /**
  * Service for handling digital signatures
  */
-@TracingDecorator()
+
 export class SignatureService {
   private readonly wallet: Wallet;
 
   constructor(
     private readonly signersManagerClient: SignersManagerClient,
-    privateKey: string
+    privateKey: string,
   ) {
     this.wallet = new Wallet(privateKey);
   }
@@ -20,25 +23,24 @@ export class SignatureService {
   /**
    * Sign hash with private key and send result back
    */
-  async signHash(
-    hash: string,
-    taskId: string,
-    expired: number,
-  ) {
-    logger.debug("Signing hash for task", { taskId });
-
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ hash: a[0], taskId: a[1], expired: a[2] }),
+  })
+  async signHash(hash: string, taskId: string, expired: number) {
+    setSpanAttributes({
+      wallet: this.wallet.address,
+      hash,
+      taskId,
+      expired,
+    });
     const now = Math.floor(Date.now() / 1000);
     if (expired < now) {
-      throw new Error("Task expired");
+      throw new AppError({ message: 'Task expired', statusCode: 410, code: 'EXPIRED' });
     }
 
-    const hashToSign = ethers.solidityPackedKeccak256(
-      ["bytes32", "uint256"],
-      [
-        hash,
-        expired,
-      ]
-    );
+    const hashToSign = ethers.solidityPackedKeccak256(['bytes32', 'uint256'], [hash, expired]);
 
     // Sign hash using ethers
     const signer = this.wallet.address;
@@ -49,13 +51,7 @@ export class SignatureService {
       taskId,
       signer,
       hash,
-      signature
-    });
-    
-    logger.info("Successfully signed hash", {
-      taskId,
-      hash,
-      signature
+      signature,
     });
 
     return { signer, signature };

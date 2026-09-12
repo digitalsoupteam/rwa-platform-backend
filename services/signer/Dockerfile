@@ -26,4 +26,6 @@ COPY services/signer ./services/signer
 EXPOSE ${PORT}
 
 
-CMD ["bun", "services/signer/src/index.ts"]
+WORKDIR /app/services/signer
+ENTRYPOINT ["bun"]
+CMD ["src/index.ts"]
