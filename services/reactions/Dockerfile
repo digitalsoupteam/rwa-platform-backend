@@ -25,4 +25,6 @@ COPY services/reactions ./services/reactions
 EXPOSE ${PORT}
 
 
-CMD ["bun", "services/reactions/src/index.ts"]
+WORKDIR /app/services/reactions
+ENTRYPOINT ["bun"]
+CMD ["src/index.ts"]
