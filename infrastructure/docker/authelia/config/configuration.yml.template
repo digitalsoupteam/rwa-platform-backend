@@ -1,6 +1,8 @@
 server:
   address: "tcp://0.0.0.0:9091"
 
+theme: dark
+
 log:
   level: debug
 

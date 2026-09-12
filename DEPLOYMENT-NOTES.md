@@ -62,41 +62,25 @@ Edit `infrastructure/docker/.env` and update the following mandatory fields:
     - `APP_JWT_SECRET`
     - `RABBITMQ_PASSWORD`
     - `GRAFANA_PASSWORD`
-    - `LLDAP_ADMIN_PASSWORD`
+     - `LLDAP_ADMIN_PASSWORD`
+     - `WEBHOOKS_ENCRYPTION_KEY`
 2.  **Set your domain:**
     - `BASE_DOMAIN=yourdomain.com`
     - `LLDAP_BASE_DN=dc=yourdomain,dc=com`
 3.  **Check Blockchain Keys** (if deploying to production/mainnet):
     - Update `SIGNER_X_PRIVATE_KEY` and `TESTNET_FAUCET_WALLET_PRIVATE_KEY`.
 4.  **SSL Configuration:**
-    - **Production (Certbot):**
-      - `NGINX_SSL_PATH=/etc/letsencrypt/live/${BASE_DOMAIN}`
-      - `NGINX_CHALLENGE_PATH=/var/www/certbot`
+    - **Production (Cloudflare Origin Certificate):**
+      - `NGINX_HOST_SSL_CERT_PATH=/path/to/fullchain.pem`
+      - `NGINX_HOST_SSL_KEY_PATH=/path/to/privkey.pem`
     - **Development (Self-signed):**
-      - `NGINX_SSL_PATH=./nginx/ssl`
-      - `NGINX_CHALLENGE_PATH=./nginx/challenge`
+      - `NGINX_HOST_SSL_CERT_PATH=./nginx/ssl/fullchain.pem`
+      - `NGINX_HOST_SSL_KEY_PATH=./nginx/ssl/privkey.pem`
 
-## Step 4: Setup SSL (Production Only - Host Machine Certbot)
-If you are deploying to production and want to use Certbot on the host machine:
+## Step 4: SSL Certificates (Production)
 
-1.  **Install Certbot:**
-    ```bash
-    sudo apt update
-    sudo apt install certbot
-    ```
-
-2.  **Obtain Certificates:**
-    ```bash
-    sudo certbot certonly --standalone -d yourdomain.com -d "*.yourdomain.com" --email admin@yourdomain.com --agree-tos
-    ```
-
-3.  **Auto-renewal Hook:**
-    Ensure Nginx reloads after renewal by adding a deploy hook:
-    ```bash
-    # Create /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh
-    #!/bin/bash
-    cd /path/to/project && bun run nginx:reload
-    ```
+Production uses Cloudflare certificates (Origin Certificate); Let's Encrypt / Certbot is no longer used.
+Put the certificate files on the host and point `NGINX_HOST_SSL_CERT_PATH` / `NGINX_HOST_SSL_KEY_PATH` to them.
 
 ## Step 5: Start the Infrastructure
 ```bash

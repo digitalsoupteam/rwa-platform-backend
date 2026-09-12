@@ -47,6 +47,86 @@ services:
       mongodb:
         condition: service_healthy
 
+  ai-evaluator:
+    container_name: ai-evaluator
+    restart: unless-stopped
+    build:
+      context: ../..
+      dockerfile: services/ai-evaluator/Dockerfile
+    environment:
+      <<: [*mongo-env, *monitoring-env, *openrouter-env, *rabbit-env]
+      SERVICE_NAME: ${AI_EVALUATOR_SERVICE_NAME}
+      SERVICE_VERSION: ${AI_EVALUATOR_SERVICE_VERSION}
+      MONGODB_DBNAME: ${AI_EVALUATOR_MONGODB_DBNAME}
+      OTEL_SERVICE_NAME: ${AI_EVALUATOR_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${AI_EVALUATOR_SERVICE_NAME},service.version=${AI_EVALUATOR_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
+      PORT: ${AI_EVALUATOR_PORT}
+      RWA_SERVICE_URL: ${RWA_SERVICE_URL}
+      DOCUMENTS_SERVICE_URL: ${DOCUMENTS_SERVICE_URL}
+      GALLERY_SERVICE_URL: ${GALLERY_SERVICE_URL}
+      REACTIONS_SERVICE_URL: ${REACTIONS_SERVICE_URL}
+      QUESTIONS_SERVICE_URL: ${QUESTIONS_SERVICE_URL}
+      PORTFOLIO_SERVICE_URL: ${PORTFOLIO_SERVICE_URL}
+    volumes: *monitoring-volumes
+    networks:
+      - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  api-keys:
+    container_name: api-keys
+    restart: unless-stopped
+    build:
+      context: ../..
+      dockerfile: services/api-keys/Dockerfile
+    environment:
+      <<: [*mongo-env, *monitoring-env]
+      SERVICE_NAME: ${API_KEYS_SERVICE_NAME}
+      SERVICE_VERSION: ${API_KEYS_SERVICE_VERSION}
+      MONGODB_DBNAME: ${API_KEYS_MONGODB_DBNAME}
+      OTEL_SERVICE_NAME: ${API_KEYS_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${API_KEYS_SERVICE_NAME},service.version=${API_KEYS_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
+      PORT: ${API_KEYS_PORT}
+    volumes: *monitoring-volumes
+    networks:
+      - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  webhooks:
+    container_name: webhooks
+    restart: unless-stopped
+    build:
+      context: ../..
+      dockerfile: services/webhooks/Dockerfile
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      <<: [*mongo-env, *monitoring-env, *rabbit-env]
+      SERVICE_NAME: ${WEBHOOKS_SERVICE_NAME}
+      SERVICE_VERSION: ${WEBHOOKS_SERVICE_VERSION}
+      MONGODB_DBNAME: ${WEBHOOKS_MONGODB_DBNAME}
+      OTEL_SERVICE_NAME: ${WEBHOOKS_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${WEBHOOKS_SERVICE_NAME},service.version=${WEBHOOKS_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
+      PORT: ${WEBHOOKS_PORT}
+      REDIS_URL: ${REDIS_URL}
+      WEBHOOKS_ENCRYPTION_KEY: ${WEBHOOKS_ENCRYPTION_KEY}
+      NODE_TLS_REJECT_UNAUTHORIZED: ${NODE_TLS_REJECT_UNAUTHORIZED:-0}
+    volumes: *monitoring-volumes
+    networks:
+      - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   auth:
     container_name: auth
     restart: unless-stopped
@@ -211,6 +291,8 @@ services:
       OTEL_SERVICE_NAME: ${DOCUMENTS_SERVICE_NAME}
       OTEL_RESOURCE_ATTRIBUTES: service.name=${DOCUMENTS_SERVICE_NAME},service.version=${DOCUMENTS_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
       PORT: ${DOCUMENTS_PORT}
+      BASE_DOMAIN: ${BASE_DOMAIN}
+      FILES_URL_PATH: ${FILES_URL_PATH}
     volumes: *monitoring-volumes
     networks:
       - app-network
@@ -278,6 +360,8 @@ services:
       OTEL_SERVICE_NAME: ${GALLERY_SERVICE_NAME}
       OTEL_RESOURCE_ATTRIBUTES: service.name=${GALLERY_SERVICE_NAME},service.version=${GALLERY_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
       PORT: ${GALLERY_PORT}
+      BASE_DOMAIN: ${BASE_DOMAIN}
+      FILES_URL_PATH: ${FILES_URL_PATH}
     volumes: *monitoring-volumes
     networks:
       - app-network
@@ -333,6 +417,12 @@ services:
       FILES_SERVICE_URL: ${FILES_SERVICE_URL}
       DOCUMENTS_SERVICE_URL: ${DOCUMENTS_SERVICE_URL}
       GALLERY_SERVICE_URL: ${GALLERY_SERVICE_URL}
+      DOCUMENTS_ALLOWED_MIME_TYPES: ${DOCUMENTS_ALLOWED_MIME_TYPES}
+      DOCUMENTS_MAX_FILE_SIZE: ${DOCUMENTS_MAX_FILE_SIZE}
+      GALLERY_ALLOWED_MIME_TYPES: ${GALLERY_ALLOWED_MIME_TYPES}
+      GALLERY_MAX_FILE_SIZE: ${GALLERY_MAX_FILE_SIZE}
+      TOKEN_IMAGE_ALLOWED_MIME_TYPES: ${TOKEN_IMAGE_ALLOWED_MIME_TYPES}
+      TOKEN_IMAGE_MAX_FILE_SIZE: ${TOKEN_IMAGE_MAX_FILE_SIZE}
       QUESTIONS_SERVICE_URL: ${QUESTIONS_SERVICE_URL}
       PORTFOLIO_SERVICE_URL: ${PORTFOLIO_SERVICE_URL}
       BLOG_SERVICE_URL: ${BLOG_SERVICE_URL}
@@ -343,6 +433,9 @@ services:
       REACTIONS_SERVICE_URL: ${REACTIONS_SERVICE_URL}
       LOYALTY_SERVICE_URL: ${LOYALTY_SERVICE_URL}
       DAO_SERVICE_URL: ${DAO_SERVICE_URL}
+      AI_EVALUATOR_SERVICE_URL: ${AI_EVALUATOR_SERVICE_URL}
+      API_KEYS_SERVICE_URL: ${API_KEYS_SERVICE_URL}
+      WEBHOOKS_SERVICE_URL: ${WEBHOOKS_SERVICE_URL}
       PROMETHEUS_URL: ${PROMETHEUS_URL}
       LOKI_URL: ${LOKI_URL}
       REDIS_URL: ${REDIS_URL}
@@ -357,6 +450,10 @@ services:
       auth:
         condition: service_started
       rwa:
+        condition: service_started
+      ai-evaluator:
+        condition: service_started
+      api-keys:
         condition: service_started
 
   portfolio:
@@ -391,6 +488,8 @@ services:
       dockerfile: services/questions/Dockerfile
     environment:
       <<: [*monitoring-env, *mongo-env]
+      OTEL_SERVICE_NAME: ${QUESTIONS_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${QUESTIONS_SERVICE_NAME},service.version=${QUESTIONS_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
       SERVICE_NAME: ${QUESTIONS_SERVICE_NAME}
       SERVICE_VERSION: ${QUESTIONS_SERVICE_VERSION}
       MONGODB_DBNAME: ${QUESTIONS_MONGODB_DBNAME}
@@ -410,6 +509,8 @@ services:
       dockerfile: services/reactions/Dockerfile
     environment:
       <<: [*monitoring-env, *mongo-env]
+      OTEL_SERVICE_NAME: ${REACTIONS_SERVICE_NAME}
+      OTEL_RESOURCE_ATTRIBUTES: service.name=${REACTIONS_SERVICE_NAME},service.version=${REACTIONS_SERVICE_VERSION},deployment.environment=${DEPLOYMENT_ENVIRONMENT}
       SERVICE_NAME: ${REACTIONS_SERVICE_NAME}
       SERVICE_VERSION: ${REACTIONS_SERVICE_VERSION}
       MONGODB_DBNAME: ${REACTIONS_MONGODB_DBNAME}
@@ -436,6 +537,10 @@ services:
       RABBITMQ_EXCHANGE: ${RABBITMQ_BLOCKCHAIN_EVENTS_EXCHANGE}
       REDIS_URL: ${REDIS_URL}
       SIGNERS_MANAGER_URL: ${SIGNERS_MANAGER_SERVICE_URL}
+      AI_EVALUATOR_URL: ${AI_EVALUATOR_SERVICE_URL}
+      BASE_DOMAIN: ${BASE_DOMAIN}
+      PLACEHOLDER_IMAGE_PATH: ${PLACEHOLDER_IMAGE_PATH}
+      FILES_URL_PATH: ${FILES_URL_PATH}
     volumes: *monitoring-volumes
     networks:
       - app-network
@@ -564,17 +669,19 @@ services:
       - BASE_DOMAIN=${BASE_DOMAIN}
       - NGINX_SSL_CERT_PATH=${NGINX_SSL_CERT_PATH}
       - NGINX_SSL_KEY_PATH=${NGINX_SSL_KEY_PATH}
+      - DOCUMENTS_MAX_FILE_SIZE=${DOCUMENTS_MAX_FILE_SIZE}
+      - GALLERY_MAX_FILE_SIZE=${GALLERY_MAX_FILE_SIZE}
+      - TOKEN_IMAGE_MAX_FILE_SIZE=${TOKEN_IMAGE_MAX_FILE_SIZE}
+      - FILES_URL_PATH=${FILES_URL_PATH}
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/templates:/etc/nginx/templates:ro
       - ./nginx/snippets:/etc/nginx/snippets:ro
-      - ./nginx/admin-gui:/usr/share/nginx/html/admin:ro
-      - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro
       - ${NGINX_HOST_SSL_CERT_PATH}:${NGINX_SSL_CERT_PATH}:ro
       - ${NGINX_HOST_SSL_KEY_PATH}:${NGINX_SSL_KEY_PATH}:ro
-      - ${NGINX_CHALLENGE_PATH}:/var/www/certbot:ro
       - nginx_logs:/var/log/nginx
       - files_storage:/app/storage
+      - ./nginx/static:/usr/share/nginx/html/static:ro
     networks:
       - app-network
 
@@ -591,6 +698,22 @@ services:
       start_period: 15s
     networks:
       - app-network
+
+  mongodb-exporter:
+    image: percona/mongodb_exporter:0.40
+    container_name: mongodb-exporter
+    environment:
+      MONGODB_URI: ${MONGODB_BASE_URI}
+      MONGODB_EXPORTER_PORT: "9216"
+    command:
+      - '--mongodb.global-conn-pool'
+      - '--compatible-mode'
+      - '--collect-all'
+    networks:
+      - app-network
+    depends_on:
+      mongodb:
+        condition: service_healthy
 
   mongo_express:
     restart: unless-stopped
@@ -618,6 +741,17 @@ services:
       start_period: 15s
     networks:
       - app-network
+
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: redis-exporter
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    networks:
+      - app-network
+    depends_on:
+      redis:
+        condition: service_healthy
 
   redisinsight:
     restart: unless-stopped
@@ -680,12 +814,11 @@ services:
 
   tempo:
     restart: unless-stopped
-    image: grafana/tempo:2.8.1
+    image: grafana/tempo:3.0.2
     volumes:
       - ./tempo/tempo.yml:/etc/tempo/tempo.yaml
       - tempo_data:/var/tempo
     command: -config.file=/etc/tempo/tempo.yaml
-    user: "0:0"
     networks:
       - app-network
 
@@ -796,8 +929,10 @@ services:
       - app-network
     restart: unless-stopped
     depends_on:
-      - redis
-      - lldap
+      redis:
+        condition: service_started
+      lldap:
+        condition: service_healthy
 
   lldap:
     image: lldap/lldap:latest
@@ -820,7 +955,6 @@ services:
       - BASE_DOMAIN=${BASE_DOMAIN}
     volumes:
       - ./homer/config.yml.template:/www/assets/config.yml.template:ro
-      - ./homer/logo.svg:/www/assets/logo.svg:ro
     entrypoint: /bin/sh -c "sed \"s/\\$${BASE_DOMAIN}/$BASE_DOMAIN/g\" /www/assets/config.yml.template > /www/assets/config.yml && sh /entrypoint.sh"
     networks:
       - app-network

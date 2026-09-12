@@ -24,7 +24,6 @@ cp -r ./infrastructure/docker/authelia/config/*.sqlite3 "$BACKUP_PATH/files/" 2>
 cp -r ./infrastructure/docker/authelia/secrets "$BACKUP_PATH/files/"
 cp -r ./infrastructure/docker/lldap/data "$BACKUP_PATH/files/lldap_data"
 cp -r ./infrastructure/docker/nginx/ssl "$BACKUP_PATH/files/nginx_ssl"
-cp ./infrastructure/docker/nginx/.htpasswd "$BACKUP_PATH/files/" 2>/dev/null
 
 # 4. Create final archive
 echo "Creating archive..."

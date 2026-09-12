@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Путь к секретам Authelia
 AUTHELIA_SECRETS="./infrastructure/docker/authelia/secrets"
 
 echo "--------------------------------------------------"

@@ -39,17 +39,9 @@ prometheus.remote_write "default" {
   }
 }
 
-// Docker logs collection - DISABLED due to parsing errors
-// Will be re-enabled after fixing Docker API issues
-
-// File logs collection
-loki.source.file "service_logs" {
-  targets = [
-    {__path__ = "/var/log/*.log", job = "service_logs"},
-    {__path__ = "/var/log/**/*.log", job = "service_logs"},
-  ]
-  forward_to = [loki.write.default.receiver]
-}
+// Logs are collected exclusively via OTLP from service SDKs.
+// File-based log collection is removed to prevent duplicate entries in Loki.
+// Docker API log collection is also disabled (parsing errors — track in GH issue #).
 
 // Remote write to Loki
 loki.write "default" {
@@ -71,7 +63,7 @@ otelcol.receiver.otlp "default" {
   output {
     traces  = [otelcol.exporter.otlp.tempo.input]
     metrics = [otelcol.exporter.prometheus.default.input]
-    logs    = [otelcol.exporter.loki.default.input]
+    logs    = [otelcol.exporter.otlphttp.loki.input]
   }
 }
 
@@ -90,7 +82,9 @@ otelcol.exporter.prometheus "default" {
   forward_to = [prometheus.remote_write.default.receiver]
 }
 
-// Export logs to Loki
-otelcol.exporter.loki "default" {
-  forward_to = [loki.write.default.receiver]
+// Export logs to Loki via native OTLP (replaces otelcol.exporter.loki)
+otelcol.exporter.otlphttp "loki" {
+  client {
+    endpoint = "http://loki:3100/otlp"
+  }
 }
