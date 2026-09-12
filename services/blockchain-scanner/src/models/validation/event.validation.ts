@@ -1,5 +1,5 @@
-import { t } from "elysia";
-import { paginationSchema } from "./shared.validation";
+import { t } from 'elysia';
+import { paginationSchema } from './shared.validation';
 
 /*
  * Base model schema
@@ -19,7 +19,7 @@ export const eventSchema = t.Object({
 /*
  * Get by id
  */
-export const getEventByIdRequest = t.Pick(eventSchema, ["id"]);
+export const getEventByIdRequest = t.Pick(eventSchema, ['id']);
 
 export const getEventByIdResponse = eventSchema;
 

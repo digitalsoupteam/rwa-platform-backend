@@ -1,9 +1,11 @@
-import { ethers } from "ethers";
-import { logger } from "@shared/monitoring/src/logger";
-import { BlockchainError } from "@shared/errors/app-errors";
-import EventEmitterABI from "../abi/EventEmitter.json";
-import { BlockchainScannerService } from "../services/blockchainScanner.service";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { ethers } from 'ethers';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
+import { AppError } from '@shared/errors/app-errors';
+import EventEmitterABI from '../abi/EventEmitter.json';
+import { BlockchainScannerService } from '../services/blockchainScanner.service';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
 
 type BlockchainEventData = {
   chainId: number;
@@ -16,72 +18,55 @@ type BlockchainEventData = {
   timestamp: number;
 };
 
-/**
- * Daemon for scanning blockchain
- * Handles blockchain interaction and periodic scanning
- */
-@TracingDecorator()
 export class BlockchainScannerDaemon {
-  // Blockchain related
   private provider: ethers.JsonRpcProvider;
   private eventEmitterContract: ethers.Contract;
 
-  // Scanner related
   private isRunning: boolean = false;
-  private scanTimer: Timer | null = null;
   private lastProcessedBlock: number = 0;
 
   constructor(
-    private rpcUrl: string,
+    rpcUrl: string,
     private contractAddress: string,
     private blockConfirmations: number,
     private scanIntervalMs: number,
     private batchSize: number,
     private chainId: number,
-    private scannerService: BlockchainScannerService
+    private scannerService: BlockchainScannerService,
   ) {
-    // Initialize provider and contract
     this.provider = new ethers.JsonRpcProvider(rpcUrl);
-    this.eventEmitterContract = new ethers.Contract(
-      contractAddress,
-      EventEmitterABI.abi,
-      this.provider
-    );
+    this.eventEmitterContract = new ethers.Contract(contractAddress, EventEmitterABI.abi, this.provider);
   }
 
   /**
    * Initialize daemon
    */
+  @TraceDecorator()
+  @LogDecorator()
   async initialize(): Promise<void> {
     try {
-      logger.info("Initializing Blockchain Scanner Daemon");
-
-      // Verify chain ID from provider matches the expected one
       const network = await this.provider.getNetwork();
       const providerChainId = Number(network.chainId);
 
       if (providerChainId !== this.chainId) {
-        throw new BlockchainError(
-          `Chain ID mismatch. Expected ${this.chainId}, but provider returned ${providerChainId}`
-        );
+        throw new AppError({
+          message: `Chain ID mismatch. Expected ${this.chainId}, but provider returned ${providerChainId}`,
+          statusCode: 502,
+          code: 'BLOCKCHAIN_ERROR',
+        });
       }
 
-      logger.info(`Chain ID verified: ${this.chainId}`);
-
-      // Get last processed block from database or use genesis block
       this.lastProcessedBlock = await this.scannerService.getLastProcessedBlock();
       if (this.lastProcessedBlock === 0) {
-        this.lastProcessedBlock = await this.getGenesisBlock() - 1;
+        this.lastProcessedBlock = (await this.getGenesisBlock()) - 1;
       }
-      logger.info(`Last processed block: ${this.lastProcessedBlock}`);
-
-      logger.info("Blockchain Scanner Daemon initialized successfully");
     } catch (error) {
-      logger.error("Failed to initialize Blockchain Scanner Daemon", error);
-      throw new BlockchainError(
-        "Failed to initialize Blockchain Scanner Daemon",
-        error
-      );
+      throw new AppError({
+        message: 'Failed to initialize Blockchain Scanner Daemon',
+        statusCode: 502,
+        code: 'BLOCKCHAIN_ERROR',
+        cause: error,
+      });
     }
   }
 
@@ -89,15 +74,16 @@ export class BlockchainScannerDaemon {
    * Get genesis block number from contract
    */
   private async getGenesisBlock(): Promise<number> {
-    try {      
-      logger.info(`getGenesisBlock`);
+    try {
       const genesisBlock = await this.eventEmitterContract.genesisBlock();
-      return typeof genesisBlock === "bigint"
-        ? Number(genesisBlock)
-        : genesisBlock;
+      return typeof genesisBlock === 'bigint' ? Number(genesisBlock) : genesisBlock;
     } catch (error) {
-      logger.error("Failed to get genesis block", error);
-      return 0;
+      throw new AppError({
+        message: 'Failed to get genesis block',
+        statusCode: 502,
+        code: 'BLOCKCHAIN_ERROR',
+        cause: error,
+      });
     }
   }
 
@@ -108,30 +94,22 @@ export class BlockchainScannerDaemon {
     try {
       return await this.provider.getBlockNumber();
     } catch (error) {
-      logger.error("Failed to get latest block number", error);
-      throw new BlockchainError("Failed to get latest block number", error);
+      throw new AppError({
+        message: 'Failed to get latest block number',
+        statusCode: 502,
+        code: 'BLOCKCHAIN_ERROR',
+        cause: error,
+      });
     }
   }
 
   /**
    * Get events from block range
    */
-  private async getEvents(
-    fromBlock: number,
-    toBlock: number
-  ): Promise<BlockchainEventData[]> {
+  private async getEvents(fromBlock: number, toBlock: number): Promise<BlockchainEventData[]> {
     try {
-      logger.info(`Getting events from block ${fromBlock} to ${toBlock}`);
+      const allEvents = await this.eventEmitterContract.queryFilter('*' as any, fromBlock, toBlock);
 
-      const allEvents = await this.eventEmitterContract.queryFilter(
-        "*" as any,
-        fromBlock,
-        toBlock
-      );
-
-      logger.info(`Retrieved ${allEvents.length} events`);
-
-      // Group events by blocks for ordered processing
       const eventsByBlock: Record<number, ethers.EventLog[]> = {};
       const blockNumbers: number[] = [];
 
@@ -143,15 +121,13 @@ export class BlockchainScannerDaemon {
         eventsByBlock[event.blockNumber].push(event as ethers.EventLog);
       }
 
-      // Sort blocks for sequential processing
       blockNumbers.sort((a, b) => a - b);
 
       const processedEvents: BlockchainEventData[] = [];
 
-      // Process each block sequentially
       for (const blockNumber of blockNumbers) {
         const blockEvents = eventsByBlock[blockNumber];
-        const block = await blockEvents[0].getBlock(); // Get block once for all events
+        const block = await blockEvents[0].getBlock();
 
         for (const event of blockEvents) {
           const eventName = this.getEventName(event);
@@ -170,31 +146,23 @@ export class BlockchainScannerDaemon {
 
       return processedEvents;
     } catch (error) {
-      logger.error(
-        `Failed to get events from ${fromBlock} to ${toBlock}`,
-        error
-      );
-      throw new BlockchainError(
-        `Failed to get events from block ${fromBlock} to ${toBlock}`,
-        error
-      );
+      throw new AppError({
+        message: `Failed to get events from block ${fromBlock} to ${toBlock}`,
+        statusCode: 502,
+        code: 'BLOCKCHAIN_ERROR',
+        cause: error,
+      });
     }
   }
 
-  /**
-   * Get event name from log
-   */
   private getEventName(event: ethers.EventLog): string {
     try {
       return event.fragment.name;
     } catch (error) {
-      return "Unknown";
+      return 'Unknown';
     }
   }
 
-  /**
-   * Parse event data
-   */
   private parseEventData(event: ethers.EventLog): Record<string, any> {
     try {
       const args = event.args;
@@ -209,20 +177,20 @@ export class BlockchainScannerDaemon {
 
       return this.convertBigIntToString(result);
     } catch (error) {
-      logger.error("Failed to parse event data", error);
-      return {};
+      throw new AppError({
+        message: `Failed to parse event data`,
+        statusCode: 502,
+        code: 'BLOCKCHAIN_ERROR',
+        cause: error,
+      });
     }
   }
 
-  /**
-   * Convert BigInt to string in object
-   */
   private convertBigIntToString(obj: any): any {
     if (obj === null || obj === undefined) return obj;
-    if (typeof obj === "bigint") return obj.toString();
-    if (Array.isArray(obj))
-      return obj.map((item) => this.convertBigIntToString(item));
-    if (typeof obj === "object") {
+    if (typeof obj === 'bigint') return obj.toString();
+    if (Array.isArray(obj)) return obj.map((item) => this.convertBigIntToString(item));
+    if (typeof obj === 'object') {
       const result: Record<string, any> = {};
       for (const key in obj) {
         if (isNaN(Number(key))) {
@@ -234,120 +202,114 @@ export class BlockchainScannerDaemon {
     return obj;
   }
 
-  /**
-   * Start scanning daemon
-   */
+  @TraceDecorator()
+  @LogDecorator()
   async start(): Promise<void> {
     if (this.isRunning) {
-      logger.warn("Scanner is already running");
       return;
     }
 
-    try {
-      this.isRunning = true;
-      logger.info("Starting blockchain scanner");
+    this.isRunning = true;
 
-      await this.scan();
+    this.runLoop().catch((err) => {
+      logger.error('runLoop fatal error, killing process for Docker restart', err, {
+        lastProcessedBlock: this.lastProcessedBlock,
+        chainId: this.chainId,
+      });
+      setTimeout(() => {
+        process.exit(1)
+      }, 5000);
+    });
+  }
 
-      this.scanTimer = setInterval(async () => {
-        try {
-          await this.scan();
-        } catch (error) {
-          logger.error("Error during periodic scan", error);
-        }
-      }, this.scanIntervalMs);
+  private async runLoop(): Promise<void> {
+    while (this.isRunning) {
+      try {
+        await this.scan();
+      } catch (error) {
+        logger.error('Error during scan cycle', error, {
+          lastProcessedBlock: this.lastProcessedBlock,
+          chainId: this.chainId,
+        });
+      }
 
-      logger.info(
-        `Scanner started. Scanning every ${this.scanIntervalMs / 1000} seconds`
-      );
-    } catch (error) {
-      this.isRunning = false;
-      logger.error("Failed to start scanner", error);
-      throw new BlockchainError("Failed to start scanner", error);
+      if (!this.isRunning) break;
+
+      await new Promise((resolve) => setTimeout(resolve, this.scanIntervalMs));
     }
   }
 
-  /**
-   * Stop scanning daemon
-   */
+  @TraceDecorator()
   async stop(): Promise<void> {
     if (!this.isRunning) {
-      logger.warn("Scanner is not running");
       return;
-    }
-
-    logger.info("Stopping blockchain scanner");
-
-    if (this.scanTimer) {
-      clearInterval(this.scanTimer);
-      this.scanTimer = null;
     }
 
     this.isRunning = false;
-    logger.info("Scanner stopped");
   }
 
-  /**
-   * Scan blockchain
-   */
+  @TraceDecorator({ root: true })
   private async scan(): Promise<void> {
+    let currentBlock: number;
     try {
-      const currentBlock = await this.getLatestBlockNumber();
-      const confirmedBlock = currentBlock - this.blockConfirmations;
+      currentBlock = await this.getLatestBlockNumber();
+    } catch (error) {
+      return;
+    }
+    const confirmedBlock = currentBlock - this.blockConfirmations;
 
-      if (this.lastProcessedBlock >= confirmedBlock) {
-        logger.info(
-          `No new blocks to process. Last processed: ${this.lastProcessedBlock}, Latest confirmed: ${confirmedBlock}`
-        );
-        return;
-      }
+    if (this.lastProcessedBlock >= confirmedBlock) {
+      return;
+    }
 
-      logger.info(
-        `Processing blocks from ${
-          this.lastProcessedBlock + 1
-        } to ${confirmedBlock}`
-      );
+    const fromBlock = this.lastProcessedBlock + 1;
+    const toBlock = Math.min(fromBlock + this.batchSize - 1, confirmedBlock);
+    const blocksRemaining = confirmedBlock - this.lastProcessedBlock;
 
-      let fromBlock = this.lastProcessedBlock + 1;
+    try {
+      await this.processBatch(fromBlock, toBlock);
+      this.lastProcessedBlock = toBlock;
+    } catch (error) {
+      throw new AppError({
+        message: 'Error during blockchain scan',
+        statusCode: 502,
+        code: 'BLOCKCHAIN_ERROR',
+        cause: error,
+      });
+    }
+  }
 
-      while (fromBlock <= confirmedBlock) {
-        const toBlock = Math.min(
-          fromBlock + this.batchSize - 1,
-          confirmedBlock
-        );
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ fromBlock: a[0], toBlock: a[1] }),
+  })
+  private async processBatch(fromBlock: number, toBlock: number): Promise<void> {
+    const events = await this.getEvents(fromBlock, toBlock);
 
-        const events = await this.getEvents(fromBlock, toBlock);
-        
-        // Group events by block number
-        const eventsByBlock = events.reduce((acc, event) => {
+    if (events.length > 0) {
+      const eventsByBlock = events.reduce(
+        (acc, event) => {
           if (!acc[event.blockNumber]) {
             acc[event.blockNumber] = [];
           }
           acc[event.blockNumber].push(event);
           return acc;
-        }, {} as Record<number, BlockchainEventData[]>);
+        },
+        {} as Record<number, BlockchainEventData[]>,
+      );
 
-        // Process events block by block in ascending order
-        const blockNumbers = Object.keys(eventsByBlock)
-          .map(Number)
-          .sort((a, b) => a - b);
+      const blockNumbers = Object.keys(eventsByBlock)
+        .map(Number)
+        .sort((a, b) => a - b);
 
-        for (const blockNumber of blockNumbers) {
-          const blockEvents = eventsByBlock[blockNumber];
-          await this.scannerService.applyBlockEvents(blockNumber, blockEvents);
-        }
-
-        // Always update last processed block in database to save progress even if no events were found
-        await this.scannerService.updateLastProcessedBlock(toBlock);
-
-        fromBlock = toBlock + 1;
-        this.lastProcessedBlock = toBlock;
+      for (const blockNumber of blockNumbers) {
+        const blockEvents = eventsByBlock[blockNumber];
+        await this.scannerService.applyBlockEvents(blockNumber, blockEvents);
       }
-
-      logger.info(`Finished processing blocks up to ${confirmedBlock}`);
-    } catch (error) {
-      logger.error("Error during scan", error);
-      throw new BlockchainError("Error during blockchain scan", error);
     }
+
+    // Single update of last processed block per batch — source of truth for crash recovery
+    await this.scannerService.updateLastProcessedBlock(toBlock);
   }
 }

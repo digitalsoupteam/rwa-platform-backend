@@ -1,33 +1,47 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { AppError, NotFoundError } from "@shared/errors/app-errors";
-import { EventRepository } from "../repositories/event.repository";
-import { ScannerStateRepository } from "../repositories/scannerState.repository";
-import { RabbitMQClient } from "@shared/rabbitmq/src/rabbitmq.client";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { AppError } from '@shared/errors/app-errors';
+import { EventRepository } from '../repositories/event.repository';
+import { ScannerStateRepository } from '../repositories/scannerState.repository';
+import { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { metrics } from '@shared/monitoring/src/metrics';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
 /**
  * Service for handling blockchain events
  */
-@TracingDecorator()
+
 export class BlockchainScannerService {
-  private readonly EXCHANGE_NAME = "blockchain.events";
+  private readonly EXCHANGE_NAME = 'blockchain.events';
 
   constructor(
     private readonly eventRepository: EventRepository,
     private readonly scannerStateRepository: ScannerStateRepository,
     private readonly rabbitMQClient: RabbitMQClient,
-    private readonly chainId: number
+    private readonly chainId: number,
   ) {}
 
   /**
    * Get event by ID
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getEventById(id: string) {
-    logger.debug(`Getting event by ID: ${id}`);
-
+    setSpanAttributes({
+      entityId: id,
+      entityType: 'blockchain_event',
+    });
     const event = await this.eventRepository.findById(id);
     if (!event) {
-      throw new NotFoundError(`Event with id ${id} not found`);
+      throw new AppError({
+        message: `Event with id ${id} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return {
@@ -46,6 +60,11 @@ export class BlockchainScannerService {
   /**
    * Get events by filters
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ limit: a[2], offset: a[3] }),
+  })
   async getEvents(
     filters: {
       chainId?: number;
@@ -54,15 +73,22 @@ export class BlockchainScannerService {
       address?: string;
       name?: string;
     },
-    pagination?: { limit?: number; offset?: number }
+    pagination?: { limit?: number; offset?: number },
   ) {
-    logger.debug(`Getting events with filters: ${JSON.stringify(filters)}`);
-
+    setSpanAttributes({
+      entityType: 'blockchain_event',
+      ...(filters.chainId !== undefined && { chainId: filters.chainId }),
+      ...(filters.blockNumber !== undefined && { blockNumber: filters.blockNumber }),
+      ...(filters.transactionHash !== undefined && {
+        transactionHash: filters.transactionHash,
+      }),
+      ...(filters.name !== undefined && { eventName: filters.name }),
+    });
     const events = await this.eventRepository.findAll(
       filters,
       { blockNumber: -1, logIndex: -1 },
       pagination?.limit || 100,
-      pagination?.offset || 0
+      pagination?.offset || 0,
     );
 
     return events.map((event) => ({
@@ -81,6 +107,11 @@ export class BlockchainScannerService {
   /**
    * Apply blockchain events from a single block - save to DB and publish to RabbitMQ
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ blockNumber: a[0] }),
+  })
   async applyBlockEvents(
     blockNumber: number,
     events: Array<{
@@ -92,16 +123,22 @@ export class BlockchainScannerService {
       logIndex: number;
       data: Record<string, any>;
       timestamp: number;
-    }>
+    }>,
   ): Promise<void> {
+    setSpanAttributes({
+      blockNumber,
+      batchSize: events.length,
+      ...(events.length > 0 && { chainId: events[0].chainId }),
+      ...(events.length > 0 && { eventName: events[0].name }),
+    });
     if (events.length) {
-      console.log("applyBlockEvents");
-      console.log(JSON.stringify(events));
-      console.log("-applyBlockEvents");
-
       for (let i = 0; i < events.length; i++) {
         if (events[i].blockNumber !== blockNumber) {
-          throw new AppError("applyBlockEvents blockNumber!");
+          throw new AppError({
+            message: 'applyBlockEvents blockNumber!',
+            statusCode: 502,
+            code: 'BLOCKCHAIN_ERROR',
+          });
         }
       }
 
@@ -110,41 +147,48 @@ export class BlockchainScannerService {
 
       // Save new events to database
       const savedEvents = await this.eventRepository.createEvents(events);
-      logger.info(
-        `Saved ${savedEvents.length} events from block ${blockNumber} to database`
-      );
 
-      // Publish events to RabbitMQ
+      // Publish events to RabbitMQ.
+      // The AmqplibInstrumentation auto-creates a producer span per publish and
+      // propagates traceparent via AMQP headers so the consumer continues the trace.
       for (const event of savedEvents) {
         await this.rabbitMQClient.publish(this.EXCHANGE_NAME, event.name, event);
+        metrics.counter('events_processed_total', {
+          event_name: event.name,
+          chain_id: String(this.chainId),
+        });
       }
-      logger.info(
-        `Published ${savedEvents.length} events from block ${blockNumber} to RabbitMQ`
-      );
     }
 
     // Update scanner state only after successful publish
-    await this.scannerStateRepository.updateLastScannedBlock(
-      this.chainId,
-      blockNumber
-    );
-    logger.info(`Updated scanner state to block ${blockNumber}`);
+    await this.scannerStateRepository.updateLastScannedBlock(this.chainId, blockNumber);
   }
 
   /**
    * Get last processed block number from database
    * Returns 0 if no blocks were processed yet
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator()
   async getLastProcessedBlock(): Promise<number> {
-    logger.debug(`Getting last processed block for chain ${this.chainId}`);
+    setSpanAttributes({ chainId: this.chainId });
     return this.scannerStateRepository.getLastScannedBlock(this.chainId);
   }
 
   /**
    * Update last processed block number in database
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ blockNumber: a[0] }),
+  })
   async updateLastProcessedBlock(blockNumber: number): Promise<void> {
-    logger.debug(`Updating last processed block for chain ${this.chainId} to ${blockNumber}`);
+    setSpanAttributes({
+      blockNumber,
+      chainId: this.chainId,
+    });
     await this.scannerStateRepository.updateLastScannedBlock(this.chainId, blockNumber);
   }
 }
