@@ -1,34 +1,30 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { TopicRepository } from "../repositories/topic.repository";
-import { QuestionRepository } from "../repositories/question.repository";
-import { FilterQuery, SortOrder, Types } from "mongoose";
-import { QuestionLikesRepository } from "../repositories/questionLikes.repository";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { TopicRepository } from '../repositories/topic.repository';
+import { QuestionRepository } from '../repositories/question.repository';
+import type { SortOrder } from 'mongoose';
+import { QuestionLikesRepository } from '../repositories/questionLikes.repository';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
-@TracingDecorator()
 export class QuestionsService {
   constructor(
     private readonly topicRepository: TopicRepository,
     private readonly questionRepository: QuestionRepository,
-    private readonly questionLikesRepository: QuestionLikesRepository
+    private readonly questionLikesRepository: QuestionLikesRepository,
   ) {}
 
   /**
    * Toggles like status for a question
    */
-  async toggleLike(data: {
-    questionId: string;
-    userId: string;
-  }) {
-    logger.debug("Toggling question like", {
-      questionId: data.questionId,
-      userId: data.userId
-    });
-    
-    const exists = await this.questionLikesRepository.exists(
-      data.questionId,
-      data.userId
-    );
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ questionId: a[0].questionId, userId: a[0].userId }),
+  })
+  async toggleLike(data: { questionId: string; userId: string }) {
+    setSpanAttributes({ userId: data.userId, questionId: data.questionId });
+    const exists = await this.questionLikesRepository.exists(data.questionId, data.userId);
 
     if (exists) {
       // Remove like and decrease counter
@@ -39,7 +35,7 @@ export class QuestionsService {
       // Add like and increase counter
       await this.questionLikesRepository.create({
         questionId: data.questionId,
-        userId: data.userId
+        userId: data.userId,
       });
       await this.questionRepository.incrementLikes(data.questionId);
       return { liked: true };
@@ -49,6 +45,11 @@ export class QuestionsService {
   /**
    * Creates a new topic
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ questionId: a[0].questionId, userId: a[0].userId }),
+  })
   async createTopic(data: {
     name: string;
     ownerId: string;
@@ -57,8 +58,7 @@ export class QuestionsService {
     parentId: string;
     grandParentId: string;
   }) {
-    logger.debug("Creating new topic", { name: data.name });
-    
+    setSpanAttributes({});
     const topic = await this.topicRepository.create(data);
 
     return {
@@ -77,9 +77,13 @@ export class QuestionsService {
   /**
    * Updates topic name
    */
-  async updateTopic(params: { id: string, updateData: { name: string } }) {
-    logger.debug("Updating topic", params);
-    
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
+  async updateTopic(params: { id: string; updateData: { name: string } }) {
+    setSpanAttributes({});
     const topic = await this.topicRepository.update(params.id, params.updateData);
 
     return {
@@ -98,12 +102,16 @@ export class QuestionsService {
   /**
    * Deletes a topic and all its questions
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async deleteTopic(id: string) {
-    logger.debug("Deleting topic and its content", { id });
-    
+    setSpanAttributes({});
     // First get all questions in the topic
     const questions = await this.questionRepository.findAll({ topicIds: [id] });
-    
+
     // Delete all questions
     for (const question of questions) {
       await this.questionRepository.delete(question._id.toString());
@@ -118,9 +126,13 @@ export class QuestionsService {
   /**
    * Gets topic by ID
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getTopic(id: string) {
-    logger.debug("Getting topic", { id });
-    
+    setSpanAttributes({});
     const topic = await this.topicRepository.findById(id);
 
     return {
@@ -139,22 +151,21 @@ export class QuestionsService {
   /**
    * Gets topics list with filters, pagination and sorting
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
   async getTopics(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
     limit?: number;
     offset?: number;
   }) {
-    logger.debug("Getting topics list", params);
-    
-    const topics = await this.topicRepository.findAll(
-      params.filter,
-      params.sort,
-      params.limit,
-      params.offset
-    );
+    setSpanAttributes({});
+    const topics = await this.topicRepository.findAll(params.filter, params.sort, params.limit, params.offset);
 
-    return topics.map(topic => ({
+    return topics.map((topic) => ({
       id: topic._id.toString(),
       name: topic.name,
       ownerId: topic.ownerId,
@@ -170,6 +181,11 @@ export class QuestionsService {
   /**
    * Creates a new question in a topic
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ questionId: a[0].questionId, userId: a[0].userId }),
+  })
   async createQuestion(data: {
     topicId: string;
     text: string;
@@ -179,8 +195,7 @@ export class QuestionsService {
     parentId: string;
     grandParentId: string;
   }) {
-    logger.debug("Creating new question", { text: data.text });
-    
+    setSpanAttributes({ topicId: data.topicId });
     const question = await this.questionRepository.create(data);
 
     return {
@@ -203,14 +218,18 @@ export class QuestionsService {
   /**
    * Updates question text
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
   async updateQuestionText(params: {
     id: string;
     updateData: {
       text: string;
-    }
+    };
   }) {
-    logger.debug("Updating question text", params);
-    
+    setSpanAttributes({});
     const question = await this.questionRepository.updateText(params.id, params.updateData.text);
 
     return {
@@ -233,14 +252,18 @@ export class QuestionsService {
   /**
    * Updates question answer
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
   async updateAnswer(params: {
     id: string;
     updateData: {
       text: string;
-    }
+    };
   }) {
-    logger.debug("Updating question answer", params);
-    
+    setSpanAttributes({});
     const question = await this.questionRepository.updateAnswerText(params.id, params.updateData.text);
 
     return {
@@ -263,16 +286,16 @@ export class QuestionsService {
   /**
    * Creates answer for question
    */
-  async createAnswer(data: {
-    id: string;
-    userId: string;
-    text: string;
-  }) {
-    logger.debug("Creating question answer", { id: data.id });
-    
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ questionId: a[0].questionId, userId: a[0].userId }),
+  })
+  async createAnswer(data: { id: string; userId: string; text: string }) {
+    setSpanAttributes({ userId: data.userId });
     const question = await this.questionRepository.createAnswer(data.id, {
       userId: data.userId,
-      text: data.text
+      text: data.text,
     });
 
     return {
@@ -295,8 +318,13 @@ export class QuestionsService {
   /**
    * Deletes question
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async deleteQuestion(id: string) {
-    logger.debug("Deleting question", { id });
+    setSpanAttributes({});
     await this.questionRepository.delete(id);
     return { id };
   }
@@ -304,9 +332,13 @@ export class QuestionsService {
   /**
    * Gets question by ID
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getQuestion(id: string) {
-    logger.debug("Getting question", { id });
-    
+    setSpanAttributes({});
     const question = await this.questionRepository.findById(id);
 
     return {
@@ -329,22 +361,21 @@ export class QuestionsService {
   /**
    * Gets questions list with filters, pagination and sorting
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
   async getQuestions(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
     limit?: number;
     offset?: number;
   }) {
-    logger.debug("Getting questions list", params);
-    
-    const questions = await this.questionRepository.findAll(
-      params.filter,
-      params.sort,
-      params.limit,
-      params.offset
-    );
+    setSpanAttributes({});
+    const questions = await this.questionRepository.findAll(params.filter, params.sort, params.limit, params.offset);
 
-    return questions.map(question => ({
+    return questions.map((question) => ({
       id: question._id.toString(),
       topicId: question.topicId.toString(),
       text: question.text,

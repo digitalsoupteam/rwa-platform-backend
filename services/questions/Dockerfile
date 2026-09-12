@@ -25,4 +25,6 @@ COPY services/questions ./services/questions
 EXPOSE ${PORT}
 
 
-CMD ["bun", "services/questions/src/index.ts"]
+WORKDIR /app/services/questions
+ENTRYPOINT ["bun"]
+CMD ["src/index.ts"]
