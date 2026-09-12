@@ -27,4 +27,6 @@ COPY services/loyalty ./services/loyalty
 EXPOSE ${PORT}
 
 
-CMD ["bun", "services/loyalty/src/index.ts"]
+WORKDIR /app/services/loyalty
+ENTRYPOINT ["bun"]
+CMD ["src/index.ts"]

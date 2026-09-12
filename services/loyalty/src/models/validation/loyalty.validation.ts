@@ -1,4 +1,4 @@
-import { t } from "elysia";
+import { t } from 'elysia';
 
 /*
  * Entity schemas
@@ -82,9 +82,9 @@ export const commissionHistorySchema = t.Object({
  */
 export const getFeesRequest = t.Object({
   filter: t.Optional(t.Record(t.String(), t.Any())),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
   limit: t.Optional(t.Number()),
-  offset: t.Optional(t.Number())
+  offset: t.Optional(t.Number()),
 });
 export const getFeesResponse = t.Array(feesSchema);
 
@@ -93,9 +93,9 @@ export const getFeesResponse = t.Array(feesSchema);
  */
 export const getReferralsRequest = t.Object({
   filter: t.Optional(t.Record(t.String(), t.Any())),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
   limit: t.Optional(t.Number()),
-  offset: t.Optional(t.Number())
+  offset: t.Optional(t.Number()),
 });
 export const getReferralsResponse = t.Array(referralSchema);
 
@@ -103,9 +103,9 @@ export const getReferralsResponse = t.Array(referralSchema);
  * Register referral
  */
 export const registerReferralRequest = t.Object({
-  userWallet: t.String({pattern: "^0x[a-f0-9]{40}$"}),
+  userWallet: t.String({ pattern: '^0x[a-f0-9]{40}$' }),
   userId: t.String(),
-  referrerWallet: t.Optional(t.String({pattern: "^0x[a-f0-9]{40}$"})),
+  referrerWallet: t.Optional(t.String({ pattern: '^0x[a-f0-9]{40}$' })),
   referrerId: t.Optional(t.String()),
 });
 export const registerReferralResponse = referralSchema;
@@ -115,9 +115,9 @@ export const registerReferralResponse = referralSchema;
  */
 export const getReferrerWithdrawsRequest = t.Object({
   filter: t.Optional(t.Record(t.String(), t.Any())),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
   limit: t.Optional(t.Number()),
-  offset: t.Optional(t.Number())
+  offset: t.Optional(t.Number()),
 });
 export const getReferrerWithdrawsResponse = t.Array(referrerWithdrawSchema);
 
@@ -126,9 +126,9 @@ export const getReferrerWithdrawsResponse = t.Array(referrerWithdrawSchema);
  */
 export const getReferrerClaimHistoryRequest = t.Object({
   filter: t.Optional(t.Record(t.String(), t.Any())),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
   limit: t.Optional(t.Number()),
-  offset: t.Optional(t.Number())
+  offset: t.Optional(t.Number()),
 });
 export const getReferrerClaimHistoryResponse = t.Array(referrerClaimHistorySchema);
 
@@ -136,7 +136,7 @@ export const getReferrerClaimHistoryResponse = t.Array(referrerClaimHistorySchem
  * Request claim signatures
  */
 export const createReferrerWithdrawTaskRequest = t.Object({
-  referrerWallet: t.String({pattern: "^0x[a-f0-9]{40}$"}),
+  referrerWallet: t.String({ pattern: '^0x[a-f0-9]{40}$' }),
   referrerId: t.String(),
   chainId: t.String(),
   tokenAddress: t.String(),
@@ -149,8 +149,8 @@ export const createReferrerWithdrawTaskResponse = referrerWithdrawSchema;
  */
 export const getCommissionHistoryRequest = t.Object({
   filter: t.Optional(t.Record(t.String(), t.Any())),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
   limit: t.Optional(t.Number()),
-  offset: t.Optional(t.Number())
+  offset: t.Optional(t.Number()),
 });
 export const getCommissionHistoryResponse = t.Array(commissionHistorySchema);
