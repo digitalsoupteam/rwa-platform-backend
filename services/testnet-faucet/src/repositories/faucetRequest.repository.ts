@@ -1,12 +1,10 @@
-import {
-  FaucetRequestEntity,
-  IFaucetRequestEntity,
-} from "../models/entity/faucet.entity";
-import { FaucetTokenType } from "../models/shared/enums.model";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { FaucetRequestEntity } from '../models/entity/faucet.entity';
+import type { IFaucetRequestEntity } from '../models/entity/faucet.entity';
+import type { FaucetTokenType } from '../models/shared/enums.model';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
-@TracingDecorator()
 export class FaucetRequestRepository {
+  @TraceDecorator()
   async create(data: {
     userId: string;
     wallet: string;
@@ -14,17 +12,17 @@ export class FaucetRequestRepository {
     amount: number;
     transactionHash: string;
   }) {
-    const request = await FaucetRequestEntity.create<IFaucetRequestEntity>(
-      data
-    );
+    const request = await FaucetRequestEntity.create<IFaucetRequestEntity>(data);
     return request.toObject();
   }
 
+  @TraceDecorator()
   async findById(id: string) {
     const request = await FaucetRequestEntity.findById(id);
     return request?.toObject();
   }
 
+  @TraceDecorator()
   async findAll(
     filter: {
       userId?: string;
@@ -35,15 +33,11 @@ export class FaucetRequestRepository {
       limit?: number;
       offset?: number;
       sort?: Record<string, 'asc' | 'desc'>;
-    } = {}
+    } = {},
   ) {
     const { limit = 50, offset = 0, sort = { createdAt: 'asc' } } = options;
 
-    const requests = await FaucetRequestEntity.find(filter)
-      .sort(sort)
-      .skip(offset)
-      .limit(limit)
-      .lean();
+    const requests = await FaucetRequestEntity.find(filter).sort(sort).skip(offset).limit(limit).lean();
 
     return requests;
   }

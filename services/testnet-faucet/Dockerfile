@@ -25,4 +25,6 @@ COPY services/testnet-faucet ./services/testnet-faucet
 EXPOSE ${PORT}
 
 
-CMD ["bun", "services/testnet-faucet/src/index.ts"]
+WORKDIR /app/services/testnet-faucet
+ENTRYPOINT ["bun"]
+CMD ["src/index.ts"]

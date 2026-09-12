@@ -1,6 +1,6 @@
-import { t } from "elysia";
-import { paginationSchema } from "./shared.validation";
-import { faucetTokenTypeSchema } from "../shared/enums.model";
+import { t } from 'elysia';
+import { paginationSchema } from './shared.validation';
+import { faucetTokenTypeSchema } from '../shared/enums.model';
 
 /*
  * Base model schema
@@ -12,7 +12,7 @@ export const faucetRequestSchema = t.Object({
   tokenType: faucetTokenTypeSchema,
   amount: t.Number(),
   transactionHash: t.String(),
-  createdAt: t.Number()
+  createdAt: t.Number(),
 });
 
 /*
@@ -21,7 +21,7 @@ export const faucetRequestSchema = t.Object({
 export const requestGasSchema = t.Object({
   userId: t.String(),
   wallet: t.String(),
-  amount: t.Number()
+  amount: t.Number(),
 });
 
 export const requestGasResponse = faucetRequestSchema;
@@ -32,7 +32,7 @@ export const requestGasResponse = faucetRequestSchema;
 export const requestHoldSchema = t.Object({
   userId: t.String(),
   wallet: t.String(),
-  amount: t.Number()
+  amount: t.Number(),
 });
 
 export const requestHoldResponse = faucetRequestSchema;
@@ -43,7 +43,7 @@ export const requestHoldResponse = faucetRequestSchema;
 export const requestPlatformSchema = t.Object({
   userId: t.String(),
   wallet: t.String(),
-  amount: t.Number()
+  amount: t.Number(),
 });
 
 export const requestPlatformResponse = faucetRequestSchema;
@@ -53,7 +53,7 @@ export const requestPlatformResponse = faucetRequestSchema;
  */
 export const getHistorySchema = t.Object({
   userId: t.String(),
-  pagination: t.Optional(paginationSchema)
+  pagination: t.Optional(paginationSchema),
 });
 
 export const getHistoryResponse = t.Array(faucetRequestSchema);
@@ -62,11 +62,11 @@ export const getHistoryResponse = t.Array(faucetRequestSchema);
  * Get unlock time
  */
 export const getUnlockTimeSchema = t.Object({
-  userId: t.String()
+  userId: t.String(),
 });
 
 export const getUnlockTimeResponse = t.Object({
   gasUnlockTime: t.Number(),
   holdUnlockTime: t.Number(),
-  platformUnlockTime: t.Number()
+  platformUnlockTime: t.Number(),
 });
