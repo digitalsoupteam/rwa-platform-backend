@@ -1,61 +1,53 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { NotFoundError } from "@shared/errors/app-errors";
-import { FilterQuery, SortOrder } from "mongoose";
-import { SignatureEntity, ISignature } from "../models/entity/signature.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { AppError } from '@shared/errors/app-errors';
+import type { FilterQuery, SortOrder } from 'mongoose';
+import { SignatureEntity } from '../models/entity/signature.entity';
+import type { ISignature } from '../models/entity/signature.entity';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
-@TracingDecorator()
 export class SignatureRepository {
   constructor(private readonly model = SignatureEntity) {}
 
-  async create(data: Pick<ISignature, "taskId" | "signer" | "signature">) {
-    logger.debug(`Creating signature for task: ${data.taskId}`);
+  @TraceDecorator()
+  async create(data: Pick<ISignature, 'taskId' | 'signer' | 'signature'>) {
     const doc = await this.model.create(data);
     return doc.toObject();
   }
 
+  @TraceDecorator()
   async findById(id: string) {
-    logger.debug(`Finding signature by ID: ${id}`);
     const doc = await this.model.findById(id).lean();
 
     if (!doc) {
-      throw new NotFoundError("Signature", id);
+      throw new AppError({
+        message: `Signature ${id} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return doc;
   }
 
-  async findByTaskId(
-    taskId: string,
-    sort: { [key: string]: SortOrder } = { createdAt: 'asc' }
-  ) {
-    logger.debug(`Finding signatures for task: ${taskId}`);
-    const docs = await this.model
-      .find({ taskId })
-      .sort(sort)
-      .lean();
+  @TraceDecorator()
+  async findByTaskId(taskId: string, sort: { [key: string]: SortOrder } = { createdAt: 'asc' }) {
+    const docs = await this.model.find({ taskId }).sort(sort).lean();
 
     return docs;
   }
 
+  @TraceDecorator()
   async countByTaskId(taskId: string): Promise<number> {
-    logger.debug(`Counting signatures for task: ${taskId}`);
     return this.model.countDocuments({ taskId });
   }
 
+  @TraceDecorator()
   async findAll(
     filters: FilterQuery<typeof this.model> = {},
     sort: { [key: string]: SortOrder } = { createdAt: 'asc' },
     limit: number = 100,
-    offset: number = 0
+    offset: number = 0,
   ) {
-    logger.debug(`Finding signatures with filters: ${JSON.stringify(filters)}`);
-    const docs = await this.model
-      .find(filters)
-      .sort(sort)
-      .skip(offset)
-      .limit(limit)
-      .lean();
+    const docs = await this.model.find(filters).sort(sort).skip(offset).limit(limit).lean();
 
     return docs;
   }

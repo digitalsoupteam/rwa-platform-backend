@@ -1,4 +1,4 @@
-import { t } from "elysia";
+import { t } from 'elysia';
 
 // Base schemas
 const signatureTaskSchema = t.Object({
@@ -14,18 +14,18 @@ const signatureTaskSchema = t.Object({
       t.Object({
         signer: t.String(),
         signature: t.String(),
-      })
-    )
+      }),
+    ),
   ),
 });
 
 // Create signature task
 export const createSignatureTaskRequest = t.Pick(signatureTaskSchema, [
-  "ownerId",
-  "ownerType",
-  "hash",
-  "requiredSignatures",
-  "expired",
+  'ownerId',
+  'ownerType',
+  'hash',
+  'requiredSignatures',
+  'expired',
 ]);
 
 export const createSignatureTaskResponse = signatureTaskSchema;

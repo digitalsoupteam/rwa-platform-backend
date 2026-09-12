@@ -1,8 +1,10 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { SignerClient } from "../clients/signer.client";
-import { SignaturesService } from "../services/signatures.service";
-import type { ConsumeMessage } from "amqplib";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { SignerClient } from '../clients/signer.client';
+import { SignaturesService } from '../services/signatures.service';
+import type { ConsumeMessage } from 'amqplib';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { AppError } from '@shared/errors/app-errors';
 
 interface SignatureResponse {
   signer: string;
@@ -14,29 +16,24 @@ interface SignatureResponse {
 /**
  * Daemon for handling signature responses from signer service
  */
-@TracingDecorator()
-export class TaskResponsesDaemon {
-  private initialized: boolean = false;
 
+export class TaskResponsesDaemon {
   constructor(
     private readonly signerClient: SignerClient,
-    private readonly signaturesService: SignaturesService
+    private readonly signaturesService: SignaturesService,
   ) {}
 
   /**
    * Initialize daemon and start consuming messages
    */
+  @TraceDecorator()
   async initialize(): Promise<void> {
     try {
-      logger.info("Initializing Task Responses Daemon");
-
       // Start consuming messages
       await this.signerClient.consumeResponses(this.handleResponse.bind(this));
 
-      this.initialized = true;
-      logger.info("Task Responses Daemon initialized successfully");
+      // initialized
     } catch (error) {
-      logger.error("Failed to initialize Task Responses Daemon:", error);
       throw error;
     }
   }
@@ -44,6 +41,11 @@ export class TaskResponsesDaemon {
   /**
    * Handle signature response
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ routingKey: a[0]?.fields?.routingKey }),
+  })
   private async handleResponse(message: ConsumeMessage | null): Promise<void> {
     if (!message) return;
 
@@ -52,20 +54,23 @@ export class TaskResponsesDaemon {
 
       // Validate response
       if (!response.signer || !response.hash || !response.signature || !response.taskId) {
-        throw new Error("Invalid signature response format");
+        throw new AppError({
+          message: 'Invalid signature response format',
+          statusCode: 400,
+          code: 'VALIDATION_ERROR',
+        });
       }
 
       // Add signature to task
       await this.signaturesService.addSignature({
         taskId: response.taskId,
         signer: response.signer,
-        signature: response.signature
+        signature: response.signature,
       });
 
       // Acknowledge message
       await this.signerClient.ackMessage(message);
     } catch (error) {
-      logger.error("Error processing signature response:", error);
       // Reject message without requeue as we can't process it
       await this.signerClient.nackMessage(message, false);
     }
