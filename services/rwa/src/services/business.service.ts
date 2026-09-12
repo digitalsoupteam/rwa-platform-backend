@@ -1,13 +1,19 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { BusinessRepository } from "../repositories/business.repository";
-import { NotAllowedError } from "@shared/errors/app-errors";
-import { IBusinessEntity } from "../models/entity/business.entity";
+import { BusinessRepository } from '../repositories/business.repository';
+import { AppError } from '@shared/errors/app-errors';
+import type { IBusinessEntity } from '../models/entity/business.entity';
 
-import { OpenRouterClient } from "@shared/openrouter/client";
-import { ethers } from "ethers";
-import { SortOrder } from "mongoose";
-import { SignersManagerClient } from "../clients/eden.clients";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { OpenRouterClient } from '@shared/openrouter/client';
+import { ethers } from 'ethers';
+import type { SortOrder } from 'mongoose';
+import type { SignersManagerClient } from '../clients/eden.clients';
+import type { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
+import type { EvaluationRequestsClient } from '../clients/evaluationRequests.client';
+import type { WebhookEventsPublisher } from '@shared/webhooks/src';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
+import { buildFileUrl } from '@shared/files/src/index';
 
 interface NetworkConfig {
   chainId: string;
@@ -15,19 +21,21 @@ interface NetworkConfig {
   factoryAddress: string;
 }
 
-@TracingDecorator()
 export class BusinessService {
   constructor(
     private readonly businessRepository: BusinessRepository,
     private readonly openRouterClient: OpenRouterClient,
     private readonly signersManagerClient: SignersManagerClient,
-    private readonly supportedNetworks: NetworkConfig[]
-  ) { }
+    private readonly rabbitMQClient: RabbitMQClient,
+    private readonly evaluationRequestsClient: EvaluationRequestsClient,
+    private readonly webhookEventsPublisher: WebhookEventsPublisher,
+    private readonly supportedNetworks: NetworkConfig[],
+    private readonly openRouterModel: string,
+    private readonly filesBaseUrl: string,
+  ) {}
 
   private isChainIdSupported(chainId: string): boolean {
-    return this.supportedNetworks.some(
-      (network) => network.chainId === chainId
-    );
+    return this.supportedNetworks.some((network) => network.chainId === chainId);
   }
 
   private generateMessageHash(
@@ -41,28 +49,18 @@ export class BusinessService {
     owner: string,
   ): string {
     const paramsHash = ethers.solidityPackedKeccak256(
-      [
-        "uint256",
-        "address",
-        "address",
-        "string",
-        "uint256",
-        "string",
-        "string",
-        "string",
-        "address"
-      ],
+      ['uint256', 'address', 'address', 'string', 'uint256', 'string', 'string', 'string', 'address'],
       [
         BigInt(chainId),
         ethers.getAddress(factoryAddress),
         ethers.getAddress(deployerWallet),
-        "deployRWA",
+        'deployRWA',
         BigInt(createRWAFee),
         entityId,
         entityOwnerId,
         entityOwnerType,
-        ethers.getAddress(owner)
-      ]
+        ethers.getAddress(owner),
+      ],
     );
 
     return paramsHash;
@@ -84,16 +82,23 @@ Response format:
 }`;
 
     const response = await this.openRouterClient.chatCompletion({
-      model: "google/gemini-2.0-flash-001",
+      model: this.openRouterModel,
       messages: [
-        { role: "system", content: systemMessage },
-        { role: "user", content: "Please analyze the provided business description and generate the required fields." },
+        { role: 'system', content: systemMessage },
+        {
+          role: 'user',
+          content: 'Please analyze the provided business description and generate the required fields.',
+        },
       ],
     });
 
     const aiResponse = response.choices[0]?.message?.content;
     if (!aiResponse) {
-      throw new Error("Failed to get AI response for business field generation");
+      throw new AppError({
+        message: 'Failed to get AI response for business field generation',
+        statusCode: 502,
+        code: 'AI_ERROR',
+      });
     }
 
     try {
@@ -102,27 +107,48 @@ Response format:
       const lastBrace = aiResponse.lastIndexOf('}');
 
       if (firstBrace === -1 || lastBrace === -1 || firstBrace >= lastBrace) {
-        throw new Error("No valid JSON object found in AI response");
+        throw new AppError({
+          message: 'No valid JSON object found in AI response',
+          statusCode: 502,
+          code: 'AI_ERROR',
+        });
       }
 
       const jsonString = aiResponse.substring(firstBrace, lastBrace + 1);
 
       return JSON.parse(jsonString);
     } catch (error) {
-      throw new Error("Failed to parse AI response as JSON");
+      throw new AppError({
+        message: 'Failed to parse AI response as JSON',
+        statusCode: 502,
+        code: 'AI_ERROR',
+        cause: error,
+      });
     }
   }
 
-  async createBusinessWithAI(data: {
-    description: string;
-    ownerId: string;
-    ownerType: string;
-    chainId: string;
-  }) {
-    logger.debug("Creating new business with AI", { data });
-
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({
+      description: a[0].description,
+      ownerId: a[0].ownerId,
+      ownerType: a[0].ownerType,
+      chainId: a[0].chainId,
+    }),
+  })
+  async createBusinessWithAI(data: { description: string; ownerId: string; ownerType: string; chainId: string }) {
+    setSpanAttributes({
+      ownerId: data.ownerId,
+      ownerType: data.ownerType,
+      chainId: data.chainId,
+    });
     if (!this.isChainIdSupported(data.chainId)) {
-      throw new NotAllowedError(`Chain ID ${data.chainId} is not supported`);
+      throw new AppError({
+        message: `Chain ID ${data.chainId} is not supported`,
+        statusCode: 403,
+        code: 'NOT_ALLOWED',
+      });
     }
 
     const aiFields = await this.generateBusinessFields(data.description);
@@ -139,6 +165,16 @@ Response format:
     return this.mapBusiness(business);
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({
+      description: a[0].description,
+      ownerId: a[0].ownerId,
+      ownerType: a[0].ownerType,
+      chainId: a[0].chainId,
+    }),
+  })
   async createBusiness(data: {
     name: string;
     ownerId: string;
@@ -151,144 +187,191 @@ Response format:
     businessType?: string;
     socials?: { type: string; url: string }[];
   }) {
-    logger.debug("Creating new business", { data });
-
+    setSpanAttributes({
+      ownerId: data.ownerId,
+      ownerType: data.ownerType,
+      chainId: data.chainId,
+    });
     if (!this.isChainIdSupported(data.chainId)) {
-      throw new NotAllowedError(`Chain ID ${data.chainId} is not supported`);
+      throw new AppError({
+        message: `Chain ID ${data.chainId} is not supported`,
+        statusCode: 403,
+        code: 'NOT_ALLOWED',
+      });
     }
 
-    const business = await this.businessRepository.createBusiness(data);
+    const business = await this.businessRepository.createBusiness(
+      data as Parameters<typeof this.businessRepository.createBusiness>[0],
+    );
 
     return this.mapBusiness(business);
   }
 
-  async editBusiness(
-    params: {
-      id: string,
-      updateData: {
-        chainId?: string;
-        name?: string;
-        description?: string;
-        tags?: string[];
-        image?: string;
-        country?: string;
-        businessType?: string;
-        socials?: { type: string; url: string }[];
-      }
-    }
-  ) {
-    logger.debug("Updating business info", params);
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id }),
+  })
+  async updateBusinessImage(params: { id: string; image: string; fileId: string }) {
+    setSpanAttributes({ entityId: params.id, entityType: 'business' });
+    const updated = await this.businessRepository.updateBusiness(params.id, {
+      image: params.image,
+      fileId: params.fileId,
+    });
+    return this.mapBusiness(updated);
+  }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
+  async editBusiness(params: {
+    id: string;
+    updateData: {
+      chainId?: string;
+      name?: string;
+      description?: string;
+      tags?: string[];
+      image?: string;
+      country?: string;
+      businessType?: string;
+      socials?: { type: string; url: string }[];
+    };
+  }) {
+    setSpanAttributes({
+      entityId: params.id,
+      entityType: 'business',
+      ...(params.updateData.chainId !== undefined && { chainId: params.updateData.chainId }),
+    });
     const business = await this.businessRepository.findById(params.id);
 
     if (business.approvalSignaturesTaskId) {
-      const immutableFields = [
-        'chainId',
-      ];
+      const immutableFields = ['chainId'];
 
       for (const field of immutableFields) {
         if (params.updateData[field as keyof typeof params.updateData] !== undefined) {
-          throw new NotAllowedError(`Cannot edit ${field} while approval signatures task is pending`);
+          throw new AppError({
+            message: `Cannot edit ${field} while approval signatures task is pending`,
+            statusCode: 403,
+            code: 'NOT_ALLOWED',
+          });
         }
       }
     }
 
-    const updated = await this.businessRepository.updateBusiness(params.id, params.updateData);
+    const updated = await this.businessRepository.updateBusiness(
+      params.id,
+      params.updateData as Parameters<typeof this.businessRepository.updateBusiness>[1],
+    );
 
     return this.mapBusiness(updated);
   }
 
-  async updateRiskScore(id: string) {
-    logger.debug("Updating business risk score", { id });
-
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id }),
+  })
+  async requestEvaluation({ id }: { id: string }) {
+    setSpanAttributes({ entityId: id, entityType: 'business' });
     const business = await this.businessRepository.findById(id);
 
-    if (!business.name || !business.description || !business.tags?.length) {
-      throw new Error(
-        "Business name, description and tags are required for risk assessment"
-      );
+    if (business.riskScoreEvaluationProcess) {
+      throw new AppError({
+        message: 'Evaluation already in progress',
+        statusCode: 403,
+        code: 'NOT_ALLOWED',
+      });
     }
 
-    const systemMessage = `You are a risk assessment expert. Analyze the business information and provide a risk score from 1 to 100.
-
-Business Name: ${business.name}"
-Description: ${business.description}
-Tags: ${business.tags.join(", ")}
-
-Consider these factors:
-- Business model viability
-- Market competition and conditions
-- Regulatory compliance risks
-- Financial stability indicators
-- Operational risks and scalability
-- Management team experience
-- Industry-specific challenges
-- Market positioning and branding
-- Technology and innovation potential
-- Target market size and accessibility
-
-Provide your response in EXACTLY this format:
-RISK_SCORE: [number between 1-100]
-REASONING: [brief explanation]
-
-Example response:
-RISK_SCORE: 45
-REASONING: Moderate risk due to competitive market, but strong business model and experienced team`;
-
-    const response = await this.openRouterClient.chatCompletion({
-      model: "google/gemini-2.0-flash-001",
-      messages: [
-        { role: "system", content: systemMessage },
-        {
-          role: "user",
-          content:
-            "Please analyze the provided business information and assess its risk score.",
-        },
-      ],
+    await this.businessRepository.updateBusiness(id, {
+      riskScoreEvaluationProcess: true,
     });
 
-    const aiResponse = response.choices[0]?.message?.content;
-    if (!aiResponse) {
-      throw new Error("Failed to get AI response for risk assessment");
-    }
+    await this.evaluationRequestsClient.publishEvaluationRequest('evaluateBusiness', {
+      businessId: id,
+      ownerId: business.ownerId,
+      ownerType: business.ownerType,
+    });
 
-    const match = aiResponse.match(/RISK_SCORE:\s*(\d+)/);
-    if (!match) {
-      throw new Error("Failed to parse risk score from AI response");
-    }
+    const updated = await this.businessRepository.findById(id);
+    return this.mapBusiness(updated);
+  }
 
-    const riskScore = parseInt(match[1]);
-    if (isNaN(riskScore) || riskScore < 1 || riskScore > 100) {
-      throw new Error("Invalid risk score received from AI assessment");
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, riskScore: a[0].riskScore }),
+  })
+  async setRiskScore({ id, riskScore }: { id: string; riskScore: number }) {
+    setSpanAttributes({ entityId: id, entityType: 'business', riskScore });
+    if (riskScore < 1 || riskScore > 100) {
+      throw new AppError({
+        message: 'riskScore must be between 1 and 100',
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
     }
 
     const updated = await this.businessRepository.updateBusiness(id, {
-      riskScore
+      riskScore,
+      riskScoreEvaluationProcess: false,
     });
 
     return this.mapBusiness(updated);
   }
 
-  async requestApprovalSignatures(params: {
-    id: string,
-    ownerWallet: string,
-    deployerWallet: string,
-    createRWAFee: string
-  }) {
-    logger.debug("Requesting approval signatures", params);
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id }),
+  })
+  async resetEvaluation({ id }: { id: string }) {
+    setSpanAttributes({ entityId: id, entityType: 'business' });
+    const updated = await this.businessRepository.updateBusiness(id, {
+      riskScoreEvaluationProcess: false,
+    });
+    return this.mapBusiness(updated);
+  }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
+  async requestApprovalSignatures(params: {
+    id: string;
+    ownerWallet: string;
+    deployerWallet: string;
+    createRWAFee: string;
+  }) {
+    setSpanAttributes({
+      entityId: params.id,
+      entityType: 'business',
+      ownerWallet: params.ownerWallet,
+      deployerWallet: params.deployerWallet,
+    });
     const business = await this.businessRepository.findById(params.id);
 
     if (business.approvalSignaturesTaskId) {
-      throw new NotAllowedError("Business already has an active approval signatures task");
+      throw new AppError({
+        message: 'Business already has an active approval signatures task',
+        statusCode: 403,
+        code: 'NOT_ALLOWED',
+      });
     }
 
     const now = Math.floor(Date.now() / 1000);
     const expired = now + 86400; // 24 hours
 
-    const network = this.supportedNetworks.find(n => n.chainId === business.chainId);
+    const network = this.supportedNetworks.find((n) => n.chainId === business.chainId);
     if (!network) {
-      throw new Error(`Network configuration not found for chain ID ${business.chainId}`);
+      throw new AppError({
+        message: `Network configuration not found for chain ID ${business.chainId}`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     const messageHash = this.generateMessageHash(
@@ -302,14 +385,13 @@ REASONING: Moderate risk due to competitive market, but strong business model an
       params.ownerWallet,
     );
 
-    const taskResponse =
-      await this.signersManagerClient.createSignatureTask.post({
-        ownerId: business.ownerId,
-        ownerType: business.ownerType,
-        hash: messageHash,
-        expired,
-        requiredSignatures: 3
-      });
+    const taskResponse = await this.signersManagerClient.createSignatureTask.post({
+      ownerId: business.ownerId,
+      ownerType: business.ownerType,
+      hash: messageHash,
+      expired,
+      requiredSignatures: 3,
+    });
 
     if (taskResponse.error) throw taskResponse.error;
 
@@ -323,44 +405,75 @@ REASONING: Moderate risk due to competitive market, but strong business model an
     return { taskId };
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async rejectApprovalSignatures(id: string) {
-    logger.debug("Rejecting approval signatures", { id });
-
+    setSpanAttributes({ entityId: id, entityType: 'business' });
     const business = await this.businessRepository.findById(id);
 
     if (business.tokenAddress) {
-      throw new NotAllowedError("Business already deployed!");
+      throw new AppError({
+        message: 'Business already deployed!',
+        statusCode: 403,
+        code: 'NOT_ALLOWED',
+      });
     }
 
     if (!business.approvalSignaturesTaskId || !business.approvalSignaturesTaskExpired) {
-      throw new NotAllowedError("Business has no active approval signatures task");
+      throw new AppError({
+        message: 'Business has no active approval signatures task',
+        statusCode: 403,
+        code: 'NOT_ALLOWED',
+      });
     }
 
     const now = Math.floor(Date.now() / 1000);
     if (now <= business.approvalSignaturesTaskExpired + 60) {
-      throw new NotAllowedError("Cannot reject approval signatures before expiration");
+      throw new AppError({
+        message: 'Cannot reject approval signatures before expiration',
+        statusCode: 403,
+        code: 'NOT_ALLOWED',
+      });
     }
 
     await this.businessRepository.updateBusiness(id, {
-      approvalSignaturesTaskId: undefined
+      approvalSignaturesTaskId: undefined,
     });
   }
 
-  async syncAfterDeployment(
-    eventData: {
-      entityId: string,
-      emittedFrom: string;
-      owner: string;
-    }
-  ) {
-    logger.debug("Updating business contract data", eventData);
-
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ entityId: a[0].entityId, emittedFrom: a[0].emittedFrom, owner: a[0].owner }),
+  })
+  async syncAfterDeployment(eventData: { entityId: string; emittedFrom: string; owner: string }) {
+    setSpanAttributes({
+      entityId: eventData.entityId,
+      entityType: 'business',
+      tokenAddress: eventData.emittedFrom,
+      ownerWallet: eventData.owner,
+    });
     const updated = await this.businessRepository.updateBusiness(eventData.entityId, {
       tokenAddress: eventData.emittedFrom,
-      ownerWallet: eventData.owner
+      ownerWallet: eventData.owner,
     });
 
-    return this.mapBusiness(updated);
+    const businessDto = this.mapBusiness(updated);
+
+    await this.webhookEventsPublisher.publish('business.created', {
+      businessId: businessDto.id,
+      ownerId: businessDto.ownerId,
+      ownerType: businessDto.ownerType,
+      ownerWallet: businessDto.ownerWallet,
+      tokenAddress: businessDto.tokenAddress,
+      chainId: businessDto.chainId,
+      name: businessDto.name,
+    });
+
+    return businessDto;
   }
 
   private mapBusiness(business: IBusinessEntity) {
@@ -374,10 +487,13 @@ REASONING: Moderate risk due to competitive market, but strong business model an
       tokenAddress: business.tokenAddress ?? undefined,
       description: business.description,
       tags: business.tags,
-      riskScore: business.riskScore,
+      riskScore: business.riskScore ?? undefined,
       image: business.image ?? undefined,
+      imageUrl: business.image ? buildFileUrl(business.image, this.filesBaseUrl) : undefined,
+      fileId: business.fileId ?? undefined,
       approvalSignaturesTaskId: business.approvalSignaturesTaskId ?? undefined,
       approvalSignaturesTaskExpired: business.approvalSignaturesTaskExpired ?? undefined,
+      riskScoreEvaluationProcess: business.riskScoreEvaluationProcess,
       country: business.country ?? undefined,
       businessType: business.businessType ?? undefined,
       socials: business.socials ?? [],
@@ -387,25 +503,36 @@ REASONING: Moderate risk due to competitive market, but strong business model an
     };
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getBusiness(id: string) {
+    setSpanAttributes({ entityId: id, entityType: 'business' });
     const business = await this.businessRepository.findById(id);
     return this.mapBusiness(business);
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0].id, limit: a[0].limit, offset: a[0].offset }),
+  })
   async getBusinesses(params: {
-    filter?: Record<string, any>,
-    sort?: { [key: string]: SortOrder },
-    limit?: number,
-    offset?: number
-  }
-  ) {
-    logger.debug("Getting businesses with filter", params);
-    const businesses = await this.businessRepository.findAll(
-      params.filter,
-      params.sort,
-      params.limit,
-      params.offset
-    );
-    return businesses.map(this.mapBusiness);
+    filter?: Record<string, any>;
+    sort?: { [key: string]: SortOrder };
+    limit?: number;
+    offset?: number;
+  }) {
+    const filterJson = params.filter ? JSON.stringify(params.filter) : undefined;
+    setSpanAttributes({
+      entityType: 'business',
+      ...(filterJson !== undefined && { filter: filterJson }),
+      ...(params.limit !== undefined && { limit: params.limit }),
+      ...(params.offset !== undefined && { offset: params.offset }),
+    });
+    const businesses = await this.businessRepository.findAll(params.filter, params.sort, params.limit, params.offset);
+    return businesses.map((b) => this.mapBusiness(b));
   }
 }

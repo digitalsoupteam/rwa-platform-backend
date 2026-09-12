@@ -1,29 +1,33 @@
 {
-  "businessId": "6870f4e3c4f8e83d1fcd0dea",
-  "companyId": "6870f4e29f886aaa00f5518f",
-  "tokenAddress": "0x06C39ABC9C426806966d5A387bd121c80377CCa0",
-  "ownerWallet": "0xE9a86c95245613ce6844DfC50F8422F80EDd8cd5",
-  "ownerPrivateKey": "0xfea1550a690abe5882cbf4cf4cf8b06803fea07a68edc83d8abc30f862578c3e",
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODcwZjRlMjMwOTIwMjMwYWRhYTZmYjMiLCJ3YWxsZXQiOiIweEU5YTg2Yzk1MjQ1NjEzY2U2ODQ0RGZDNTBGODQyMkY4MEVEZDhjZDUiLCJ0eXBlIjoiYWNjZXNzIiwianRpIjoiMzlhMzRiNmViMzUxZDk5NWU1NDI4NDA2YThiZTdjOTkiLCJpYXQiOjE3NTIyMzMxODYsImV4cCI6MTc1MjIzNDA4Nn0.Y8RwFLUL2J6yam8g22S1XiFbyboShHqQ7LMVH0eX-Z0",
+  "businessId": "6a451b2ad90e26b41e71080f",
+  "companyId": "6a451b2a1350eac5cece0f84",
+  "tokenAddress": "0xFc0A9e6EB04E3af97258b7FDB3f5100D98f705F9",
+  "ownerWallet": "0x51AEffdD7131F69679c811c99b69AC88F6C3193d",
+  "ownerPrivateKey": "0x232823efcb5208ed4d180fa34113fc6196165471c022b4ed945e4960a9f16baa",
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTQ1MWIyYTcyNmUwYjZmMTA2NmQyZTkiLCJ3YWxsZXQiOiIweDUxQUVmZmRENzEzMUY2OTY3OWM4MTFjOTliNjlBQzg4RjZDMzE5M2QiLCJ0eXBlIjoiYWNjZXNzIiwianRpIjoiODVkNjAxMjU2YWJkMDQ4NmJkYWQzZmMzODE3NWY3OTciLCJpYXQiOjE3ODI5MTM4MzQsImV4cCI6MTc4MjkxNDczNH0.jVzOVgzhXYASMUhzjWdXabxDhq7TNhL-vzn9A2dR72o",
   "chainId": "97",
   "businessData": {
-    "id": "6870f4e3c4f8e83d1fcd0dea",
+    "id": "6a451b2ad90e26b41e71080f",
     "chainId": "97",
     "name": "Test Business",
-    "ownerId": "6870f4e29f886aaa00f5518f",
+    "ownerId": "6a451b2a1350eac5cece0f84",
     "ownerType": "company",
-    "ownerWallet": "0xE9a86c95245613ce6844DfC50F8422F80EDd8cd5",
-    "tokenAddress": "0x06C39ABC9C426806966d5A387bd121c80377CCa0",
+    "ownerWallet": "0x51AEffdD7131F69679c811c99b69AC88F6C3193d",
+    "tokenAddress": "0xFc0A9e6EB04E3af97258b7FDB3f5100D98f705F9",
     "description": "Test Description",
     "tags": [
       "test"
     ],
-    "riskScore": 100,
+    "riskScore": 75,
     "image": null,
-    "approvalSignaturesTaskId": "6870f4e3f5c0cef9ca47e9dd",
-    "approvalSignaturesTaskExpired": 1752319587,
+    "approvalSignaturesTaskId": "6a451b40b8c6164b4e1cfcda",
+    "approvalSignaturesTaskExpired": 1783000256,
+    "riskScoreEvaluationProcess": false,
+    "country": null,
+    "businessType": null,
+    "socials": [],
     "paused": false,
-    "createdAt": 1752233130,
-    "updatedAt": 1752233225
+    "createdAt": 1782912219,
+    "updatedAt": 1782913926
   }
 }

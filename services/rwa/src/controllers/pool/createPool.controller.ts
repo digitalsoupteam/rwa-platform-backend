@@ -1,26 +1,16 @@
-import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../../plugins/services.plugin";
-import {
-  createPoolRequest,
-  createPoolResponse,
-} from "../../models/validation/pool.validation";
+import { Elysia } from 'elysia';
+import type { ServicesPlugin } from '../../plugins/services.plugin';
+import { createPoolRequest, createPoolResponse } from '../../models/validation/pool.validation';
 
 export const createPoolController = (servicesPlugin: ServicesPlugin) => {
-  return new Elysia({ name: "CreatePoolController" })
-    .use(servicesPlugin)
-    .post(
-      "/createPool",
-      async ({ body, poolService }) => {
-        logger.info(
-          `POST /createPool - Creating pool with name: ${body.name}`
-        );
-
-        return await poolService.createPool(body);
-      },
-      {
-        body: createPoolRequest,
-        response: createPoolResponse,
-      }
-    );
+  return new Elysia({ name: 'CreatePoolController' }).use(servicesPlugin).post(
+    '/createPool',
+    async ({ body, poolService }) => {
+      return await poolService.createPool(body);
+    },
+    {
+      body: createPoolRequest,
+      response: createPoolResponse,
+    },
+  );
 };

@@ -1,119 +1,105 @@
-import { Elysia } from "elysia";
+import { Elysia } from 'elysia';
 
-import { createBusinessController } from "../controllers/business/createBusiness.controller";
-import { getTokenMetadataController } from "../controllers/token/getTokenMetadata.controller";
-import { editBusinessController } from "../controllers/business/editBusiness.controller";
-import { updateBusinessRiskScoreController } from "../controllers/business/updateBusinessRiskScore.controller";
-import { requestBusinessApprovalSignaturesController } from "../controllers/business/requestBusinessApprovalSignatures.controller";
-import { rejectBusinessApprovalSignaturesController } from "../controllers/business/rejectBusinessApprovalSignatures.controller";
-import { getBusinessController } from "../controllers/business/getBusiness.controller";
-import { getBusinessesController } from "../controllers/business/getBusinesses.controller";
-import { createBusinessWithAIController } from "../controllers/business/createBusinessWithAI.controller";
+import { createBusinessController } from '../controllers/business/createBusiness.controller';
+import { getTokenMetadataController } from '../controllers/token/getTokenMetadata.controller';
+import { editBusinessController } from '../controllers/business/editBusiness.controller';
+import { requestBusinessApprovalSignaturesController } from '../controllers/business/requestBusinessApprovalSignatures.controller';
+import { rejectBusinessApprovalSignaturesController } from '../controllers/business/rejectBusinessApprovalSignatures.controller';
+import { requestBusinessEvaluationController } from '../controllers/business/requestBusinessEvaluation.controller';
+import { getBusinessController } from '../controllers/business/getBusiness.controller';
+import { getBusinessesController } from '../controllers/business/getBusinesses.controller';
+import { createBusinessWithAIController } from '../controllers/business/createBusinessWithAI.controller';
 
-import { createPoolController } from "../controllers/pool/createPool.controller";
-import { editPoolController } from "../controllers/pool/editPool.controller";
-import { updatePoolRiskScoreController } from "../controllers/pool/updatePoolRiskScore.controller";
-import { requestPoolApprovalSignaturesController } from "../controllers/pool/requestPoolApprovalSignatures.controller";
-import { rejectPoolApprovalSignaturesController } from "../controllers/pool/rejectPoolApprovalSignatures.controller";
-import { getPoolController } from "../controllers/pool/getPool.controller";
-import { getPoolsController } from "../controllers/pool/getPools.controller";
-import { createPoolWithAIController } from "../controllers/pool/createPoolWithAI.controller";
-import type { ServicesPlugin } from "./services.plugin";
-import { withTraceSync } from "@shared/monitoring/src/tracing";
+import { createPoolController } from '../controllers/pool/createPool.controller';
+import { editPoolController } from '../controllers/pool/editPool.controller';
+import { requestPoolApprovalSignaturesController } from '../controllers/pool/requestPoolApprovalSignatures.controller';
+import { rejectPoolApprovalSignaturesController } from '../controllers/pool/rejectPoolApprovalSignatures.controller';
+import { requestPoolEvaluationController } from '../controllers/pool/requestPoolEvaluation.controller';
+import { getPoolController } from '../controllers/pool/getPool.controller';
+import { getPoolsController } from '../controllers/pool/getPools.controller';
+import { createPoolWithAIController } from '../controllers/pool/createPoolWithAI.controller';
+import { updatePoolImageController } from '../controllers/pool/updatePoolImage.controller';
+import { updateBusinessImageController } from '../controllers/business/updateBusinessImage.controller';
+import type { ServicesPlugin } from './services.plugin';
+import { withTraceSync } from '@shared/monitoring/src/tracing';
 
 export const createControllersPlugin = (servicesPlugin: ServicesPlugin) => {
-  const createBusinessCtrl = withTraceSync(
-    'rwa.init.controllers.create_business',
-    () => createBusinessController(servicesPlugin)
+  const createBusinessCtrl = withTraceSync('rwa.init.controllers.create_business', () =>
+    createBusinessController(servicesPlugin),
   );
 
-  const editBusinessCtrl = withTraceSync(
-    'rwa.init.controllers.edit_business',
-    () => editBusinessController(servicesPlugin)
+  const editBusinessCtrl = withTraceSync('rwa.init.controllers.edit_business', () =>
+    editBusinessController(servicesPlugin),
   );
 
-  const updateBusinessRiskScoreCtrl = withTraceSync(
-    'rwa.init.controllers.update_business_risk_score',
-    () => updateBusinessRiskScoreController(servicesPlugin)
+  const requestBusinessEvaluationCtrl = withTraceSync('rwa.init.controllers.request_business_evaluation', () =>
+    requestBusinessEvaluationController(servicesPlugin),
   );
 
   const requestBusinessApprovalSignaturesCtrl = withTraceSync(
     'rwa.init.controllers.request_business_approval_signatures',
-    () => requestBusinessApprovalSignaturesController(servicesPlugin)
+    () => requestBusinessApprovalSignaturesController(servicesPlugin),
   );
 
   const rejectBusinessApprovalSignaturesCtrl = withTraceSync(
     'rwa.init.controllers.reject_business_approval_signatures',
-    () => rejectBusinessApprovalSignaturesController(servicesPlugin)
+    () => rejectBusinessApprovalSignaturesController(servicesPlugin),
   );
 
-  const getBusinessCtrl = withTraceSync(
-    'rwa.init.controllers.get_business',
-    () => getBusinessController(servicesPlugin)
+  const getBusinessCtrl = withTraceSync('rwa.init.controllers.get_business', () =>
+    getBusinessController(servicesPlugin),
   );
 
-  const getBusinessesCtrl = withTraceSync(
-    'rwa.init.controllers.get_businesses',
-    () => getBusinessesController(servicesPlugin)
+  const getBusinessesCtrl = withTraceSync('rwa.init.controllers.get_businesses', () =>
+    getBusinessesController(servicesPlugin),
   );
 
-  const createBusinessWithAICtrl = withTraceSync(
-    'rwa.init.controllers.create_business_with_ai',
-    () => createBusinessWithAIController(servicesPlugin)
+  const createBusinessWithAICtrl = withTraceSync('rwa.init.controllers.create_business_with_ai', () =>
+    createBusinessWithAIController(servicesPlugin),
   );
 
-  const createPoolCtrl = withTraceSync(
-    'rwa.init.controllers.create_pool',
-    () => createPoolController(servicesPlugin)
+  const createPoolCtrl = withTraceSync('rwa.init.controllers.create_pool', () => createPoolController(servicesPlugin));
+
+  const editPoolCtrl = withTraceSync('rwa.init.controllers.edit_pool', () => editPoolController(servicesPlugin));
+
+  const requestPoolEvaluationCtrl = withTraceSync('rwa.init.controllers.request_pool_evaluation', () =>
+    requestPoolEvaluationController(servicesPlugin),
   );
 
-  const editPoolCtrl = withTraceSync(
-    'rwa.init.controllers.edit_pool',
-    () => editPoolController(servicesPlugin)
+  const requestPoolApprovalSignaturesCtrl = withTraceSync('rwa.init.controllers.request_pool_approval_signatures', () =>
+    requestPoolApprovalSignaturesController(servicesPlugin),
   );
 
-  const updatePoolRiskScoreCtrl = withTraceSync(
-    'rwa.init.controllers.update_pool_risk_score',
-    () => updatePoolRiskScoreController(servicesPlugin)
+  const rejectPoolApprovalSignaturesCtrl = withTraceSync('rwa.init.controllers.reject_pool_approval_signatures', () =>
+    rejectPoolApprovalSignaturesController(servicesPlugin),
   );
 
-  const requestPoolApprovalSignaturesCtrl = withTraceSync(
-    'rwa.init.controllers.request_pool_approval_signatures',
-    () => requestPoolApprovalSignaturesController(servicesPlugin)
+  const getPoolCtrl = withTraceSync('rwa.init.controllers.get_pool', () => getPoolController(servicesPlugin));
+
+  const getPoolsCtrl = withTraceSync('rwa.init.controllers.get_pools', () => getPoolsController(servicesPlugin));
+
+  const createPoolWithAICtrl = withTraceSync('rwa.init.controllers.create_pool_with_ai', () =>
+    createPoolWithAIController(servicesPlugin),
   );
 
-  const rejectPoolApprovalSignaturesCtrl = withTraceSync(
-    'rwa.init.controllers.reject_pool_approval_signatures',
-    () => rejectPoolApprovalSignaturesController(servicesPlugin)
+  const getTokenMetadataCtrl = withTraceSync('rwa.init.controllers.get_token_metadata', () =>
+    getTokenMetadataController(servicesPlugin),
   );
 
-  const getPoolCtrl = withTraceSync(
-    'rwa.init.controllers.get_pool',
-    () => getPoolController(servicesPlugin)
+  const updatePoolImageCtrl = withTraceSync('rwa.init.controllers.update_pool_image', () =>
+    updatePoolImageController(servicesPlugin),
   );
 
-  const getPoolsCtrl = withTraceSync(
-    'rwa.init.controllers.get_pools',
-    () => getPoolsController(servicesPlugin)
+  const updateBusinessImageCtrl = withTraceSync('rwa.init.controllers.update_business_image', () =>
+    updateBusinessImageController(servicesPlugin),
   );
 
-  const createPoolWithAICtrl = withTraceSync(
-    'rwa.init.controllers.create_pool_with_ai',
-    () => createPoolWithAIController(servicesPlugin)
-  );
-
-  const getTokenMetadataCtrl = withTraceSync(
-    'rwa.init.controllers.get_token_metadata',
-    () => getTokenMetadataController(servicesPlugin)
-  );
-
-  const plugin = withTraceSync(
-    'rwa.init.controllers.plugin',
-    () => new Elysia({ name: "Controllers" })
+  const plugin = withTraceSync('rwa.init.controllers.plugin', () =>
+    new Elysia({ name: 'Controllers' })
       // Business controllers
       .use(createBusinessCtrl)
       .use(editBusinessCtrl)
-      .use(updateBusinessRiskScoreCtrl)
+      .use(requestBusinessEvaluationCtrl)
       .use(requestBusinessApprovalSignaturesCtrl)
       .use(rejectBusinessApprovalSignaturesCtrl)
       .use(getBusinessCtrl)
@@ -122,7 +108,7 @@ export const createControllersPlugin = (servicesPlugin: ServicesPlugin) => {
       // Pool controllers
       .use(createPoolCtrl)
       .use(editPoolCtrl)
-      .use(updatePoolRiskScoreCtrl)
+      .use(requestPoolEvaluationCtrl)
       .use(requestPoolApprovalSignaturesCtrl)
       .use(rejectPoolApprovalSignaturesCtrl)
       .use(getPoolCtrl)
@@ -130,9 +116,12 @@ export const createControllersPlugin = (servicesPlugin: ServicesPlugin) => {
       .use(createPoolWithAICtrl)
       // Token controllers
       .use(getTokenMetadataCtrl)
+      // Image controllers
+      .use(updatePoolImageCtrl)
+      .use(updateBusinessImageCtrl),
   );
 
   return plugin;
-}
+};
 
-export type ControllersPlugin = ReturnType<typeof createControllersPlugin>
+export type ControllersPlugin = ReturnType<typeof createControllersPlugin>;

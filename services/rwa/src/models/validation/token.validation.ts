@@ -1,9 +1,9 @@
-import { t } from "elysia";
+import { t } from 'elysia';
 
 const businessPropertiesSchema = t.Object({
   id: t.String(),
   name: t.String(),
-  riskScore: t.Number()
+  riskScore: t.Optional(t.Number()),
 });
 
 const poolPropertiesSchema = t.Object({
@@ -13,30 +13,32 @@ const poolPropertiesSchema = t.Object({
   expectedRwaAmount: t.Optional(t.String()),
   rewardPercent: t.Optional(t.String()),
   entryFeePercent: t.Optional(t.String()),
-  exitFeePercent: t.Optional(t.String())
+  exitFeePercent: t.Optional(t.String()),
+  riskScore: t.Optional(t.Number()),
 });
 
 const statusPropertiesSchema = t.Object({
   isTargetReached: t.Boolean(),
   isFullyReturned: t.Boolean(),
-  paused: t.Boolean()
+  paused: t.Boolean(),
 });
 
 export const tokenMetadataSchema = t.Object({
   name: t.String(),
   description: t.String(),
-  image: t.String(),
+  image: t.Optional(t.String()),
   decimals: t.Number(),
   properties: t.Object({
     business: businessPropertiesSchema,
     pool: poolPropertiesSchema,
     status: statusPropertiesSchema,
-    tags: t.Array(t.String())
-  })
+    tags: t.Array(t.String()),
+  }),
 });
 
 export const getTokenMetadataRequest = t.Object({
-  tokenId: t.String()
+  rwaAddress: t.String(),
+  tokenId: t.String(),
 });
 
 export const getTokenMetadataResponse = tokenMetadataSchema;

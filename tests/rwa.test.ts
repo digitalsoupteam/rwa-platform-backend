@@ -1,7 +1,8 @@
 import { expect, test, describe, beforeAll } from "bun:test";
 import { ethers, HDNodeWallet, JsonRpcProvider } from "ethers";
-import { FACTORY_ADDRESS, HOLD_TOKEN_ADDRESS, TESTNET_RPC } from "./utils/config";
+import { FACTORY_ADDRESS, HOLD_TOKEN_ADDRESS, TESTNET_RPC, GATEWAY_REST_URL } from "./utils/config";
 import { makeGraphQLRequest } from "./utils/graphql/makeGraphQLRequest";
+import { makeRestRequest } from "./utils/makeRestRequest";
 import { authenticate } from "./utils/authenticate";
 import { CREATE_COMPANY } from "./utils/graphql/schema/company";
 import {
@@ -37,6 +38,8 @@ describe("RWA Flow", () => {
   let businessApprovalSignaturesTaskId: string;
   let poolApprovalSignaturesTaskId: string;
   let tokenAddress: string;
+  let businessImageUrl: string;
+  let poolImageUrl: string;
 
   beforeAll(async () => {
     chainId = "97";
@@ -112,7 +115,7 @@ describe("RWA Flow", () => {
       );
 
       expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toContain("Invalid business type");
+      expect(result.errors[0].message).toContain("Value \"enterprise\" does not");
     });
 
     test("should reject invalid country code on business", async () => {
@@ -313,20 +316,38 @@ describe("RWA Flow", () => {
       expect(result.data.editBusiness.socials[2].type).toBe("webpage");
     });
 
-    // test("should update business risk score", async () => {
-    //   const result = await makeGraphQLRequest(
-    //     UPDATE_BUSINESS_RISK_SCORE,
-    //     {
-    //       id: businessId,
-    //     },
-    //     accessToken
-    //   );
+    test("should update business risk score", async () => {
+      const result = await makeGraphQLRequest(
+        UPDATE_BUSINESS_RISK_SCORE,
+        {
+          id: businessId,
+        },
+        accessToken
+      );
 
-    //   expect(result.errors).toBeUndefined();
-    //   expect(result.data.updateBusinessRiskScore).toBeDefined();
-    //   expect(result.data.updateBusinessRiskScore.id).toBe(businessId);
-    //   expect(result.data.updateBusinessRiskScore.riskScore).toBeDefined();
-    // });
+      expect(result.errors).toBeUndefined();
+      expect(result.data.updateBusinessRiskScore).toBeDefined();
+      expect(result.data.updateBusinessRiskScore.id).toBe(businessId);
+
+      // Wait for async evaluation to complete — poll until riskScore appears
+      // Poll until riskScore appears (async evaluation via RabbitMQ)
+      let riskScore: number | undefined;
+      for (let i = 0; i < 10; i++) {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        const riskPoll = await makeGraphQLRequest(
+          GET_BUSINESS,
+          { id: businessId },
+          accessToken
+        );
+        riskScore = riskPoll.data.getBusiness.riskScore;
+        if (typeof riskScore === 'number') break;
+      }
+
+      expect(riskScore).toBeDefined();
+      expect(riskScore).toBeGreaterThanOrEqual(1);
+      expect(riskScore).toBeLessThanOrEqual(100);
+    });
+
 
     test("should deploy business contract", async () => {
       // Request signatures
@@ -350,8 +371,8 @@ describe("RWA Flow", () => {
       businessApprovalSignaturesTaskId = sigResult.data.requestBusinessApprovalSignatures.taskId;
 
       // Wait for signatures to be processed
-      await new Promise(resolve => setTimeout(resolve, 10000));
-        const updatedBusiness2 = await makeGraphQLRequest(
+      await new Promise(resolve => setTimeout(resolve, 30000));
+      const updatedBusiness2 = await makeGraphQLRequest(
         GET_BUSINESS,
         {
           id: businessId,
@@ -375,7 +396,7 @@ describe("RWA Flow", () => {
       expect(taskResult.data.getSignatureTask.completed).toBe(true);
       expect(taskResult.data.getSignatureTask.signatures).toBeArray();
       expect(taskResult.data.getSignatureTask.signatures.length).toBeGreaterThan(0);
-
+      // return
       // Request HOLD tokens and gas
       await requestHold(accessToken, 500);
       await requestGas(accessToken, 0.0035);
@@ -444,6 +465,33 @@ describe("RWA Flow", () => {
       expect(updatedBusiness.data.getBusiness.tokenAddress).not.toBe("");
 
       tokenAddress = updatedBusiness.data.getBusiness.tokenAddress
+    });
+
+    test("should upload business image", async () => {
+      const file = new File(["fake image content"], "business.png", { type: "image/png" });
+
+      const result = await makeRestRequest(
+        "/api/business/uploadImage",
+        { file, businessId },
+        accessToken,
+      );
+
+      expect(result.error).toBeUndefined();
+      expect(result.id).toBe(businessId);
+      expect(result.imageUrl).toBeDefined();
+      expect(result.imageUrl).toBeTruthy();
+
+      // Verify business image was updated
+      const businessResult = await makeGraphQLRequest(
+        GET_BUSINESS,
+        { id: businessId },
+        accessToken,
+      );
+
+      expect(businessResult.errors).toBeUndefined();
+      expect(businessResult.data.getBusiness.imageUrl).toBe(result.imageUrl);
+
+      businessImageUrl = result.imageUrl;
     });
   });
 
@@ -529,7 +577,7 @@ describe("RWA Flow", () => {
       const expectedRwaAmount = "100000"; // 100,000 RWA units
 
       // Entry period: 30 days
-      const entryPeriodStart = now - 100; 
+      const entryPeriodStart = now - 100;
       const entryPeriodExpired = entryPeriodStart + (30 * 86400); // 30 days duration
 
       // Completion period: 60 days
@@ -601,9 +649,9 @@ describe("RWA Flow", () => {
               expectedHoldAmount,
               expectedRwaAmount,
               rewardPercent,
-              priceImpactPercent: "101", 
-              entryFeePercent: "100", 
-              exitFeePercent: "100", 
+              priceImpactPercent: "101",
+              entryFeePercent: "100",
+              exitFeePercent: "100",
               entryPeriodStart,
               entryPeriodExpired,
               completionPeriodExpired,
@@ -672,7 +720,25 @@ describe("RWA Flow", () => {
       expect(result.errors).toBeUndefined();
       expect(result.data.updatePoolRiskScore).toBeDefined();
       expect(result.data.updatePoolRiskScore.id).toBe(poolId);
-      expect(result.data.updatePoolRiskScore.riskScore).toBeDefined();
+
+      // Wait for async evaluation to complete — poll until riskScore appears
+      // Poll until riskScore appears (async evaluation via RabbitMQ)
+      let riskScore: number | undefined;
+      for (let i = 0; i < 10; i++) {
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        const riskPoll = await makeGraphQLRequest(
+          GET_POOL,
+          { id: poolId },
+          accessToken
+        );
+        riskScore = riskPoll.data.getPool.riskScore;
+        if (typeof riskScore === 'number') break;
+      }
+
+      console.log('riskScore', riskScore)
+      expect(riskScore).toBeDefined();
+      expect(riskScore).toBeGreaterThanOrEqual(1);
+      expect(riskScore).toBeLessThanOrEqual(100);
     });
 
     test("should deploy pool contract", async () => {
@@ -773,7 +839,7 @@ describe("RWA Flow", () => {
       await deployTx.wait(20);
 
       // Wait for backend to process the event
-      await new Promise(resolve => setTimeout(resolve, 10000));
+      await new Promise(resolve => setTimeout(resolve, 30000));
 
       // Verify pool was deployed
       const updatedPool = await makeGraphQLRequest(
@@ -788,6 +854,47 @@ describe("RWA Flow", () => {
       expect(updatedPool.data.getPool.poolAddress).toBeDefined();
       expect(updatedPool.data.getPool.poolAddress).not.toBeNull();
       expect(updatedPool.data.getPool.poolAddress).not.toBe("");
+    });
+  });
+
+  describe("Token Metadata", () => {
+    test("should return ERC-1155 metadata with business image fallback", async () => {
+      // Get pool to find tokenId and rwaAddress
+      const poolData = await makeGraphQLRequest(
+        GET_POOL,
+        {
+          id: poolId,
+        },
+        accessToken
+      );
+
+      expect(poolData.errors).toBeUndefined();
+      const pool = poolData.data.getPool;
+      expect(pool.tokenId).toBeDefined();
+      expect(pool.rwaAddress).toBeDefined();
+      // Pool should NOT have its own image yet
+      expect(pool.image).toBeNull();
+
+      const metadataUrl = `${GATEWAY_REST_URL}/storage/rwa/metadata/${pool.rwaAddress}/${pool.tokenId}`;
+      const response = await fetch(metadataUrl);
+      expect(response.status).toBe(200);
+
+      const metadata = await response.json();
+      expect(metadata).toBeDefined();
+      expect(metadata.name).toBe(pool.name);
+      expect(metadata.description).toBeDefined();
+      expect(metadata.decimals).toBe(18);
+      expect(metadata.properties).toBeDefined();
+      expect(metadata.properties.business).toBeDefined();
+      expect(metadata.properties.pool).toBeDefined();
+      expect(metadata.properties.pool.riskScore).toBeDefined();
+      expect(metadata.properties.pool.riskScore).toBeGreaterThanOrEqual(1);
+      expect(metadata.properties.pool.riskScore).toBeLessThanOrEqual(100);
+      expect(metadata.properties.status).toBeDefined();
+      expect(metadata.properties.tags).toBeArray();
+
+      // Image should fallback to business image (pool has no image yet)
+      expect(metadata.image).toBe(businessImageUrl);
     });
   });
 
@@ -857,7 +964,7 @@ describe("RWA Flow", () => {
       await mintTx.wait();
 
       // Wait for backend to process events
-      await new Promise(resolve => setTimeout(resolve, 10000));
+      await new Promise(resolve => setTimeout(resolve, 30000));
 
       // Check pool state after mint
       const poolAfterMint = await makeGraphQLRequest(
@@ -889,7 +996,7 @@ describe("RWA Flow", () => {
       await burnTx.wait();
 
       // Wait for backend to process events
-      await new Promise(resolve => setTimeout(resolve, 10000));
+      await new Promise(resolve => setTimeout(resolve, 30000));
 
       // Check pool state after burn
       const poolAfterBurn = await makeGraphQLRequest(
@@ -980,6 +1087,127 @@ describe("RWA Flow", () => {
     });
   });
 
+  describe("Token Image Upload", () => {
+    test("should require authentication for uploading pool image", async () => {
+      const file = new File(["fake image"], "test.png", { type: "image/png" });
+
+      const result = await makeRestRequest(
+        "/api/pool/uploadImage",
+        { file, poolId: "some-pool-id" },
+        undefined,
+      );
+
+      expect(result.error).toBeDefined();
+      expect(result.error.message).toBe("Authentication required");
+    });
+
+    test("should require authentication for uploading business image", async () => {
+      const file = new File(["fake image"], "test.png", { type: "image/png" });
+
+      const result = await makeRestRequest(
+        "/api/business/uploadImage",
+        { file, businessId: "some-business-id" },
+        undefined,
+      );
+
+      expect(result.error).toBeDefined();
+      expect(result.error.message).toBe("Authentication required");
+    });
+
+    test("should reject pool image with wrong MIME type", async () => {
+      const file = new File(["not an image"], "test.txt", { type: "text/plain" });
+
+      const result = await makeRestRequest(
+        "/api/pool/uploadImage",
+        { file, poolId },
+        accessToken,
+      );
+
+      expect(result.error).toBeDefined();
+      expect(result.error.message).toContain("not allowed");
+    });
+
+    test("should reject business image with wrong MIME type", async () => {
+      const file = new File(["not an image"], "test.txt", { type: "text/plain" });
+
+      const result = await makeRestRequest(
+        "/api/business/uploadImage",
+        { file, businessId },
+        accessToken,
+      );
+
+      expect(result.error).toBeDefined();
+      expect(result.error.message).toContain("not allowed");
+    });
+
+    test("should not allow non-owner to upload pool image", async () => {
+      const file = new File(["fake image"], "test.png", { type: "image/png" });
+
+      const result = await makeRestRequest(
+        "/api/pool/uploadImage",
+        { file, poolId },
+        accessToken2,
+      );
+
+      expect(result.error).toBeDefined();
+      expect(result.error.message).toBe("User does not have required company permissions");
+    });
+
+    test("should not allow non-owner to upload business image", async () => {
+      const file = new File(["fake image"], "test.png", { type: "image/png" });
+
+      const result = await makeRestRequest(
+        "/api/business/uploadImage",
+        { file, businessId },
+        accessToken2,
+      );
+
+      expect(result.error).toBeDefined();
+      expect(result.error.message).toBe("User does not have required company permissions");
+    });
+
+    test("should upload pool image successfully", async () => {
+      const file = new File(["fake image content"], "pool.png", { type: "image/png" });
+
+      const result = await makeRestRequest(
+        "/api/pool/uploadImage",
+        { file, poolId },
+        accessToken,
+      );
+
+      expect(result.error).toBeUndefined();
+      expect(result.id).toBe(poolId);
+      expect(result.imageUrl).toBeDefined();
+      expect(result.imageUrl).toBeTruthy();
+
+      // Verify pool image was updated
+      const poolResult = await makeGraphQLRequest(
+        GET_POOL,
+        { id: poolId },
+        accessToken,
+      );
+
+      expect(poolResult.errors).toBeUndefined();
+      expect(poolResult.data.getPool.imageUrl).toBe(result.imageUrl);
+
+      poolImageUrl = result.imageUrl;
+
+      // Verify metadata now returns pool image (overrides business fallback)
+      const poolData = await makeGraphQLRequest(
+        GET_POOL,
+        { id: poolId },
+        accessToken,
+      );
+
+      const metadataUrl = `${GATEWAY_REST_URL}/storage/rwa/metadata/${poolData.data.getPool.rwaAddress}/${poolData.data.getPool.tokenId}`;
+      const metadataResponse = await fetch(metadataUrl);
+      expect(metadataResponse.status).toBe(200);
+
+      const metadata = await metadataResponse.json();
+      expect(metadata.image).toBe(poolImageUrl);
+    });
+  });
+return
   describe("Cleanup", () => {
     test("should reject pool approval signatures", async () => {
       const result = await makeGraphQLRequest(

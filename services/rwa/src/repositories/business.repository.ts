@@ -1,81 +1,83 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { NotFoundError } from "@shared/errors/app-errors";
-import { FilterQuery, SortOrder } from "mongoose";
-import { BusinessEntity, IBusinessEntity } from "../models/entity/business.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { AppError } from '@shared/errors/app-errors';
+import type { FilterQuery, SortOrder } from 'mongoose';
+import { BusinessEntity } from '../models/entity/business.entity';
+import type { IBusinessEntity } from '../models/entity/business.entity';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
-@TracingDecorator()
 export class BusinessRepository {
-  constructor(private readonly model = BusinessEntity) { }
+  constructor(private readonly model = BusinessEntity) {}
 
-  async createBusiness(data: Pick<IBusinessEntity,
-    "ownerId" |
-    "ownerType" |
-    "name" |
-    "chainId"
-  > & Partial<Pick<IBusinessEntity,
-    "description" |
-    "tags" |
-    "image" |
-    "country" |
-    "businessType" |
-    "socials"
-  >>) {
-    logger.debug(`Creating business: ${JSON.stringify(data)}`);
+  @TraceDecorator()
+  async createBusiness(
+    data: Pick<IBusinessEntity, 'ownerId' | 'ownerType' | 'name' | 'chainId'> &
+      Partial<
+        Pick<IBusinessEntity, 'description' | 'tags' | 'image' | 'fileId' | 'country' | 'businessType' | 'socials'>
+      >,
+  ) {
     const doc = await this.model.create(data);
     return doc.toObject();
   }
 
-  async updateBusiness(id: string, data: Partial<Pick<IBusinessEntity,
-    "chainId" |
-    "ownerWallet" |
-    "name" |
-    "tokenAddress" |
-    "description" |
-    "tags" |
-    "image" |
-    "riskScore" |
-    "approvalSignaturesTaskId" |
-    "approvalSignaturesTaskExpired" |
-    "country" |
-    "businessType" |
-    "socials" |
-    "paused"
-  >>) {
-    logger.debug(`Updating business fields: ${JSON.stringify(data)}`);
+  @TraceDecorator()
+  async updateBusiness(
+    id: string,
+    data: Partial<
+      Pick<
+        IBusinessEntity,
+        | 'chainId'
+        | 'ownerWallet'
+        | 'name'
+        | 'tokenAddress'
+        | 'description'
+        | 'tags'
+        | 'image'
+        | 'fileId'
+        | 'riskScore'
+        | 'approvalSignaturesTaskId'
+        | 'approvalSignaturesTaskExpired'
+        | 'riskScoreEvaluationProcess'
+        | 'country'
+        | 'businessType'
+        | 'socials'
+        | 'paused'
+      >
+    >,
+  ) {
     const doc = await this.model.findByIdAndUpdate(id, data, { new: true }).lean();
 
     if (!doc) {
-      throw new NotFoundError("Business", id);
+      throw new AppError({
+        message: `Business ${id} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return doc;
   }
 
+  @TraceDecorator()
   async findById(id: string) {
-    logger.debug(`Finding business by ID: ${id}`);
     const doc = await this.model.findById(id).lean();
 
     if (!doc) {
-      throw new NotFoundError("Business", id);
+      throw new AppError({
+        message: `Business ${id} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
     }
 
     return doc;
   }
 
+  @TraceDecorator()
   async findAll(
     filter: FilterQuery<typeof this.model> = {},
-    sort: { [key: string]: SortOrder } = { createdAt: "asc" },
+    sort: { [key: string]: SortOrder } = { createdAt: 'asc' },
     limit: number = 100,
-    offset: number = 0
+    offset: number = 0,
   ) {
-    logger.debug(`Finding businesses with query: ${JSON.stringify(filter)}`);
-
-    return await this.model
-      .find(filter)
-      .sort(sort)
-      .skip(offset)
-      .limit(limit)
-      .lean();
+    return await this.model.find(filter).sort(sort).skip(offset).limit(limit).lean();
   }
 }

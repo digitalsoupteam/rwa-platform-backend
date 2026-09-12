@@ -1,5 +1,5 @@
-import { t } from "elysia";
-import { paginationSchema } from "./shared.validation";
+import { t } from 'elysia';
+import { businessTypeSchema } from '../shared/enums.model';
 
 /*
  * Shared schemas
@@ -22,13 +22,16 @@ export const businessSchema = t.Object({
   tokenAddress: t.Optional(t.String()),
   description: t.Optional(t.String()),
   tags: t.Optional(t.Array(t.String())),
-  riskScore: t.Number(),
+  riskScore: t.Optional(t.Number()),
   image: t.Optional(t.String()),
+  imageUrl: t.Optional(t.String()),
+  fileId: t.Optional(t.String()),
   approvalSignaturesTaskId: t.Optional(t.String()),
   approvalSignaturesTaskExpired: t.Optional(t.Number()),
+  riskScoreEvaluationProcess: t.Boolean(),
   country: t.Optional(t.String()),
-  businessType: t.Optional(t.String()),
-  socials: t.Optional(t.Array(socialLinkSchema)),
+  businessType: t.Optional(businessTypeSchema),
+  socials: t.Array(socialLinkSchema),
   paused: t.Boolean(),
   createdAt: t.Number(),
   updatedAt: t.Number(),
@@ -38,8 +41,8 @@ export const businessSchema = t.Object({
  * Create Business
  */
 export const createBusinessRequest = t.Composite([
-  t.Pick(businessSchema, ["name", "ownerId", "ownerType", "chainId"]),
-  t.Partial(t.Pick(businessSchema, ["description", "tags", "image", "country", "businessType", "socials"])),
+  t.Pick(businessSchema, ['name', 'ownerId', 'ownerType', 'chainId']),
+  t.Partial(t.Pick(businessSchema, ['description', 'tags', 'image', 'country', 'businessType', 'socials'])),
 ]);
 export const createBusinessResponse = businessSchema;
 
@@ -59,24 +62,14 @@ export const createBusinessWithAIResponse = businessSchema;
  */
 export const editBusinessRequest = t.Object({
   id: t.String(),
-  updateData: t.Partial(t.Pick(businessSchema, [
-    "chainId",
-    "name", 
-    "description", 
-    "tags", 
-    "image",
-    "country",
-    "businessType",
-    "socials"
-  ])),
+  updateData: t.Partial(
+    t.Pick(businessSchema, ['chainId', 'name', 'description', 'tags', 'image', 'country', 'businessType', 'socials']),
+  ),
 });
 export const editBusinessResponse = businessSchema;
 
-/*
- * Update Risk Score
- */
-export const updateBusinessRiskScoreRequest = t.Pick(businessSchema, ["id"]);
-export const updateBusinessRiskScoreResponse = businessSchema;
+export const requestBusinessEvaluationRequest = t.Pick(businessSchema, ['id']);
+export const requestBusinessEvaluationResponse = businessSchema;
 
 /*
  * Request Approval Signatures
@@ -94,13 +87,13 @@ export const requestBusinessApprovalSignaturesResponse = t.Object({
 /*
  * Reject Approval Signatures
  */
-export const rejectBusinessApprovalSignaturesRequest = t.Pick(businessSchema, ["id"]);
+export const rejectBusinessApprovalSignaturesRequest = t.Pick(businessSchema, ['id']);
 export const rejectBusinessApprovalSignaturesResponse = t.Object({});
 
 /*
  * Get Business
  */
-export const getBusinessRequest = t.Pick(businessSchema, ["id"]);
+export const getBusinessRequest = t.Pick(businessSchema, ['id']);
 export const getBusinessResponse = businessSchema;
 
 /*
@@ -108,8 +101,18 @@ export const getBusinessResponse = businessSchema;
  */
 export const getBusinessesRequest = t.Object({
   filter: t.Optional(t.Record(t.String(), t.Any())),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")]))),
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
   limit: t.Optional(t.Number()),
-  offset: t.Optional(t.Number())
+  offset: t.Optional(t.Number()),
 });
 export const getBusinessesResponse = t.Array(businessSchema);
+
+/*
+ * Update Business Image
+ */
+export const updateBusinessImageRequest = t.Object({
+  id: t.String(),
+  image: t.String(),
+  fileId: t.String(),
+});
+export const updateBusinessImageResponse = businessSchema;
