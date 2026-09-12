@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { logger } from '@shared/monitoring/src/logger';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 export interface EventMetadata {
   timestamp: number;
@@ -25,7 +25,6 @@ export class RedisEventsClient {
     this.serviceName = serviceName;
     this.version = version;
 
-    
     this.publisher.on('error', (err) => {
       logger.error('Redis publisher error:', err);
     });
@@ -35,7 +34,6 @@ export class RedisEventsClient {
     });
   }
 
-  
   async publish<T>(channel: string, type: string, payload: T): Promise<void> {
     const event: Event<T> = {
       type,
@@ -43,8 +41,8 @@ export class RedisEventsClient {
       metadata: {
         timestamp: Date.now(),
         service: this.serviceName,
-        version: this.version
-      }
+        version: this.version,
+      },
     };
 
     try {
@@ -56,14 +54,13 @@ export class RedisEventsClient {
     }
   }
 
-  
   subscribe(channel: string, callback: (event: Event) => void): () => void {
     this.subscriber.subscribe(channel, (err) => {
       if (err) {
         logger.error('Failed to subscribe:', err);
         throw err;
       }
-      logger.debug('Subscribed to channel:', channel);
+      logger.debug('Subscribed to channel: ' + channel);
     });
 
     const messageHandler = (_channel: string, message: string) => {
@@ -77,18 +74,13 @@ export class RedisEventsClient {
 
     this.subscriber.on('message', messageHandler);
 
-    
     return () => {
       this.subscriber.unsubscribe(channel);
       this.subscriber.off('message', messageHandler);
     };
   }
 
-  
   async close(): Promise<void> {
-    await Promise.all([
-      this.publisher.quit(),
-      this.subscriber.quit()
-    ]);
+    await Promise.all([this.publisher.quit(), this.subscriber.quit()]);
   }
 }

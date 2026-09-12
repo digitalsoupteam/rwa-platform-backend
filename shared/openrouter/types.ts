@@ -1,16 +1,56 @@
+export type TextContentPart = {
+  type: 'text';
+  text: string;
+};
+
+export type ImageContentPart = {
+  type: 'image_url';
+  imageUrl: {
+    url: string; // URL or data:image/...;base64,...
+  };
+};
+
+export type FileContentPart = {
+  type: 'file';
+  file: {
+    filename: string;
+    fileData: string; // URL or data:application/pdf;base64,...
+  };
+};
+
+export type InputAudioContentPart = {
+  type: 'input_audio';
+  inputAudio: {
+    data: string; // base64 (without the data: prefix)
+    format: 'mp3' | 'wav';
+  };
+};
+
+export type VideoContentPart = {
+  type: 'video_url';
+  videoUrl: {
+    url: string; // URL or data:video/...;base64,...
+  };
+};
+
+export type ContentPart =
+  | TextContentPart
+  | ImageContentPart
+  | FileContentPart
+  | InputAudioContentPart
+  | VideoContentPart;
+
+export type MessageContent = string | ContentPart[];
 
 export interface ChatMessage {
   role: string;
-  content: string;
+  content: MessageContent;
 }
-
 
 export interface OpenRouterCompletionRequest {
-  
   model: string;
   prompt: string;
-  
-  
+
   stream?: boolean;
   maxTokens?: number;
   temperature?: number;
@@ -30,14 +70,11 @@ export interface OpenRouterCompletionRequest {
   provider?: Record<string, any>;
   reasoning?: Record<string, any>;
 }
-
 
 export interface OpenRouterChatCompletionRequest {
-  
   model: string;
   messages: ChatMessage[];
-  
-  
+
   stream?: boolean;
   maxTokens?: number;
   temperature?: number;
@@ -57,7 +94,6 @@ export interface OpenRouterChatCompletionRequest {
   provider?: Record<string, any>;
   reasoning?: Record<string, any>;
 }
-
 
 export interface OpenRouterCompletionResponse {
   id: string;
@@ -67,7 +103,6 @@ export interface OpenRouterCompletionResponse {
     finishReason: string;
   }>;
 }
-
 
 export interface OpenRouterChatCompletionResponse {
   id: string;
@@ -80,7 +115,6 @@ export interface OpenRouterChatCompletionResponse {
     finishReason: string;
   }>;
 }
-
 
 export interface OpenRouterGenerationMetadata {
   data: {
@@ -113,19 +147,16 @@ export interface OpenRouterGenerationMetadata {
   };
 }
 
-
 export interface ModelArchitecture {
   modality: string;
   tokenizer: string;
 }
-
 
 export interface ModelProvider {
   contextLength: number;
   maxCompletionTokens: number;
   isModerated: boolean;
 }
-
 
 export interface ModelPricing {
   prompt: string;
@@ -138,11 +169,9 @@ export interface ModelPricing {
   internalReasoning: string;
 }
 
-
 export interface ModelRequestLimits {
   [key: string]: string;
 }
-
 
 export interface OpenRouterModel {
   id: string;
@@ -155,7 +184,6 @@ export interface OpenRouterModel {
   pricing: ModelPricing;
   perRequestLimits: ModelRequestLimits;
 }
-
 
 export interface OpenRouterModelsResponse {
   data: OpenRouterModel[];
