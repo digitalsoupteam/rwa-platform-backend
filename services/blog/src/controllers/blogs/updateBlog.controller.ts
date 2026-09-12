@@ -1,26 +1,16 @@
-import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../../plugins/services.plugin";
-import {
-  updateBlogRequest,
-  updateBlogResponse,
-} from "../../models/validation/blogs.validation";
+import { Elysia } from 'elysia';
+import type { ServicesPlugin } from '../../plugins/services.plugin';
+import { updateBlogRequest, updateBlogResponse } from '../../models/validation/blogs.validation';
 
 export const updateBlogController = (servicesPlugin: ServicesPlugin) => {
-  return new Elysia({ name: "UpdateBlogController" })
-    .use(servicesPlugin)
-    .post(
-      "/updateBlog",
-      async ({ body, blogsService }) => {
-        logger.info(
-          `POST /updateBlog - Updating blog: ${body.id}`
-        );
-
-        return await blogsService.updateBlog(body);
-      },
-      {
-        body: updateBlogRequest,
-        response: updateBlogResponse,
-      }
-    );
+  return new Elysia({ name: 'UpdateBlogController' }).use(servicesPlugin).post(
+    '/updateBlog',
+    async ({ body, blogsService }) => {
+      return await blogsService.updateBlog(body);
+    },
+    {
+      body: updateBlogRequest,
+      response: updateBlogResponse,
+    },
+  );
 };
