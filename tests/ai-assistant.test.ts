@@ -119,12 +119,14 @@ describe("AI Assistant Flow Tests", () => {
     const userMessage = result.data.createMessage[0];
     expect(userMessage.assistantId).toBe(assistantId);
     expect(userMessage.text).toBe("Hello, assistant!");
+    expect(userMessage.sender).toBe("user");
     userMessageId = userMessage.id;
 
     // Check AI response
     const aiMessage = result.data.createMessage[1];
     expect(aiMessage.assistantId).toBe(assistantId);
     expect(typeof aiMessage.text).toBe("string");
+    expect(aiMessage.sender).toBe("assistant");
     aiMessageId = aiMessage.id;
   });
 
@@ -149,7 +151,9 @@ describe("AI Assistant Flow Tests", () => {
     // Check messages order
     const messages = result.data.getMessageHistory;
     expect(messages[1].text).toBe("Hello, assistant!"); // User message
+    expect(messages[1].sender).toBe("user");
     expect(typeof messages[0].text).toBe("string"); // AI response
+    expect(messages[0].sender).toBe("assistant");
   });
 
   test("should get user message by id", async () => {
@@ -165,6 +169,7 @@ describe("AI Assistant Flow Tests", () => {
     expect(result.data.getMessage).toBeDefined();
     expect(result.data.getMessage.id).toBe(userMessageId);
     expect(result.data.getMessage.text).toBe("Hello, assistant!");
+    expect(result.data.getMessage.sender).toBe("user");
   });
 
   test("should get AI message by id", async () => {
@@ -180,6 +185,7 @@ describe("AI Assistant Flow Tests", () => {
     expect(result.data.getMessage).toBeDefined();
     expect(result.data.getMessage.id).toBe(aiMessageId);
     expect(typeof result.data.getMessage.text).toBe("string");
+    expect(result.data.getMessage.sender).toBe("assistant");
   });
 
   test("should update user message", async () => {
@@ -198,6 +204,7 @@ describe("AI Assistant Flow Tests", () => {
     expect(updateResult.data.updateMessage).toBeDefined();
     expect(updateResult.data.updateMessage.id).toBe(userMessageId);
     expect(updateResult.data.updateMessage.text).toBe("Updated user message");
+    expect(updateResult.data.updateMessage.sender).toBe("user");
 
     // Verify update
     const result = await makeGraphQLRequest(
@@ -228,6 +235,7 @@ describe("AI Assistant Flow Tests", () => {
     expect(updateResult.data.updateMessage).toBeDefined();
     expect(updateResult.data.updateMessage.id).toBe(aiMessageId);
     expect(updateResult.data.updateMessage.text).toBe("Updated AI message");
+    expect(updateResult.data.updateMessage.sender).toBe("assistant");
 
     // Verify update
     const result = await makeGraphQLRequest(
