@@ -1,26 +1,16 @@
-import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../../plugins/services.plugin";
-import {
-  deleteCompanyRequest,
-  deleteCompanyResponse,
-} from "../../models/validation/company.validation";
+import { Elysia } from 'elysia';
+import type { ServicesPlugin } from '../../plugins/services.plugin';
+import { deleteCompanyRequest, deleteCompanyResponse } from '../../models/validation/company.validation';
 
 export const deleteCompanyController = (servicesPlugin: ServicesPlugin) => {
-  return new Elysia({ name: "DeleteCompanyController" })
-    .use(servicesPlugin)
-  .post(
-    "/deleteCompany",
+  return new Elysia({ name: 'DeleteCompanyController' }).use(servicesPlugin).post(
+    '/deleteCompany',
     async ({ body, companyService }) => {
-      logger.info(
-        `POST /deleteCompany - Deleting company with ID: ${body.id}`
-      );
-
       return await companyService.deleteCompany(body.id);
     },
     {
       body: deleteCompanyRequest,
       response: deleteCompanyResponse,
-    }
+    },
   );
 };

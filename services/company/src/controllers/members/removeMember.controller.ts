@@ -1,26 +1,16 @@
-import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../../plugins/services.plugin";
-import {
-  removeMemberRequest,
-  removeMemberResponse,
-} from "../../models/validation/company.validation";
+import { Elysia } from 'elysia';
+import type { ServicesPlugin } from '../../plugins/services.plugin';
+import { removeMemberRequest, removeMemberResponse } from '../../models/validation/company.validation';
 
 export const removeMemberController = (servicesPlugin: ServicesPlugin) => {
-  return new Elysia({ name: "RemoveMemberController" })
-    .use(servicesPlugin)
-  .post(
-    "/removeMember",
+  return new Elysia({ name: 'RemoveMemberController' }).use(servicesPlugin).post(
+    '/removeMember',
     async ({ body, companyService }) => {
-      logger.info(
-        `POST /removeMember - Removing member with ID: ${body.id}`
-      );
-
       return await companyService.removeMember(body.id);
     },
     {
       body: removeMemberRequest,
       response: removeMemberResponse,
-    }
+    },
   );
 };
