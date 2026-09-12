@@ -1,4 +1,4 @@
-import { t } from "elysia";
+import { t } from 'elysia';
 
 /*
  * Base model schema
@@ -56,14 +56,16 @@ export const getUserTokensRequest = t.Object({
   userId: t.String({ minLength: 1 }),
 });
 
-export const getUserTokensResponse = t.Array(t.Object({
-  tokenId: t.String(),
-  userId: t.String(),
-  tokenHash: t.String(),
-  expiresAt: t.Number(),
-  createdAt: t.Number(),
-  updatedAt: t.Number(),
-}));
+export const getUserTokensResponse = t.Array(
+  t.Object({
+    tokenId: t.String(),
+    userId: t.String(),
+    tokenHash: t.String(),
+    expiresAt: t.Number(),
+    createdAt: t.Number(),
+    updatedAt: t.Number(),
+  }),
+);
 
 /*
  * Revoke tokens

@@ -1,23 +1,20 @@
 import { createApp } from './app';
-import { tracer } from '@shared/monitoring/src/tracing';
+import { withTraceAsync } from '@shared/monitoring/src/tracing';
 
-const app = await tracer.startActiveSpan(
-  'auth.init.main',
-  async (span) => {
-    const appInstance = await createApp(
-      Number(process.env.PORT),
-      String(process.env.MONGODB_URI) + '/' + String(process.env.MONGODB_DBNAME),
-      String(process.env.JWT_SECRET),
-      String(process.env.ACCESS_TOKEN_EXPIRY),
-      String(process.env.REFRESH_TOKEN_EXPIRY),
-      String(process.env.DOMAIN_NAME),
-      String(process.env.DOMAIN_VERSION)
-    );
-    
-    span.end();
-    return appInstance;
-  }
-)
+const app = await withTraceAsync('auth.init.main', async () => {
+  return await createApp(
+    Number(process.env.PORT),
+    String(process.env.MONGODB_URI) + '/' + String(process.env.MONGODB_DBNAME),
+    String(process.env.JWT_SECRET),
+    String(process.env.ACCESS_TOKEN_EXPIRY),
+    String(process.env.REFRESH_TOKEN_EXPIRY),
+    String(process.env.DOMAIN_NAME),
+    String(process.env.DOMAIN_VERSION),
+  );
+
+});
+
+app.listen(Number(process.env.PORT));
 
 const shutdown = async () => {
   try {

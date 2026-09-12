@@ -1,4 +1,5 @@
-import mongoose, { Schema, InferRawDocType } from "mongoose";
+import mongoose, { Schema } from 'mongoose';
+import type { InferRawDocType } from 'mongoose';
 
 const userSchemaDefinition = {
   wallet: {
@@ -8,11 +9,11 @@ const userSchemaDefinition = {
   },
   createdAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
   updatedAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
 } as const;
 
@@ -23,4 +24,4 @@ const userSchema = new Schema(userSchemaDefinition, {
 userSchema.index({ wallet: 1 }, { unique: true });
 
 export type IUserEntity = InferRawDocType<typeof userSchemaDefinition>;
-export const UserEntity = mongoose.model("User", userSchema);
+export const UserEntity = mongoose.model('User', userSchema);

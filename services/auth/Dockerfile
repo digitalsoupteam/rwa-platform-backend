@@ -25,5 +25,6 @@ COPY services/auth ./services/auth
 EXPOSE ${PORT}
 
 
-ENTRYPOINT cd services/auth && bun ./src/index.ts
-# CMD ["bun", "services/auth/src/index.ts"]
+WORKDIR /app/services/auth
+ENTRYPOINT ["bun"]
+CMD ["src/index.ts"]
