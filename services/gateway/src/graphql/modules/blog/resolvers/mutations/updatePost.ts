@@ -1,26 +1,26 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { MutationResolvers } from '../../../../generated/types';
 
-export const updatePost: MutationResolvers['updatePost'] = async (
-  _parent,
-  { input },
-  { services, clients, user }
-) => {
-  logger.info('Updating post', { input });
-
+export const updatePost: MutationResolvers['updatePost'] = async (_parent, { input }, { services, clients, user }) => {
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Get post first to check permissions
   const postResponse = await clients.blogClient.getPost.post({
-    id: input.id
+    id: input.id,
   });
 
   if (postResponse.error) {
-    logger.error('Failed to get post:', postResponse.error);
-    throw new Error('Failed to get post data');
+    throw new AppError({
+      message: 'Failed to get post data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const post = postResponse.data;
@@ -29,17 +29,16 @@ export const updatePost: MutationResolvers['updatePost'] = async (
     userId: user.id,
     ownerId: post.ownerId,
     ownerType: post.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   const response = await clients.blogClient.updatePost.post({
     id: input.id,
-    updateData: input.updateData
+    updateData: input.updateData,
   });
 
   if (response.error) {
-    logger.error('Failed to update post:', response.error);
-    throw new Error('Failed to update post');
+    throw new AppError({ message: 'Failed to update post', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   const { data } = response;

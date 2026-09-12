@@ -1,16 +1,17 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { MutationResolvers } from '../../../../generated/types';
 
 export const toggleQuestionLike: MutationResolvers['toggleQuestionLike'] = async (
   _parent,
   { questionId },
-  { clients, user }
+  { clients, user },
 ) => {
-  logger.info('Toggling question like', { questionId });
-
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   const response = await clients.questionsClient.toggleQuestionLike.post({
@@ -19,8 +20,11 @@ export const toggleQuestionLike: MutationResolvers['toggleQuestionLike'] = async
   });
 
   if (response.error) {
-    logger.error('Failed to toggle question like:', response.error);
-    throw new Error('Failed to toggle question like');
+    throw new AppError({
+      message: 'Failed to toggle question like',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   return response.data.liked;

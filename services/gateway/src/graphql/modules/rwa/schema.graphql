@@ -21,10 +21,13 @@ type Business {
   tokenAddress: String
   description: String
   tags: [String!]
-  riskScore: Float!
+  riskScore: Int
   image: String
+  imageUrl: String
+  fileId: String
   approvalSignaturesTaskId: String
   approvalSignaturesTaskExpired: Float
+  riskScoreEvaluationProcess: Boolean!
   country: String
   businessType: String
   socials: [SocialLink!]!
@@ -43,8 +46,10 @@ type Pool {
   description: String
   chainId: String!
   tags: [String!]
-  riskScore: Float!
+  riskScore: Int
   image: String
+  imageUrl: String
+  fileId: String
 
   # Contract Addresses
   rwaAddress: String!
@@ -100,6 +105,9 @@ type Pool {
   approvalSignaturesTaskId: String
   approvalSignaturesTaskExpired: Float
 
+  # Evaluation
+  riskScoreEvaluationProcess: Boolean!
+
   # Timestamps
   createdAt: Float!
   updatedAt: Float!
@@ -131,7 +139,6 @@ input CreateBusinessInput {
   chainId: String!
   description: String
   tags: [String!]
-  image: String
   country: String
   businessType: BusinessType
   socials: [SocialLinkInput!]
@@ -146,7 +153,6 @@ input EditBusinessDataInput {
   name: String
   description: String
   tags: [String!]
-  image: String
   chainId: String
   country: String
   businessType: BusinessType
@@ -178,7 +184,6 @@ input CreatePoolInput {
   incomingTranches: [IncomingTrancheInput!]
   description: String
   tags: [String!]
-  image: String
 }
 
 input EditPoolInput {
@@ -206,7 +211,6 @@ input EditPoolDataInput {
   incomingTranches: [IncomingTrancheInput!]
   description: String
   tags: [String!]
-  image: String
 }
 
 input OutgoingTrancheInput {

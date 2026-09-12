@@ -1,26 +1,30 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { MutationResolvers } from '../../../../../generated/types';
 
 export const requestBusinessApprovalSignatures: MutationResolvers['requestBusinessApprovalSignatures'] = async (
   _parent,
   { input },
-  { services, clients, user }
+  { services, clients, user },
 ) => {
-  logger.info('Requesting business approval signatures', { input });
-
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Get business first to check permissions
   const businessResponse = await clients.rwaClient.getBusiness.post({
-    id: input.id
+    id: input.id,
   });
 
   if (businessResponse.error) {
-    logger.error('Failed to get business:', businessResponse.error);
-    throw new Error('Failed to get business data');
+    throw new AppError({
+      message: 'Failed to get business data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const business = businessResponse.data;
@@ -29,7 +33,7 @@ export const requestBusinessApprovalSignatures: MutationResolvers['requestBusine
     userId: user.id,
     ownerId: business.ownerId,
     ownerType: business.ownerType,
-    permission: 'deploy'
+    permission: 'deploy',
   });
 
   const response = await clients.rwaClient.requestBusinessApprovalSignatures.post({
@@ -40,8 +44,11 @@ export const requestBusinessApprovalSignatures: MutationResolvers['requestBusine
   });
 
   if (response.error) {
-    logger.error('Failed to request business approval signatures:', response.error);
-    throw new Error('Failed to request business approval signatures');
+    throw new AppError({
+      message: 'Failed to request business approval signatures',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

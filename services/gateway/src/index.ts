@@ -1,24 +1,28 @@
 import { Elysia } from 'elysia';
-// import { instrumentation } from './instrumentation';
 import { yogaServer } from './graphql/server';
-import { monitoringPlugin } from '@shared/monitoring/src/monitoring.plugin';
+import { monitoringPlugin, logger } from '@shared/monitoring/src/monitoring.plugin';
 import { healthPlugin } from '@shared/monitoring/src/health.plugin';
+import { uploadDocumentController } from './controllers/uploadDocument.controller';
+import { uploadImageController } from './controllers/uploadImage.controller';
+import { uploadPoolImageController } from './controllers/uploadPoolImage.controller';
+import { uploadBusinessImageController } from './controllers/uploadBusinessImage.controller';
+import { getTokenMetadataController } from './controllers/getTokenMetadata.controller';
 
-console.log('[GATEWAY TRACING] Configuration:', {
-  serviceName: process.env.OTEL_SERVICE_NAME || 'gateway',
-  endpoint: process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT || 'http://alloy:4320/v1/traces',
-  protocol: process.env.OTEL_EXPORTER_OTLP_PROTOCOL || 'http/protobuf'
-});
-
-const app = new Elysia({
+new Elysia({
   serve: {
-    idleTimeout: 30
-  }
+    idleTimeout: 30,
+  },
 })
   .use(monitoringPlugin)
   .use(healthPlugin)
+  .state('startTime', 0 as number)
+  .use(uploadDocumentController)
+  .use(uploadImageController)
+  .use(uploadPoolImageController)
+  .use(uploadBusinessImageController)
+  .use(getTokenMetadataController)
   .all('/graphql', (context) => yogaServer.handle(context.request))
   .all('/graphql/stream', (context) => yogaServer.handle(context.request))
   .listen(3000);
 
-console.info('Server is running on http://localhost:3000/graphql');
+logger.info('Server is running on http://localhost:3000/graphql');

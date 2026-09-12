@@ -1,4 +1,4 @@
-import { Resolvers } from '../../../generated/types';
+import type { Resolvers } from '../../../generated/types';
 import { getDocument } from './queries/getDocument';
 import { getDocuments } from './queries/getDocuments';
 import { getFolder } from './queries/getFolder';

@@ -1,16 +1,17 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { MutationResolvers } from '../../../../generated/types';
 
 export const createCompany: MutationResolvers['createCompany'] = async (
   _parent,
   { input },
-  { services, clients, user }
+  { services, clients, user },
 ) => {
-  logger.info('Creating new company', { input });
-
   if (!user) {
-    throw new AuthenticationError("Authentication required");
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   services.validation.validateCountry(input.country);
@@ -25,8 +26,11 @@ export const createCompany: MutationResolvers['createCompany'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to create company:', response.error);
-    throw new Error('Failed to create company');
+    throw new AppError({
+      message: 'Failed to create company',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;
@@ -36,7 +40,7 @@ export const createCompany: MutationResolvers['createCompany'] = async (
     name: data.name,
     description: data.description,
     ownerId: data.ownerId,
-    country: data.country ?? null,
+    country: data.country,
     socials: data.socials ?? [],
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,

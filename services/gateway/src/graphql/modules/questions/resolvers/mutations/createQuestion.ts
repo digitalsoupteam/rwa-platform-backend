@@ -1,26 +1,30 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { MutationResolvers } from '../../../../generated/types';
 
 export const createQuestion: MutationResolvers['createQuestion'] = async (
   _parent,
   { input },
-  { services, clients, user }
+  { services, clients, user },
 ) => {
-  logger.info('Creating new question', { input });
-
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Get topic info first
   const topicResponse = await clients.questionsClient.getTopic.post({
-    id: input.topicId
+    id: input.topicId,
   });
 
   if (topicResponse.error) {
-    logger.error('Failed to get topic:', topicResponse.error);
-    throw new Error('Failed to get topic data');
+    throw new AppError({
+      message: 'Failed to get topic data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const topic = topicResponse.data;
@@ -29,7 +33,7 @@ export const createQuestion: MutationResolvers['createQuestion'] = async (
     userId: user.id,
     ownerId: topic.ownerId,
     ownerType: topic.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   const response = await clients.questionsClient.createQuestion.post({
@@ -43,8 +47,11 @@ export const createQuestion: MutationResolvers['createQuestion'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to create question:', response.error);
-    throw new Error('Failed to create question');
+    throw new AppError({
+      message: 'Failed to create question',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

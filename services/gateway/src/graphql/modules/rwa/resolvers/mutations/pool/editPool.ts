@@ -1,25 +1,25 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { MutationResolvers } from '../../../../../generated/types';
 
-export const editPool: MutationResolvers['editPool'] = async (
-  _parent,
-  { input },
-  { services, clients, user }
-) => {
-  logger.info('Editing pool', { input });
-
+export const editPool: MutationResolvers['editPool'] = async (_parent, { input }, { services, clients, user }) => {
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   const poolResponse = await clients.rwaClient.getPool.post({
-    id: input.id
+    id: input.id,
   });
 
   if (poolResponse.error) {
-    logger.error('Failed to get pool:', poolResponse.error);
-    throw new Error('Failed to get pool data');
+    throw new AppError({
+      message: 'Failed to get pool data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const pool = poolResponse.data;
@@ -28,17 +28,16 @@ export const editPool: MutationResolvers['editPool'] = async (
     userId: user.id,
     ownerId: pool.ownerId,
     ownerType: pool.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   const response = await clients.rwaClient.editPool.post({
     id: input.id,
-    updateData: input.updateData
+    updateData: input.updateData,
   });
 
   if (response.error) {
-    logger.error('Failed to edit pool:', response.error);
-    throw new Error('Failed to edit pool');
+    throw new AppError({ message: 'Failed to edit pool', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   const { data } = response;

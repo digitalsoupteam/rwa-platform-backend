@@ -1,4 +1,4 @@
-import { Resolvers } from '../../../generated/types';
+import type { Resolvers } from '../../../generated/types';
 import { getBusiness } from './queries/getBusiness';
 import { getBusinesses } from './queries/getBusinesses';
 import { getPool } from './queries/getPool';
@@ -42,6 +42,6 @@ export const rwaResolvers: Resolvers = {
     rejectPoolApprovalSignatures,
   },
   Subscription: {
-    poolDeployed
-  }
+    poolDeployed,
+  },
 };

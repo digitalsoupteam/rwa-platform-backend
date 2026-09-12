@@ -1,13 +1,7 @@
-import { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { QueryResolvers } from '../../../../generated/types';
 
-export const getPools: QueryResolvers['getPools'] = async (
-  _parent,
-  { input },
-  { clients }
-) => {
-  logger.info('Getting pools list', { input });
-
+export const getPools: QueryResolvers['getPools'] = async (_parent, { input }, { clients }) => {
   const response = await clients.rwaClient.getPools.post({
     filter: input.filter,
     sort: input.sort,
@@ -16,8 +10,7 @@ export const getPools: QueryResolvers['getPools'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to get pools:', response.error);
-    throw new Error('Failed to get pools');
+    throw new AppError({ message: 'Failed to get pools', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   return response.data;

@@ -1,13 +1,7 @@
-import { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { QueryResolvers } from '../../../../generated/types';
 
-export const getReferrals: QueryResolvers['getReferrals'] = async (
-  _parent,
-  { input },
-  { clients }
-) => {
-  logger.info('Getting referrals list', { input });
-
+export const getReferrals: QueryResolvers['getReferrals'] = async (_parent, { input }, { clients }) => {
   const response = await clients.loyaltyClient.getReferrals.post({
     filter: input?.filter || {},
     sort: input?.sort || {},
@@ -16,8 +10,11 @@ export const getReferrals: QueryResolvers['getReferrals'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to get referrals:', response.error);
-    throw new Error('Failed to get referrals');
+    throw new AppError({
+      message: 'Failed to get referrals',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

@@ -1,6 +1,4 @@
-import { Redis } from 'ioredis';
 import { CONFIG } from '../config';
-import { trace, propagation, context } from '@opentelemetry/api';
 import type { App as AuthApp } from '@services/auth/src';
 import type { App as AiAssistantApp } from '@services/ai-assistant/src';
 import type { App as TestnetFaucetApp } from '@services/testnet-faucet/src';
@@ -18,10 +16,11 @@ import type { App as ChartsApp } from '@services/charts/src';
 import type { App as ReactionsApp } from '@services/reactions/src';
 import type { App as LoyaltyApp } from '@services/loyalty/src';
 import type { App as DaoApp } from '@services/dao/src';
+import type { App as AiEvaluatorApp } from '@services/ai-evaluator/src';
+import type { App as ApiKeysApp } from '@services/api-keys/src';
+import type { App as WebhooksApp } from '@services/webhooks/src';
 
-import { logger } from "@shared/monitoring/src/logger";
-import { createEdenTreatyClient } from "@shared/monitoring/src/eden";
-
+import { createEdenTreatyClient } from '@shared/monitoring/src/eden';
 
 export const authClient = createEdenTreatyClient<AuthApp>(CONFIG.SERVICES.AUTH.URL);
 export const aiAssistantClient = createEdenTreatyClient<AiAssistantApp>(CONFIG.SERVICES.ASSISTANT.URL);
@@ -40,6 +39,9 @@ export const chartsClient = createEdenTreatyClient<ChartsApp>(CONFIG.SERVICES.CH
 export const reactionsClient = createEdenTreatyClient<ReactionsApp>(CONFIG.SERVICES.REACTIONS.URL);
 export const loyaltyClient = createEdenTreatyClient<LoyaltyApp>(CONFIG.SERVICES.LOYALTY.URL);
 export const daoClient = createEdenTreatyClient<DaoApp>(CONFIG.SERVICES.DAO.URL);
+export const aiEvaluatorClient = createEdenTreatyClient<AiEvaluatorApp>(CONFIG.SERVICES.AI_EVALUATOR.URL);
+export const apiKeysClient = createEdenTreatyClient<ApiKeysApp>(CONFIG.SERVICES.API_KEYS.URL);
+export const webhooksClient = createEdenTreatyClient<WebhooksApp>(CONFIG.SERVICES.WEBHOOKS.URL);
 
 export type AuthClient = typeof authClient;
 export type AiAssistantClient = typeof aiAssistantClient;
@@ -58,3 +60,6 @@ export type ChartsClient = typeof chartsClient;
 export type ReactionsClient = typeof reactionsClient;
 export type LoyaltyClient = typeof loyaltyClient;
 export type DaoClient = typeof daoClient;
+export type AiEvaluatorClient = typeof aiEvaluatorClient;
+export type ApiKeysClient = typeof apiKeysClient;
+export type WebhooksClient = typeof webhooksClient;

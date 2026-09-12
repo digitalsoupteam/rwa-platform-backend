@@ -1,26 +1,27 @@
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
-import { AuthenticationError } from '@shared/errors/app-errors';
+import type { MutationResolvers } from '../../../../generated/types';
+import { AppError } from '@shared/errors/app-errors';
 
-export const createMessage: MutationResolvers['createMessage'] = async (
-  _parent,
-  { input },
-  { clients, user }
-) => {
+export const createMessage: MutationResolvers['createMessage'] = async (_parent, { input }, { clients, user }) => {
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Verify assistant ownership first
   const assistantResponse = await clients.aiAssistantClient.getAssistant.post({
-    id: input.assistantId
+    id: input.assistantId,
   });
 
   if (assistantResponse.error || assistantResponse.data.userId !== user.id) {
-    throw new Error('Access denied: Assistant does not belong to the current user');
+    throw new AppError({
+      message: 'Access denied: Assistant does not belong to the current user',
+      statusCode: 403,
+      code: 'FORBIDDEN',
+    });
   }
-
-  logger.info('Creating message', { input, userId: user.id });
 
   const response = await clients.aiAssistantClient.createMessage.post({
     assistantId: input.assistantId,
@@ -28,15 +29,19 @@ export const createMessage: MutationResolvers['createMessage'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to create message:', response.error);
-    throw new Error('Failed to create message');
+    throw new AppError({
+      message: 'Failed to create message',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;
 
-  return data.map(message => ({
+  return data.map((message) => ({
     id: message.id,
     assistantId: message.assistantId,
     text: message.text,
+    sender: message.sender,
   }));
 };

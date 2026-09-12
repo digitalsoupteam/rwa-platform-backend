@@ -1,20 +1,13 @@
-import { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { QueryResolvers } from '../../../../generated/types';
 
-export const getBusiness: QueryResolvers['getBusiness'] = async (
-  _parent,
-  { id },
-  { clients }
-) => {
-  logger.info('Getting business by id', { id });
-
+export const getBusiness: QueryResolvers['getBusiness'] = async (_parent, { id }, { clients }) => {
   const response = await clients.rwaClient.getBusiness.post({
-    id
+    id,
   });
 
   if (response.error) {
-    logger.error('Failed to get business:', response.error);
-    throw new Error('Failed to get business');
+    throw new AppError({ message: 'Failed to get business', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   return response.data;

@@ -1,26 +1,30 @@
-import { AuthenticationError, ForbiddenError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import type { MutationResolvers } from '../../../../generated/types';
+import { AppError } from '@shared/errors/app-errors';
 
 export const deleteDocument: MutationResolvers['deleteDocument'] = async (
   _parent,
   { id },
-  { services, clients, user }
+  { services, clients, user },
 ) => {
-  logger.info('Deleting document', { id });
-
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Get document first to check permissions
   const documentResponse = await clients.documentsClient.getDocument.post({
-    id
+    id,
   });
 
   if (documentResponse.error) {
-    logger.error('Failed to get document:', documentResponse.error);
-    throw new Error('Failed to get document data');
+    throw new AppError({
+      message: 'Failed to get document data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const document = documentResponse.data;
@@ -29,16 +33,22 @@ export const deleteDocument: MutationResolvers['deleteDocument'] = async (
     userId: user.id,
     ownerId: document.ownerId,
     ownerType: document.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
+  // Delete file from files service
+  await clients.filesClient.deleteFile.post({ id: document.fileId });
+
   const response = await clients.documentsClient.deleteDocument.post({
-    id
+    id,
   });
 
   if (response.error) {
-    logger.error('Failed to delete document:', response.error);
-    throw new Error('Failed to delete document');
+    throw new AppError({
+      message: 'Failed to delete document',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   return response.data.id;

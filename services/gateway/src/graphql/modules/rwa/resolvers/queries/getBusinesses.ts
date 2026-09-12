@@ -1,16 +1,7 @@
-import { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { QueryResolvers } from '../../../../generated/types';
 
-export const getBusinesses: QueryResolvers['getBusinesses'] = async (
-  _parent,
-  { input },
-  { clients }
-) => {
-  logger.info('Getting businesses list', { input });
-
-  console.log('inputinputinput')
-  console.log(input)
-
+export const getBusinesses: QueryResolvers['getBusinesses'] = async (_parent, { input }, { clients }) => {
   const response = await clients.rwaClient.getBusinesses.post({
     filter: input.filter,
     sort: input.sort,
@@ -19,8 +10,11 @@ export const getBusinesses: QueryResolvers['getBusinesses'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to get businesses:', response.error);
-    throw new Error('Failed to get businesses');
+    throw new AppError({
+      message: 'Failed to get businesses',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   return response.data;

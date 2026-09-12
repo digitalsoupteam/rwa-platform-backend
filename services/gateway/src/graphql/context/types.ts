@@ -15,7 +15,10 @@ import type {
   ChartsClient,
   ReactionsClient,
   LoyaltyClient,
-  DaoClient
+  DaoClient,
+  AiEvaluatorClient,
+  ApiKeysClient,
+  WebhooksClient,
 } from '../../clients/eden.clients';
 import type { createPubSub } from 'graphql-yoga';
 import { CacheService } from '../../services/cache.service';
@@ -47,6 +50,9 @@ export interface ServiceClients {
   reactionsClient: ReactionsClient;
   loyaltyClient: LoyaltyClient;
   daoClient: DaoClient;
+  aiEvaluatorClient: AiEvaluatorClient;
+  apiKeysClient: ApiKeysClient;
+  webhooksClient: WebhooksClient;
 }
 
 export interface Services {
@@ -56,8 +62,14 @@ export interface Services {
   validation: ValidationService;
 }
 
-
 export type PubSubInstance = ReturnType<typeof createPubSub>;
+
+export interface FileValidationConfig {
+  DOCUMENTS_ALLOWED_MIME_TYPES: string[];
+  DOCUMENTS_MAX_FILE_SIZE: number;
+  GALLERY_ALLOWED_MIME_TYPES: string[];
+  GALLERY_MAX_FILE_SIZE: number;
+}
 
 export interface GraphQLContext {
   clients: ServiceClients;
@@ -66,6 +78,7 @@ export interface GraphQLContext {
   token: string | null;
   pubSub: PubSubInstance;
   traceContext: Context;
+  fileValidation: FileValidationConfig;
 }
 
 export interface RedisEvent {

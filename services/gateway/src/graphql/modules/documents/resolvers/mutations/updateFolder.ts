@@ -1,26 +1,30 @@
-import { AuthenticationError, ForbiddenError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import type { MutationResolvers } from '../../../../generated/types';
+import { AppError } from '@shared/errors/app-errors';
 
 export const updateFolder: MutationResolvers['updateFolder'] = async (
   _parent,
   { input },
-  { services, clients, user }
+  { services, clients, user },
 ) => {
-  logger.info('Updating folder', { input });
-
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Get folder first to check permissions
   const folderResponse = await clients.documentsClient.getFolder.post({
-    id: input.id
+    id: input.id,
   });
 
   if (folderResponse.error) {
-    logger.error('Failed to get folder:', folderResponse.error);
-    throw new Error('Failed to get folder data');
+    throw new AppError({
+      message: 'Failed to get folder data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const folder = folderResponse.data;
@@ -29,17 +33,20 @@ export const updateFolder: MutationResolvers['updateFolder'] = async (
     userId: user.id,
     ownerId: folder.ownerId,
     ownerType: folder.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   const response = await clients.documentsClient.updateFolder.post({
     id: input.id,
-    updateData: input.updateData
+    updateData: input.updateData,
   });
 
   if (response.error) {
-    logger.error('Failed to update folder:', response.error);
-    throw new Error('Failed to update folder');
+    throw new AppError({
+      message: 'Failed to update folder',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

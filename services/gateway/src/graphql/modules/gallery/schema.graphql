@@ -20,7 +20,11 @@ type Image {
   galleryId: String!
   name: String!
   description: String!
-  link: String!
+  fileId: String!
+  path: String!
+  url: String!
+  mimeType: String!
+  size: Float!
   ownerId: String!
   ownerType: String!
   creator: String!
@@ -65,7 +69,6 @@ input UpdateImageInput {
 input UpdateImageDataInput {
   name: String
   description: String
-  link: String
 }
 
 # Get galleries filter input

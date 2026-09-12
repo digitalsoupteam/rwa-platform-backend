@@ -1,4 +1,4 @@
-import { Resolvers } from '../../../generated/types';
+import type { Resolvers } from '../../../generated/types';
 import { getBalances } from './queries/getBalances';
 import { getTransactions } from './queries/getTransactions';
 

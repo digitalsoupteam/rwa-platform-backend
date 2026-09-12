@@ -1,26 +1,30 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { MutationResolvers } from '../../../../generated/types';
 
 export const createQuestionAnswer: MutationResolvers['createQuestionAnswer'] = async (
   _parent,
   { input },
-  { services, clients, user }
+  { services, clients, user },
 ) => {
-  logger.info('Creating question answer', { input });
-
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Get question first to check permissions
   const questionResponse = await clients.questionsClient.getQuestion.post({
-    id: input.id
+    id: input.id,
   });
 
   if (questionResponse.error) {
-    logger.error('Failed to get question:', questionResponse.error.message);
-    throw new Error('Failed to get question data');
+    throw new AppError({
+      message: 'Failed to get question data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const question = questionResponse.data;
@@ -29,7 +33,7 @@ export const createQuestionAnswer: MutationResolvers['createQuestionAnswer'] = a
     userId: user.id,
     ownerId: question.ownerId,
     ownerType: question.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   const response = await clients.questionsClient.createQuestionAnswer.post({
@@ -39,8 +43,11 @@ export const createQuestionAnswer: MutationResolvers['createQuestionAnswer'] = a
   });
 
   if (response.error) {
-    logger.error(`Failed to create question answer:`, response.error);
-    throw new Error('Failed to create question answer');
+    throw new AppError({
+      message: 'Failed to create question answer',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

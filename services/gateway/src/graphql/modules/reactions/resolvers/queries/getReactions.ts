@@ -1,13 +1,7 @@
-import { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { QueryResolvers } from '../../../../generated/types';
 
-export const getReactions: QueryResolvers['getReactions'] = async (
-  _parent,
-  { input },
-  { clients }
-) => {
-  logger.info('Getting reactions list', { input });
-
+export const getReactions: QueryResolvers['getReactions'] = async (_parent, { input }, { clients }) => {
   const response = await clients.reactionsClient.getReactions.post({
     filter: input.filter,
     sort: input.sort,
@@ -16,8 +10,11 @@ export const getReactions: QueryResolvers['getReactions'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to get reactions:', response.error);
-    throw new Error('Failed to get reactions');
+    throw new AppError({
+      message: 'Failed to get reactions',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

@@ -1,16 +1,17 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { MutationResolvers } from '../../../../../generated/types';
 
 export const editBusiness: MutationResolvers['editBusiness'] = async (
   _parent,
   { input },
-  { services, clients, user }
+  { services, clients, user },
 ) => {
-  logger.info('Editing business', { input });
-
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   services.validation.validateCountry(input.updateData.country);
@@ -18,12 +19,15 @@ export const editBusiness: MutationResolvers['editBusiness'] = async (
 
   // Get business first to check permissions
   const businessResponse = await clients.rwaClient.getBusiness.post({
-    id: input.id
+    id: input.id,
   });
 
   if (businessResponse.error) {
-    logger.error('Failed to get business:', businessResponse.error);
-    throw new Error('Failed to get business data');
+    throw new AppError({
+      message: 'Failed to get business data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const business = businessResponse.data;
@@ -32,7 +36,7 @@ export const editBusiness: MutationResolvers['editBusiness'] = async (
     userId: user.id,
     ownerId: business.ownerId,
     ownerType: business.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   const response = await clients.rwaClient.editBusiness.post({
@@ -42,16 +46,18 @@ export const editBusiness: MutationResolvers['editBusiness'] = async (
       name: input.updateData.name,
       description: input.updateData.description,
       tags: input.updateData.tags,
-      image: input.updateData.image,
       country: input.updateData.country,
       businessType: input.updateData.businessType,
       socials: input.updateData.socials,
-    }
+    },
   });
 
   if (response.error) {
-    logger.error('Failed to edit business:', response.error);
-    throw new Error('Failed to edit business');
+    throw new AppError({
+      message: 'Failed to edit business',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

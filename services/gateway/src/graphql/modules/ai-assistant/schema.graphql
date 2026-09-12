@@ -10,11 +10,18 @@ enum AssistantContext {
   user_portfolio
 }
 
+# Message sender
+enum MessageSender {
+  user
+  assistant
+}
+
 # Message type
 type Message {
   id: ID!
   assistantId: ID!
   text: String!
+  sender: MessageSender!
 }
 
 # Assistant type

@@ -1,13 +1,7 @@
-import { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { QueryResolvers } from '../../../../generated/types';
 
-export const getRawPriceData: QueryResolvers['getRawPriceData'] = async (
-  _parent,
-  { input },
-  { clients }
-) => {
-  logger.info('Getting raw price data', { input });
-
+export const getRawPriceData: QueryResolvers['getRawPriceData'] = async (_parent, { input }, { clients }) => {
   const response = await clients.chartsClient.getRawPriceData.post({
     poolAddress: input.poolAddress,
     startTime: input.startTime,
@@ -18,13 +12,16 @@ export const getRawPriceData: QueryResolvers['getRawPriceData'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to get raw price data:', response.error);
-    throw new Error('Failed to get raw price data');
+    throw new AppError({
+      message: 'Failed to get raw price data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;
 
-  return data.map(priceData => ({
+  return data.map((priceData) => ({
     id: priceData.id,
     poolAddress: priceData.poolAddress,
     timestamp: priceData.timestamp,

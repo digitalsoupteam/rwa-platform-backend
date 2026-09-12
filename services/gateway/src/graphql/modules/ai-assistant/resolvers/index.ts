@@ -1,4 +1,4 @@
-import { Resolvers } from '../../../generated/types';
+import type { Resolvers } from '../../../generated/types';
 import { createAssistant } from './mutations/createAssistant';
 import { createMessage } from './mutations/createMessage';
 import { deleteAssistant } from './mutations/deleteAssistant';

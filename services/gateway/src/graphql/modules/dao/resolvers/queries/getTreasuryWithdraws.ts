@@ -1,13 +1,7 @@
-import { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { QueryResolvers } from '../../../../generated/types';
 
-export const getTreasuryWithdraws: QueryResolvers['getTreasuryWithdraws'] = async (
-  _parent,
-  { input },
-  { clients }
-) => {
-  logger.info('Getting treasury withdraws list', { input });
-
+export const getTreasuryWithdraws: QueryResolvers['getTreasuryWithdraws'] = async (_parent, { input }, { clients }) => {
   const response = await clients.daoClient.getTreasuryWithdrawals.post({
     filter: input?.filter || {},
     sort: input?.sort || {},
@@ -16,8 +10,11 @@ export const getTreasuryWithdraws: QueryResolvers['getTreasuryWithdraws'] = asyn
   });
 
   if (response.error) {
-    logger.error('Failed to get treasury withdraws:', response.error);
-    throw new Error('Failed to get treasury withdraws');
+    throw new AppError({
+      message: 'Failed to get treasury withdraws',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

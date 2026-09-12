@@ -1,16 +1,17 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { MutationResolvers } from '../../../../generated/types';
 
 export const createReferrerWithdrawTask: MutationResolvers['createReferrerWithdrawTask'] = async (
   _parent,
   { input },
-  { clients, user }
+  { clients, user },
 ) => {
-  logger.info('Creating referrer withdraw task', { input });
-
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Get full user data from auth service
@@ -19,8 +20,11 @@ export const createReferrerWithdrawTask: MutationResolvers['createReferrerWithdr
   });
 
   if (userResponse.error) {
-    logger.error('Failed to get user data:', userResponse.error);
-    throw new Error('Failed to get user data');
+    throw new AppError({
+      message: 'Failed to get user data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const userData = userResponse.data;
@@ -34,8 +38,11 @@ export const createReferrerWithdrawTask: MutationResolvers['createReferrerWithdr
   });
 
   if (response.error) {
-    logger.error('Failed to create referrer withdraw task:', response.error);
-    throw new Error('Failed to create referrer withdraw task');
+    throw new AppError({
+      message: 'Failed to create referrer withdraw task',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

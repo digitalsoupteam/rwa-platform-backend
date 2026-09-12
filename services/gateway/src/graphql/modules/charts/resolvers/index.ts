@@ -1,4 +1,4 @@
-import { Resolvers } from '../../../generated/types';
+import type { Resolvers } from '../../../generated/types';
 import { getRawPriceData } from './queries/getRawPriceData';
 import { getOhlcPriceData } from './queries/getOhlcPriceData';
 import { getPoolTransactions } from './queries/getPoolTransactions';

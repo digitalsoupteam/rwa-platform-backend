@@ -12,11 +12,12 @@ import { questionsResolvers } from './questions/resolvers';
 import { portfolioResolvers } from './portfolio/resolvers';
 import { companyResolvers } from './company/resolvers';
 import { chartsResolvers } from './charts/resolvers';
-import { demoResolvers } from './demo/resolvers';
 import { reactionsResolvers } from './reactions/resolvers';
 import { loyaltyResolvers } from './loyalty/resolvers';
 import { daoResolvers } from './dao/resolvers';
-
+import { aiEvaluatorResolvers } from './ai-evaluator/resolvers';
+import { apiKeysResolvers } from './api-keys/resolvers';
+import { webhooksResolvers } from './webhooks/resolvers';
 
 export const resolvers = mergeResolvers([
   authResolvers,
@@ -31,9 +32,11 @@ export const resolvers = mergeResolvers([
   questionsResolvers,
   companyResolvers,
   portfolioResolvers,
-  demoResolvers,
   chartsResolvers,
   reactionsResolvers,
   loyaltyResolvers,
   daoResolvers,
+  aiEvaluatorResolvers,
+  apiKeysResolvers,
+  webhooksResolvers,
 ]);

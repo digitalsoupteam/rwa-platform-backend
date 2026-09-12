@@ -1,25 +1,29 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { MutationResolvers } from '../../../../../generated/types';
 
 export const rejectBusinessApprovalSignatures: MutationResolvers['rejectBusinessApprovalSignatures'] = async (
   _parent,
   { id },
-  { services, clients, user }
+  { services, clients, user },
 ) => {
-  logger.info('Rejecting business approval signatures', { id });
-
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   const businessResponse = await clients.rwaClient.getBusiness.post({
-    id
+    id,
   });
 
   if (businessResponse.error) {
-    logger.error('Failed to get business:', businessResponse.error);
-    throw new Error('Failed to get business data');
+    throw new AppError({
+      message: 'Failed to get business data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const business = businessResponse.data;
@@ -28,16 +32,19 @@ export const rejectBusinessApprovalSignatures: MutationResolvers['rejectBusiness
     userId: user.id,
     ownerId: business.ownerId,
     ownerType: business.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   const response = await clients.rwaClient.rejectBusinessApprovalSignatures.post({
-    id
+    id,
   });
 
   if (response.error) {
-    logger.error('Failed to reject business approval signatures:', response.error);
-    throw new Error('Failed to reject business approval signatures');
+    throw new AppError({
+      message: 'Failed to reject business approval signatures',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   return true;

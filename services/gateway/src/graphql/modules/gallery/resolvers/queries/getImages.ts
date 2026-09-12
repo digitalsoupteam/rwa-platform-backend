@@ -1,13 +1,7 @@
-import { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { QueryResolvers } from '../../../../generated/types';
 
-export const getImages: QueryResolvers['getImages'] = async (
-  _parent,
-  { input },
-  { clients }
-) => {
-  logger.info('Getting images list', { input });
-
+export const getImages: QueryResolvers['getImages'] = async (_parent, { input }, { clients }) => {
   const response = await clients.galleryClient.getImages.post({
     filter: input?.filter || {},
     sort: input?.sort || {},
@@ -16,18 +10,21 @@ export const getImages: QueryResolvers['getImages'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to get images:', response.error);
-    throw new Error('Failed to get images');
+    throw new AppError({ message: 'Failed to get images', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   const { data } = response;
 
-  return data.map(image => ({
+  return data.map((image) => ({
     id: image.id,
     galleryId: image.galleryId,
     name: image.name,
     description: image.description,
-    link: image.link,
+    fileId: image.fileId,
+    path: image.path,
+    url: image.url,
+    mimeType: image.mimeType,
+    size: image.size,
     ownerId: image.ownerId,
     ownerType: image.ownerType,
     creator: image.creator,

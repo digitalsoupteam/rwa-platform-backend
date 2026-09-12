@@ -1,25 +1,29 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { MutationResolvers } from '../../../../../generated/types';
 
 export const rejectPoolApprovalSignatures: MutationResolvers['rejectPoolApprovalSignatures'] = async (
   _parent,
   { id },
-  { services, clients, user }
+  { services, clients, user },
 ) => {
-  logger.info('Rejecting pool approval signatures', { id });
-
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   const poolResponse = await clients.rwaClient.getPool.post({
-    id
+    id,
   });
 
   if (poolResponse.error) {
-    logger.error('Failed to get pool:', poolResponse.error);
-    throw new Error('Failed to get pool data');
+    throw new AppError({
+      message: 'Failed to get pool data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const pool = poolResponse.data;
@@ -28,16 +32,19 @@ export const rejectPoolApprovalSignatures: MutationResolvers['rejectPoolApproval
     userId: user.id,
     ownerId: pool.ownerId,
     ownerType: pool.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   const response = await clients.rwaClient.rejectPoolApprovalSignatures.post({
-    id
+    id,
   });
 
   if (response.error) {
-    logger.error('Failed to reject pool approval signatures:', response.error);
-    throw new Error('Failed to reject pool approval signatures');
+    throw new AppError({
+      message: 'Failed to reject pool approval signatures',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   return true;

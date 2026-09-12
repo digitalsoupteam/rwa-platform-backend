@@ -1,13 +1,7 @@
-import { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { QueryResolvers } from '../../../../generated/types';
 
-export const getOhlcPriceData: QueryResolvers['getOhlcPriceData'] = async (
-  _parent,
-  { input },
-  { clients }
-) => {
-  logger.info('Getting OHLC price data', { input });
-
+export const getOhlcPriceData: QueryResolvers['getOhlcPriceData'] = async (_parent, { input }, { clients }) => {
   const response = await clients.chartsClient.getOhlcPriceData.post({
     poolAddress: input.poolAddress,
     interval: input.interval as any,
@@ -17,13 +11,16 @@ export const getOhlcPriceData: QueryResolvers['getOhlcPriceData'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to get OHLC price data:', response.error);
-    throw new Error('Failed to get OHLC price data');
+    throw new AppError({
+      message: 'Failed to get OHLC price data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;
 
-  return data.map(ohlcData => ({
+  return data.map((ohlcData) => ({
     timestamp: ohlcData.timestamp,
     open: ohlcData.open,
     high: ohlcData.high,

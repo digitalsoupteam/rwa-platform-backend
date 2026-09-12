@@ -1,16 +1,17 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { MutationResolvers } from '../../../../generated/types';
 
 export const registerReferral: MutationResolvers['registerReferral'] = async (
   _parent,
   { input },
-  { clients, user }
+  { clients, user },
 ) => {
-  logger.info('Registering new referral', { input });
-
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Get full user data from auth service
@@ -19,8 +20,11 @@ export const registerReferral: MutationResolvers['registerReferral'] = async (
   });
 
   if (userResponse.error) {
-    logger.error('Failed to get user data', userResponse.error);
-    throw new Error('Failed to get user data');
+    throw new AppError({
+      message: 'Failed to get user data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const userData = userResponse.data;
@@ -30,9 +34,7 @@ export const registerReferral: MutationResolvers['registerReferral'] = async (
     const referrerResponse = await clients.authClient.getUser.post({
       userId: input.referrerId,
     });
-    if (referrerResponse.error) {
-      logger.warn('Failed to get referrer user data', { error: referrerResponse.error });
-    } else {
+    if (!referrerResponse.error) {
       referrerWallet = referrerResponse.data.wallet;
     }
   }
@@ -45,8 +47,11 @@ export const registerReferral: MutationResolvers['registerReferral'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to register referral', response.error);
-    throw new Error('Failed to register referral');
+    throw new AppError({
+      message: 'Failed to register referral',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

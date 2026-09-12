@@ -1,13 +1,7 @@
-import { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { QueryResolvers } from '../../../../generated/types';
 
-export const getQuestions: QueryResolvers['getQuestions'] = async (
-  _parent,
-  { input },
-  { clients }
-) => {
-  logger.info('Getting questions list', { input });
-
+export const getQuestions: QueryResolvers['getQuestions'] = async (_parent, { input }, { clients }) => {
   const response = await clients.questionsClient.getQuestions.post({
     filter: input?.filter || {},
     sort: input?.sort || {},
@@ -16,8 +10,11 @@ export const getQuestions: QueryResolvers['getQuestions'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to get questions:', response.error);
-    throw new Error('Failed to get questions');
+    throw new AppError({
+      message: 'Failed to get questions',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

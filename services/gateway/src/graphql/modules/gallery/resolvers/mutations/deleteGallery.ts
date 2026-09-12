@@ -1,26 +1,30 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { MutationResolvers } from '../../../../generated/types';
 
 export const deleteGallery: MutationResolvers['deleteGallery'] = async (
   _parent,
   { id },
-  { services, clients, user }
+  { services, clients, user },
 ) => {
-  logger.info('Deleting gallery', { id });
-
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Get gallery first to check permissions
   const galleryResponse = await clients.galleryClient.getGallery.post({
-    id
+    id,
   });
 
   if (galleryResponse.error) {
-    logger.error('Failed to get gallery:', galleryResponse.error);
-    throw new Error('Failed to get gallery data');
+    throw new AppError({
+      message: 'Failed to get gallery data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const gallery = galleryResponse.data;
@@ -29,16 +33,19 @@ export const deleteGallery: MutationResolvers['deleteGallery'] = async (
     userId: user.id,
     ownerId: gallery.ownerId,
     ownerType: gallery.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   const response = await clients.galleryClient.deleteGallery.post({
-    id
+    id,
   });
 
   if (response.error) {
-    logger.error('Failed to delete gallery:', response.error);
-    throw new Error('Failed to delete gallery');
+    throw new AppError({
+      message: 'Failed to delete gallery',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   return response.data.id;

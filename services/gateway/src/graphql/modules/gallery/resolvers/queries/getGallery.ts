@@ -1,20 +1,13 @@
-import { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { QueryResolvers } from '../../../../generated/types';
 
-export const getGallery: QueryResolvers['getGallery'] = async (
-  _parent,
-  { id },
-  { clients }
-) => {
-  logger.info('Getting gallery by id', { id });
-
+export const getGallery: QueryResolvers['getGallery'] = async (_parent, { id }, { clients }) => {
   const response = await clients.galleryClient.getGallery.post({
-    id
+    id,
   });
 
   if (response.error) {
-    logger.error('Failed to get gallery:', response.error);
-    throw new Error('Failed to get gallery');
+    throw new AppError({ message: 'Failed to get gallery', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   const gallery = response.data;

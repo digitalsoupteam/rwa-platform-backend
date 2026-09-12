@@ -1,13 +1,7 @@
-import { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { QueryResolvers } from '../../../../generated/types';
 
-export const getStakingHistory: QueryResolvers['getStakingHistory'] = async (
-  _parent,
-  { input },
-  { clients }
-) => {
-  logger.info('Getting staking history list', { input });
-
+export const getStakingHistory: QueryResolvers['getStakingHistory'] = async (_parent, { input }, { clients }) => {
   const response = await clients.daoClient.getStakingHistory.post({
     filter: input?.filter || {},
     sort: input?.sort || {},
@@ -16,8 +10,11 @@ export const getStakingHistory: QueryResolvers['getStakingHistory'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to get staking history:', response.error);
-    throw new Error('Failed to get staking history');
+    throw new AppError({
+      message: 'Failed to get staking history',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const { data } = response;

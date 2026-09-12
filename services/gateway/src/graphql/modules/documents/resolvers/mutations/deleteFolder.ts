@@ -1,26 +1,26 @@
-import { AuthenticationError, ForbiddenError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import type { MutationResolvers } from '../../../../generated/types';
+import { AppError } from '@shared/errors/app-errors';
 
-export const deleteFolder: MutationResolvers['deleteFolder'] = async (
-  _parent,
-  { id },
-  { services, clients, user }
-) => {
-  logger.info('Deleting folder', { id });
-
+export const deleteFolder: MutationResolvers['deleteFolder'] = async (_parent, { id }, { services, clients, user }) => {
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   // Get folder first to check permissions
   const folderResponse = await clients.documentsClient.getFolder.post({
-    id
+    id,
   });
 
   if (folderResponse.error) {
-    logger.error('Failed to get folder:', folderResponse.error);
-    throw new Error('Failed to get folder data');
+    throw new AppError({
+      message: 'Failed to get folder data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const folder = folderResponse.data;
@@ -29,16 +29,19 @@ export const deleteFolder: MutationResolvers['deleteFolder'] = async (
     userId: user.id,
     ownerId: folder.ownerId,
     ownerType: folder.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
   const response = await clients.documentsClient.deleteFolder.post({
-    id
+    id,
   });
 
   if (response.error) {
-    logger.error('Failed to delete folder:', response.error);
-    throw new Error('Failed to delete folder');
+    throw new AppError({
+      message: 'Failed to delete folder',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   return response.data.id;

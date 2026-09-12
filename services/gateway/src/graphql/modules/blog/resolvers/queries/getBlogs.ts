@@ -1,13 +1,7 @@
-import { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { QueryResolvers } from '../../../../generated/types';
 
-export const getBlogs: QueryResolvers['getBlogs'] = async (
-  _parent,
-  { input },
-  { clients }
-) => {
-  logger.info('Getting blogs list', { input });
-
+export const getBlogs: QueryResolvers['getBlogs'] = async (_parent, { input }, { clients }) => {
   const response = await clients.blogClient.getBlogs.post({
     filter: input?.filter || {},
     sort: input?.sort || {},
@@ -16,13 +10,12 @@ export const getBlogs: QueryResolvers['getBlogs'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to get blogs:', response.error);
-    throw new Error('Failed to get blogs');
+    throw new AppError({ message: 'Failed to get blogs', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   const { data } = response;
 
-  return data.map(blog => ({
+  return data.map((blog) => ({
     id: blog.id,
     name: blog.name,
     ownerId: blog.ownerId,

@@ -1,4 +1,4 @@
-import { Resolvers } from '../../../generated/types';
+import type { Resolvers } from '../../../generated/types';
 import { getProposals } from './queries/getProposals';
 import { getStaking } from './queries/getStaking';
 import { getStakingHistory } from './queries/getStakingHistory';

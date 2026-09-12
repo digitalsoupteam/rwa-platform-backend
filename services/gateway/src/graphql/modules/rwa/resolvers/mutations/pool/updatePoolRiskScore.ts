@@ -1,25 +1,29 @@
-import { AuthenticationError } from '@shared/errors/app-errors';
-import { MutationResolvers } from '../../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { MutationResolvers } from '../../../../../generated/types';
 
 export const updatePoolRiskScore: MutationResolvers['updatePoolRiskScore'] = async (
   _parent,
   { id },
-  { services, clients, user }
+  { services, clients, user },
 ) => {
-  logger.info('Updating pool risk score', { id });
-
   if (!user) {
-    throw new AuthenticationError('Authentication required');
+    throw new AppError({
+      message: 'Authentication required',
+      statusCode: 401,
+      code: 'UNAUTHORIZED',
+    });
   }
 
   const poolResponse = await clients.rwaClient.getPool.post({
-    id
+    id,
   });
 
   if (poolResponse.error) {
-    logger.error('Failed to get pool:', poolResponse.error);
-    throw new Error('Failed to get pool data');
+    throw new AppError({
+      message: 'Failed to get pool data',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
   const pool = poolResponse.data;
@@ -28,19 +32,20 @@ export const updatePoolRiskScore: MutationResolvers['updatePoolRiskScore'] = asy
     userId: user.id,
     ownerId: pool.ownerId,
     ownerType: pool.ownerType,
-    permission: 'content'
+    permission: 'content',
   });
 
-  const response = await clients.rwaClient.updatePoolRiskScore.post({
-    id
+  const response = await clients.rwaClient.requestPoolEvaluation.post({
+    id,
   });
 
   if (response.error) {
-    logger.error('Failed to update pool risk score:', response.error);
-    throw new Error('Failed to update pool risk score');
+    throw new AppError({
+      message: 'Failed to request pool evaluation',
+      statusCode: 502,
+      code: 'BAD_GATEWAY',
+    });
   }
 
-  const { data } = response;
-
-  return data;
+  return response.data;
 };

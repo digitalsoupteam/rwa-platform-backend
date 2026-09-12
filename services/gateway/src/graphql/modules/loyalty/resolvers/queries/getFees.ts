@@ -1,13 +1,7 @@
-import { QueryResolvers } from '../../../../generated/types';
-import { logger } from '@shared/monitoring/src/logger';
+import { AppError } from '@shared/errors/app-errors';
+import type { QueryResolvers } from '../../../../generated/types';
 
-export const getFees: QueryResolvers['getFees'] = async (
-  _parent,
-  { input },
-  { clients }
-) => {
-  logger.info('Getting fees list', { input });
-
+export const getFees: QueryResolvers['getFees'] = async (_parent, { input }, { clients }) => {
   const response = await clients.loyaltyClient.getFees.post({
     filter: input?.filter || {},
     sort: input?.sort || {},
@@ -16,8 +10,7 @@ export const getFees: QueryResolvers['getFees'] = async (
   });
 
   if (response.error) {
-    logger.error('Failed to get fees:', response.error);
-    throw new Error('Failed to get fees');
+    throw new AppError({ message: 'Failed to get fees', statusCode: 502, code: 'BAD_GATEWAY' });
   }
 
   const { data } = response;
