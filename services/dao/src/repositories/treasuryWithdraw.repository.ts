@@ -1,42 +1,32 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { FilterQuery, SortOrder } from "mongoose";
-import mongoose from "mongoose";
-import { TreasuryWithdrawEntity, ITreasuryWithdrawEntity } from "../models/entity/treasuryWithdraw.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import type { FilterQuery, SortOrder } from 'mongoose';
+import mongoose from 'mongoose';
+import { TreasuryWithdrawEntity } from '../models/entity/treasuryWithdraw.entity';
+import type { ITreasuryWithdrawEntity } from '../models/entity/treasuryWithdraw.entity';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
-@TracingDecorator()
 export class TreasuryWithdrawRepository {
   constructor(private readonly model = TreasuryWithdrawEntity) {}
 
-  async create(data: Pick<ITreasuryWithdrawEntity,
-    "recipient" |
-    "token" |
-    "chainId" |
-    "transactionHash" |
-    "logIndex"
-  > & {amount: string}) {
-    logger.debug(`Creating treasury withdraw: ${data.amount} ${data.token} to ${data.recipient}`);
-
+  @TraceDecorator()
+  async create(
+    data: Pick<ITreasuryWithdrawEntity, 'recipient' | 'token' | 'chainId' | 'transactionHash' | 'logIndex'> & {
+      amount: string;
+    },
+  ) {
     const doc = await this.model.create({
       ...data,
-      amount: mongoose.Types.Decimal128.fromString(data.amount)
+      amount: mongoose.Types.Decimal128.fromString(data.amount),
     });
     return doc.toObject();
   }
 
+  @TraceDecorator()
   async findAll(
     filter: FilterQuery<typeof this.model> = {},
-    sort: { [key: string]: SortOrder } = { createdAt: "desc" },
+    sort: { [key: string]: SortOrder } = { createdAt: 'desc' },
     limit: number = 100,
-    offset: number = 0
+    offset: number = 0,
   ) {
-    logger.debug(`Finding treasury withdraws with query: ${JSON.stringify(filter)}`);
-
-    return await this.model
-      .find(filter)
-      .sort(sort)
-      .skip(offset)
-      .limit(limit)
-      .lean();
+    return await this.model.find(filter).sort(sort).skip(offset).limit(limit).lean();
   }
 }

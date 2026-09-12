@@ -1,21 +1,18 @@
 import { createApp } from './app';
-import { tracer } from '@shared/monitoring/src/tracing';
+import { withTraceAsync } from '@shared/monitoring/src/tracing';
 
-const app = await tracer.startActiveSpan(
-  'dao.init.main',
-  async (span) => {
-    const appInstance = await createApp(
-      Number(process.env.PORT),
-      String(process.env.MONGODB_URI) + '/' + String(process.env.MONGODB_DBNAME),
-      String(process.env.RABBITMQ_URL),
-      Number(process.env.RABBITMQ_MAX_RECONNECT_ATTEMPTS),
-      Number(process.env.RABBITMQ_RECONNECT_INTERVAL)
-    );
+const app = await withTraceAsync('dao.init.main', async () => {
+  return await createApp(
+    Number(process.env.PORT),
+    String(process.env.MONGODB_URI) + '/' + String(process.env.MONGODB_DBNAME),
+    String(process.env.RABBITMQ_URL),
+    Number(process.env.RABBITMQ_MAX_RECONNECT_ATTEMPTS),
+    Number(process.env.RABBITMQ_RECONNECT_INTERVAL),
+  );
 
-    span.end();
-    return appInstance;
-  }
-);
+});
+
+app.listen(Number(process.env.PORT));
 
 const shutdown = async () => {
   try {

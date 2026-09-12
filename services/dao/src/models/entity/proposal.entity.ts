@@ -1,4 +1,6 @@
-import mongoose, { Schema, InferRawDocType, Types } from "mongoose";
+import mongoose, { Schema, Types } from 'mongoose';
+import type { InferRawDocType } from 'mongoose';
+import { ProposalStateList } from '../shared/enums.model';
 
 const proposalSchemaDefinition = {
   proposalId: {
@@ -34,8 +36,8 @@ const proposalSchemaDefinition = {
   },
   state: {
     type: String,
-    enum: ["pending", "executed", "canceled"],
-    default: "pending",
+    enum: ProposalStateList,
+    default: 'pending',
   },
   chainId: {
     type: String,
@@ -51,15 +53,15 @@ const proposalSchemaDefinition = {
     type: Number,
     required: true,
   },
-  
+
   // Timestamps
   createdAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
   updatedAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
 };
 
@@ -77,11 +79,8 @@ proposalSchema.index({ endTime: 1 });
 proposalSchema.index({ transactionHash: 1 });
 proposalSchema.index({ createdAt: -1 });
 
-export type IProposalEntity = InferRawDocType<
-  typeof proposalSchemaDefinition
-> & { _id: Types.ObjectId };
+export type IProposalEntity = InferRawDocType<typeof proposalSchemaDefinition> & {
+  _id: Types.ObjectId;
+};
 
-export const ProposalEntity = mongoose.model(
-  "Proposal",
-  proposalSchema
-);
+export const ProposalEntity = mongoose.model('Proposal', proposalSchema);

@@ -1,491 +1,631 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { ProposalRepository } from "../repositories/proposal.repository";
-import { StakingRepository } from "../repositories/staking.repository";
-import { StakingHistoryRepository } from "../repositories/stakingHistory.repository";
-import { TimelockTaskRepository } from "../repositories/timelockTask.repository";
-import { TreasuryWithdrawRepository } from "../repositories/treasuryWithdraw.repository";
-import { VoteRepository } from "../repositories/vote.repository";
-import { Types, SortOrder } from "mongoose";
-import { IProposalEntity } from "../models/entity/proposal.entity";
-import { IVoteEntity } from "../models/entity/vote.entity";
-import { IStakingHistoryEntity } from "../models/entity/stakingHistory.entity";
-import { ITimelockTaskEntity } from "../models/entity/timelockTask.entity";
-import { ITreasuryWithdrawEntity } from "../models/entity/treasuryWithdraw.entity";
-import { IStakingEntity } from "../models/entity/staking.entity";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { ProposalRepository } from '../repositories/proposal.repository';
+import { StakingRepository } from '../repositories/staking.repository';
+import { StakingHistoryRepository } from '../repositories/stakingHistory.repository';
+import { TimelockTaskRepository } from '../repositories/timelockTask.repository';
+import { TreasuryWithdrawRepository } from '../repositories/treasuryWithdraw.repository';
+import { VoteRepository } from '../repositories/vote.repository';
+import type { SortOrder } from 'mongoose';
+import type { IProposalEntity } from '../models/entity/proposal.entity';
+import type { IVoteEntity } from '../models/entity/vote.entity';
+import type { IStakingHistoryEntity } from '../models/entity/stakingHistory.entity';
+import type { ITimelockTaskEntity } from '../models/entity/timelockTask.entity';
+import type { ITreasuryWithdrawEntity } from '../models/entity/treasuryWithdraw.entity';
+import type { IStakingEntity } from '../models/entity/staking.entity';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
-@TracingDecorator()
 export class DaoService {
-    constructor(
-        private readonly proposalRepository: ProposalRepository,
-        private readonly stakingRepository: StakingRepository,
-        private readonly stakingHistoryRepository: StakingHistoryRepository,
-        private readonly timelockTaskRepository: TimelockTaskRepository,
-        private readonly treasuryWithdrawRepository: TreasuryWithdrawRepository,
-        private readonly voteRepository: VoteRepository
-    ) { }
+  constructor(
+    private readonly proposalRepository: ProposalRepository,
+    private readonly stakingRepository: StakingRepository,
+    private readonly stakingHistoryRepository: StakingHistoryRepository,
+    private readonly timelockTaskRepository: TimelockTaskRepository,
+    private readonly treasuryWithdrawRepository: TreasuryWithdrawRepository,
+    private readonly voteRepository: VoteRepository,
+  ) {}
 
-    /**
-     * Process Governance_ProposalCreated event
-     */
-    async processProposalCreated(event: {
-        emittedFrom: string;
-        proposalId: string;
-        proposer: string;
-        target: string;
-        data: string;
-        description: string;
-        startTime: number;
-        endTime: number;
-        chainId: string;
-        transactionHash: string;
-        logIndex: number;
-    }) {
-        logger.info(`Processing proposal created: ${event.proposalId} by ${event.proposer}`);
+  /**
+   * Process Governance_ProposalCreated event
+   */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].emittedFrom,
+      proposalId: a[0].proposalId,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
+  async processProposalCreated(event: {
+    emittedFrom: string;
+    proposalId: string;
+    proposer: string;
+    target: string;
+    data: string;
+    description: string;
+    startTime: number;
+    endTime: number;
+    chainId: string;
+    transactionHash: string;
+    logIndex: number;
+  }) {
+    setSpanAttributes({
+      wallet: event.proposer,
+      proposalId: event.proposalId,
+      chainId: event.chainId,
+      transactionHash: event.transactionHash,
+    });
+    await this.proposalRepository.create({
+      proposalId: event.proposalId,
+      proposer: event.proposer,
+      target: event.target,
+      data: event.data,
+      description: event.description,
+      startTime: event.startTime,
+      endTime: event.endTime,
+      chainId: event.chainId,
+      transactionHash: event.transactionHash,
+      logIndex: event.logIndex,
+    });
+  }
 
-        await this.proposalRepository.create({
-            proposalId: event.proposalId,
-            proposer: event.proposer,
-            target: event.target,
-            data: event.data,
-            description: event.description,
-            startTime: event.startTime,
-            endTime: event.endTime,
-            chainId: event.chainId,
-            transactionHash: event.transactionHash,
-            logIndex: event.logIndex
-        });
-    }
+  /**
+   * Process Governance_ProposalExecuted event
+   */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].emittedFrom,
+      proposalId: a[0].proposalId,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
+  async processProposalExecuted(event: {
+    emittedFrom: string;
+    proposalId: string;
+    executor: string;
+    chainId: string;
+    transactionHash: string;
+    logIndex: number;
+  }) {
+    setSpanAttributes({
+      wallet: event.executor,
+      proposalId: event.proposalId,
+      chainId: event.chainId,
+      transactionHash: event.transactionHash,
+    });
+    await this.proposalRepository.updateState(event.proposalId, 'executed');
+  }
 
-    /**
-     * Process Governance_ProposalExecuted event
-     */
-    async processProposalExecuted(event: {
-        emittedFrom: string;
-        proposalId: string;
-        executor: string;
-        chainId: string;
-        transactionHash: string;
-        logIndex: number;
-    }) {
-        logger.info(`Processing proposal executed: ${event.proposalId} by ${event.executor}`);
+  /**
+   * Process Governance_ProposalCancelled event
+   */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].emittedFrom,
+      proposalId: a[0].proposalId,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
+  async processProposalCancelled(event: {
+    emittedFrom: string;
+    proposalId: string;
+    canceller: string;
+    chainId: string;
+    transactionHash: string;
+    logIndex: number;
+  }) {
+    setSpanAttributes({
+      wallet: event.canceller,
+      proposalId: event.proposalId,
+      chainId: event.chainId,
+      transactionHash: event.transactionHash,
+    });
+    await this.proposalRepository.updateState(event.proposalId, 'canceled');
+  }
 
-        await this.proposalRepository.updateState(event.proposalId, "executed");
-    }
+  /**
+   * Process Governance_VoteCast event
+   */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].emittedFrom,
+      proposalId: a[0].proposalId,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
+  async processVoteCast(event: {
+    emittedFrom: string;
+    proposalId: string;
+    voter: string;
+    support: boolean;
+    weight: string;
+    reason: string;
+    chainId: string;
+    transactionHash: string;
+    logIndex: number;
+    blockNumber: number;
+  }) {
+    setSpanAttributes({
+      voter: event.voter,
+      proposalId: event.proposalId,
+      chainId: event.chainId,
+      transactionHash: event.transactionHash,
+    });
+    await this.voteRepository.create({
+      proposalId: event.proposalId,
+      chainId: event.chainId,
+      governanceAddress: event.emittedFrom,
+      voterWallet: event.voter,
+      support: event.support,
+      weight: event.weight,
+      reason: event.reason,
+      transactionHash: event.transactionHash,
+      logIndex: event.logIndex,
+      blockNumber: event.blockNumber,
+    });
+  }
 
-    /**
-     * Process Governance_ProposalCancelled event
-     */
-    async processProposalCancelled(event: {
-        emittedFrom: string;
-        proposalId: string;
-        canceller: string;
-        chainId: string;
-        transactionHash: string;
-        logIndex: number;
-    }) {
-        logger.info(`Processing proposal cancelled: ${event.proposalId} by ${event.canceller}`);
+  /**
+   * Process DaoStaking_TokensStaked event
+   */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].emittedFrom,
+      proposalId: a[0].proposalId,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
+  async processTokensStaked(event: {
+    emittedFrom: string;
+    staker: string;
+    amount: string;
+    newVotingPower: string;
+    chainId: string;
+    transactionHash: string;
+    logIndex: number;
+  }) {
+    setSpanAttributes({
+      wallet: event.staker,
+      chainId: event.chainId,
+      transactionHash: event.transactionHash,
+    });
+    // Add stake amount to user's total
+    await this.stakingRepository.addStake(event.staker, event.chainId, event.amount, Math.floor(Date.now() / 1000));
 
-        await this.proposalRepository.updateState(event.proposalId, "canceled");
-    }
+    // Record staking history
+    await this.stakingHistoryRepository.create({
+      staker: event.staker,
+      amount: event.amount,
+      operation: 'staked',
+      chainId: event.chainId,
+      transactionHash: event.transactionHash,
+      logIndex: event.logIndex,
+    });
+  }
 
-    /**
-     * Process Governance_VoteCast event
-     */
-    async processVoteCast(event: {
-        emittedFrom: string;
-        proposalId: string;
-        voter: string;
-        support: boolean;
-        weight: string;
-        reason: string;
-        chainId: string;
-        transactionHash: string;
-        logIndex: number;
-        blockNumber: number;
-    }) {
-        logger.info(`Processing vote cast: ${event.proposalId} by ${event.voter}, support: ${event.support}`);
+  /**
+   * Process DaoStaking_TokensUnstaked event
+   */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].emittedFrom,
+      proposalId: a[0].proposalId,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
+  async processTokensUnstaked(event: {
+    emittedFrom: string;
+    staker: string;
+    amount: string;
+    newVotingPower: string;
+    chainId: string;
+    transactionHash: string;
+    logIndex: number;
+  }) {
+    setSpanAttributes({
+      wallet: event.staker,
+      chainId: event.chainId,
+      transactionHash: event.transactionHash,
+    });
+    // Subtract stake amount from user's total
+    await this.stakingRepository.subStake(event.staker, event.chainId, event.amount);
 
-        await this.voteRepository.create({
-            proposalId: event.proposalId,
-            chainId: event.chainId,
-            governanceAddress: event.emittedFrom,
-            voterWallet: event.voter,
-            support: event.support,
-            weight: event.weight,
-            reason: event.reason,
-            transactionHash: event.transactionHash,
-            logIndex: event.logIndex,
-            blockNumber: event.blockNumber
-        });
-    }
+    // Record staking history
+    await this.stakingHistoryRepository.create({
+      staker: event.staker,
+      amount: event.amount,
+      operation: 'unstaked',
+      chainId: event.chainId,
+      transactionHash: event.transactionHash,
+      logIndex: event.logIndex,
+    });
+  }
 
-    /**
-     * Process DaoStaking_TokensStaked event
-     */
-    async processTokensStaked(event: {
-        emittedFrom: string;
-        staker: string;
-        amount: string;
-        newVotingPower: string;
-        chainId: string;
-        transactionHash: string;
-        logIndex: number;
-    }) {
-        logger.info(`Processing tokens staked: ${event.amount} by ${event.staker}`);
+  /**
+   * Process Timelock_TransactionQueued event
+   */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].emittedFrom,
+      proposalId: a[0].proposalId,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
+  async processTransactionQueued(event: {
+    emittedFrom: string;
+    txHash: string;
+    target: string;
+    data: string;
+    eta: number;
+    chainId: string;
+    transactionHash: string;
+    logIndex: number;
+  }) {
+    setSpanAttributes({
+      chainId: event.chainId,
+      transactionHash: event.transactionHash,
+    });
+    await this.timelockTaskRepository.create({
+      txHash: event.txHash,
+      target: event.target,
+      data: event.data,
+      eta: event.eta,
+      chainId: event.chainId,
+    });
+  }
 
-        // Add stake amount to user's total
-        await this.stakingRepository.addStake(
-            event.staker,
-            event.chainId,
-            event.amount,
-            Math.floor(Date.now() / 1000)
-        );
+  /**
+   * Process Timelock_TransactionExecuted event
+   */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].emittedFrom,
+      proposalId: a[0].proposalId,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
+  async processTransactionExecuted(event: {
+    emittedFrom: string;
+    txHash: string;
+    target: string;
+    data: string;
+    eta: number;
+    chainId: string;
+    transactionHash: string;
+    logIndex: number;
+  }) {
+    setSpanAttributes({
+      chainId: event.chainId,
+      transactionHash: event.transactionHash,
+    });
+    await this.timelockTaskRepository.updateExecuted(event.txHash, true);
+  }
 
-        // Record staking history
-        await this.stakingHistoryRepository.create({
-            staker: event.staker,
-            amount: event.amount,
-            operation: "staked",
-            chainId: event.chainId,
-            transactionHash: event.transactionHash,
-            logIndex: event.logIndex
-        });
-    }
+  /**
+   * Process Timelock_TransactionCancelled event
+   */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].emittedFrom,
+      proposalId: a[0].proposalId,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
+  async processTransactionCancelled(event: {
+    emittedFrom: string;
+    txHash: string;
+    target: string;
+    data: string;
+    eta: number;
+    chainId: string;
+    transactionHash: string;
+    logIndex: number;
+  }) {
+    setSpanAttributes({
+      chainId: event.chainId,
+      transactionHash: event.transactionHash,
+    });
+    // For cancelled transactions, we might want to remove them or mark as cancelled
+    // For now, we'll just log it since the entity doesn't have a cancelled state
+  }
 
-    /**
-     * Process DaoStaking_TokensUnstaked event
-     */
-    async processTokensUnstaked(event: {
-        emittedFrom: string;
-        staker: string;
-        amount: string;
-        newVotingPower: string;
-        chainId: string;
-        transactionHash: string;
-        logIndex: number;
-    }) {
-        logger.info(`Processing tokens unstaked: ${event.amount} by ${event.staker}`);
+  /**
+   * Process Treasury_Withdrawal event
+   */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].emittedFrom,
+      proposalId: a[0].proposalId,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
+  async processTreasuryWithdrawal(event: {
+    emittedFrom: string;
+    to: string;
+    token: string;
+    amount: string;
+    chainId: string;
+    transactionHash: string;
+    logIndex: number;
+  }) {
+    setSpanAttributes({
+      wallet: event.to,
+      chainId: event.chainId,
+      transactionHash: event.transactionHash,
+    });
+    await this.treasuryWithdrawRepository.create({
+      recipient: event.to,
+      token: event.token,
+      amount: event.amount,
+      chainId: event.chainId,
+      transactionHash: event.transactionHash,
+      logIndex: event.logIndex,
+    });
+  }
 
-        // Subtract stake amount from user's total
-        await this.stakingRepository.subStake(
-            event.staker,
-            event.chainId,
-            event.amount
-        );
+  // Mapping methods
+  private mapProposal(proposal: IProposalEntity) {
+    return {
+      id: proposal._id.toString(),
+      proposalId: proposal.proposalId,
+      proposer: proposal.proposer,
+      target: proposal.target,
+      data: proposal.data,
+      description: proposal.description,
+      startTime: proposal.startTime,
+      endTime: proposal.endTime,
+      state: proposal.state ?? undefined,
+      chainId: proposal.chainId,
+      transactionHash: proposal.transactionHash,
+      logIndex: proposal.logIndex,
+      createdAt: proposal.createdAt,
+      updatedAt: proposal.updatedAt,
+    };
+  }
 
-        // Record staking history
-        await this.stakingHistoryRepository.create({
-            staker: event.staker,
-            amount: event.amount,
-            operation: "unstaked",
-            chainId: event.chainId,
-            transactionHash: event.transactionHash,
-            logIndex: event.logIndex
-        });
-    }
+  private mapVote(vote: IVoteEntity) {
+    return {
+      id: vote._id.toString(),
+      proposalId: vote.proposalId,
+      chainId: vote.chainId,
+      governanceAddress: vote.governanceAddress,
+      voterWallet: vote.voterWallet,
+      support: vote.support,
+      weight: vote.weight.toString(),
+      reason: vote.reason,
+      transactionHash: vote.transactionHash,
+      logIndex: vote.logIndex,
+      blockNumber: vote.blockNumber,
+      createdAt: vote.createdAt,
+      updatedAt: vote.updatedAt,
+    };
+  }
 
-    /**
-     * Process Timelock_TransactionQueued event
-     */
-    async processTransactionQueued(event: {
-        emittedFrom: string;
-        txHash: string;
-        target: string;
-        data: string;
-        eta: number;
-        chainId: string;
-        transactionHash: string;
-        logIndex: number;
-    }) {
-        logger.info(`Processing transaction queued: ${event.txHash} for target ${event.target}`);
+  private mapStakingHistory(stakingHistory: IStakingHistoryEntity) {
+    return {
+      id: stakingHistory._id.toString(),
+      staker: stakingHistory.staker,
+      amount: stakingHistory.amount.toString(),
+      operation: stakingHistory.operation,
+      chainId: stakingHistory.chainId,
+      transactionHash: stakingHistory.transactionHash,
+      logIndex: stakingHistory.logIndex,
+      createdAt: stakingHistory.createdAt,
+      updatedAt: stakingHistory.updatedAt,
+    };
+  }
 
-        await this.timelockTaskRepository.create({
-            txHash: event.txHash,
-            target: event.target,
-            data: event.data,
-            eta: event.eta,
-            chainId: event.chainId
-        });
-    }
+  private mapTimelockTask(timelockTask: ITimelockTaskEntity) {
+    return {
+      id: timelockTask._id.toString(),
+      txHash: timelockTask.txHash,
+      target: timelockTask.target,
+      data: timelockTask.data,
+      eta: timelockTask.eta,
+      executed: timelockTask.executed,
+      chainId: timelockTask.chainId,
+      createdAt: timelockTask.createdAt,
+      updatedAt: timelockTask.updatedAt,
+    };
+  }
 
-    /**
-     * Process Timelock_TransactionExecuted event
-     */
-    async processTransactionExecuted(event: {
-        emittedFrom: string;
-        txHash: string;
-        target: string;
-        data: string;
-        eta: number;
-        chainId: string;
-        transactionHash: string;
-        logIndex: number;
-    }) {
-        logger.info(`Processing transaction executed: ${event.txHash}`);
+  private mapTreasuryWithdraw(treasuryWithdraw: ITreasuryWithdrawEntity) {
+    return {
+      id: treasuryWithdraw._id.toString(),
+      recipient: treasuryWithdraw.recipient,
+      token: treasuryWithdraw.token,
+      amount: treasuryWithdraw.amount.toString(),
+      chainId: treasuryWithdraw.chainId,
+      transactionHash: treasuryWithdraw.transactionHash,
+      logIndex: treasuryWithdraw.logIndex,
+      createdAt: treasuryWithdraw.createdAt,
+      updatedAt: treasuryWithdraw.updatedAt,
+    };
+  }
 
-        await this.timelockTaskRepository.updateExecuted(event.txHash, true);
-    }
+  private mapStaking(staking: IStakingEntity) {
+    return {
+      id: staking._id.toString(),
+      staker: staking.staker,
+      amount: staking.amount.toString(),
+      lastStakeTimestamp: staking.lastStakeTimestamp,
+      chainId: staking.chainId,
+      createdAt: staking.createdAt,
+      updatedAt: staking.updatedAt,
+    };
+  }
 
-    /**
-     * Process Timelock_TransactionCancelled event
-     */
-    async processTransactionCancelled(event: {
-        emittedFrom: string;
-        txHash: string;
-        target: string;
-        data: string;
-        eta: number;
-        chainId: string;
-        transactionHash: string;
-        logIndex: number;
-    }) {
-        logger.info(`Processing transaction cancelled: ${event.txHash}`);
+  /**
+   * Get all proposals with pagination
+   */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
+  async getProposals(params: {
+    filter?: Record<string, any>;
+    sort?: { [key: string]: SortOrder };
+    limit?: number;
+    offset?: number;
+  }) {
+    const proposals = await this.proposalRepository.findAll(params.filter, params.sort, params.limit, params.offset);
 
-        // For cancelled transactions, we might want to remove them or mark as cancelled
-        // For now, we'll just log it since the entity doesn't have a cancelled state
-    }
+    return proposals.map((proposal) => this.mapProposal(proposal));
+  }
 
-    /**
-     * Process Treasury_Withdrawal event
-     */
-    async processTreasuryWithdrawal(event: {
-        emittedFrom: string;
-        to: string;
-        token: string;
-        amount: string;
-        chainId: string;
-        transactionHash: string;
-        logIndex: number;
-    }) {
-        logger.info(`Processing treasury withdrawal: ${event.amount} ${event.token} to ${event.to}`);
+  /**
+   * Get all votes
+   */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
+  async getVotes(params: {
+    filter?: Record<string, any>;
+    sort?: { [key: string]: SortOrder };
+    limit?: number;
+    offset?: number;
+  }) {
+    const votes = await this.voteRepository.findAll(params.filter, params.sort, params.limit, params.offset);
 
-        await this.treasuryWithdrawRepository.create({
-            recipient: event.to,
-            token: event.token,
-            amount: event.amount,
-            chainId: event.chainId,
-            transactionHash: event.transactionHash,
-            logIndex: event.logIndex
-        });
-    }
+    return votes.map((vote) => this.mapVote(vote));
+  }
 
-    // Mapping methods
-    private mapProposal(proposal: IProposalEntity) {
-        return {
-            id: proposal._id.toString(),
-            proposalId: proposal.proposalId,
-            proposer: proposal.proposer,
-            target: proposal.target,
-            data: proposal.data,
-            description: proposal.description,
-            startTime: proposal.startTime,
-            endTime: proposal.endTime,
-            state: proposal.state ?? undefined,
-            chainId: proposal.chainId,
-            transactionHash: proposal.transactionHash,
-            logIndex: proposal.logIndex,
-            createdAt: proposal.createdAt,
-            updatedAt: proposal.updatedAt
-        };
-    }
+  /**
+   * Get staking history
+   */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
+  async getStakingHistory(params: {
+    filter?: Record<string, any>;
+    sort?: { [key: string]: SortOrder };
+    limit?: number;
+    offset?: number;
+  }) {
+    const stakingHistory = await this.stakingHistoryRepository.findAll(
+      params.filter,
+      params.sort,
+      params.limit,
+      params.offset,
+    );
 
-    private mapVote(vote: IVoteEntity) {
-        return {
-            id: vote._id.toString(),
-            proposalId: vote.proposalId,
-            chainId: vote.chainId,
-            governanceAddress: vote.governanceAddress,
-            voterWallet: vote.voterWallet,
-            support: vote.support,
-            weight: vote.weight.toString(),
-            reason: vote.reason,
-            transactionHash: vote.transactionHash,
-            logIndex: vote.logIndex,
-            blockNumber: vote.blockNumber,
-            createdAt: vote.createdAt,
-            updatedAt: vote.updatedAt
-        };
-    }
+    return stakingHistory.map((history) => this.mapStakingHistory(history));
+  }
 
-    private mapStakingHistory(stakingHistory: IStakingHistoryEntity) {
-        return {
-            id: stakingHistory._id.toString(),
-            staker: stakingHistory.staker,
-            amount: stakingHistory.amount.toString(),
-            operation: stakingHistory.operation,
-            chainId: stakingHistory.chainId,
-            transactionHash: stakingHistory.transactionHash,
-            logIndex: stakingHistory.logIndex,
-            createdAt: stakingHistory.createdAt,
-            updatedAt: stakingHistory.updatedAt
-        };
-    }
+  /**
+   * Get timelock tasks
+   */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
+  async getTimelockTasks(params: {
+    filter?: Record<string, any>;
+    sort?: { [key: string]: SortOrder };
+    limit?: number;
+    offset?: number;
+  }) {
+    const timelockTasks = await this.timelockTaskRepository.findAll(
+      params.filter,
+      params.sort,
+      params.limit,
+      params.offset,
+    );
 
-    private mapTimelockTask(timelockTask: ITimelockTaskEntity) {
-        return {
-            id: timelockTask._id.toString(),
-            txHash: timelockTask.txHash,
-            target: timelockTask.target,
-            data: timelockTask.data,
-            eta: timelockTask.eta,
-            executed: timelockTask.executed,
-            chainId: timelockTask.chainId,
-            createdAt: timelockTask.createdAt,
-            updatedAt: timelockTask.updatedAt
-        };
-    }
+    return timelockTasks.map((task) => this.mapTimelockTask(task));
+  }
 
-    private mapTreasuryWithdraw(treasuryWithdraw: ITreasuryWithdrawEntity) {
-        return {
-            id: treasuryWithdraw._id.toString(),
-            recipient: treasuryWithdraw.recipient,
-            token: treasuryWithdraw.token,
-            amount: treasuryWithdraw.amount.toString(),
-            chainId: treasuryWithdraw.chainId,
-            transactionHash: treasuryWithdraw.transactionHash,
-            logIndex: treasuryWithdraw.logIndex,
-            createdAt: treasuryWithdraw.createdAt,
-            updatedAt: treasuryWithdraw.updatedAt
-        };
-    }
+  /**
+   * Get treasury withdrawals
+   */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
+  async getTreasuryWithdrawals(params: {
+    filter?: Record<string, any>;
+    sort?: { [key: string]: SortOrder };
+    limit?: number;
+    offset?: number;
+  }) {
+    const treasuryWithdrawals = await this.treasuryWithdrawRepository.findAll(
+      params.filter,
+      params.sort,
+      params.limit,
+      params.offset,
+    );
 
-    private mapStaking(staking: IStakingEntity) {
-        return {
-            id: staking._id.toString(),
-            staker: staking.staker,
-            amount: staking.amount.toString(),
-            lastStakeTimestamp: staking.lastStakeTimestamp,
-            chainId: staking.chainId,
-            createdAt: staking.createdAt,
-            updatedAt: staking.updatedAt
-        };
-    }
+    return treasuryWithdrawals.map((withdrawal) => this.mapTreasuryWithdraw(withdrawal));
+  }
 
-    /**
-     * Get all proposals with pagination
-     */
-    async getProposals(params: {
-        filter?: Record<string, any>,
-        sort?: { [key: string]: SortOrder },
-        limit?: number,
-        offset?: number
-    }) {
-        logger.debug("Getting proposals list", params);
-        
-        const proposals = await this.proposalRepository.findAll(
-            params.filter,
-            params.sort,
-            params.limit,
-            params.offset
-        );
+  /**
+   * Get staking records
+   */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+  })
+  async getStaking(params: {
+    filter?: Record<string, any>;
+    sort?: { [key: string]: SortOrder };
+    limit?: number;
+    offset?: number;
+  }) {
+    const stakingRecords = await this.stakingRepository.findAll(
+      params.filter,
+      params.sort,
+      params.limit,
+      params.offset,
+    );
 
-        return proposals.map(proposal => this.mapProposal(proposal));
-    }
-
-    /**
-     * Get all votes
-     */
-    async getVotes(params: {
-        filter?: Record<string, any>,
-        sort?: { [key: string]: SortOrder },
-        limit?: number,
-        offset?: number
-    }) {
-        logger.debug("Getting votes list", params);
-        
-        const votes = await this.voteRepository.findAll(
-            params.filter,
-            params.sort,
-            params.limit,
-            params.offset
-        );
-
-        return votes.map(vote => this.mapVote(vote));
-    }
-
-    /**
-     * Get staking history 
-     */
-    async getStakingHistory(params: {
-        filter?: Record<string, any>,
-        sort?: { [key: string]: SortOrder },
-        limit?: number,
-        offset?: number
-    }) {
-        logger.debug("Getting staking history list", params);
-        
-        const stakingHistory = await this.stakingHistoryRepository.findAll(
-            params.filter,
-            params.sort,
-            params.limit,
-            params.offset
-        );
-
-        return stakingHistory.map(history => this.mapStakingHistory(history));
-    }
-
-
-    /**
-     * Get timelock tasks
-     */
-    async getTimelockTasks(params: {
-        filter?: Record<string, any>,
-        sort?: { [key: string]: SortOrder },
-        limit?: number,
-        offset?: number
-    }) {
-        logger.debug("Getting timelock tasks list", params);
-        
-        const timelockTasks = await this.timelockTaskRepository.findAll(
-            params.filter,
-            params.sort,
-            params.limit,
-            params.offset
-        );
-
-        return timelockTasks.map(task => this.mapTimelockTask(task));
-    }
-
-    /**
-     * Get treasury withdrawals
-     */
-    async getTreasuryWithdrawals(params: {
-        filter?: Record<string, any>,
-        sort?: { [key: string]: SortOrder },
-        limit?: number,
-        offset?: number
-    }) {
-        logger.debug("Getting treasury withdrawals list", params);
-        
-        const treasuryWithdrawals = await this.treasuryWithdrawRepository.findAll(
-            params.filter,
-            params.sort,
-            params.limit,
-            params.offset
-        );
-
-        return treasuryWithdrawals.map(withdrawal => this.mapTreasuryWithdraw(withdrawal));
-    }
-
-    /**
-     * Get staking records
-     */
-    async getStaking(params: {
-        filter?: Record<string, any>,
-        sort?: { [key: string]: SortOrder },
-        limit?: number,
-        offset?: number
-    }) {
-        logger.debug("Getting staking records list", params);
-        
-        const stakingRecords = await this.stakingRepository.findAll(
-            params.filter,
-            params.sort,
-            params.limit,
-            params.offset
-        );
-
-        return stakingRecords.map(staking => this.mapStaking(staking));
-    }
+    return stakingRecords.map((staking) => this.mapStaking(staking));
+  }
 }

@@ -27,4 +27,6 @@ COPY services/dao ./services/dao
 EXPOSE ${PORT}
 
 
-CMD ["bun", "services/dao/src/index.ts"]
+WORKDIR /app/services/dao
+ENTRYPOINT ["bun"]
+CMD ["src/index.ts"]

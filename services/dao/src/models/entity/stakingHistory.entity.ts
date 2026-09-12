@@ -1,4 +1,6 @@
-import mongoose, { Schema, InferRawDocType, Types } from "mongoose";
+import mongoose, { Schema, Types } from 'mongoose';
+import type { InferRawDocType } from 'mongoose';
+import { StakingOperationList } from '../shared/enums.model';
 
 const stakingHistorySchemaDefinition = {
   staker: {
@@ -13,9 +15,9 @@ const stakingHistorySchemaDefinition = {
   operation: {
     type: String,
     required: true,
-    enum: ["staked", "unstaked"],
+    enum: StakingOperationList,
   },
-  
+
   // Blockchain metadata
   chainId: {
     type: String,
@@ -35,11 +37,11 @@ const stakingHistorySchemaDefinition = {
   // Timestamps
   createdAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
   updatedAt: {
     type: Number,
-    default: Math.floor(Date.now() / 1000)
+    default: Math.floor(Date.now() / 1000),
   },
 };
 
@@ -55,11 +57,8 @@ stakingHistorySchema.index({ chainId: 1, staker: 1 });
 stakingHistorySchema.index({ transactionHash: 1, logIndex: 1 }, { unique: true });
 stakingHistorySchema.index({ createdAt: -1 });
 
-export type IStakingHistoryEntity = InferRawDocType<
-  typeof stakingHistorySchemaDefinition
-> & { _id: Types.ObjectId };
+export type IStakingHistoryEntity = InferRawDocType<typeof stakingHistorySchemaDefinition> & {
+  _id: Types.ObjectId;
+};
 
-export const StakingHistoryEntity = mongoose.model(
-  "StakingHistory",
-  stakingHistorySchema
-);
+export const StakingHistoryEntity = mongoose.model('StakingHistory', stakingHistorySchema);
