@@ -27,4 +27,6 @@ COPY services/charts ./services/charts
 EXPOSE ${PORT}
 
 
-CMD ["bun", "services/charts/src/index.ts"]
+WORKDIR /app/services/charts
+ENTRYPOINT ["bun"]
+CMD ["src/index.ts"]

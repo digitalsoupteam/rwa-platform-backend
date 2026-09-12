@@ -1,4 +1,4 @@
-import { t } from "elysia";
+import { t } from 'elysia';
 
 export const priceDataSchema = t.Object({
   id: t.String(),
@@ -10,7 +10,7 @@ export const priceDataSchema = t.Object({
   virtualRwaReserve: t.String(),
   price: t.String(),
   createdAt: t.Number(),
-  updatedAt: t.Number()
+  updatedAt: t.Number(),
 });
 
 export const ohlcDataSchema = t.Object({
@@ -22,17 +22,17 @@ export const ohlcDataSchema = t.Object({
 });
 
 export const ohlcIntervalSchema = t.Union([
-  t.Literal("1m"),
-  t.Literal("5m"),
-  t.Literal("15m"),
-  t.Literal("30m"),
-  t.Literal("1h"),
-  t.Literal("2h"),
-  t.Literal("4h"),
-  t.Literal("6h"),
-  t.Literal("12h"),
-  t.Literal("1d"),
-  t.Literal("1w")
+  t.Literal('1m'),
+  t.Literal('5m'),
+  t.Literal('15m'),
+  t.Literal('30m'),
+  t.Literal('1h'),
+  t.Literal('2h'),
+  t.Literal('4h'),
+  t.Literal('6h'),
+  t.Literal('12h'),
+  t.Literal('1d'),
+  t.Literal('1w'),
 ]);
 
 export const getRawPriceDataRequest = t.Object({
@@ -41,7 +41,7 @@ export const getRawPriceDataRequest = t.Object({
   endTime: t.Number(),
   limit: t.Optional(t.Number()),
   offset: t.Optional(t.Number()),
-  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal("asc"), t.Literal("desc")])))
+  sort: t.Optional(t.Record(t.String(), t.Union([t.Literal('asc'), t.Literal('desc')]))),
 });
 export const getRawPriceDataResponse = t.Array(priceDataSchema);
 
@@ -50,6 +50,6 @@ export const getOhlcPriceDataRequest = t.Object({
   interval: ohlcIntervalSchema,
   startTime: t.Number(),
   endTime: t.Number(),
-  limit: t.Optional(t.Number())
+  limit: t.Optional(t.Number()),
 });
 export const getOhlcPriceDataResponse = t.Array(ohlcDataSchema);

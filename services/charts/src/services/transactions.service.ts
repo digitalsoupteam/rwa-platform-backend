@@ -1,18 +1,28 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { ValidationError } from "@shared/errors/app-errors";
-import { PoolTransactionRepository } from "../repositories/poolTransaction.repository";
-import { IPoolTransactionEntity, PoolTransactionType } from "../models/entity/poolTransaction.entity";
-import { FilterQuery, SortOrder } from "mongoose";
-import { ChartEventsClient } from "../clients/redis.client";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { AppError } from '@shared/errors/app-errors';
+import { PoolTransactionRepository } from '../repositories/poolTransaction.repository';
+import { PoolTransactionType } from '../models/shared/enums.model';
+import type { SortOrder } from 'mongoose';
+import { ChartEventsClient } from '../clients/redis.client';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
-@TracingDecorator()
 export class TransactionsService {
   constructor(
     private readonly poolTransactionRepository: PoolTransactionRepository,
-    private readonly chartEventsClient: ChartEventsClient
+    private readonly chartEventsClient: ChartEventsClient,
   ) {}
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({
+      poolAddress: a[0].poolAddress,
+      transactionType: a[0].transactionType,
+      userAddress: a[0].userAddress,
+    }),
+  })
   async recordTransaction(data: {
     poolAddress: string;
     transactionType: PoolTransactionType;
@@ -24,12 +34,15 @@ export class TransactionsService {
     holdFee: string;
     bonusFee?: string;
   }) {
-    logger.info(`Recording transaction for pool: ${data.poolAddress}, type: ${data.transactionType}`);
-
+    setSpanAttributes({
+      poolAddress: data.poolAddress,
+      transactionType: data.transactionType,
+      wallet: data.userAddress,
+    });
     const transaction = await this.poolTransactionRepository.create({
       ...data,
-      bonusAmount: data.bonusAmount || "0",
-      bonusFee: data.bonusFee || "0"
+      bonusAmount: data.bonusAmount || '0',
+      bonusFee: data.bonusFee || '0',
     });
 
     const output = {
@@ -44,7 +57,7 @@ export class TransactionsService {
       holdFee: transaction.holdFee,
       bonusFee: transaction.bonusFee,
       createdAt: transaction.createdAt,
-      updatedAt: transaction.updatedAt
+      updatedAt: transaction.updatedAt,
     };
 
     await this.chartEventsClient.publishTransactionUpdate({
@@ -62,22 +75,31 @@ export class TransactionsService {
     return output;
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ filter: a[0].filter, sort: a[0].sort }),
+  })
   async getTransactions(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
     limit?: number;
     offset?: number;
   }) {
-    logger.debug('Getting transactions list', params);
-    
+    const filter = params.filter ?? {};
+    setSpanAttributes({
+      poolAddress: filter.poolAddress,
+      transactionType: filter.transactionType,
+      wallet: filter.userAddress,
+    });
     const transactions = await this.poolTransactionRepository.findAll(
       params.filter,
       params.sort,
       params.limit,
-      params.offset
+      params.offset,
     );
 
-    return transactions.map(tx => ({
+    return transactions.map((tx) => ({
       id: tx._id.toString(),
       poolAddress: tx.poolAddress,
       transactionType: tx.transactionType,
@@ -89,10 +111,15 @@ export class TransactionsService {
       holdFee: tx.holdFee,
       bonusFee: tx.bonusFee,
       createdAt: tx.createdAt,
-      updatedAt: tx.updatedAt
+      updatedAt: tx.updatedAt,
     }));
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ poolAddress: a[0], interval: a[1], startTime: a[2], endTime: a[3] }),
+  })
   async getVolumeData(params: {
     poolAddress: string;
     interval: string;
@@ -100,8 +127,11 @@ export class TransactionsService {
     endTime: number;
     limit?: number;
   }) {
-    logger.debug('Getting volume data', params);
-    
+    setSpanAttributes({
+      poolAddress: params.poolAddress,
+      interval: params.interval,
+    });
+
     const intervalMap: { [key: string]: number } = {
       '1m': 60,
       '5m': 300,
@@ -113,12 +143,16 @@ export class TransactionsService {
       '6h': 21600,
       '12h': 43200,
       '1d': 86400,
-      '1w': 604800
+      '1w': 604800,
     };
 
     const intervalSeconds = intervalMap[params.interval];
     if (!intervalSeconds) {
-      throw new ValidationError(`Unsupported interval: ${params.interval}`);
+      throw new AppError({
+        message: `Unsupported interval: ${params.interval}`,
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
     }
 
     return await this.poolTransactionRepository.aggregateVolumeData(
@@ -126,7 +160,7 @@ export class TransactionsService {
       intervalSeconds,
       params.startTime,
       params.endTime,
-      params.limit
+      params.limit,
     );
   }
 }
