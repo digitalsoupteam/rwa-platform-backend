@@ -1,26 +1,16 @@
-import { Elysia } from "elysia";
-import { logger } from "@shared/monitoring/src/logger";
-import { ServicesPlugin } from "../../plugins/services.plugin";
-import {
-  getAnswersRequest,
-  getAnswersResponse,
-} from "../../models/validation/faq.validation";
+import { Elysia } from 'elysia';
+import type { ServicesPlugin } from '../../plugins/services.plugin';
+import { getAnswersRequest, getAnswersResponse } from '../../models/validation/faq.validation';
 
 export const getAnswersController = (servicesPlugin: ServicesPlugin) => {
-  return new Elysia({ name: "GetAnswersController" })
-    .use(servicesPlugin)
-    .post(
-      "/getAnswers",
-      async ({ body, faqService }) => {
-        logger.info(
-          `POST /getAnswers - Getting answers for topic`
-        );
-
-        return await faqService.getAnswers(body);
-      },
-      {
-        body: getAnswersRequest,
-        response: getAnswersResponse,
-      }
-    );
+  return new Elysia({ name: 'GetAnswersController' }).use(servicesPlugin).post(
+    '/getAnswers',
+    async ({ body, faqService }) => {
+      return await faqService.getAnswers(body);
+    },
+    {
+      body: getAnswersRequest,
+      response: getAnswersResponse,
+    },
+  );
 };

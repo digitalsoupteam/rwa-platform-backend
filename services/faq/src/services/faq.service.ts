@@ -1,19 +1,25 @@
-import { logger } from "@shared/monitoring/src/logger";
-import { TopicRepository } from "../repositories/topic.repository";
-import { AnswerRepository } from "../repositories/answer.repository";
-import { FilterQuery, SortOrder, Types } from "mongoose";
-import { TracingDecorator } from "@shared/monitoring/src/tracingDecorator";
+import { TopicRepository } from '../repositories/topic.repository';
+import { AnswerRepository } from '../repositories/answer.repository';
+import type { SortOrder } from 'mongoose';
+import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
+import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
+import { LogDecorator } from '@shared/monitoring/src/logDecorator';
+import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
-@TracingDecorator()
 export class FaqService {
   constructor(
     private readonly topicRepository: TopicRepository,
-    private readonly answerRepository: AnswerRepository
+    private readonly answerRepository: AnswerRepository,
   ) {}
 
   /**
    * Creates a new topic
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ name: a[0] }),
+  })
   async createTopic(data: {
     name: string;
     ownerId: string;
@@ -22,8 +28,11 @@ export class FaqService {
     parentId: string;
     grandParentId: string;
   }) {
-    logger.debug("Creating new topic", { name: data.name });
-    
+    setSpanAttributes({
+      userId: data.creator,
+      entityId: data.parentId,
+    });
+
     const topic = await this.topicRepository.create(data);
 
     return {
@@ -42,9 +51,14 @@ export class FaqService {
   /**
    * Updates topic name
    */
-  async updateTopic(params: { id: string, updateData: { name: string } }) {
-    logger.debug("Updating topic", params);
-    
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
+  async updateTopic(params: { id: string; updateData: { name: string } }) {
+    setSpanAttributes({ entityId: params.id });
+
     const topic = await this.topicRepository.update(params.id, params.updateData);
 
     return {
@@ -63,9 +77,14 @@ export class FaqService {
   /**
    * Deletes a topic and all its answers
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async deleteTopic(id: string) {
-    logger.debug("Deleting topic and its answers", { id });
-    
+    setSpanAttributes({ entityId: id });
+
     // First delete all answers in the topic
     const answers = await this.answerRepository.findAll({ topicId: id });
     for (const answer of answers) {
@@ -81,9 +100,14 @@ export class FaqService {
   /**
    * Gets topic by ID
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getTopic(id: string) {
-    logger.debug("Getting topic", { id });
-    
+    setSpanAttributes({ entityId: id });
+
     const topic = await this.topicRepository.findById(id);
 
     return {
@@ -102,22 +126,22 @@ export class FaqService {
   /**
    * Gets topics list with filters, pagination and sorting
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ filter: a[0] }),
+  })
   async getTopics(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
     limit?: number;
     offset?: number;
   }) {
-    logger.debug("Getting topics list", params);
-    
-    const topics = await this.topicRepository.findAll(
-      params.filter,
-      params.sort,
-      params.limit,
-      params.offset
-    );
+    setSpanAttributes({});
 
-    return topics.map(topic => ({
+    const topics = await this.topicRepository.findAll(params.filter, params.sort, params.limit, params.offset);
+
+    return topics.map((topic) => ({
       id: topic._id.toString(),
       name: topic.name,
       ownerId: topic.ownerId,
@@ -133,6 +157,11 @@ export class FaqService {
   /**
    * Creates a new answer in a topic
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ question: a[0] }),
+  })
   async createAnswer(data: {
     topicId: string;
     question: string;
@@ -144,8 +173,11 @@ export class FaqService {
     parentId: string;
     grandParentId: string;
   }) {
-    logger.debug("Creating new answer", { question: data.question });
-    
+    setSpanAttributes({
+      topicId: data.topicId,
+      userId: data.creator,
+    });
+
     const answer = await this.answerRepository.create(data);
 
     return {
@@ -167,16 +199,21 @@ export class FaqService {
   /**
    * Updates answer
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async updateAnswer(params: {
     id: string;
     updateData: {
       question?: string;
       answer?: string;
       order?: number;
-    }
+    };
   }) {
-    logger.debug("Updating answer", params);
-    
+    setSpanAttributes({ entityId: params.id });
+
     const answer = await this.answerRepository.update(params.id, params.updateData);
 
     return {
@@ -198,8 +235,13 @@ export class FaqService {
   /**
    * Deletes answer
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async deleteAnswer(id: string) {
-    logger.debug("Deleting answer", { id });
+    setSpanAttributes({ entityId: id });
     await this.answerRepository.delete(id);
     return { id };
   }
@@ -207,9 +249,14 @@ export class FaqService {
   /**
    * Gets answer by ID
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
   async getAnswer(id: string) {
-    logger.debug("Getting answer", { id });
-    
+    setSpanAttributes({ entityId: id });
+
     const answer = await this.answerRepository.findById(id);
 
     return {
@@ -231,22 +278,22 @@ export class FaqService {
   /**
    * Gets answers list with filters, pagination and sorting
    */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ filter: a[0] }),
+  })
   async getAnswers(params: {
     filter: Record<string, any>;
     sort?: { [key: string]: SortOrder };
     limit?: number;
     offset?: number;
   }) {
-    logger.debug("Getting answers list", params);
-    
-    const answers = await this.answerRepository.findAll(
-      params.filter,
-      params.sort,
-      params.limit,
-      params.offset
-    );
+    setSpanAttributes({});
 
-    return answers.map(answer => ({
+    const answers = await this.answerRepository.findAll(params.filter, params.sort, params.limit, params.offset);
+
+    return answers.map((answer) => ({
       id: answer._id.toString(),
       topicId: answer.topicId.toString(),
       question: answer.question,
