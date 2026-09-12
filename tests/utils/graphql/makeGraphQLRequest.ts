@@ -56,5 +56,7 @@ export async function makeGraphQLRequest(
     body,
   });
 
-  return response.json();
+  const text = await response.text()
+  // console.log(text)
+  return JSON.parse(text);
 }

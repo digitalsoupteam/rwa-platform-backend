@@ -1,6 +1,7 @@
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 export const GATEWAY_URL = "https://localhost/gateway/graphql";
+export const GATEWAY_REST_URL = "https://localhost";
 
 export const TESTNET_RPC =
   "https://bsc-testnet-rpc.publicnode.com";

@@ -74,7 +74,11 @@ export const CREATE_DOCUMENT = `
       id
       folderId
       name
-      link
+      fileId
+      path
+      url
+      mimeType
+      size
       ownerId
       ownerType
       creator
@@ -92,7 +96,11 @@ export const UPDATE_DOCUMENT = `
       id
       folderId
       name
-      link
+      fileId
+      path
+      url
+      mimeType
+      size
       ownerId
       ownerType
       creator
@@ -116,7 +124,11 @@ export const GET_DOCUMENT = `
       id
       folderId
       name
-      link
+      fileId
+      path
+      url
+      mimeType
+      size
       ownerId
       ownerType
       creator
@@ -134,7 +146,11 @@ export const GET_DOCUMENTS = `
       id
       folderId
       name
-      link
+      fileId
+      path
+      url
+      mimeType
+      size
       ownerId
       ownerType
       creator

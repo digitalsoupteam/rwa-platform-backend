@@ -15,8 +15,10 @@ export const GET_BUSINESS = gql`
       tags
       riskScore
       image
+      imageUrl
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
+      riskScoreEvaluationProcess
       country
       businessType
       socials {
@@ -44,8 +46,10 @@ export const GET_BUSINESSES = gql`
       tags
       riskScore
       image
+      imageUrl
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
+      riskScoreEvaluationProcess
       country
       businessType
       socials {
@@ -74,6 +78,7 @@ export const CREATE_BUSINESS_WITH_AI = gql`
       tags
       riskScore
       image
+      imageUrl
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
       country
@@ -103,6 +108,7 @@ export const CREATE_BUSINESS = gql`
       tags
       riskScore
       image
+      imageUrl
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
       country
@@ -132,6 +138,7 @@ export const EDIT_BUSINESS = gql`
       tags
       riskScore
       image
+      imageUrl
       approvalSignaturesTaskId
       approvalSignaturesTaskExpired
       country
@@ -151,7 +158,7 @@ export const UPDATE_BUSINESS_RISK_SCORE = gql`
   mutation UpdateBusinessRiskScore($id: ID!) {
     updateBusinessRiskScore(id: $id) {
       id
-      riskScore
+      riskScoreEvaluationProcess
       updatedAt
     }
   }
@@ -185,12 +192,15 @@ export const GET_POOL = gql`
       chainId
       tags
       riskScore
+      riskScoreEvaluationProcess
 
       # Contract Addresses
       rwaAddress
       poolAddress
       holdToken
       tokenId
+      image
+      imageUrl
 
       # Pool Configuration
       entryFeePercent
@@ -268,12 +278,15 @@ export const GET_POOLS = gql`
       chainId
       tags
       riskScore
+      riskScoreEvaluationProcess
 
       # Contract Addresses
       rwaAddress
       poolAddress
       holdToken
       tokenId
+      image
+      imageUrl
 
       # Pool Configuration
       entryFeePercent
@@ -592,7 +605,7 @@ export const UPDATE_POOL_RISK_SCORE = gql`
   mutation UpdatePoolRiskScore($id: ID!) {
     updatePoolRiskScore(id: $id) {
       id
-      riskScore
+      riskScoreEvaluationProcess
       updatedAt
     }
   }
