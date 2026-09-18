@@ -6,11 +6,20 @@ export const getApiKey: QueryResolvers['getApiKey'] = async (_parent, { id }, { 
     throw new AppError({ message: 'Authentication required', statusCode: 401, code: 'UNAUTHORIZED' });
   }
 
-  const response = await clients.apiKeysClient.getApiKey.post({ id, userId: user.id });
+  // Verify API key ownership first
+  const keyResponse = await clients.apiKeysClient.getApiKeyById.post({ id });
 
-  if (response.error) {
-    throw new AppError({ message: 'Failed to get API key', statusCode: 502, code: 'BAD_GATEWAY' });
+  if (keyResponse.error) {
+    if (Number(keyResponse.error.status) >= 500) {
+      throw new AppError({ message: 'Failed to get API key', statusCode: 502, code: 'BAD_GATEWAY' });
+    }
+
+    throw new AppError({ message: 'Api key not found', statusCode: 404, code: 'NOT_FOUND' });
   }
 
-  return response.data;
+  if (keyResponse.data.userId !== user.id) {
+    throw new AppError({ message: 'Api key not found', statusCode: 404, code: 'NOT_FOUND' });
+  }
+
+  return keyResponse.data;
 };

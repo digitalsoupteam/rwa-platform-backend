@@ -2,6 +2,7 @@ import { Elysia } from 'elysia';
 import { createApiKeyController } from '../controllers/createApiKey.controller';
 import { deleteApiKeyController } from '../controllers/deleteApiKey.controller';
 import { getApiKeyController } from '../controllers/getApiKey.controller';
+import { getApiKeyByIdController } from '../controllers/getApiKeyById.controller';
 import { getApiKeysController } from '../controllers/getApiKeys.controller';
 import { updateApiKeyController } from '../controllers/updateApiKey.controller';
 import { validateApiKeyController } from '../controllers/validateApiKey.controller';
@@ -19,6 +20,10 @@ export const createControllersPlugin = (servicesPlugin: ServicesPlugin) => {
 
   const getApiKeyCtrl = withTraceSync('api-keys.init.controllers.get', () => getApiKeyController(servicesPlugin));
 
+  const getApiKeyByIdCtrl = withTraceSync('api-keys.init.controllers.getById', () =>
+    getApiKeyByIdController(servicesPlugin),
+  );
+
   const getApiKeysCtrl = withTraceSync('api-keys.init.controllers.list', () => getApiKeysController(servicesPlugin));
 
   const updateApiKeyCtrl = withTraceSync('api-keys.init.controllers.update', () =>
@@ -34,6 +39,7 @@ export const createControllersPlugin = (servicesPlugin: ServicesPlugin) => {
       .use(createApiKeyCtrl)
       .use(deleteApiKeyCtrl)
       .use(getApiKeyCtrl)
+      .use(getApiKeyByIdCtrl)
       .use(getApiKeysCtrl)
       .use(updateApiKeyCtrl)
       .use(validateApiKeyCtrl),
