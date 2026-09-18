@@ -231,10 +231,30 @@ describe("Webhooks E2E — Business Deployment", () => {
   });
 
   test("should not allow other user to access webhook endpoint by id", async () => {
+    // Create a dedicated endpoint owned by the first user so this test is self-sufficient
+    const idorEndpointUrl = "https://example.com/e2e-idor-webhook";
+
+    const createResult = await makeGraphQLRequest(
+      CREATE_WEBHOOK_ENDPOINT,
+      {
+        input: {
+          url: idorEndpointUrl,
+          events: ["pool.created"],
+          description: "IDOR test webhook",
+        },
+      },
+      accessToken
+    );
+
+    expect(createResult.errors).toBeUndefined();
+    expect(createResult.data.createWebhookEndpoint).toBeDefined();
+
+    const idorEndpointId = createResult.data.createWebhookEndpoint.id;
+
     // Try to get the endpoint as a second user
     const getResult = await makeGraphQLRequest(
       GET_WEBHOOK_ENDPOINT,
-      { id: endpointId },
+      { id: idorEndpointId },
       accessToken2
     );
 
@@ -246,8 +266,10 @@ describe("Webhooks E2E — Business Deployment", () => {
       UPDATE_WEBHOOK_ENDPOINT,
       {
         input: {
-          id: endpointId,
+          id: idorEndpointId,
           url: "https://example.com/hijacked-webhook",
+          events: ["pool.burned"],
+          active: false,
         },
       },
       accessToken2
@@ -259,7 +281,7 @@ describe("Webhooks E2E — Business Deployment", () => {
     // Try to delete it as a second user
     const deleteResult = await makeGraphQLRequest(
       DELETE_WEBHOOK_ENDPOINT,
-      { id: endpointId },
+      { id: idorEndpointId },
       accessToken2
     );
 
@@ -269,13 +291,25 @@ describe("Webhooks E2E — Business Deployment", () => {
     // Owner still sees the endpoint unchanged
     const ownerResult = await makeGraphQLRequest(
       GET_WEBHOOK_ENDPOINT,
-      { id: endpointId },
+      { id: idorEndpointId },
       accessToken
     );
 
     expect(ownerResult.errors).toBeUndefined();
-    expect(ownerResult.data.getWebhookEndpoint.id).toBe(endpointId);
-    expect(ownerResult.data.getWebhookEndpoint.url).toBe(webhookServer.getUrl());
+    expect(ownerResult.data.getWebhookEndpoint.id).toBe(idorEndpointId);
+    expect(ownerResult.data.getWebhookEndpoint.url).toBe(idorEndpointUrl);
+    expect(ownerResult.data.getWebhookEndpoint.events).toEqual(["pool.created"]);
+    expect(ownerResult.data.getWebhookEndpoint.active).toBe(true);
+
+    // Clean up the endpoint created by this test
+    const cleanupResult = await makeGraphQLRequest(
+      DELETE_WEBHOOK_ENDPOINT,
+      { id: idorEndpointId },
+      accessToken
+    );
+
+    expect(cleanupResult.errors).toBeUndefined();
+    expect(cleanupResult.data.deleteWebhookEndpoint).toBe(idorEndpointId);
   });
 
   test("should clean up webhook endpoint", async () => {

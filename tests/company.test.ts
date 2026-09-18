@@ -1,4 +1,4 @@
-import { expect, test, describe, beforeAll } from "bun:test";
+import { expect, test, describe, beforeAll, afterAll } from "bun:test";
 import { ethers, HDNodeWallet, JsonRpcProvider } from "ethers";
 import { TESTNET_RPC } from "./utils/config";
 import { makeGraphQLRequest } from "./utils/graphql/makeGraphQLRequest";
@@ -548,6 +548,50 @@ describe("Company Flow", () => {
       const foreignMember = companyResult.data.getCompany.users.find((u: any) => u.id === foreignMemberId);
       expect(foreignMember).toBeDefined();
       expect(foreignMember.permissions.some((p: any) => p.id === foreignPermissionId)).toBe(true);
+    });
+
+    afterAll(async () => {
+      // Revoke the permission granted to the foreign member
+      const revokeResult = await makeGraphQLRequest(
+        REVOKE_PERMISSION,
+        {
+          input: {
+            id: foreignPermissionId,
+            companyId: foreignCompanyId,
+          },
+        },
+        accessToken2
+      );
+
+      expect(revokeResult.errors).toBeUndefined();
+      expect(revokeResult.data.revokePermission).toBe(foreignPermissionId);
+
+      // Remove the foreign member
+      const removeResult = await makeGraphQLRequest(
+        REMOVE_MEMBER,
+        {
+          input: {
+            id: foreignMemberId,
+            companyId: foreignCompanyId,
+          },
+        },
+        accessToken2
+      );
+
+      expect(removeResult.errors).toBeUndefined();
+      expect(removeResult.data.removeMember).toBe(foreignMemberId);
+
+      // Delete the foreign company
+      const deleteResult = await makeGraphQLRequest(
+        DELETE_COMPANY,
+        {
+          id: foreignCompanyId,
+        },
+        accessToken2
+      );
+
+      expect(deleteResult.errors).toBeUndefined();
+      expect(deleteResult.data.deleteCompany).toBe(foreignCompanyId);
     });
   });
 
