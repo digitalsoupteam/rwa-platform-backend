@@ -235,5 +235,149 @@ describe("Webhooks Flow", () => {
         accessToken
       );
     });
+
+    test("should return 404 when another user gets a webhook endpoint by id", async () => {
+      // Create an endpoint as first user
+      const createResult = await makeGraphQLRequest(
+        CREATE_WEBHOOK_ENDPOINT,
+        {
+          input: {
+            url: "https://example.com/idor-get-webhook",
+            events: ["pool.created"],
+            description: "IDOR get test webhook",
+          },
+        },
+        accessToken
+      );
+
+      expect(createResult.errors).toBeUndefined();
+      const foreignEndpointId = createResult.data.createWebhookEndpoint.id;
+
+      // Get it as second user: foreign endpoint must be indistinguishable from a missing one
+      const getResult = await makeGraphQLRequest(
+        GET_WEBHOOK_ENDPOINT,
+        { id: foreignEndpointId },
+        accessToken2
+      );
+
+      expect(getResult.errors).toBeDefined();
+      expect(getResult.errors[0].message).toContain("not found");
+
+      // Owner still reads the endpoint
+      const ownerResult = await makeGraphQLRequest(
+        GET_WEBHOOK_ENDPOINT,
+        { id: foreignEndpointId },
+        accessToken
+      );
+
+      expect(ownerResult.errors).toBeUndefined();
+      expect(ownerResult.data.getWebhookEndpoint.id).toBe(foreignEndpointId);
+
+      // Clean up
+      await makeGraphQLRequest(
+        DELETE_WEBHOOK_ENDPOINT,
+        { id: foreignEndpointId },
+        accessToken
+      );
+    });
+
+    test("should return 404 when another user updates a webhook endpoint by id and leave it unchanged", async () => {
+      // Create an endpoint as first user
+      const createResult = await makeGraphQLRequest(
+        CREATE_WEBHOOK_ENDPOINT,
+        {
+          input: {
+            url: "https://example.com/idor-update-webhook",
+            events: ["pool.created"],
+            description: "IDOR update test webhook",
+          },
+        },
+        accessToken
+      );
+
+      expect(createResult.errors).toBeUndefined();
+      const foreignEndpointId = createResult.data.createWebhookEndpoint.id;
+
+      // Try to update it as second user
+      const updateResult = await makeGraphQLRequest(
+        UPDATE_WEBHOOK_ENDPOINT,
+        {
+          input: {
+            id: foreignEndpointId,
+            url: "https://example.com/hijacked-webhook",
+            events: ["pool.burned"],
+            active: false,
+          },
+        },
+        accessToken2
+      );
+
+      expect(updateResult.errors).toBeDefined();
+      expect(updateResult.errors[0].message).toContain("not found");
+
+      // Owner still sees the endpoint unchanged
+      const ownerResult = await makeGraphQLRequest(
+        GET_WEBHOOK_ENDPOINT,
+        { id: foreignEndpointId },
+        accessToken
+      );
+
+      expect(ownerResult.errors).toBeUndefined();
+      expect(ownerResult.data.getWebhookEndpoint.url).toBe("https://example.com/idor-update-webhook");
+      expect(ownerResult.data.getWebhookEndpoint.events).toEqual(["pool.created"]);
+      expect(ownerResult.data.getWebhookEndpoint.active).toBe(true);
+
+      // Clean up
+      await makeGraphQLRequest(
+        DELETE_WEBHOOK_ENDPOINT,
+        { id: foreignEndpointId },
+        accessToken
+      );
+    });
+
+    test("should return 404 when another user deletes a webhook endpoint by id and leave it intact", async () => {
+      // Create an endpoint as first user
+      const createResult = await makeGraphQLRequest(
+        CREATE_WEBHOOK_ENDPOINT,
+        {
+          input: {
+            url: "https://example.com/idor-delete-webhook",
+            events: ["pool.created"],
+            description: "IDOR delete test webhook",
+          },
+        },
+        accessToken
+      );
+
+      expect(createResult.errors).toBeUndefined();
+      const foreignEndpointId = createResult.data.createWebhookEndpoint.id;
+
+      // Try to delete it as second user
+      const deleteResult = await makeGraphQLRequest(
+        DELETE_WEBHOOK_ENDPOINT,
+        { id: foreignEndpointId },
+        accessToken2
+      );
+
+      expect(deleteResult.errors).toBeDefined();
+      expect(deleteResult.errors[0].message).toContain("not found");
+
+      // Owner still sees the endpoint
+      const ownerResult = await makeGraphQLRequest(
+        GET_WEBHOOK_ENDPOINT,
+        { id: foreignEndpointId },
+        accessToken
+      );
+
+      expect(ownerResult.errors).toBeUndefined();
+      expect(ownerResult.data.getWebhookEndpoint.id).toBe(foreignEndpointId);
+
+      // Clean up
+      await makeGraphQLRequest(
+        DELETE_WEBHOOK_ENDPOINT,
+        { id: foreignEndpointId },
+        accessToken
+      );
+    });
   });
 });

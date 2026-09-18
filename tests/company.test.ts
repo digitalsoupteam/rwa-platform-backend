@@ -434,6 +434,123 @@ describe("Company Flow", () => {
     });
   });
 
+  describe("Cross-Company Access Control Tests", () => {
+    let foreignCompanyId: string;
+    let foreignMemberId: string;
+    let foreignPermissionId: string;
+
+    beforeAll(async () => {
+      // Create a second company owned by wallet2 (user B)
+      const companyResult = await makeGraphQLRequest(
+        CREATE_COMPANY,
+        {
+          input: {
+            name: "Foreign Company",
+            description: "Company owned by user B",
+          },
+        },
+        accessToken2
+      );
+
+      expect(companyResult.errors).toBeUndefined();
+      foreignCompanyId = companyResult.data.createCompany.id;
+
+      // Add a member to the foreign company
+      const memberResult = await makeGraphQLRequest(
+        ADD_MEMBER,
+        {
+          input: {
+            companyId: foreignCompanyId,
+            userId: wallet.address,
+            name: "Foreign Member",
+          },
+        },
+        accessToken2
+      );
+
+      expect(memberResult.errors).toBeUndefined();
+      foreignMemberId = memberResult.data.addMember.id;
+
+      // Grant a permission to the foreign member
+      const permissionResult = await makeGraphQLRequest(
+        GRANT_PERMISSION,
+        {
+          input: {
+            companyId: foreignCompanyId,
+            memberId: foreignMemberId,
+            userId: wallet.address,
+            permission: "read",
+            entity: "company",
+          },
+        },
+        accessToken2
+      );
+
+      expect(permissionResult.errors).toBeUndefined();
+      foreignPermissionId = permissionResult.data.grantPermission.id;
+    });
+
+    test("should not allow company owner to remove a member of another company", async () => {
+      // Owner of own company tries to remove a member that belongs to the foreign company
+      const result = await makeGraphQLRequest(
+        REMOVE_MEMBER,
+        {
+          input: {
+            id: foreignMemberId,
+            companyId,
+          },
+        },
+        accessToken
+      );
+
+      expect(result.errors).toBeDefined();
+      expect(result.errors[0].message).toContain("belongs to this company");
+
+      // Verify the foreign member is still alive
+      const companyResult = await makeGraphQLRequest(
+        GET_COMPANY,
+        {
+          id: foreignCompanyId,
+        },
+        accessToken2
+      );
+
+      expect(companyResult.errors).toBeUndefined();
+      expect(companyResult.data.getCompany.users.some((u: any) => u.id === foreignMemberId)).toBe(true);
+    });
+
+    test("should not allow company owner to revoke a permission of another company", async () => {
+      // Owner of own company tries to revoke a permission that belongs to the foreign company
+      const result = await makeGraphQLRequest(
+        REVOKE_PERMISSION,
+        {
+          input: {
+            id: foreignPermissionId,
+            companyId,
+          },
+        },
+        accessToken
+      );
+
+      expect(result.errors).toBeDefined();
+      expect(result.errors[0].message).toContain("belongs to this company");
+
+      // Verify the foreign permission is still alive
+      const companyResult = await makeGraphQLRequest(
+        GET_COMPANY,
+        {
+          id: foreignCompanyId,
+        },
+        accessToken2
+      );
+
+      expect(companyResult.errors).toBeUndefined();
+      const foreignMember = companyResult.data.getCompany.users.find((u: any) => u.id === foreignMemberId);
+      expect(foreignMember).toBeDefined();
+      expect(foreignMember.permissions.some((p: any) => p.id === foreignPermissionId)).toBe(true);
+    });
+  });
+
   describe("Company Cleanup", () => {
     test("should delete company", async () => {
       const result = await makeGraphQLRequest(

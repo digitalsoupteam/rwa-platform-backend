@@ -15,13 +15,17 @@ import { requestHold, requestGas } from "./utils/requestTokens";
 import {
   CREATE_WEBHOOK_ENDPOINT,
   DELETE_WEBHOOK_ENDPOINT,
+  GET_WEBHOOK_ENDPOINT,
+  UPDATE_WEBHOOK_ENDPOINT,
 } from "./utils/graphql/schema/webhooks";
 
 describe("Webhooks E2E — Business Deployment", () => {
   let chainId: string;
   let provider: JsonRpcProvider;
   let wallet: HDNodeWallet;
+  let wallet2: HDNodeWallet;
   let accessToken: string;
+  let accessToken2: string;
   let userId: string;
   let companyId: string;
   let businessId: string;
@@ -33,7 +37,9 @@ describe("Webhooks E2E — Business Deployment", () => {
     chainId = "97";
     provider = new ethers.JsonRpcProvider(TESTNET_RPC);
     wallet = ethers.Wallet.createRandom().connect(provider);
+    wallet2 = ethers.Wallet.createRandom().connect(provider);
     ({ accessToken, userId } = await authenticate(wallet));
+    ({ accessToken: accessToken2 } = await authenticate(wallet2));
 
     // Create company
     const companyResult = await makeGraphQLRequest(
@@ -222,6 +228,54 @@ describe("Webhooks E2E — Business Deployment", () => {
     expect(delivery.headers["x-webhook-signature"]).toBeDefined();
     expect(delivery.headers["x-webhook-signature"]).toMatch(/^sha256=/);
     expect(delivery.headers["content-type"]).toBe("application/json");
+  });
+
+  test("should not allow other user to access webhook endpoint by id", async () => {
+    // Try to get the endpoint as a second user
+    const getResult = await makeGraphQLRequest(
+      GET_WEBHOOK_ENDPOINT,
+      { id: endpointId },
+      accessToken2
+    );
+
+    expect(getResult.errors).toBeDefined();
+    expect(getResult.errors[0].message).toContain("not found");
+
+    // Try to update it as a second user
+    const updateResult = await makeGraphQLRequest(
+      UPDATE_WEBHOOK_ENDPOINT,
+      {
+        input: {
+          id: endpointId,
+          url: "https://example.com/hijacked-webhook",
+        },
+      },
+      accessToken2
+    );
+
+    expect(updateResult.errors).toBeDefined();
+    expect(updateResult.errors[0].message).toContain("not found");
+
+    // Try to delete it as a second user
+    const deleteResult = await makeGraphQLRequest(
+      DELETE_WEBHOOK_ENDPOINT,
+      { id: endpointId },
+      accessToken2
+    );
+
+    expect(deleteResult.errors).toBeDefined();
+    expect(deleteResult.errors[0].message).toContain("not found");
+
+    // Owner still sees the endpoint unchanged
+    const ownerResult = await makeGraphQLRequest(
+      GET_WEBHOOK_ENDPOINT,
+      { id: endpointId },
+      accessToken
+    );
+
+    expect(ownerResult.errors).toBeUndefined();
+    expect(ownerResult.data.getWebhookEndpoint.id).toBe(endpointId);
+    expect(ownerResult.data.getWebhookEndpoint.url).toBe(webhookServer.getUrl());
   });
 
   test("should clean up webhook endpoint", async () => {
