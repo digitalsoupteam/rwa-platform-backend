@@ -35,6 +35,17 @@ export const revokePermission: MutationResolvers['revokePermission'] = async (
     });
   }
 
+  // Check if the permission belongs to the company
+  const belongs = companyResponse.data.users.some((u) => u.permissions.some((p) => p.id === input.id));
+
+  if (!belongs) {
+    throw new AppError({
+      message: 'Permission does not belong to this company',
+      statusCode: 403,
+      code: 'FORBIDDEN',
+    });
+  }
+
   const response = await clients.companyClient.revokePermission.post({
     id: input.id,
   });
