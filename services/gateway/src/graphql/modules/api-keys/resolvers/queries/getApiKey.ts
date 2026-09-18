@@ -21,5 +21,12 @@ export const getApiKey: QueryResolvers['getApiKey'] = async (_parent, { id }, { 
     throw new AppError({ message: 'Api key not found', statusCode: 404, code: 'NOT_FOUND' });
   }
 
-  return keyResponse.data;
+  // Scoped call as a second line of defense
+  const response = await clients.apiKeysClient.getApiKey.post({ id, userId: user.id });
+
+  if (response.error) {
+    throw new AppError({ message: 'Failed to get API key', statusCode: 502, code: 'BAD_GATEWAY' });
+  }
+
+  return response.data;
 };
