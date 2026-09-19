@@ -4,6 +4,7 @@ import { TESTNET_RPC } from "./utils/config";
 import { makeGraphQLRequest } from "./utils/graphql/makeGraphQLRequest";
 import { makeRestRequest } from "./utils/makeRestRequest";
 import { authenticate } from "./utils/authenticate";
+import { makePdfFile } from "./utils/testFiles";
 import {
   CREATE_FOLDER,
   UPDATE_FOLDER,
@@ -336,9 +337,8 @@ describe("Documents Flow", () => {
 
   describe("Documents", () => {
     test("should create a document with file", async () => {
-      // Create test file
-      const fileContent = "Test file content";
-      const file = new File([fileContent], "test.pdf", { type: "application/pdf" });
+      // Create test file (real magic bytes — content check)
+      const file = makePdfFile("test.pdf");
 
       const result = await makeRestRequest(
         "/api/documents/createDocument",
