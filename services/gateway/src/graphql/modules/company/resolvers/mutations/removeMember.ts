@@ -35,6 +35,17 @@ export const removeMember: MutationResolvers['removeMember'] = async (
     });
   }
 
+  // Check if the member belongs to the company
+  const member = companyResponse.data.users.find((u) => u.id === input.id);
+
+  if (!member) {
+    throw new AppError({
+      message: 'Member does not belong to this company',
+      statusCode: 403,
+      code: 'FORBIDDEN',
+    });
+  }
+
   const response = await clients.companyClient.removeMember.post({
     id: input.id,
   });

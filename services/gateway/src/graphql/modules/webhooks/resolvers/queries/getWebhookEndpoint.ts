@@ -12,8 +12,8 @@ export const getWebhookEndpoint: QueryResolvers['getWebhookEndpoint'] = async (_
     wallet: user.wallet,
   });
 
-  if (response.error) {
-    throw new AppError({ message: 'Failed to get webhook endpoint', statusCode: 502, code: 'BAD_GATEWAY' });
+  if (response.error || response.data.userId !== user.id) {
+    throw new AppError({ message: 'Webhook endpoint not found', statusCode: 404, code: 'NOT_FOUND' });
   }
 
   return response.data;

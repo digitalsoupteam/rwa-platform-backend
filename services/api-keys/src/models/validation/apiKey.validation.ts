@@ -45,6 +45,13 @@ export const getApiKeysRequest = t.Pick(apiKeySchema, ['userId']);
 export const getApiKeysResponse = t.Array(apiKeySchema);
 
 /*
+ * Get API key by id (internal, without user scope)
+ */
+export const getApiKeyByIdRequest = t.Pick(apiKeySchema, ['id']);
+
+export const getApiKeyByIdResponse = apiKeySchema;
+
+/*
  * Update API key
  */
 export const updateApiKeyRequest = t.Composite([

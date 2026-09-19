@@ -81,6 +81,28 @@ export class ApiKeyService {
   }
 
   /**
+   * Gets an API key by ID without user scope (internal)
+   */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ id: a[0] }),
+  })
+  async getApiKeyById(id: string) {
+    setSpanAttributes({ apiKeyId: id });
+    const doc = await this.apiKeyRepository.findByIdUnscoped(id);
+    return {
+      id: doc._id.toString(),
+      name: doc.name,
+      prefix: doc.prefix,
+      userId: doc.userId,
+      wallet: doc.wallet,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+    };
+  }
+
+  /**
    * Lists all API keys for a user
    */
   @TraceDecorator()

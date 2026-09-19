@@ -10,6 +10,17 @@ export const updateWebhookEndpoint: MutationResolvers['updateWebhookEndpoint'] =
     throw new AppError({ message: 'Authentication required', statusCode: 401, code: 'UNAUTHORIZED' });
   }
 
+  // Verify endpoint ownership first
+  const endpointResponse = await clients.webhooksClient.getEndpoint.post({
+    id: input.id,
+    userId: user.id,
+    wallet: user.wallet,
+  });
+
+  if (endpointResponse.error || endpointResponse.data.userId !== user.id) {
+    throw new AppError({ message: 'Webhook endpoint not found', statusCode: 404, code: 'NOT_FOUND' });
+  }
+
   const response = await clients.webhooksClient.updateEndpoint.post({
     id: input.id,
     userId: user.id,

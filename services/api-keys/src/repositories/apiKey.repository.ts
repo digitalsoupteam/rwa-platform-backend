@@ -29,6 +29,21 @@ export class ApiKeyRepository {
   }
 
   @TraceDecorator()
+  async findByIdUnscoped(id: string) {
+    const doc = await this.model.findById(id).lean();
+
+    if (!doc) {
+      throw new AppError({
+        message: `ApiKey ${id} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
+    }
+
+    return doc;
+  }
+
+  @TraceDecorator()
   async findAll(filters: { userId: string }) {
     return await this.model.find(filters).select('-keyHash').lean();
   }

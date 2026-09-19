@@ -226,5 +226,130 @@ describe("API Keys Flow", () => {
         accessToken
       );
     });
+
+    test("should return 404 when another user gets an API key by id", async () => {
+      // Create a key as first user
+      const createResult = await makeGraphQLRequest(
+        CREATE_API_KEY,
+        {
+          input: {
+            name: "IDOR Get Key",
+          },
+        },
+        accessToken
+      );
+
+      expect(createResult.errors).toBeUndefined();
+      const foreignKeyId = createResult.data.createApiKey.id;
+
+      // Get it as second user: foreign key must be indistinguishable from a missing one
+      const getResult = await makeGraphQLRequest(
+        GET_API_KEY,
+        { id: foreignKeyId },
+        accessToken2
+      );
+
+      expect(getResult.errors).toBeDefined();
+      expect(getResult.errors[0].message).toContain("not found");
+
+      // Clean up
+      await makeGraphQLRequest(
+        DELETE_API_KEY,
+        { id: foreignKeyId },
+        accessToken
+      );
+    });
+
+    test("should return 404 when another user updates an API key by id and leave it unchanged", async () => {
+      // Create a key as first user
+      const createResult = await makeGraphQLRequest(
+        CREATE_API_KEY,
+        {
+          input: {
+            name: "IDOR Update Key",
+          },
+        },
+        accessToken
+      );
+
+      expect(createResult.errors).toBeUndefined();
+      const foreignKeyId = createResult.data.createApiKey.id;
+
+      // Try to update it as second user
+      const updateResult = await makeGraphQLRequest(
+        UPDATE_API_KEY,
+        {
+          input: {
+            id: foreignKeyId,
+            name: "Hijacked Key Name",
+          },
+        },
+        accessToken2
+      );
+
+      expect(updateResult.errors).toBeDefined();
+      expect(updateResult.errors[0].message).toContain("not found");
+
+      // Owner still sees the key unchanged
+      const ownerResult = await makeGraphQLRequest(
+        GET_API_KEY,
+        { id: foreignKeyId },
+        accessToken
+      );
+
+      expect(ownerResult.errors).toBeUndefined();
+      expect(ownerResult.data.getApiKey.id).toBe(foreignKeyId);
+      expect(ownerResult.data.getApiKey.name).toBe("IDOR Update Key");
+
+      // Clean up
+      await makeGraphQLRequest(
+        DELETE_API_KEY,
+        { id: foreignKeyId },
+        accessToken
+      );
+    });
+
+    test("should return 404 when another user deletes an API key by id and leave it intact", async () => {
+      // Create a key as first user
+      const createResult = await makeGraphQLRequest(
+        CREATE_API_KEY,
+        {
+          input: {
+            name: "IDOR Delete Key",
+          },
+        },
+        accessToken
+      );
+
+      expect(createResult.errors).toBeUndefined();
+      const foreignKeyId = createResult.data.createApiKey.id;
+
+      // Try to delete it as second user
+      const deleteResult = await makeGraphQLRequest(
+        DELETE_API_KEY,
+        { id: foreignKeyId },
+        accessToken2
+      );
+
+      expect(deleteResult.errors).toBeDefined();
+      expect(deleteResult.errors[0].message).toContain("not found");
+
+      // Owner still sees the key
+      const ownerResult = await makeGraphQLRequest(
+        GET_API_KEY,
+        { id: foreignKeyId },
+        accessToken
+      );
+
+      expect(ownerResult.errors).toBeUndefined();
+      expect(ownerResult.data.getApiKey.id).toBe(foreignKeyId);
+
+      // Clean up
+      await makeGraphQLRequest(
+        DELETE_API_KEY,
+        { id: foreignKeyId },
+        accessToken
+      );
+    });
   });
 });
