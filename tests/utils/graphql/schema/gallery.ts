@@ -68,29 +68,6 @@ export const GET_GALLERIES = `
   }
 `;
 
-export const CREATE_IMAGE = `
-  mutation CreateImage($input: CreateImageInput!) {
-    createImage(input: $input) {
-      id
-      galleryId
-      name
-      description
-      fileId
-      path
-      url
-      mimeType
-      size
-      ownerId
-      ownerType
-      creator
-      parentId
-      grandParentId
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
 export const UPDATE_IMAGE = `
   mutation UpdateImage($input: UpdateImageInput!) {
     updateImage(input: $input) {

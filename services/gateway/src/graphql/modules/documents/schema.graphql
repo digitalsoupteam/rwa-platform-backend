@@ -1,5 +1,4 @@
 scalar JSON
-scalar Upload
 
 # Document type
 type Document {
@@ -37,13 +36,6 @@ enum ParentTypes {
     business,
     pool
 }
-# Create document input
-input CreateDocumentInput {
-  folderId: String!
-  name: String!
-  file: Upload!
-}
-
 # Update document input
 input UpdateDocumentInput {
   id: ID!
@@ -102,9 +94,6 @@ extend type Query {
 }
 
 extend type Mutation {
-  # Create new document
-  createDocument(input: CreateDocumentInput!): Document!
-
   # Update existing document
   updateDocument(input: UpdateDocumentInput!): Document!
 

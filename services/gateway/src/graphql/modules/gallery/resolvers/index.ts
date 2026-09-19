@@ -6,7 +6,6 @@ import { getImages } from './queries/getImages';
 import { createGallery } from './mutations/createGallery';
 import { updateGallery } from './mutations/updateGallery';
 import { deleteGallery } from './mutations/deleteGallery';
-import { createImage } from './mutations/createImage';
 import { updateImage } from './mutations/updateImage';
 import { deleteImage } from './mutations/deleteImage';
 
@@ -21,7 +20,6 @@ export const galleryResolvers: Resolvers = {
     createGallery,
     updateGallery,
     deleteGallery,
-    createImage,
     updateImage,
     deleteImage,
   },

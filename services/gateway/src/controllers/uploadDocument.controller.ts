@@ -26,7 +26,7 @@ export const uploadDocumentController = new Elysia({ name: 'UploadDocumentContro
 
       const { file, folderId, name } = body;
 
-      // Validate file MIME type — same as createDocument resolver
+      // Validate file MIME type
       const mimeType = file.type.split(';')[0].trim();
       if (!CONFIG.FILE_VALIDATION.DOCUMENTS_ALLOWED_MIME_TYPES.includes(mimeType)) {
         throw new AppError({
@@ -36,7 +36,7 @@ export const uploadDocumentController = new Elysia({ name: 'UploadDocumentContro
         });
       }
 
-      // Get folder info — same as createDocument resolver
+      // Get folder info
       const folderResponse = await documentsClient.getFolder.post({ id: folderId });
       if (folderResponse.error) {
         throw new AppError({ message: 'Failed to get folder data', statusCode: 502, code: 'BAD_GATEWAY' });
@@ -44,7 +44,7 @@ export const uploadDocumentController = new Elysia({ name: 'UploadDocumentContro
 
       const folder = folderResponse.data;
 
-      // Ownership check — same as createDocument resolver
+      // Ownership check
       await ownershipService.checkOwnership({
         userId: user.id,
         ownerId: folder.ownerId,

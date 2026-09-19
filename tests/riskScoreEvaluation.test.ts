@@ -12,8 +12,9 @@ import {
 import { GET_EVALUATIONS } from "./utils/graphql/schema/ai-evaluator";
 import { SET_REACTION } from "./utils/graphql/schema/reactions";
 import { CREATE_TOPIC, CREATE_QUESTION, CREATE_QUESTION_ANSWER } from "./utils/graphql/schema/questions";
-import { CREATE_FOLDER, CREATE_DOCUMENT } from "./utils/graphql/schema/documents";
-import { CREATE_GALLERY, CREATE_IMAGE } from "./utils/graphql/schema/gallery";
+import { CREATE_FOLDER } from "./utils/graphql/schema/documents";
+import { CREATE_GALLERY } from "./utils/graphql/schema/gallery";
+import { makeRestRequest } from "./utils/makeRestRequest";
 
 // ── Helpers ──────────────────────────────────────────
 
@@ -135,12 +136,12 @@ describe("Risk Score Evaluation", () => {
     const folderId = folderRes.data.createFolder.id;
 
     const docFile = await readDemoFile("good_business", "coffee_shop_profile.pdf", "application/pdf");
-    await makeGraphQLRequest(
-      CREATE_DOCUMENT,
-      { input: { folderId, name: "coffee_shop_profile" } },
+    const docRes = await makeRestRequest(
+      "/api/documents/createDocument",
+      { file: docFile, folderId, name: "coffee_shop_profile" },
       accessToken,
-      docFile,
     );
+    expect(docRes.error).toBeUndefined();
 
     // Gallery + image (real coffee shop photo)
     const galleryRes = await makeGraphQLRequest(
@@ -149,12 +150,12 @@ describe("Risk Score Evaluation", () => {
       accessToken,
     );
     const imgFile = await readDemoFile("good_business", "storefront.jpg", "image/jpeg");
-    await makeGraphQLRequest(
-      CREATE_IMAGE,
-      { input: { galleryId: galleryRes.data.createGallery.id, name: "storefront", description: "Storefront photo" } },
+    const imgRes = await makeRestRequest(
+      "/api/gallery/createImage",
+      { file: imgFile, galleryId: galleryRes.data.createGallery.id, name: "storefront", description: "Storefront photo" },
       accessToken,
-      imgFile,
     );
+    expect(imgRes.error).toBeUndefined();
 
     // ── Evaluate ──
     const result = await makeGraphQLRequest(UPDATE_BUSINESS_RISK_SCORE, { id: businessId }, accessToken);
@@ -248,12 +249,12 @@ describe("Risk Score Evaluation", () => {
     const folderId = folderRes.data.createFolder.id;
 
     const docFile = await readDemoFile("bad_business", "crypto_pyramid_report.pdf", "application/pdf");
-    await makeGraphQLRequest(
-      CREATE_DOCUMENT,
-      { input: { folderId, name: "due_diligence_report" } },
+    const docRes = await makeRestRequest(
+      "/api/documents/createDocument",
+      { file: docFile, folderId, name: "due_diligence_report" },
       accessToken,
-      docFile,
     );
+    expect(docRes.error).toBeUndefined();
 
     // Gallery + image (blue square)
     const galleryRes = await makeGraphQLRequest(
@@ -262,12 +263,12 @@ describe("Risk Score Evaluation", () => {
       accessToken,
     );
     const imgFile = await readDemoFile("bad_business", "office_photo.png", "image/png");
-    await makeGraphQLRequest(
-      CREATE_IMAGE,
-      { input: { galleryId: galleryRes.data.createGallery.id, name: "office", description: "Office photo" } },
+    const imgRes = await makeRestRequest(
+      "/api/gallery/createImage",
+      { file: imgFile, galleryId: galleryRes.data.createGallery.id, name: "office", description: "Office photo" },
       accessToken,
-      imgFile,
     );
+    expect(imgRes.error).toBeUndefined();
 
     // ── Evaluate ──
     const result = await makeGraphQLRequest(UPDATE_BUSINESS_RISK_SCORE, { id: businessId }, accessToken);
