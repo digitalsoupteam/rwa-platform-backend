@@ -99,6 +99,22 @@ describe("Testnet Faucet Flow Tests", () => {
     expect(typeof result.data.getUnlockTime.holdUnlockTime).toBe("number");
   });
 
+  test("should block repeated gas request within cooldown", async () => {
+    const result = await makeGraphQLRequest(
+      REQUEST_GAS,
+      {
+        input: {
+          amount: 0.0001,
+        },
+      },
+      accessToken
+    );
+
+    expect(result.errors).toBeDefined();
+    expect(result.errors[0].message).toBe("Failed to request gas token");
+    expect(result.data?.requestGas).toBeUndefined();
+  });
+
   test("should fail operations without auth", async () => {
     // Test request gas
     const gasAmount = 0.00001

@@ -1,6 +1,7 @@
 import { AppError } from '@shared/errors/app-errors';
 import { FaucetRequestRepository } from '../repositories/faucetRequest.repository';
 import { BlockchainClient } from '../clients/blockchain.client';
+import type { FaucetTokenType } from '../models/shared/enums.model';
 import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
 import { LogDecorator } from '@shared/monitoring/src/logDecorator';
@@ -77,25 +78,51 @@ export class FaucetService {
     const [lastGasRequest, lastHoldRequest, lastPlatformRequest] = await Promise.all([
       this.faucetRequestRepository.findAll(
         { userId: data.userId, tokenType: 'gas' },
-        { limit: 1, sort: { createdAt: 'asc' } },
+        { limit: 1, sort: { createdAt: 'desc' } },
       ),
       this.faucetRequestRepository.findAll(
         { userId: data.userId, tokenType: 'hold' },
-        { limit: 1, sort: { createdAt: 'asc' } },
+        { limit: 1, sort: { createdAt: 'desc' } },
       ),
       this.faucetRequestRepository.findAll(
         { userId: data.userId, tokenType: 'platform' },
-        { limit: 1, sort: { createdAt: 'asc' } },
+        { limit: 1, sort: { createdAt: 'desc' } },
       ),
     ]);
 
-    const currentTime = Math.floor(Date.now() / 1000);
-
     return {
-      gasUnlockTime: lastGasRequest[0] ? currentTime + this.requestGasDelay : 0,
-      holdUnlockTime: lastHoldRequest[0] ? currentTime + this.requestHoldDelay : 0,
-      platformUnlockTime: lastPlatformRequest[0] ? currentTime + this.requestPlatformDelay : 0,
+      gasUnlockTime: lastGasRequest[0] ? lastGasRequest[0].createdAt + this.requestGasDelay / 1000 : 0,
+      holdUnlockTime: lastHoldRequest[0] ? lastHoldRequest[0].createdAt + this.requestHoldDelay / 1000 : 0,
+      platformUnlockTime: lastPlatformRequest[0]
+        ? lastPlatformRequest[0].createdAt + this.requestPlatformDelay / 1000
+        : 0,
     };
+  }
+
+  /**
+   * Ensures the cooldown between token requests has passed
+   */
+  @TraceDecorator()
+  private async checkRequestCooldown(userId: string, tokenType: FaucetTokenType, delayMs: number) {
+    const [lastRequest] = await this.faucetRequestRepository.findAll(
+      { userId, tokenType },
+      { limit: 1, sort: { createdAt: 'desc' } },
+    );
+
+    if (!lastRequest || !lastRequest.createdAt) {
+      return;
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const unlockTime = lastRequest.createdAt + delayMs / 1000;
+
+    if (now < unlockTime) {
+      throw new AppError({
+        message: `Cooldown period active. Try again in ${Math.ceil(unlockTime - now)} seconds`,
+        statusCode: 403,
+        code: 'NOT_ALLOWED',
+      });
+    }
   }
 
   /**
@@ -113,6 +140,9 @@ export class FaucetService {
       tokenType: 'gas',
       amount: data.amount,
     });
+
+    await this.checkRequestCooldown(data.userId, 'gas', this.requestGasDelay);
+
     const transferAmount = data.amount > this.gasTokenAmount ? this.gasTokenAmount : data.amount;
 
     // Use configured gas amount
@@ -152,6 +182,9 @@ export class FaucetService {
       tokenType: 'hold',
       amount: data.amount,
     });
+
+    await this.checkRequestCooldown(data.userId, 'hold', this.requestHoldDelay);
+
     const transferAmount = data.amount > this.holdTokenAmount ? this.holdTokenAmount : data.amount;
 
     // Use configured hold token address and amount
@@ -195,6 +228,9 @@ export class FaucetService {
       tokenType: 'platform',
       amount: data.amount,
     });
+
+    await this.checkRequestCooldown(data.userId, 'platform', this.requestPlatformDelay);
+
     const transferAmount = data.amount > this.platformTokenAmount ? this.platformTokenAmount : data.amount;
 
     // Use configured platform token address and amount
