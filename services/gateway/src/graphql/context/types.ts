@@ -66,9 +66,7 @@ export type PubSubInstance = ReturnType<typeof createPubSub>;
 
 export interface FileValidationConfig {
   DOCUMENTS_ALLOWED_MIME_TYPES: string[];
-  DOCUMENTS_MAX_FILE_SIZE: number;
   GALLERY_ALLOWED_MIME_TYPES: string[];
-  GALLERY_MAX_FILE_SIZE: number;
 }
 
 export interface GraphQLContext {
