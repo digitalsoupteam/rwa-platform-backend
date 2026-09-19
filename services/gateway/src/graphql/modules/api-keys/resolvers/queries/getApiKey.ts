@@ -9,15 +9,7 @@ export const getApiKey: QueryResolvers['getApiKey'] = async (_parent, { id }, { 
   // Verify API key ownership first
   const keyResponse = await clients.apiKeysClient.getApiKeyById.post({ id });
 
-  if (keyResponse.error) {
-    if (Number(keyResponse.error.status) >= 500) {
-      throw new AppError({ message: 'Failed to get API key', statusCode: 502, code: 'BAD_GATEWAY' });
-    }
-
-    throw new AppError({ message: 'Api key not found', statusCode: 404, code: 'NOT_FOUND' });
-  }
-
-  if (keyResponse.data.userId !== user.id) {
+  if (keyResponse.error || keyResponse.data.userId !== user.id) {
     throw new AppError({ message: 'Api key not found', statusCode: 404, code: 'NOT_FOUND' });
   }
 
