@@ -1,4 +1,6 @@
 import crypto from 'crypto';
+import { lookup } from 'node:dns/promises';
+import { isIP } from 'node:net';
 import { AppError } from '@shared/errors/app-errors';
 import { EndpointRepository } from '../repositories/endpoint.repository';
 import { RedisWithTracing } from '@shared/monitoring/src/redis';
@@ -9,6 +11,36 @@ import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 import { metrics } from '@shared/monitoring/src/metrics';
 
 const MAX_ENDPOINTS_PER_USER = 50;
+
+const isPrivateIpv4 = (address: string): boolean => {
+  const parts = address.split('.').map(Number);
+  if (parts.length !== 4 || parts.some((part) => Number.isNaN(part) || part < 0 || part > 255)) {
+    return true; // malformed — treat as unsafe
+  }
+  const [a, b] = parts;
+  return (
+    a === 0 || // 0.0.0.0/8
+    a === 10 || // 10.0.0.0/8
+    a === 127 || // 127.0.0.0/8
+    (a === 100 && b >= 64 && b <= 127) || // 100.64.0.0/10 (CGNAT)
+    (a === 169 && b === 254) || // 169.254.0.0/16 (link-local, cloud metadata)
+    (a === 172 && b >= 16 && b <= 31) || // 172.16.0.0/12
+    (a === 192 && b === 168) || // 192.168.0.0/16
+    a >= 224 // multicast / reserved
+  );
+};
+
+const isPrivateAddress = (address: string): boolean => {
+  if (!address.includes(':')) {
+    return isPrivateIpv4(address);
+  }
+  const lower = address.toLowerCase();
+  if (lower === '::' || lower === '::1') return true;
+  if (lower.startsWith('fc') || lower.startsWith('fd')) return true; // fc00::/7 (unique local)
+  if (lower.startsWith('fe8') || lower.startsWith('fe9') || lower.startsWith('fea') || lower.startsWith('feb')) return true; // fe80::/10
+  if (lower.startsWith('::ffff:')) return isPrivateIpv4(lower.slice(7)); // IPv4-mapped
+  return false;
+};
 
 export class WebhookService {
   private encryptionKey: Buffer;
@@ -36,7 +68,7 @@ export class WebhookService {
   }) {
     setSpanAttributes({ userId: data.userId });
 
-    this.validateUrl(data.url);
+    await this.validateUrl(data.url);
 
     const count = await this.endpointRepository.countByUser(data.userId);
     if (count >= MAX_ENDPOINTS_PER_USER) {
@@ -143,7 +175,7 @@ export class WebhookService {
     const existing = await this.endpointRepository.findById(data.id);
 
     if (data.url) {
-      this.validateUrl(data.url);
+      await this.validateUrl(data.url);
     }
 
     let newSecret: string | undefined;
@@ -280,7 +312,7 @@ export class WebhookService {
     return Buffer.concat([iv, authTag, encrypted]).toString('base64');
   }
 
-  private validateUrl(url: string) {
+  private async validateUrl(url: string) {
     if (url.length > 2048) {
       throw new AppError({
         message: 'URL exceeds maximum length of 2048 characters',
@@ -289,48 +321,46 @@ export class WebhookService {
       });
     }
 
+    let parsed: URL;
     try {
-      const parsed = new URL(url);
-      if (parsed.protocol !== 'https:') {
-        throw new AppError({
-          message: 'Only HTTPS URLs are allowed',
-          statusCode: 400,
-          code: 'VALIDATION_ERROR',
-        });
-      }
-
-      const hostname = parsed.hostname;
-      if (
-        hostname === 'localhost' ||
-        hostname === '127.0.0.1' ||
-        hostname === '0.0.0.0' ||
-        hostname.startsWith('10.') ||
-        hostname.startsWith('172.16.') ||
-        hostname.startsWith('192.168.') ||
-        hostname.endsWith('.local') ||
-        hostname.endsWith('.localhost')
-      ) {
-        throw new AppError({
-          message: 'URL points to a private network (SSRF protection)',
-          statusCode: 400,
-          code: 'VALIDATION_ERROR',
-        });
-      }
-
-      if (parsed.protocol !== 'https:') {
-        throw new AppError({
-          message: 'Only HTTPS URLs are allowed',
-          statusCode: 400,
-          code: 'VALIDATION_ERROR',
-        });
-      }
-    } catch (error: any) {
-      if (error instanceof AppError) throw error;
+      parsed = new URL(url);
+    } catch {
       throw new AppError({
         message: 'Invalid URL format',
         statusCode: 400,
         code: 'VALIDATION_ERROR',
       });
     }
+
+    if (parsed.protocol !== 'https:') {
+      throw new AppError({
+        message: 'Only HTTPS URLs are allowed',
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
+    }
+
+    const hostname = parsed.hostname.replace(/^\[|\]$/g, '');
+    const addresses = isIP(hostname) ? [hostname] : await this.resolveHostname(hostname);
+
+    if (addresses.some(isPrivateAddress)) {
+      throw new AppError({
+        message: 'URL points to a private network (SSRF protection)',
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
+    }
+  }
+
+  private async resolveHostname(hostname: string): Promise<string[]> {
+    const resolved = await lookup(hostname, { all: true, verbatim: true }).catch(() => []);
+    if (resolved.length === 0) {
+      throw new AppError({
+        message: 'Failed to resolve hostname',
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
+    }
+    return resolved.map((record) => record.address);
   }
 }

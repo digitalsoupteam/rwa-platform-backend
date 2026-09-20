@@ -78,6 +78,7 @@ export class DeliveryService {
           'X-Webhook-Signature': `sha256=${signature}`,
         },
         body,
+        redirect: 'manual',
         signal: AbortSignal.timeout(10000),
       });
 
@@ -91,10 +92,14 @@ export class DeliveryService {
         return { success: true };
       }
 
-      if (response.status >= 300 && response.status < 400) {
-        await this.recordSuccess(data.deliveryLogId, data.attempt, response.status);
-        metrics.counter('webhook_delivery_total', { status: 'redirect' });
-        return { success: true };
+      // Redirects are never followed (redirect: 'manual'): a webhook endpoint must answer 2xx directly.
+      // A 3xx response (or an opaque redirect with status 0) means the endpoint is misconfigured —
+      // treat it like 400/404/410: record a failure, dead letter and deactivate.
+      if (response.status === 0 || (response.status >= 300 && response.status < 400)) {
+        await this.recordFailure(data.deliveryLogId, data.attempt, response.status, '', 'Redirects are not followed');
+        await this.deactivateEndpoint(data.endpointId);
+        metrics.counter('webhook_delivery_total', { status: 'dead_letter' });
+        return { success: false, deadLetter: true };
       }
 
       if (response.status === 400 || response.status === 404 || response.status === 410) {
