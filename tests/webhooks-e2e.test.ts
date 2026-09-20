@@ -312,6 +312,38 @@ describe("Webhooks E2E — Business Deployment", () => {
     expect(cleanupResult.data.deleteWebhookEndpoint).toBe(idorEndpointId);
   });
 
+  test("should reject webhook endpoint pointing to a private network (SSRF protection)", async () => {
+    const result = await makeGraphQLRequest(
+      CREATE_WEBHOOK_ENDPOINT,
+      {
+        input: {
+          url: "https://172.20.0.5/internal",
+          events: ["pool.created"],
+        },
+      },
+      accessToken
+    );
+
+    expect(result.errors).toBeDefined();
+    expect(result.errors[0].message).toContain("Failed to create webhook endpoint");
+  });
+
+  test("should reject webhook endpoint pointing to IPv6 loopback (SSRF protection)", async () => {
+    const result = await makeGraphQLRequest(
+      CREATE_WEBHOOK_ENDPOINT,
+      {
+        input: {
+          url: "https://[::1]/internal",
+          events: ["pool.created"],
+        },
+      },
+      accessToken
+    );
+
+    expect(result.errors).toBeDefined();
+    expect(result.errors[0].message).toContain("Failed to create webhook endpoint");
+  });
+
   test("should clean up webhook endpoint", async () => {
     const result = await makeGraphQLRequest(
       DELETE_WEBHOOK_ENDPOINT,
