@@ -68,28 +68,6 @@ export const GET_FOLDERS = `
   }
 `;
 
-export const CREATE_DOCUMENT = `
-  mutation CreateDocument($input: CreateDocumentInput!) {
-    createDocument(input: $input) {
-      id
-      folderId
-      name
-      fileId
-      path
-      url
-      mimeType
-      size
-      ownerId
-      ownerType
-      creator
-      parentId
-      grandParentId
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
 export const UPDATE_DOCUMENT = `
   mutation UpdateDocument($input: UpdateDocumentInput!) {
     updateDocument(input: $input) {

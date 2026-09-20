@@ -4,6 +4,7 @@ import { TESTNET_RPC } from "./utils/config";
 import { makeGraphQLRequest } from "./utils/graphql/makeGraphQLRequest";
 import { makeRestRequest } from "./utils/makeRestRequest";
 import { authenticate } from "./utils/authenticate";
+import { makeJpegFile } from "./utils/testFiles";
 import {
   CREATE_GALLERY,
   UPDATE_GALLERY,
@@ -173,8 +174,7 @@ describe("Gallery Flow", () => {
 
     test("should not allow non-owner to update image", async () => {
       // First create an image as owner
-      const imageContent = "fake image content";
-      const file = new File([imageContent], "test.jpg", { type: "image/jpeg" });
+      const file = makeJpegFile("test.jpg");
 
       const createResult = await makeRestRequest(
         "/api/gallery/createImage",
@@ -321,9 +321,8 @@ describe("Gallery Flow", () => {
 
   describe("Images", () => {
     test("should create an image with file", async () => {
-      // Create test image file
-      const imageContent = "fake image content";
-      const file = new File([imageContent], "test.jpg", { type: "image/jpeg" });
+      // Create test image file (real magic bytes — content check)
+      const file = makeJpegFile("test.jpg");
 
       const result = await makeRestRequest(
         "/api/gallery/createImage",

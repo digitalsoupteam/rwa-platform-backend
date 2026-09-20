@@ -7,6 +7,15 @@ import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 import { AppError } from '@shared/errors/app-errors';
 import { fileTypeFromBuffer } from 'file-type';
 
+// Allowed file types. Key — MIME detected from content (magic bytes), value — canonical extension.
+const EXTENSION_BY_MIME: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+  'application/pdf': 'pdf',
+};
+
 export class FileService {
   constructor(
     private readonly fileRepository: FileRepository,
@@ -23,22 +32,33 @@ export class FileService {
     setSpanAttributes({
       mimeType: data.file.type,
     });
-    const buffer = await data.file.arrayBuffer();
-    const relativePath = this.storageClient.generatePath(data.file.name);
+    const buffer = Buffer.from(await data.file.arrayBuffer());
+
+    // The content decides: type and extension are derived from magic bytes only.
+    // Undetectable content, a type outside the allowed set, or a mismatch with the
+    // declared type is rejected — the client-provided type is never trusted.
+    const detected = await fileTypeFromBuffer(buffer);
+    const declared = data.file.type.split(';')[0].trim().toLowerCase();
+    const extension = detected ? EXTENSION_BY_MIME[detected.mime] : undefined;
+
+    if (!detected || !extension || detected.mime !== declared) {
+      throw new AppError({
+        message: 'File type is not allowed',
+        statusCode: 400,
+        code: 'VALIDATION_ERROR',
+      });
+    }
+
+    const relativePath = this.storageClient.generatePath(extension);
 
     // Save file to storage
-    await this.storageClient.saveFile(relativePath, Buffer.from(buffer));
-
-    // Determine MIME type from file content (magic bytes).
-    // Text files (.txt, .csv) have no magic bytes — fallback to client-provided type (stripped of parameters).
-    const detected = await fileTypeFromBuffer(Buffer.from(buffer));
-    const mimeType = detected?.mime ?? data.file.type.split(';')[0].trim();
+    await this.storageClient.saveFile(relativePath, buffer);
 
     const file = await this.fileRepository.create({
       name: data.file.name,
       path: relativePath,
       size: data.file.size,
-      mimeType,
+      mimeType: detected.mime,
     });
 
     return {

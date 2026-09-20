@@ -23,6 +23,7 @@ import {
 } from "./utils/graphql/schema/rwa";
 import { GET_SIGNATURE_TASK } from "./utils/graphql/schema/signers-manager";
 import { requestHold, requestGas } from "./utils/requestTokens";
+import { makePngFile } from "./utils/testFiles";
 
 describe("RWA Flow", () => {
   let chainId: string;
@@ -468,7 +469,7 @@ describe("RWA Flow", () => {
     });
 
     test("should upload business image", async () => {
-      const file = new File(["fake image content"], "business.png", { type: "image/png" });
+      const file = makePngFile("business.png");
 
       const result = await makeRestRequest(
         "/api/business/uploadImage",
@@ -1167,7 +1168,7 @@ describe("RWA Flow", () => {
     });
 
     test("should upload pool image successfully", async () => {
-      const file = new File(["fake image content"], "pool.png", { type: "image/png" });
+      const file = makePngFile("pool.png");
 
       const result = await makeRestRequest(
         "/api/pool/uploadImage",

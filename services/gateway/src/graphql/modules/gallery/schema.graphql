@@ -1,5 +1,4 @@
 scalar JSON
-scalar Upload
 
 # Gallery type
 type Gallery {
@@ -50,14 +49,6 @@ input UpdateGalleryInput {
 
 input UpdateGalleryDataInput {
   name: String!
-}
-
-# Create image input
-input CreateImageInput {
-  galleryId: String!
-  name: String!
-  description: String!
-  file: Upload
 }
 
 # Update image input
@@ -116,9 +107,6 @@ extend type Mutation {
 
   # Delete gallery
   deleteGallery(id: ID!): ID!
-
-  # Create new image
-  createImage(input: CreateImageInput!): Image!
 
   # Update existing image
   updateImage(input: UpdateImageInput!): Image!

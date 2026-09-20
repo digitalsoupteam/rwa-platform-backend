@@ -3,7 +3,6 @@ import { getDocument } from './queries/getDocument';
 import { getDocuments } from './queries/getDocuments';
 import { getFolder } from './queries/getFolder';
 import { getFolders } from './queries/getFolders';
-import { createDocument } from './mutations/createDocument';
 import { updateDocument } from './mutations/updateDocument';
 import { deleteDocument } from './mutations/deleteDocument';
 import { createFolder } from './mutations/createFolder';
@@ -18,7 +17,6 @@ export const documentsResolvers: Resolvers = {
     getFolders,
   },
   Mutation: {
-    createDocument,
     updateDocument,
     deleteDocument,
     createFolder,

@@ -24,7 +24,7 @@ export const uploadImageController = new Elysia({ name: 'UploadImageController' 
 
     const { file, galleryId, name, description } = body;
 
-    // Validate file MIME type — same as createImage resolver
+    // Validate file MIME type
     const mimeType = file.type.split(';')[0].trim();
     if (!CONFIG.FILE_VALIDATION.GALLERY_ALLOWED_MIME_TYPES.includes(mimeType)) {
       throw new AppError({
@@ -34,7 +34,7 @@ export const uploadImageController = new Elysia({ name: 'UploadImageController' 
       });
     }
 
-    // Get gallery info — same as createImage resolver
+    // Get gallery info
     const galleryResponse = await galleryClient.getGallery.post({ id: galleryId });
     if (galleryResponse.error) {
       throw new AppError({ message: 'Failed to get gallery data', statusCode: 502, code: 'BAD_GATEWAY' });
@@ -42,7 +42,7 @@ export const uploadImageController = new Elysia({ name: 'UploadImageController' 
 
     const gallery = galleryResponse.data;
 
-    // Ownership check — same as createImage resolver
+    // Ownership check
     await ownershipService.checkOwnership({
       userId: user.id,
       ownerId: gallery.ownerId,

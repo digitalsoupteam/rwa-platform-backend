@@ -14,12 +14,12 @@ export class StorageClient {
 
   /**
    * Generates a relative storage path based on current date/hour.
+   * `ext` is the canonical extension derived from the file content (never from the uploaded name).
    * Returns e.g. "2025/06/27/15/uuid.pdf" — relative, without rootDir.
    */
   @TraceDecorator()
-  generatePath(originalName: string): string {
+  generatePath(ext: string): string {
     const uuid = randomUUID();
-    const ext = originalName.split('.').pop() || '';
     const now = new Date();
     const date = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
     const hour = String(now.getHours());

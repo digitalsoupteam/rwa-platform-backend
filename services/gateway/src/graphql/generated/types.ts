@@ -16,7 +16,6 @@ export type Scalars = {
   Int: { input: number; output: number };
   Float: { input: number; output: number };
   JSON: { input: { [key: string]: any }; output: { [key: string]: any } };
-  Upload: { input: any; output: any };
 };
 
 export type AddMemberInput = {
@@ -193,12 +192,6 @@ export type CreateCompanyInput = {
   socials?: InputMaybe<Array<SocialLinkInput>>;
 };
 
-export type CreateDocumentInput = {
-  file: Scalars['Upload']['input'];
-  folderId: Scalars['String']['input'];
-  name: Scalars['String']['input'];
-};
-
 export type CreateFaqAnswerInput = {
   answer: Scalars['String']['input'];
   order?: InputMaybe<Scalars['Int']['input']>;
@@ -222,13 +215,6 @@ export type CreateGalleryInput = {
   name: Scalars['String']['input'];
   parentId: Scalars['String']['input'];
   type: GalleryParentTypes;
-};
-
-export type CreateImageInput = {
-  description: Scalars['String']['input'];
-  file?: InputMaybe<Scalars['Upload']['input']>;
-  galleryId: Scalars['String']['input'];
-  name: Scalars['String']['input'];
 };
 
 export type CreateMessageInput = {
@@ -821,12 +807,10 @@ export type Mutation = {
   createBusiness: Business;
   createBusinessWithAI: Business;
   createCompany: Company;
-  createDocument: Document;
   createFaqAnswer: FaqAnswer;
   createFaqTopic: FaqTopic;
   createFolder: Folder;
   createGallery: Gallery;
-  createImage: Image;
   createMessage: Array<Message>;
   createPool: Pool;
   createPoolWithAI: Pool;
@@ -921,10 +905,6 @@ export type MutationCreateCompanyArgs = {
   input: CreateCompanyInput;
 };
 
-export type MutationCreateDocumentArgs = {
-  input: CreateDocumentInput;
-};
-
 export type MutationCreateFaqAnswerArgs = {
   input: CreateFaqAnswerInput;
 };
@@ -939,10 +919,6 @@ export type MutationCreateFolderArgs = {
 
 export type MutationCreateGalleryArgs = {
   input: CreateGalleryInput;
-};
-
-export type MutationCreateImageArgs = {
-  input: CreateImageInput;
 };
 
 export type MutationCreateMessageArgs = {
@@ -2238,12 +2214,10 @@ export type ResolversTypes = ResolversObject<{
   CreateBusinessInput: CreateBusinessInput;
   CreateBusinessWithAIInput: CreateBusinessWithAiInput;
   CreateCompanyInput: CreateCompanyInput;
-  CreateDocumentInput: CreateDocumentInput;
   CreateFaqAnswerInput: CreateFaqAnswerInput;
   CreateFaqTopicInput: CreateFaqTopicInput;
   CreateFolderInput: CreateFolderInput;
   CreateGalleryInput: CreateGalleryInput;
-  CreateImageInput: CreateImageInput;
   CreateMessageInput: CreateMessageInput;
   CreatePoolInput: CreatePoolInput;
   CreatePoolWithAIInput: CreatePoolWithAiInput;
@@ -2396,7 +2370,6 @@ export type ResolversTypes = ResolversObject<{
   UpdateTopicDataInput: UpdateTopicDataInput;
   UpdateTopicInput: UpdateTopicInput;
   UpdateWebhookEndpointInput: UpdateWebhookEndpointInput;
-  Upload: ResolverTypeWrapper<Scalars['Upload']['output']>;
   User: ResolverTypeWrapper<User>;
   UserPermission: ResolverTypeWrapper<UserPermission>;
   UserWithPermissions: ResolverTypeWrapper<UserWithPermissions>;
@@ -2426,12 +2399,10 @@ export type ResolversParentTypes = ResolversObject<{
   CreateBusinessInput: CreateBusinessInput;
   CreateBusinessWithAIInput: CreateBusinessWithAiInput;
   CreateCompanyInput: CreateCompanyInput;
-  CreateDocumentInput: CreateDocumentInput;
   CreateFaqAnswerInput: CreateFaqAnswerInput;
   CreateFaqTopicInput: CreateFaqTopicInput;
   CreateFolderInput: CreateFolderInput;
   CreateGalleryInput: CreateGalleryInput;
-  CreateImageInput: CreateImageInput;
   CreateMessageInput: CreateMessageInput;
   CreatePoolInput: CreatePoolInput;
   CreatePoolWithAIInput: CreatePoolWithAiInput;
@@ -2575,7 +2546,6 @@ export type ResolversParentTypes = ResolversObject<{
   UpdateTopicDataInput: UpdateTopicDataInput;
   UpdateTopicInput: UpdateTopicInput;
   UpdateWebhookEndpointInput: UpdateWebhookEndpointInput;
-  Upload: Scalars['Upload']['output'];
   User: User;
   UserPermission: UserPermission;
   UserWithPermissions: UserWithPermissions;
@@ -3054,12 +3024,6 @@ export type MutationResolvers<
     ContextType,
     RequireFields<MutationCreateCompanyArgs, 'input'>
   >;
-  createDocument?: Resolver<
-    ResolversTypes['Document'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationCreateDocumentArgs, 'input'>
-  >;
   createFaqAnswer?: Resolver<
     ResolversTypes['FaqAnswer'],
     ParentType,
@@ -3083,12 +3047,6 @@ export type MutationResolvers<
     ParentType,
     ContextType,
     RequireFields<MutationCreateGalleryArgs, 'input'>
-  >;
-  createImage?: Resolver<
-    ResolversTypes['Image'],
-    ParentType,
-    ContextType,
-    RequireFields<MutationCreateImageArgs, 'input'>
   >;
   createMessage?: Resolver<
     Array<ResolversTypes['Message']>,
@@ -4113,10 +4071,6 @@ export type UnlockTimeResponseResolvers<
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
-export interface UploadScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['Upload'], any> {
-  name: 'Upload';
-}
-
 export type UserResolvers<
   ContextType = GraphQLContext,
   ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User'],
@@ -4256,7 +4210,6 @@ export type Resolvers<ContextType = GraphQLContext> = ResolversObject<{
   TransactionEvent?: TransactionEventResolvers<ContextType>;
   TreasuryWithdraw?: TreasuryWithdrawResolvers<ContextType>;
   UnlockTimeResponse?: UnlockTimeResponseResolvers<ContextType>;
-  Upload?: GraphQLScalarType;
   User?: UserResolvers<ContextType>;
   UserPermission?: UserPermissionResolvers<ContextType>;
   UserWithPermissions?: UserWithPermissionsResolvers<ContextType>;
