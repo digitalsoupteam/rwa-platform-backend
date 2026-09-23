@@ -1,7 +1,6 @@
 import type { ConsumeMessage } from 'amqplib';
 import { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
 import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
-import { AppError } from '@shared/errors/app-errors';
 
 export interface SignatureResponse {
   taskId: string;
@@ -13,9 +12,16 @@ export interface SignatureResponse {
 export class SignersManagerClient {
   private readonly SIGN_EXCHANGE = 'sign.exchange';
   private readonly RESPONSES_QUEUE = 'sign.responses';
-  private requestsQueue: string | null = null;
+  private readonly REQUESTS_QUEUE: string;
 
-  constructor(private readonly rabbitClient: RabbitMQClient) {}
+  constructor(
+    private readonly rabbitClient: RabbitMQClient,
+    signerAddress: string,
+  ) {
+    // Durable per-signer queue: a request sent while this signer is down stays
+    // in the queue and is processed after it comes back (until the TTL kicks in).
+    this.REQUESTS_QUEUE = `sign.requests.${signerAddress.toLowerCase()}`;
+  }
 
   @TraceDecorator()
   async initialize(): Promise<void> {
@@ -24,16 +30,14 @@ export class SignersManagerClient {
       durable: true,
     });
 
-    // Create unique queue for this signer
-    const channel = this.rabbitClient.getChannel();
-    const { queue } = await channel.assertQueue('', {
-      exclusive: true,
-      autoDelete: true,
+    // Setup per-signer requests queue
+    await this.rabbitClient.setupQueue(this.REQUESTS_QUEUE, {
+      durable: true,
+      arguments: {
+        'x-message-ttl': 900000, // 15 minutes - requests are useless after the signing window
+      },
     });
-    this.requestsQueue = queue;
-
-    // Bind queue to exchange
-    await this.rabbitClient.bindQueue(queue, this.SIGN_EXCHANGE, '');
+    await this.rabbitClient.bindQueue(this.REQUESTS_QUEUE, this.SIGN_EXCHANGE, '');
 
     // Setup responses queue
     await this.rabbitClient.setupQueue(this.RESPONSES_QUEUE, {
@@ -57,15 +61,7 @@ export class SignersManagerClient {
    */
   @TraceDecorator()
   async consumeRequests(handler: (msg: ConsumeMessage | null) => Promise<void>): Promise<void> {
-    if (!this.requestsQueue) {
-      throw new AppError({
-        message: 'Requests queue not initialized',
-        statusCode: 503,
-        code: 'SERVICE_UNAVAILABLE',
-      });
-    }
-
-    await this.rabbitClient.consume(this.requestsQueue, handler, { noAck: false });
+    await this.rabbitClient.consume(this.REQUESTS_QUEUE, handler, { noAck: false });
   }
 
   @TraceDecorator()

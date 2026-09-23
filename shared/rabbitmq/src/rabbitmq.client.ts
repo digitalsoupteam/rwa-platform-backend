@@ -1,5 +1,6 @@
-import { connect } from 'amqplib';
-import type { Channel, ConsumeMessage, ChannelModel } from 'amqplib';
+import { connect } from 'amqp-connection-manager';
+import type { AmqpConnectionManager, Channel, ChannelWrapper } from 'amqp-connection-manager';
+import type { ConsumeMessage } from 'amqplib';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 import { AppError } from '@shared/errors/app-errors';
 
@@ -9,11 +10,24 @@ export interface RabbitMQConfig {
   reconnectInterval?: number;
 }
 
+type ChannelSetup = (channel: Channel) => Promise<unknown>;
+
+/**
+ * RabbitMQ client built on amqp-connection-manager.
+ *
+ * - reconnects automatically and replays every registered setup (exchanges,
+ *   queues, bindings) and consumer after a connection loss;
+ * - publishes in confirm mode: `publish()`/`sendToQueue()` resolve only after
+ *   the broker has confirmed the message;
+ * - messages published while disconnected are queued in memory and sent after
+ *   the connection is restored.
+ */
 export class RabbitMQClient {
-  private connection: ChannelModel | null = null;
-  private channel: Channel | null = null;
-  private isShuttingDown: boolean = false;
-  private reconnectAttempts: number = 0;
+  private connection: AmqpConnectionManager | null = null;
+  private channelWrapper: ChannelWrapper | null = null;
+  private currentChannel: Channel | null = null;
+  private processingSetup = false;
+  private readonly setups: ChannelSetup[] = [];
 
   constructor(private config: RabbitMQConfig) {
     this.config.reconnectAttempts = this.config.reconnectAttempts || 5;
@@ -21,27 +35,54 @@ export class RabbitMQClient {
   }
 
   async connect(): Promise<void> {
-    try {
-      this.connection = await connect(this.config.uri);
-      this.channel = await this.connection.createChannel();
-
-      this.connection.on('error', this.handleConnectionError.bind(this));
-      this.connection.on('close', this.handleConnectionClose.bind(this));
-
-      this.reconnectAttempts = 0;
-      logger.info('Connected to RabbitMQ');
-    } catch (error) {
-      logger.error('Failed to connect to RabbitMQ:', error);
-      throw error;
+    if (this.connection) {
+      return;
     }
+
+    const reconnectTimeInSeconds = Math.max(1, Math.round((this.config.reconnectInterval || 5000) / 1000));
+
+    this.connection = connect([this.config.uri], { reconnectTimeInSeconds });
+
+    this.connection.on('connect', () => logger.info('Connected to RabbitMQ'));
+    this.connection.on('disconnect', ({ err }) => {
+      this.currentChannel = null;
+      logger.warn(`RabbitMQ connection closed: ${err?.message ?? 'unknown reason'}`);
+    });
+    this.connection.on('connectFailed', ({ err }) => logger.error('Failed to connect to RabbitMQ:', err));
+
+    this.channelWrapper = this.connection.createChannel({
+      name: 'shared-rabbitmq-client',
+      json: false,
+      // Runs on every (re)connect. Setups are replayed sequentially so that
+      // assertions and bindings happen in the same order they were registered.
+      setup: async (channel: Channel) => {
+        this.currentChannel = channel;
+        this.processingSetup = true;
+        try {
+          for (const setup of this.setups) {
+            try {
+              await setup(channel);
+            } catch (error) {
+              logger.error('RabbitMQ: setup registration failed', error);
+            }
+          }
+        } finally {
+          this.processingSetup = false;
+        }
+      },
+    });
+
+    this.channelWrapper.on('error', (error: Error, { name }: { name: string }) =>
+      logger.error(`RabbitMQ channel error (${name}): ${error?.message ?? error}`),
+    );
   }
 
   async disconnect(): Promise<void> {
-    this.isShuttingDown = true;
+    this.currentChannel = null;
 
-    if (this.channel) {
-      await this.channel.close();
-      this.channel = null;
+    if (this.channelWrapper) {
+      await this.channelWrapper.close();
+      this.channelWrapper = null;
     }
 
     if (this.connection) {
@@ -50,36 +91,21 @@ export class RabbitMQClient {
     }
   }
 
-  getChannel(): Channel {
-    if (!this.channel) {
-      throw new AppError({
-        message: 'RabbitMQ channel not initialized',
-        statusCode: 503,
-        code: 'SERVICE_UNAVAILABLE',
-      });
-    }
-    return this.channel;
-  }
-
   async setupQueue(queue: string, options?: any): Promise<void> {
-    const channel = this.getChannel();
-    await channel.assertQueue(queue, options);
+    await this.registerSetup((channel) => channel.assertQueue(queue, options));
   }
 
   async setupExchange(exchange: string, type: string, options?: any): Promise<void> {
-    const channel = this.getChannel();
-    await channel.assertExchange(exchange, type, options);
+    await this.registerSetup((channel) => channel.assertExchange(exchange, type, options));
   }
 
   async bindQueue(queue: string, exchange: string, pattern: string): Promise<void> {
-    const channel = this.getChannel();
-    await channel.bindQueue(queue, exchange, pattern);
+    await this.registerSetup((channel) => channel.bindQueue(queue, exchange, pattern));
   }
 
   async publish(exchange: string, routingKey: string, content: any, options?: any): Promise<void> {
-    const channel = this.getChannel();
     const buffer = Buffer.from(JSON.stringify(content));
-    channel.publish(exchange, routingKey, buffer, {
+    await this.getWrapper().publish(exchange, routingKey, buffer, {
       persistent: true,
       contentType: 'application/json',
       ...options,
@@ -87,60 +113,54 @@ export class RabbitMQClient {
   }
 
   async sendToQueue(queue: string, content: any, options?: any): Promise<void> {
-    const channel = this.getChannel();
     const buffer = Buffer.from(JSON.stringify(content));
-    channel.sendToQueue(queue, buffer, {
+    await this.getWrapper().sendToQueue(queue, buffer, {
       persistent: true,
       contentType: 'application/json',
       ...options,
     });
   }
 
-  async consume(queue: string, handler: (msg: ConsumeMessage | null) => Promise<void>, options?: any): Promise<void> {
-    const channel = this.getChannel();
-    await channel.consume(queue, handler, options);
+  async consume(
+    queue: string,
+    handler: (msg: ConsumeMessage | null) => Promise<void>,
+    options?: { noAck?: boolean; prefetch?: number },
+  ): Promise<void> {
+    const { prefetch, noAck = false } = options ?? {};
+
+    // ChannelWrapper re-establishes consumers on reconnect and re-applies prefetch.
+    await this.getWrapper().consume(queue, handler, {
+      noAck,
+      ...(typeof prefetch === 'number' ? { prefetch } : {}),
+    });
   }
 
   async ack(message: ConsumeMessage): Promise<void> {
-    const channel = this.getChannel();
-    channel.ack(message);
+    this.getWrapper().ack(message);
   }
 
   async nack(message: ConsumeMessage, requeue: boolean = true): Promise<void> {
-    const channel = this.getChannel();
-    channel.nack(message, false, requeue);
+    this.getWrapper().nack(message, false, requeue);
   }
 
-  private handleConnectionError(error: any): void {
-    if (this.isShuttingDown) return;
-    logger.error('RabbitMQ connection error:', error);
-    this.reconnect();
-  }
+  private async registerSetup(setup: ChannelSetup): Promise<void> {
+    this.setups.push(setup);
 
-  private handleConnectionClose(): void {
-    if (this.isShuttingDown) return;
-    logger.warn('RabbitMQ connection closed unexpectedly');
-    this.reconnect();
-  }
-
-  private async reconnect(): Promise<void> {
-    if (this.isShuttingDown) return;
-
-    this.reconnectAttempts++;
-
-    if (this.reconnectAttempts > this.config.reconnectAttempts!) {
-      logger.error(`Failed to reconnect to RabbitMQ after ${this.reconnectAttempts} attempts`);
-      return;
+    // Apply the registration immediately when the broker is already connected
+    // and no setup run is in flight; otherwise it is applied on the next connect.
+    if (this.currentChannel && !this.processingSetup) {
+      await setup(this.currentChannel);
     }
+  }
 
-    logger.info(`Attempting to reconnect to RabbitMQ (${this.reconnectAttempts}/${this.config.reconnectAttempts})`);
-
-    setTimeout(async () => {
-      try {
-        await this.connect();
-      } catch (error) {
-        logger.error('Failed to reconnect to RabbitMQ:', error);
-      }
-    }, this.config.reconnectInterval);
+  private getWrapper(): ChannelWrapper {
+    if (!this.channelWrapper) {
+      throw new AppError({
+        message: 'RabbitMQ channel not initialized',
+        statusCode: 503,
+        code: 'SERVICE_UNAVAILABLE',
+      });
+    }
+    return this.channelWrapper;
   }
 }
