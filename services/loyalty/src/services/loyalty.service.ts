@@ -114,6 +114,8 @@ export class LoyaltyService {
       token,
       amount,
       event.transactionHash,
+      event.logIndex,
+      event.blockNumber,
     );
   }
 
@@ -179,6 +181,8 @@ export class LoyaltyService {
       token,
       amount,
       event.transactionHash,
+      event.logIndex,
+      event.blockNumber,
     );
   }
 
@@ -245,6 +249,8 @@ export class LoyaltyService {
       holdToken,
       feePaid,
       event.transactionHash,
+      event.logIndex,
+      event.blockNumber,
     );
   }
 
@@ -324,6 +330,8 @@ export class LoyaltyService {
       holdToken,
       totalFee,
       event.transactionHash,
+      event.logIndex,
+      event.blockNumber,
     );
   }
 
@@ -432,6 +440,8 @@ export class LoyaltyService {
     tokenAddress: string,
     commissionAmount: string,
     transactionHash: string,
+    logIndex: number,
+    blockNumber: number,
   ) {
     const referral = await this.referralRepository.findByUserId(userId);
 
@@ -443,6 +453,28 @@ export class LoyaltyService {
     const commission = BigInt(commissionAmount);
     const rewardBasisPoints = BigInt(Math.floor(this.referralRewardPercentage * 10000));
     const rewardAmount = ((commission * rewardBasisPoints) / BigInt(10000)).toString();
+
+    // Claim history row doubles as the processed-event marker: the unique index
+    // (transactionHash + logIndex + chainId) rejects re-delivered events, so the
+    // reward is never credited twice.
+    try {
+      await this.referrerClaimHistoryRepository.create({
+        referrerWallet: referral.referrerWallet,
+        referrerId: referral.referrerId,
+        chainId,
+        tokenAddress,
+        referralWallet: userWallet,
+        amount: rewardAmount,
+        transactionHash,
+        logIndex,
+        blockNumber,
+      });
+    } catch (error) {
+      if ((error as { code?: number }).code === 11000) {
+        return;
+      }
+      throw error;
+    }
 
     await this.feesRepository.addReferralReward(
       referral.referrerWallet,
