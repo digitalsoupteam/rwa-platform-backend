@@ -90,7 +90,7 @@ feesSchema.index({ userWallet: 1 });
 feesSchema.index({ userId: 1 });
 feesSchema.index({ chainId: 1 });
 feesSchema.index({ tokenAddress: 1 });
-feesSchema.index({ userAddress: 1, chainId: 1, tokenAddress: 1 }, { unique: true });
+feesSchema.index({ userWallet: 1, chainId: 1, tokenAddress: 1 }, { unique: true });
 feesSchema.index({ createdAt: -1 });
 feesSchema.index({ referralRewardAmount: -1 });
 

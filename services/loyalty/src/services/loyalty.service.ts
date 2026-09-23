@@ -77,9 +77,10 @@ export class LoyaltyService {
       transactionHash: event.transactionHash,
       chainId: String(event.chainId),
     });
-    const { sender, amount, token } = event.data;
+    const { amount, token } = event.data;
+    const sender = event.data.sender.toLowerCase();
 
-    const userReferral = await this.referralRepository.findByUserWallet(sender.toLowerCase());
+    const userReferral = await this.referralRepository.findByUserWallet(sender);
     if (!userReferral) {
       return;
     }
@@ -141,9 +142,10 @@ export class LoyaltyService {
       transactionHash: event.transactionHash,
       chainId: String(event.chainId),
     });
-    const { sender, amount, token } = event.data;
+    const { amount, token } = event.data;
+    const sender = event.data.sender.toLowerCase();
 
-    const userReferral = await this.referralRepository.findByUserWallet(sender.toLowerCase());
+    const userReferral = await this.referralRepository.findByUserWallet(sender);
     if (!userReferral) {
       return;
     }
@@ -212,9 +214,10 @@ export class LoyaltyService {
       transactionHash: event.transactionHash,
       chainId: String(event.chainId),
     });
-    const { minter, feePaid, holdToken } = event.data;
+    const { feePaid, holdToken } = event.data;
+    const minter = event.data.minter.toLowerCase();
 
-    const userReferral = await this.referralRepository.findByUserWallet(minter.toLowerCase());
+    const userReferral = await this.referralRepository.findByUserWallet(minter);
     if (!userReferral) {
       return;
     }
@@ -279,9 +282,10 @@ export class LoyaltyService {
       transactionHash: event.transactionHash,
       chainId: String(event.chainId),
     });
-    const { burner, holdFeePaid, bonusFeePaid, holdToken } = event.data;
+    const { holdFeePaid, bonusFeePaid, holdToken } = event.data;
+    const burner = event.data.burner.toLowerCase();
 
-    const userReferral = await this.referralRepository.findByUserWallet(burner.toLowerCase());
+    const userReferral = await this.referralRepository.findByUserWallet(burner);
     if (!userReferral) {
       return;
     }
@@ -347,16 +351,17 @@ export class LoyaltyService {
       chainId: String(event.chainId),
     });
     const { user, token, amount } = event.data;
-    const referrerUser = await this.referralRepository.findByReferrerWallet(user.toLowerCase());
+    const referrerWallet = user.toLowerCase();
+    const referrerUser = await this.referralRepository.findByReferrerWallet(referrerWallet);
 
-    if (!referrerUser) {
+    if (!referrerUser || !referrerUser.referrerId) {
       return;
     }
 
     // Add withdrawn amount to referrer's withdraw record
     await this.referrerWithdrawRepository.addWithdrawnAmount(
-      user,
-      referrerUser.userId,
+      referrerWallet,
+      referrerUser.referrerId,
       String(event.chainId),
       token,
       amount,
