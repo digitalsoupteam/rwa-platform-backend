@@ -36,10 +36,18 @@ export const requestBusinessApprovalSignatures: MutationResolvers['requestBusine
     permission: 'deploy',
   });
 
+  // Wallet inputs are deprecated and ignored: the owner wallet is derived from the entity owner,
+  // the deployer is the authenticated user.
+  const ownerWallet = await services.ownership.getOwnerWallet({
+    user,
+    ownerId: business.ownerId,
+    ownerType: business.ownerType,
+  });
+
   const response = await clients.rwaClient.requestBusinessApprovalSignatures.post({
     id: input.id,
-    ownerWallet: input.ownerWallet,
-    deployerWallet: input.deployerWallet,
+    ownerWallet,
+    deployerWallet: user.wallet,
     createRWAFee: input.createRWAFee,
   });
 

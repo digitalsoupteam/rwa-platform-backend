@@ -227,15 +227,15 @@ input IncomingTrancheInput {
 
 input RequestBusinessApprovalSignaturesInput {
   id: ID!
-  ownerWallet: String!
-  deployerWallet: String!
+  ownerWallet: String @deprecated(reason: "Ignored: the owner wallet is derived server-side from the entity owner")
+  deployerWallet: String @deprecated(reason: "Ignored: the deployer wallet is derived server-side from the authenticated user")
   createRWAFee: String!
 }
 
 input RequestPoolApprovalSignaturesInput {
   id: ID!
-  ownerWallet: String!
-  deployerWallet: String!
+  ownerWallet: String @deprecated(reason: "Ignored: the owner wallet is derived server-side from the entity owner")
+  deployerWallet: String @deprecated(reason: "Ignored: the deployer wallet is derived server-side from the authenticated user")
   createPoolFeeRatio: String!
 }
 

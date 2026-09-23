@@ -35,10 +35,18 @@ export const requestPoolApprovalSignatures: MutationResolvers['requestPoolApprov
     permission: 'deploy',
   });
 
+  // Wallet inputs are deprecated and ignored: the owner wallet is derived from the entity owner,
+  // the deployer is the authenticated user.
+  const ownerWallet = await services.ownership.getOwnerWallet({
+    user,
+    ownerId: pool.ownerId,
+    ownerType: pool.ownerType,
+  });
+
   const response = await clients.rwaClient.requestPoolApprovalSignatures.post({
     id: input.id,
-    ownerWallet: input.ownerWallet,
-    deployerWallet: input.deployerWallet,
+    ownerWallet,
+    deployerWallet: user.wallet,
     createPoolFeeRatio: input.createPoolFeeRatio,
   });
 
