@@ -8,6 +8,7 @@ export const createClientsPlugin = async (
   rabbitMqUri: string,
   maxReconnectAttempts: number,
   reconnectInterval: number,
+  signerAddress: string,
 ) => {
   const rabbitMQClient = withTraceSync(
     'signer.init.clients.rabbitmq',
@@ -21,7 +22,7 @@ export const createClientsPlugin = async (
 
   const signersManagerClient = withTraceSync(
     'signer.init.clients.signers_manager',
-    () => new SignersManagerClient(rabbitMQClient),
+    () => new SignersManagerClient(rabbitMQClient, signerAddress),
   );
 
   await withTraceAsync('signer.init.clients.initialize', async () => {

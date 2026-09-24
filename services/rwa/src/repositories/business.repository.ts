@@ -36,6 +36,7 @@ export class BusinessRepository {
         | 'approvalSignaturesTaskId'
         | 'approvalSignaturesTaskExpired'
         | 'riskScoreEvaluationProcess'
+        | 'riskScoreEvaluationStartedAt'
         | 'country'
         | 'businessType'
         | 'socials'

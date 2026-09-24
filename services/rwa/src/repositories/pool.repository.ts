@@ -89,6 +89,7 @@ export class PoolRepository {
         | 'approvalSignaturesTaskId'
         | 'approvalSignaturesTaskExpired'
         | 'riskScoreEvaluationProcess'
+        | 'riskScoreEvaluationStartedAt'
         | 'image'
         | 'fileId'
       >

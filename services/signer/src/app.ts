@@ -1,4 +1,5 @@
 import { Elysia } from 'elysia';
+import { Wallet } from 'ethers';
 import { monitoringPlugin } from '@shared/monitoring/src/monitoring.plugin';
 import { healthPlugin } from '@shared/monitoring/src/health.plugin';
 import { ErrorHandlerPlugin } from '@shared/errors/error-handler.plugin';
@@ -14,9 +15,11 @@ export async function createApp(
   reconnectInterval: number,
   privateKey: string,
 ) {
+  const signerAddress = new Wallet(privateKey).address;
+
   const clientsPlugin = await withTraceAsync(
     'signer.init.clients_plugin',
-    async () => await createClientsPlugin(rabbitMqUri, maxReconnectAttempts, reconnectInterval),
+    async () => await createClientsPlugin(rabbitMqUri, maxReconnectAttempts, reconnectInterval, signerAddress),
   );
 
   const servicesPlugin = withTraceSync('signer.init.services_plugin', () =>

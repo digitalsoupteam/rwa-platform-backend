@@ -685,12 +685,26 @@ services:
   mongodb:
     restart: unless-stopped
     image: mongo:latest
+    # Single-node replica set: required for multi-document transactions
+    # (exactly-once processing of blockchain events in consumer services).
+    command: ["--replSet", "rs0", "--bind_ip_all"]
     volumes:
       - mongodb_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      # Initializes the replica set on the first start and reports healthy
+      # only once a primary has been elected (transactions require a primary).
+      test:
+        - CMD
+        - mongosh
+        - --quiet
+        - --eval
+        - >-
+          const getStatus = () => { try { return rs.status(); } catch (e) { return null; } };
+          let status = getStatus();
+          if (status === null) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'mongodb:27017' }] }); sleep(3000); status = getStatus(); }
+          if (!status || status.ok !== 1) { throw new Error('replica set is not ready'); }
       interval: 10s
-      timeout: 5s
+      timeout: 10s
       retries: 10
       start_period: 15s
     networks:

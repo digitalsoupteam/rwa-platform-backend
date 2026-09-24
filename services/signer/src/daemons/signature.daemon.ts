@@ -4,6 +4,7 @@ import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
 import { LogDecorator } from '@shared/monitoring/src/logDecorator';
 import { AppError } from '@shared/errors/app-errors';
+import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
 /**
  * Daemon for handling signature requests
@@ -68,8 +69,18 @@ export class SignatureDaemon {
       // Acknowledge message
       await this.signersManagerClient.ackMessage(message);
     } catch (error) {
-      // Reject message and requeue
-      await this.signersManagerClient.nackMessage(message, true);
+      const code = (error as { code?: string } | null)?.code;
+      const isPermanent = code === 'VALIDATION_ERROR' || code === 'EXPIRED';
+
+      if (isPermanent || message.redelivered) {
+        // Invalid or expired requests can never succeed; a message that already
+        // failed once is dropped instead of being redelivered forever.
+        logger.error('Dropping signature request that cannot be processed:', error);
+        await this.signersManagerClient.ackMessage(message);
+      } else {
+        // One retry for transient errors (the broker redelivers with `redelivered` set).
+        await this.signersManagerClient.nackMessage(message, true);
+      }
     }
   }
 

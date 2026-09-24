@@ -14,6 +14,10 @@ import { LogDecorator } from '@shared/monitoring/src/logDecorator';
 import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 import { buildFileUrl } from '@shared/files/src/index';
 
+// An evaluation stuck "in progress" longer than this (seconds) is considered
+// stale - its request or result was lost on the way - and may be requested again.
+const EVALUATION_STALE_AFTER_SECONDS = 60 * 60;
+
 export class PoolService {
   constructor(
     private readonly poolRepository: PoolRepository,
@@ -242,7 +246,15 @@ Example response:
     setSpanAttributes({ entityId: id, entityType: 'pool' });
     const pool = await this.poolRepository.findById(id);
 
-    if (pool.riskScoreEvaluationProcess) {
+    const now = Math.floor(Date.now() / 1000);
+
+    // An evaluation stuck "in progress" is only respected for a limited time:
+    // if its request or result was lost somewhere down the chain, the flag
+    // goes stale and the user can request a fresh evaluation.
+    const startedAt = Number(pool.riskScoreEvaluationStartedAt || 0);
+    const isStale = !startedAt || now - startedAt >= EVALUATION_STALE_AFTER_SECONDS;
+
+    if (pool.riskScoreEvaluationProcess && !isStale) {
       throw new AppError({
         message: 'Evaluation already in progress',
         statusCode: 403,
@@ -252,13 +264,23 @@ Example response:
 
     await this.poolRepository.updatePool(id, {
       riskScoreEvaluationProcess: true,
+      riskScoreEvaluationStartedAt: now,
     });
 
-    await this.evaluationRequestsClient.publishEvaluationRequest('evaluatePool', {
-      poolId: id,
-      ownerId: pool.ownerId,
-      ownerType: pool.ownerType,
-    });
+    try {
+      await this.evaluationRequestsClient.publishEvaluationRequest('evaluatePool', {
+        poolId: id,
+        ownerId: pool.ownerId,
+        ownerType: pool.ownerType,
+      });
+    } catch (error) {
+      // The request never went out - clear the flag so the user can retry.
+      await this.poolRepository.updatePool(id, {
+        riskScoreEvaluationProcess: false,
+        riskScoreEvaluationStartedAt: 0,
+      });
+      throw error;
+    }
 
     const updated = await this.poolRepository.findById(id);
     return this.mapPool(updated);
@@ -282,6 +304,7 @@ Example response:
     const updated = await this.poolRepository.updatePool(id, {
       riskScore,
       riskScoreEvaluationProcess: false,
+      riskScoreEvaluationStartedAt: 0,
     });
     return this.mapPool(updated);
   }
@@ -295,6 +318,7 @@ Example response:
     setSpanAttributes({ entityId: id, entityType: 'pool' });
     const updated = await this.poolRepository.updatePool(id, {
       riskScoreEvaluationProcess: false,
+      riskScoreEvaluationStartedAt: 0,
     });
     return this.mapPool(updated);
   }
