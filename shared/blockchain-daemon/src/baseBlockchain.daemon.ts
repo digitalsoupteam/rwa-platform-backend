@@ -1,6 +1,7 @@
 import { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 import { metrics } from '@shared/monitoring/src/metrics';
+import { processEventExactlyOnce, isTransientDbError } from './eventProcessing';
 import type { ConsumeMessage } from 'amqplib';
 
 export interface BlockchainEvent {
@@ -27,9 +28,13 @@ const MAX_RETRIES = 3;
 /**
  * Base daemon for handling blockchain events.
  *
- * Failed events are no longer dropped: the queue dead-letters them to a retry
- * queue that holds each message for RETRY_DELAY_MS and then routes it back.
- * After MAX_RETRIES failed attempts the event is parked for manual inspection.
+ * Events are processed exactly once: a unique processed-events marker and all
+ * handler writes are committed in a single MongoDB transaction (see
+ * `processEventExactlyOnce`). Duplicate deliveries are filtered out and every
+ * failure rolls back completely, so a retry always starts from a clean slate.
+ * Failed events are dead-lettered to a retry queue (RETRY_DELAY_MS); transient
+ * infrastructure errors keep cycling through it, real failures are retried up
+ * to MAX_RETRIES times and then parked for manual inspection.
  */
 export abstract class BaseBlockchainDaemon {
   private isRunning: boolean = false;
@@ -154,26 +159,31 @@ export abstract class BaseBlockchainDaemon {
       return;
     }
 
-    try {
-      const routing = this.getEventRouting();
+    const handler = this.getEventRouting()[event.name];
+    if (!handler) {
+      logger.warn(`No handler registered for event ${event.name}`);
+      await this.rabbitClient.ack(message);
+      return;
+    }
 
-      // Get handler for this event
-      const handler = routing[event.name];
-      if (!handler) {
-        logger.warn(`No handler registered for event ${event.name}`);
-        await this.rabbitClient.ack(message);
-        return;
+    try {
+      // Exactly-once: the processed-events marker and every handler write
+      // commit atomically; duplicates roll back and are acknowledged.
+      const applied = await processEventExactlyOnce(event, () => handler(event));
+
+      if (!applied) {
+        metrics.counter('blockchain_events_duplicates_total', { queue: this.queueName });
+        logger.debug(`Skipped duplicate blockchain event ${event.name}`, {
+          transactionHash: event.transactionHash,
+          logIndex: event.logIndex,
+        });
+      } else {
+        logger.debug(`Successfully processed blockchain event ${event.name}`, {
+          transactionHash: event.transactionHash,
+        });
       }
 
-      // Process event
-      await handler(event);
-
-      // Acknowledge message
       await this.rabbitClient.ack(message);
-
-      logger.debug(`Successfully processed blockchain event ${event.name}`, {
-        transactionHash: event.transactionHash,
-      });
     } catch (error) {
       logger.error(`Error processing blockchain event ${event.name}:`, error);
       await this.retryOrPark(message, error);
@@ -181,9 +191,19 @@ export abstract class BaseBlockchainDaemon {
   }
 
   /**
-   * Failed event: retry with a delay or park it after too many failures
+   * Failed event: transient infrastructure errors keep cycling through the
+   * retry queue; everything else is retried up to MAX_RETRIES and then parked.
    */
   private async retryOrPark(message: ConsumeMessage, error: unknown): Promise<void> {
+    if (isTransientDbError(error)) {
+      metrics.counter('blockchain_event_transient_retries_total', { queue: this.queueName });
+      logger.warn(`Transient error while processing blockchain event; retrying in ${RETRY_DELAY_MS}ms`);
+      // Dead-letters to the retry queue without counting towards parking:
+      // infrastructure hiccups resolve by themselves.
+      await this.rabbitClient.nack(message, false);
+      return;
+    }
+
     const retries = this.getRetryCount(message);
 
     if (retries >= MAX_RETRIES) {
@@ -218,11 +238,20 @@ export abstract class BaseBlockchainDaemon {
       content = raw;
     }
 
-    await this.rabbitClient.sendToQueue(this.parkedQueueName, {
-      reason,
-      parkedAt: Date.now(),
-      content,
-    });
+    try {
+      await this.rabbitClient.sendToQueue(this.parkedQueueName, {
+        reason,
+        parkedAt: Date.now(),
+        content,
+      });
+    } catch (error) {
+      // Never leave the message unacknowledged: with prefetch=1 that would
+      // stall the whole queue. Requeue it - the retry loop will park it again.
+      logger.error('Failed to park blockchain event; requeueing instead:', error);
+      await this.rabbitClient.nack(message, true);
+      return;
+    }
+
     await this.rabbitClient.ack(message);
     metrics.counter('blockchain_events_parked_total', { queue: this.queueName });
   }
