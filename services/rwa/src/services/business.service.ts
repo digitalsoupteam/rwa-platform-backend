@@ -21,6 +21,10 @@ interface NetworkConfig {
   factoryAddress: string;
 }
 
+// An evaluation stuck "in progress" longer than this (seconds) is considered
+// stale - its request or result was lost on the way - and may be requested again.
+const EVALUATION_STALE_AFTER_SECONDS = 60 * 60;
+
 export class BusinessService {
   constructor(
     private readonly businessRepository: BusinessRepository,
@@ -277,7 +281,15 @@ Response format:
     setSpanAttributes({ entityId: id, entityType: 'business' });
     const business = await this.businessRepository.findById(id);
 
-    if (business.riskScoreEvaluationProcess) {
+    const now = Math.floor(Date.now() / 1000);
+
+    // An evaluation stuck "in progress" is only respected for a limited time:
+    // if its request or result was lost somewhere down the chain, the flag
+    // goes stale and the user can request a fresh evaluation.
+    const startedAt = Number(business.riskScoreEvaluationStartedAt || 0);
+    const isStale = !startedAt || now - startedAt >= EVALUATION_STALE_AFTER_SECONDS;
+
+    if (business.riskScoreEvaluationProcess && !isStale) {
       throw new AppError({
         message: 'Evaluation already in progress',
         statusCode: 403,
@@ -287,13 +299,23 @@ Response format:
 
     await this.businessRepository.updateBusiness(id, {
       riskScoreEvaluationProcess: true,
+      riskScoreEvaluationStartedAt: now,
     });
 
-    await this.evaluationRequestsClient.publishEvaluationRequest('evaluateBusiness', {
-      businessId: id,
-      ownerId: business.ownerId,
-      ownerType: business.ownerType,
-    });
+    try {
+      await this.evaluationRequestsClient.publishEvaluationRequest('evaluateBusiness', {
+        businessId: id,
+        ownerId: business.ownerId,
+        ownerType: business.ownerType,
+      });
+    } catch (error) {
+      // The request never went out - clear the flag so the user can retry.
+      await this.businessRepository.updateBusiness(id, {
+        riskScoreEvaluationProcess: false,
+        riskScoreEvaluationStartedAt: 0,
+      });
+      throw error;
+    }
 
     const updated = await this.businessRepository.findById(id);
     return this.mapBusiness(updated);
@@ -317,6 +339,7 @@ Response format:
     const updated = await this.businessRepository.updateBusiness(id, {
       riskScore,
       riskScoreEvaluationProcess: false,
+      riskScoreEvaluationStartedAt: 0,
     });
 
     return this.mapBusiness(updated);
@@ -331,6 +354,7 @@ Response format:
     setSpanAttributes({ entityId: id, entityType: 'business' });
     const updated = await this.businessRepository.updateBusiness(id, {
       riskScoreEvaluationProcess: false,
+      riskScoreEvaluationStartedAt: 0,
     });
     return this.mapBusiness(updated);
   }
