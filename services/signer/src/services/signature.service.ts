@@ -40,11 +40,10 @@ export class SignatureService {
       throw new AppError({ message: 'Task expired', statusCode: 410, code: 'EXPIRED' });
     }
 
-    const hashToSign = ethers.solidityPackedKeccak256(['bytes32', 'uint256'], [hash, expired]);
-
-    // Sign hash using ethers
+    // The manager derives the final message hash (keccak(innerHash ++ expired)) to match
+    // the contracts (Factory.sol, ReferralTreasury.sol). Sign exactly what was received.
     const signer = this.wallet.address;
-    const signature = await this.wallet.signMessage(ethers.getBytes(hashToSign));
+    const signature = await this.wallet.signMessage(ethers.getBytes(hash));
 
     // Send signature back to the manager
     await this.signersManagerClient.sendSignature({

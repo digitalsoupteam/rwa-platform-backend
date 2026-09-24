@@ -6,6 +6,7 @@ import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
 import { LogDecorator } from '@shared/monitoring/src/logDecorator';
 import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 import { AppError } from '@shared/errors/app-errors';
+import { ethers } from 'ethers';
 
 export class SignaturesService {
   constructor(
@@ -40,11 +41,22 @@ export class SignaturesService {
       entityType: data.ownerType,
       hash: data.hash,
     });
-    const task = await this.signatureTaskRepository.create(data);
+
+    // Derive the final message hash here, on the manager: the contract verifies
+    // signatures over keccak(innerHash ++ expired) (Factory.sol, ReferralTreasury.sol).
+    // The task is identified by this final hash (unique index on `hash`), so a retry
+    // with a fresh expiry naturally gets a new task, while an identical repeat within
+    // the same expiry window is rejected as a duplicate.
+    const finalHash = ethers.solidityPackedKeccak256(['bytes32', 'uint256'], [data.hash, data.expired]);
+
+    const task = await this.signatureTaskRepository.create({
+      ...data,
+      hash: finalHash,
+    });
 
     // Send signature request to signers
     await this.signerClient.sendSignatureTask({
-      hash: data.hash,
+      hash: finalHash,
       taskId: task._id.toString(),
       expired: data.expired,
     });
