@@ -25,7 +25,7 @@ const ENDPOINT = {
   userId: 'user-1',
   wallet: fakeUser.wallet,
   url: 'https://example.com/hooks',
-  events: ['business.created'],
+  events: ['business.deployed'],
   description: 'demo endpoint',
   active: true,
   rateLimitPerMinute: 60,
@@ -122,7 +122,7 @@ describe('gateway webhooks resolvers (unit, fake eden clients)', () => {
     await expect(
       createWebhookEndpoint(
         null as never,
-        { input: { url: 'https://example.com/hooks', events: ['business.created'] } } as never,
+        { input: { url: 'https://example.com/hooks', events: ['business.deployed'] } } as never,
         fake as unknown as GraphQLContext,
       ),
     ).rejects.toMatchObject({ statusCode: 401, code: 'UNAUTHORIZED' });
@@ -139,7 +139,7 @@ describe('gateway webhooks resolvers (unit, fake eden clients)', () => {
       {
         input: {
           url: 'https://example.com/hooks',
-          events: ['business.created', 'business.updated'],
+          events: ['business.deployed', 'pool.deployed'],
           description: 'demo endpoint',
           rateLimitPerMinute: 60,
         },
@@ -152,7 +152,7 @@ describe('gateway webhooks resolvers (unit, fake eden clients)', () => {
       userId: 'user-1',
       wallet: fakeUser.wallet,
       url: 'https://example.com/hooks',
-      events: ['business.created', 'business.updated'],
+      events: ['business.deployed', 'pool.deployed'],
       description: 'demo endpoint',
       rateLimitPerMinute: 60,
     });
@@ -165,7 +165,7 @@ describe('gateway webhooks resolvers (unit, fake eden clients)', () => {
 
     await createWebhookEndpoint(
       null as never,
-      { input: { url: 'https://example.com/hooks', events: ['business.created'] } } as never,
+      { input: { url: 'https://example.com/hooks', events: ['business.deployed'] } } as never,
       fake as unknown as GraphQLContext,
     );
 
@@ -173,7 +173,7 @@ describe('gateway webhooks resolvers (unit, fake eden clients)', () => {
       userId: 'user-1',
       wallet: fakeUser.wallet,
       url: 'https://example.com/hooks',
-      events: ['business.created'],
+      events: ['business.deployed'],
       description: undefined,
       rateLimitPerMinute: undefined,
     });
@@ -188,7 +188,7 @@ describe('gateway webhooks resolvers (unit, fake eden clients)', () => {
     await expect(
       createWebhookEndpoint(
         null as never,
-        { input: { url: 'https://example.com/hooks', events: ['business.created'] } } as never,
+        { input: { url: 'https://example.com/hooks', events: ['business.deployed'] } } as never,
         fake as unknown as GraphQLContext,
       ),
     ).rejects.toMatchObject({ statusCode: 502, code: 'BAD_GATEWAY' });
@@ -220,7 +220,7 @@ describe('gateway webhooks resolvers (unit, fake eden clients)', () => {
         input: {
           id: 'wh-1',
           url: 'https://new.example.com/hooks',
-          events: ['business.created'],
+          events: ['business.deployed'],
           description: 'updated',
           active: false,
           rateLimitPerMinute: 30,
@@ -240,7 +240,7 @@ describe('gateway webhooks resolvers (unit, fake eden clients)', () => {
       userId: 'user-1',
       wallet: fakeUser.wallet,
       url: 'https://new.example.com/hooks',
-      events: ['business.created'],
+      events: ['business.deployed'],
       description: 'updated',
       active: false,
       rateLimitPerMinute: 30,

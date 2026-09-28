@@ -25,7 +25,7 @@ const ENDPOINT = {
   userId: 'user-1',
   wallet: '0xAbC0000000000000000000000000000000000001',
   url: PUBLIC_URL,
-  events: ['pool.created', 'vote.cast'],
+  events: ['pool.deployed', 'business.deployed'],
 };
 
 // Every one of these must trip the private-address check in validateUrl.
@@ -38,9 +38,17 @@ const BLOCKED_URLS = [
   'https://169.254.169.254/latest/meta-data', // link-local / cloud metadata
   'https://0.0.0.0/hooks', // unspecified
   'https://224.0.0.1/hooks', // multicast
+  'https://192.0.0.1/hooks', // IETF protocol assignments
+  'https://192.0.2.10/hooks', // TEST-NET-1
+  'https://198.18.0.5/hooks', // benchmarking
+  'https://198.51.100.7/hooks', // TEST-NET-2
+  'https://203.0.113.9/hooks', // TEST-NET-3
   'https://[::1]/hooks', // IPv6 loopback
   'https://[fd12:3456::1]/hooks', // IPv6 unique local
   'https://[fe80::1]/hooks', // IPv6 link-local
+  'https://[fec0::1]/hooks', // IPv6 site-local (deprecated)
+  'https://[ff02::1]/hooks', // IPv6 multicast
+  'https://[2001:db8::1]/hooks', // IPv6 documentation
   'https://[::ffff:127.0.0.1]/hooks', // IPv4-mapped loopback
 ];
 
@@ -61,7 +69,7 @@ describe('WebhookService (unit, fake repositories)', () => {
     );
   });
 
-  test('createEndpoint: stores an encrypted secret, returns the raw one and fills the cache', async () => {
+  test('createEndpoint: stores an encrypted secret, returns it once and keeps Redis out of it', async () => {
     const created = await service.createEndpoint(ENDPOINT);
 
     expect(endpoints.countByUser).toHaveBeenCalledWith('user-1');
@@ -76,10 +84,10 @@ describe('WebhookService (unit, fake repositories)', () => {
       rateLimitPerMinute: 100,
     });
 
-    // The caller gets the raw secret; the store holds it encrypted with the
-    // service key only.
+    // The caller gets the raw secret in the Standard Webhooks format; the
+    // store holds it encrypted with the service key only.
     const stored = endpoints.store.get(created.id)!;
-    expect(created.secret).toEqual(expect.any(String));
+    expect(created.secret).toMatch(/^whsec_[A-Za-z0-9+/=]+$/);
     expect(stored.secret).not.toBe(created.secret);
     expect(box.decrypt(stored.secret)).toBe(created.secret);
 
@@ -96,9 +104,9 @@ describe('WebhookService (unit, fake repositories)', () => {
     // The result must be plain JSON — no ObjectId or class instances leaking to the caller.
     expect(JSON.parse(JSON.stringify(created))).toEqual(created);
 
-    expect(redis.sadd).toHaveBeenCalledTimes(2);
-    expect(redis.sadd).toHaveBeenCalledWith('webhook:events:pool.created', created.id);
-    expect(redis.sadd).toHaveBeenCalledWith('webhook:events:vote.cast', created.id);
+    // Subscriptions live in the database only: there is no Redis index to go
+    // stale (the previous implementation wrote one and never read a value out of it).
+    expect(redis.sadd).toHaveBeenCalledTimes(0);
   });
 
   test('createEndpoint: honours an explicit description and rate limit', async () => {
@@ -109,13 +117,13 @@ describe('WebhookService (unit, fake repositories)', () => {
     expect(stored.rateLimitPerMinute).toBe(5);
   });
 
-  test('createEndpoint: falsy description/rateLimitPerMinute fall back to the defaults', async () => {
-    // Faithful to src: `data.description || ''` and `data.rateLimitPerMinute || 100`
-    // mean an explicit 0 is stored as 100.
+  test('createEndpoint: an explicit 0 rate limit is not silently turned into 100', async () => {
+    // `?? 100` instead of `|| 100`: the API layer rejects values below 1, so a
+    // 0 can only arrive from a direct internal call and is stored as-is.
     const created = await service.createEndpoint({ ...ENDPOINT, description: '', rateLimitPerMinute: 0 });
 
     const stored = endpoints.store.get(created.id)!;
-    expect(stored.rateLimitPerMinute).toBe(100);
+    expect(stored.rateLimitPerMinute).toBe(0);
     expect(stored.description).toBe('');
   });
 
@@ -128,7 +136,6 @@ describe('WebhookService (unit, fake repositories)', () => {
 
     expect(endpoints.countByUser).toHaveBeenCalledTimes(0);
     expect(endpoints.createEndpoint).toHaveBeenCalledTimes(0);
-    expect(redis.sadd).toHaveBeenCalledTimes(0);
   });
 
   test('createEndpoint: rejects a malformed URL', async () => {
@@ -171,7 +178,6 @@ describe('WebhookService (unit, fake repositories)', () => {
       await service.createEndpoint({ ...ENDPOINT, url: `${PUBLIC_URL}/${index}` });
     }
     endpoints.createEndpoint.mockClear();
-    redis.sadd.mockClear();
 
     await expect(service.createEndpoint({ ...ENDPOINT, url: `${PUBLIC_URL}/one-more` })).rejects.toMatchObject({
       statusCode: 400,
@@ -180,7 +186,6 @@ describe('WebhookService (unit, fake repositories)', () => {
     });
 
     expect(endpoints.createEndpoint).toHaveBeenCalledTimes(0);
-    expect(redis.sadd).toHaveBeenCalledTimes(0);
   });
 
   test('getEndpoints: forwards the user filter and never returns the stored secret', async () => {
@@ -232,7 +237,7 @@ describe('WebhookService (unit, fake repositories)', () => {
       description: 'Updated',
       active: false,
       rateLimitPerMinute: 42,
-      events: ['pool.created'],
+      events: ['pool.deployed'],
     });
 
     expect(endpoints.updateEndpoint).toHaveBeenCalledTimes(1);
@@ -242,7 +247,7 @@ describe('WebhookService (unit, fake repositories)', () => {
       description: 'Updated',
       active: false,
       rateLimitPerMinute: 42,
-      events: ['pool.created'],
+      events: ['pool.deployed'],
     });
     expect(updated.description).toBe('Updated');
     expect(updated.active).toBe(false);
@@ -265,8 +270,9 @@ describe('WebhookService (unit, fake repositories)', () => {
     expect(updateData.secret).toEqual(expect.any(String));
     // The stored value is the encrypted form of the secret returned to the caller.
     expect(endpoints.store.get(created.id)!.secret).toBe(updateData.secret);
-    expect(box.decrypt(updateData.secret)).toBe(updated.secret);
+    expect(box.decrypt(updateData.secret)).toBe(updated.secret as string);
     expect(updated.secret).not.toBe(created.secret);
+    expect(updated.secret).toMatch(/^whsec_/);
     expect(updated.url).toBe(newUrl);
   });
 
@@ -279,7 +285,7 @@ describe('WebhookService (unit, fake repositories)', () => {
       userId: ENDPOINT.userId,
       wallet: ENDPOINT.wallet,
       url: PUBLIC_URL,
-      events: ['pool.created'],
+      events: ['pool.deployed'],
     });
 
     const [, updateData] = endpoints.updateEndpoint.mock.calls[0] as [string, any];
@@ -312,8 +318,8 @@ describe('WebhookService (unit, fake repositories)', () => {
     expect(endpoints.updateEndpoint).toHaveBeenCalledTimes(0);
   });
 
-  test('updateEndpoint: syncs the event cache — sadd for added, srem for removed events', async () => {
-    const created = await service.createEndpoint(ENDPOINT); // pool.created, vote.cast
+  test('updateEndpoint: subscription changes do not touch Redis', async () => {
+    const created = await service.createEndpoint(ENDPOINT); // pool.deployed, business.deployed
     redis.sadd.mockClear();
     redis.srem.mockClear();
 
@@ -321,14 +327,12 @@ describe('WebhookService (unit, fake repositories)', () => {
       id: created.id,
       userId: ENDPOINT.userId,
       wallet: ENDPOINT.wallet,
-      events: ['pool.created', 'pool.burned'],
+      events: ['business.deployed'],
     });
 
-    expect(redis.sadd).toHaveBeenCalledTimes(1);
-    expect(redis.sadd).toHaveBeenCalledWith('webhook:events:pool.burned', created.id);
-    expect(redis.srem).toHaveBeenCalledTimes(1);
-    expect(redis.srem).toHaveBeenCalledWith('webhook:events:vote.cast', created.id);
-    expect(endpoints.store.get(created.id)!.events).toEqual(['pool.created', 'pool.burned']);
+    expect(redis.sadd).toHaveBeenCalledTimes(0);
+    expect(redis.srem).toHaveBeenCalledTimes(0);
+    expect(endpoints.store.get(created.id)!.events).toEqual(['business.deployed']);
   });
 
   test('updateEndpoint: toggling active caches the circuit breaker in Redis', async () => {
@@ -354,7 +358,7 @@ describe('WebhookService (unit, fake repositories)', () => {
     expect(redis.del).toHaveBeenCalledWith(activeKey);
   });
 
-  test('deleteEndpoint: removes the endpoint, its event entries and the breaker key', async () => {
+  test('deleteEndpoint: removes the endpoint and its breaker key', async () => {
     const created = await service.createEndpoint(ENDPOINT);
     redis.srem.mockClear();
     redis.del.mockClear();
@@ -367,9 +371,7 @@ describe('WebhookService (unit, fake repositories)', () => {
 
     expect(result).toEqual({ id: created.id });
     expect(endpoints.store.has(created.id)).toBe(false);
-    expect(redis.srem).toHaveBeenCalledTimes(2);
-    expect(redis.srem).toHaveBeenCalledWith('webhook:events:pool.created', created.id);
-    expect(redis.srem).toHaveBeenCalledWith('webhook:events:vote.cast', created.id);
+    expect(redis.srem).toHaveBeenCalledTimes(0);
     expect(redis.del).toHaveBeenCalledWith(`webhook:endpoint:${created.id}:active`);
   });
 
@@ -379,47 +381,21 @@ describe('WebhookService (unit, fake repositories)', () => {
     ).rejects.toMatchObject({ statusCode: 404, code: 'NOT_FOUND' });
   });
 
-  test('findEndpointsByEvent: reads the Redis index first, then serves from the repository', async () => {
+  test('findEndpointsByEvent: serves subscribers from the repository', async () => {
     const created = await service.createEndpoint(ENDPOINT);
-    redis.smembers.mockImplementationOnce(async () => [created.id]);
 
-    const found = await service.findEndpointsByEvent('pool.created');
+    const found = await service.findEndpointsByEvent('pool.deployed');
 
-    expect(redis.smembers).toHaveBeenCalledWith('webhook:events:pool.created');
-    expect(endpoints.findByEvents).toHaveBeenCalledWith('pool.created');
-    // The ids returned by smembers are only a cache-warm signal; the result
-    // itself always comes from the repository.
+    expect(endpoints.findByEvents).toHaveBeenCalledWith('pool.deployed');
+    expect(redis.smembers).toHaveBeenCalledTimes(0);
     expect(found.map((doc) => doc._id.toString())).toEqual([created.id]);
   });
 
-  test('findEndpointsByEvent: falls back to the repository when the Redis index is empty', async () => {
-    const created = await service.createEndpoint(ENDPOINT);
-
-    const found = await service.findEndpointsByEvent('pool.created');
-
-    expect(redis.smembers).toHaveBeenCalledWith('webhook:events:pool.created');
-    expect(endpoints.findByEvents).toHaveBeenCalledWith('pool.created');
-    expect(found.map((doc) => doc._id.toString())).toEqual([created.id]);
-  });
-
-  test('findEndpointsByEvent: skips Redis when the client is not connected', async () => {
+  test('findEndpointsByEvent: works without Redis at all', async () => {
     await service.createEndpoint(ENDPOINT);
     redis.status = 'end';
 
-    const found = await service.findEndpointsByEvent('pool.created');
-
-    expect(redis.smembers).toHaveBeenCalledTimes(0);
-    expect(endpoints.findByEvents).toHaveBeenCalledTimes(1);
-    expect(found).toHaveLength(1);
-  });
-
-  test('findEndpointsByEvent: falls back to the repository when Redis throws', async () => {
-    await service.createEndpoint(ENDPOINT);
-    redis.smembers.mockImplementationOnce(async () => {
-      throw new Error('redis down');
-    });
-
-    const found = await service.findEndpointsByEvent('pool.created');
+    const found = await service.findEndpointsByEvent('pool.deployed');
 
     expect(endpoints.findByEvents).toHaveBeenCalledTimes(1);
     expect(found).toHaveLength(1);

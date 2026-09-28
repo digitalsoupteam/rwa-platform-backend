@@ -471,7 +471,10 @@ Response format:
   @LogDecorator({
     args: (a) => ({ entityId: a[0].entityId, emittedFrom: a[0].emittedFrom, owner: a[0].owner }),
   })
-  async syncAfterDeployment(eventData: { entityId: string; emittedFrom: string; owner: string }) {
+  async syncAfterDeployment(
+    eventData: { entityId: string; emittedFrom: string; owner: string },
+    meta?: { sourceId?: string },
+  ) {
     setSpanAttributes({
       entityId: eventData.entityId,
       entityType: 'business',
@@ -485,15 +488,19 @@ Response format:
 
     const businessDto = this.mapBusiness(updated);
 
-    await this.webhookEventsPublisher.publish('business.created', {
-      businessId: businessDto.id,
-      ownerId: businessDto.ownerId,
-      ownerType: businessDto.ownerType,
-      ownerWallet: businessDto.ownerWallet,
-      tokenAddress: businessDto.tokenAddress,
-      chainId: businessDto.chainId,
-      name: businessDto.name,
-    });
+    await this.webhookEventsPublisher.publish(
+      'business.deployed',
+      {
+        businessId: businessDto.id,
+        ownerId: businessDto.ownerId,
+        ownerType: businessDto.ownerType,
+        ownerWallet: businessDto.ownerWallet,
+        tokenAddress: businessDto.tokenAddress,
+        chainId: businessDto.chainId,
+        name: businessDto.name,
+      },
+      meta?.sourceId,
+    );
 
     return businessDto;
   }

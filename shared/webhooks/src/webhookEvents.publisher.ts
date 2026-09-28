@@ -22,9 +22,11 @@ export class WebhookEventsPublisher {
   }
 
   @TraceDecorator()
-  async publish(eventType: string, payload: unknown): Promise<void> {
+  async publish(eventType: string, payload: unknown, sourceId?: string): Promise<void> {
     const message: WebhookEventMessage = {
-      id: crypto.randomUUID(),
+      // A stable id lets receivers deduplicate at-least-once redeliveries.
+      // Chain-derived events pass "<chainId>:<txHash>:<logIndex>".
+      id: sourceId ?? crypto.randomUUID(),
       type: eventType,
       timestamp: Date.now(),
       payload,

@@ -556,15 +556,19 @@ describe('BusinessService (unit, fake repositories and clients)', () => {
     expect(businesses.updateBusiness).toHaveBeenLastCalledWith(created.id, { approvalSignaturesTaskId: undefined });
   });
 
-  test('syncAfterDeployment: stores the deployment data and publishes business.created', async () => {
+  test('syncAfterDeployment: stores the deployment data and publishes business.deployed', async () => {
     const created = await service.createBusiness(BUSINESS);
     const tokenAddress = '0x00000000000000000000000000000000000000aa';
+    const sourceId = '97:0xdeadbeef:7';
 
-    const result = await service.syncAfterDeployment({
-      entityId: created.id,
-      emittedFrom: tokenAddress,
-      owner: OWNER_WALLET,
-    });
+    const result = await service.syncAfterDeployment(
+      {
+        entityId: created.id,
+        emittedFrom: tokenAddress,
+        owner: OWNER_WALLET,
+      },
+      { sourceId },
+    );
 
     expect(businesses.updateBusiness).toHaveBeenLastCalledWith(created.id, {
       tokenAddress,
@@ -574,15 +578,19 @@ describe('BusinessService (unit, fake repositories and clients)', () => {
     expect(result.ownerWallet).toBe(OWNER_WALLET);
 
     expect(webhooks.publish).toHaveBeenCalledTimes(1);
-    expect(webhooks.publish).toHaveBeenCalledWith('business.created', {
-      businessId: created.id,
-      ownerId: OWNER_ID,
-      ownerType: OWNER_TYPE,
-      ownerWallet: OWNER_WALLET,
-      tokenAddress,
-      chainId: CHAIN_ID,
-      name: BUSINESS.name,
-    });
+    expect(webhooks.publish).toHaveBeenCalledWith(
+      'business.deployed',
+      {
+        businessId: created.id,
+        ownerId: OWNER_ID,
+        ownerType: OWNER_TYPE,
+        ownerWallet: OWNER_WALLET,
+        tokenAddress,
+        chainId: CHAIN_ID,
+        name: BUSINESS.name,
+      },
+      sourceId,
+    );
   });
 
   test('syncPausedState: flips the pause flag on the business found by token address', async () => {

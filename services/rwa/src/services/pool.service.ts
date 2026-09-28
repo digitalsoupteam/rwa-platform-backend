@@ -731,19 +731,8 @@ Example response:
     }
 
     const pool = await this.poolRepository.createPool(data);
-    const poolDto = this.mapPool(pool);
 
-    await this.webhookEventsPublisher.publish('pool.created', {
-      poolId: poolDto.id,
-      ownerId: poolDto.ownerId,
-      ownerType: poolDto.ownerType,
-      name: poolDto.name,
-      chainId: poolDto.chainId,
-      businessId: poolDto.businessId,
-      rwaAddress: poolDto.rwaAddress,
-    });
-
-    return poolDto;
+    return this.mapPool(pool);
   }
 
   @TraceDecorator()
@@ -869,7 +858,8 @@ Example response:
     outgoingTranchTimestamps: number[];
     incomingTranches: string[];
     incomingTrancheExpired: number[];
-  }) {
+  },
+  meta?: { sourceId?: string }) {
     setSpanAttributes({
       entityId: event.entityId,
       entityType: 'pool',
@@ -924,17 +914,21 @@ Example response:
 
     await this.poolEventsClient.publishPoolDeployed(poolDto);
 
-    await this.webhookEventsPublisher.publish('pool.staked', {
-      poolId: poolDto.id,
-      poolAddress: poolDto.poolAddress,
-      ownerId: poolDto.ownerId,
-      ownerWallet: event.owner,
-      holdToken: poolDto.holdToken,
-      rwaAddress: poolDto.rwaAddress,
-      tokenId: poolDto.tokenId,
-      expectedHoldAmount: poolDto.expectedHoldAmount,
-      expectedRwaAmount: poolDto.expectedRwaAmount,
-    });
+    await this.webhookEventsPublisher.publish(
+      'pool.deployed',
+      {
+        poolId: poolDto.id,
+        poolAddress: poolDto.poolAddress,
+        ownerId: poolDto.ownerId,
+        ownerWallet: event.owner,
+        holdToken: poolDto.holdToken,
+        rwaAddress: poolDto.rwaAddress,
+        tokenId: poolDto.tokenId,
+        expectedHoldAmount: poolDto.expectedHoldAmount,
+        expectedRwaAmount: poolDto.expectedRwaAmount,
+      },
+      meta?.sourceId,
+    );
 
     return poolDto;
   }

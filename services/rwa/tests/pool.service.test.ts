@@ -233,7 +233,7 @@ describe('PoolService (unit, fake repositories and clients)', () => {
     );
   });
 
-  test('createPool: forwards the payload, returns a mapped pool and publishes pool.created', async () => {
+  test('createPool: forwards the payload and returns a mapped pool (creation emits no webhook)', async () => {
     const pool = await service.createPool(POOL);
 
     expect(pools.createPool).toHaveBeenCalledTimes(1);
@@ -250,16 +250,7 @@ describe('PoolService (unit, fake repositories and clients)', () => {
     expect(pool.incomingTranches).toEqual([]);
     expect(pool.riskScoreEvaluationProcess).toBe(false);
 
-    expect(webhooks.publish).toHaveBeenCalledTimes(1);
-    expect(webhooks.publish).toHaveBeenCalledWith('pool.created', {
-      poolId: pool.id,
-      ownerId: OWNER_ID,
-      ownerType: OWNER_TYPE,
-      name: POOL.name,
-      chainId: CHAIN_ID,
-      businessId: BUSINESS_ID,
-      rwaAddress: RWA_ADDRESS,
-    });
+    expect(webhooks.publish).toHaveBeenCalledTimes(0); // only the deployment is a webhook event
   });
 
   test('createPool: the DTO is plain JSON - string id, no raw _id leak', async () => {
@@ -767,8 +758,9 @@ describe('PoolService (unit, fake repositories and clients)', () => {
   test('syncPoolAfterDeployment: maps the deployment event, publishes redis and webhook events', async () => {
     const pool = await pools.createPool(POOL);
     const event = { ...DEPLOYMENT_EVENT, entityId: pool._id.toString() };
+    const sourceId = '97:0xdeadbeef:3';
 
-    const result = await service.syncPoolAfterDeployment(event);
+    const result = await service.syncPoolAfterDeployment(event, { sourceId });
 
     expect(pools.updatePool).toHaveBeenCalledTimes(1);
     const [updatedId, updateData] = pools.updatePool.mock.calls[0];
@@ -814,17 +806,21 @@ describe('PoolService (unit, fake repositories and clients)', () => {
     expect(poolEvents.redisClient.publish).toHaveBeenCalledWith('pool:deployed', 'POOL_DEPLOYED', expect.any(Object));
 
     expect(webhooks.publish).toHaveBeenCalledTimes(1);
-    expect(webhooks.publish).toHaveBeenCalledWith('pool.staked', {
-      poolId: pool._id.toString(),
-      poolAddress: POOL_ADDRESS,
-      ownerId: OWNER_ID,
-      ownerWallet: event.owner,
-      holdToken: event.holdToken,
-      rwaAddress: event.rwaToken,
-      tokenId: event.tokenId,
-      expectedHoldAmount: event.expectedHoldAmount,
-      expectedRwaAmount: event.expectedRwaAmount,
-    });
+    expect(webhooks.publish).toHaveBeenCalledWith(
+      'pool.deployed',
+      {
+        poolId: pool._id.toString(),
+        poolAddress: POOL_ADDRESS,
+        ownerId: OWNER_ID,
+        ownerWallet: event.owner,
+        holdToken: event.holdToken,
+        rwaAddress: event.rwaToken,
+        tokenId: event.tokenId,
+        expectedHoldAmount: event.expectedHoldAmount,
+        expectedRwaAmount: event.expectedRwaAmount,
+      },
+      sourceId,
+    );
   });
 
   test('syncPoolAfterDeployment: rejects with NOT_FOUND for an unknown pool', async () => {
@@ -847,7 +843,7 @@ describe('PoolService (unit, fake repositories and clients)', () => {
       const handler = (service as unknown as Record<string, (event: Record<string, unknown>) => Promise<{ id: string }>>)[
         method
       ];
-      const result = await handler(event);
+      const result = await handler.call(service, event);
 
       expect(pools.updatePoolByAddress).toHaveBeenCalledWith(POOL_ADDRESS, expected);
       expect(result.id).toBe(pool._id.toString());

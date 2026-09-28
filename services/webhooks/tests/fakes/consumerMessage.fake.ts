@@ -34,7 +34,7 @@ export function createSyntheticMessage(
       deliveryTag: options.deliveryTag ?? 1,
       redelivered: options.redelivered ?? false,
       exchange: options.exchange ?? 'webhooks.events',
-      routingKey: options.routingKey ?? 'pool.created',
+      routingKey: options.routingKey ?? 'pool.deployed',
     },
     properties: {
       contentType: 'application/json',

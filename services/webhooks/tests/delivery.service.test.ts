@@ -20,7 +20,9 @@ import { createSecretBox, type FakeSecretBox } from './fakes/secrets.fake';
 
 const ENCRYPTION_KEY = Buffer.alloc(32, 7).toString('base64');
 
-const RAW_SECRET = 'whsec_test_secret';
+// Standard Webhooks secret: `whsec_` + base64 of the raw key bytes.
+const SECRET_KEY_BYTES = Buffer.alloc(32, 9);
+const RAW_SECRET = `whsec_${SECRET_KEY_BYTES.toString('base64')}`;
 const HOOK_URL = 'https://8.8.8.8/hooks';
 const EVENT_ID = 'evt-1';
 const LOG_ENDPOINT_ID = '507f1f77bcf86cd799439011';
@@ -58,7 +60,7 @@ describe('DeliveryService (unit, fake repositories)', () => {
     encryptedSecret = box.encrypt(RAW_SECRET);
     deliveryLogId = await service.createDeliveryLog({
       endpointId: LOG_ENDPOINT_ID,
-      eventType: 'pool.created',
+      eventType: 'pool.deployed',
       eventId: EVENT_ID,
       payload: { hello: 'world' },
     });
@@ -74,7 +76,7 @@ describe('DeliveryService (unit, fake repositories)', () => {
       wallet: '0xAbC0000000000000000000000000000000000001',
       url: HOOK_URL,
       secret: 'encrypted-at-rest',
-      events: ['pool.created'],
+      events: ['pool.deployed'],
     });
     Object.assign(endpoints.store.get(created._id.toString())!, overrides);
     return created._id.toString();
@@ -84,7 +86,7 @@ describe('DeliveryService (unit, fake repositories)', () => {
     return {
       endpointId,
       eventId: EVENT_ID,
-      eventType: 'pool.created',
+      eventType: 'pool.deployed',
       payload: { hello: 'world' },
       attempt: 1,
       maxAttempts: 3,
@@ -98,14 +100,14 @@ describe('DeliveryService (unit, fake repositories)', () => {
   test('createDeliveryLog: stores a pending log and returns its id', async () => {
     const id = await service.createDeliveryLog({
       endpointId: LOG_ENDPOINT_ID,
-      eventType: 'pool.created',
+      eventType: 'pool.deployed',
       eventId: 'evt-2',
       payload: { amount: '100' },
     });
 
     expect(logs.createDeliveryLog).toHaveBeenCalledWith({
       endpointId: LOG_ENDPOINT_ID,
-      eventType: 'pool.created',
+      eventType: 'pool.deployed',
       eventId: 'evt-2',
       payload: { amount: '100' },
       status: 'pending',
@@ -118,7 +120,7 @@ describe('DeliveryService (unit, fake repositories)', () => {
     expect(doc.attempts).toEqual([]);
   });
 
-  test('deliverWebhook: on 2xx it signs the payload, records success and resets the breaker', async () => {
+  test('deliverWebhook: on 2xx it signs the request and records success', async () => {
     http.setResponse({ status: 200, body: 'ok' });
 
     const result = await service.deliverWebhook(deliveryInput({ attempt: 2 }));
@@ -133,21 +135,40 @@ describe('DeliveryService (unit, fake repositories)', () => {
     expect(init.signal).toBeInstanceOf(AbortSignal);
     expect(init.body).toBe(JSON.stringify({ hello: 'world' }));
 
+    // Standard Webhooks headers: webhook-id is stable across retries and is
+    // the receiver's deduplication key.
     const headers = init.headers;
     expect(headers['Content-Type']).toBe('application/json');
-    expect(headers['X-Webhook-Id']).toBe(EVENT_ID);
-    expect(Number(headers['X-Webhook-Timestamp'])).toBeGreaterThan(0);
+    expect(headers['webhook-id']).toBe(EVENT_ID);
+    expect(headers['webhook-event']).toBe('pool.deployed');
+    expect(Number(headers['webhook-timestamp'])).toBeGreaterThan(0);
 
-    // The signature is an HMAC-SHA256 of the serialized payload under the
-    // secret recovered from the encrypted delivery message.
-    const expected = crypto.createHmac('sha256', RAW_SECRET).update(init.body).digest('hex');
-    expect(headers['X-Webhook-Signature']).toBe(`sha256=${expected}`);
+    // HMAC-SHA256 over `<id>.<timestamp>.<body>`, base64, scheme version
+    // prefix — the timestamp is inside the signature, so replays are visible.
+    const expected = crypto
+      .createHmac('sha256', SECRET_KEY_BYTES)
+      .update(`${EVENT_ID}.${headers['webhook-timestamp']}.${init.body}`)
+      .digest('base64');
+    expect(headers['webhook-signature']).toBe(`v1,${expected}`);
 
     const [loggedId, successAttempt] = logs.pushAttempt.mock.calls[0] as [string, any];
     expect(loggedId).toBe(deliveryLogId);
     expect(successAttempt).toEqual({ timestamp: expect.any(Number), statusCode: 200 });
     expect(logs.updateStatus).toHaveBeenCalledWith(deliveryLogId, { status: 'delivered' });
-    expect(endpoints.updateEndpoint).toHaveBeenCalledWith(endpointId, { consecutiveFailures: 0 });
+  });
+
+  test('deliverWebhook: signs with legacy (non-whsec_) secrets as raw UTF-8 bytes', async () => {
+    const legacySecret = 'legacy-raw-secret';
+    http.setResponse({ status: 200, body: 'ok' });
+
+    await service.deliverWebhook(deliveryInput({ secret: box.encrypt(legacySecret) }));
+
+    const { init } = http.calls[0];
+    const expected = crypto
+      .createHmac('sha256', Buffer.from(legacySecret, 'utf8'))
+      .update(`${EVENT_ID}.${init.headers['webhook-timestamp']}.${init.body}`)
+      .digest('base64');
+    expect(init.headers['webhook-signature']).toBe(`v1,${expected}`);
   });
 
   test('deliverWebhook: dead-letters an oversized payload without calling the endpoint', async () => {
@@ -161,9 +182,9 @@ describe('DeliveryService (unit, fake repositories)', () => {
     const [, attempt] = logs.pushAttempt.mock.calls[0] as [string, any];
     expect(attempt).toMatchObject({ statusCode: 413, responseBody: '', error: 'Payload too large' });
 
-    // Faithful to src: this path returns deadLetter but neither marks the log
-    // dead_letter nor deactivates the endpoint (see the test report).
-    expect(logs.updateStatus).toHaveBeenCalledTimes(0);
+    // The log says what actually happened; the endpoint is not deactivated —
+    // the oversized payload is our side's problem, not the receiver's.
+    expect(logs.updateStatus).toHaveBeenCalledWith(deliveryLogId, { status: 'dead_letter' });
     expect(endpoints.updateEndpoint).toHaveBeenCalledTimes(0);
     expect(redis.set).toHaveBeenCalledTimes(0);
   });
@@ -185,8 +206,7 @@ describe('DeliveryService (unit, fake repositories)', () => {
 
       expect(endpoints.updateEndpoint).toHaveBeenCalledWith(endpointId, { active: false });
       expect(redis.set).toHaveBeenCalledWith(`webhook:endpoint:${endpointId}:active`, '0', 'EX', 3600);
-      // Redirects are not followed (redirect: 'manual'), so the response body is not read.
-      expect(logs.updateStatus).toHaveBeenCalledTimes(0);
+      expect(logs.updateStatus).toHaveBeenCalledWith(deliveryLogId, { status: 'dead_letter' });
     });
   }
 
@@ -203,12 +223,11 @@ describe('DeliveryService (unit, fake repositories)', () => {
 
       expect(endpoints.updateEndpoint).toHaveBeenCalledWith(endpointId, { active: false });
       expect(redis.set).toHaveBeenCalledWith(`webhook:endpoint:${endpointId}:active`, '0', 'EX', 3600);
-      // Faithful to src: the log is not marked dead_letter on this path.
-      expect(logs.updateStatus).toHaveBeenCalledTimes(0);
+      expect(logs.updateStatus).toHaveBeenCalledWith(deliveryLogId, { status: 'dead_letter' });
     });
   }
 
-  test('deliverWebhook: a 5xx below maxAttempts schedules a retry and counts the failure', async () => {
+  test('deliverWebhook: a 5xx below maxAttempts schedules a retry without touching the endpoint', async () => {
     http.setResponse({ status: 503, body: 'unavailable' });
 
     const result = await service.deliverWebhook(deliveryInput({ attempt: 1, maxAttempts: 3 }));
@@ -219,12 +238,11 @@ describe('DeliveryService (unit, fake repositories)', () => {
     expect(attempt).toMatchObject({ statusCode: 503, responseBody: 'unavailable', error: 'HTTP 503' });
 
     expect(logs.updateStatus).toHaveBeenCalledTimes(0);
-    expect(endpoints.findById).toHaveBeenCalledWith(endpointId);
-    expect(endpoints.updateEndpoint).toHaveBeenCalledWith(endpointId, { consecutiveFailures: 1 });
+    expect(endpoints.updateEndpoint).toHaveBeenCalledTimes(0);
     expect(redis.set).toHaveBeenCalledTimes(0); // still active
   });
 
-  test('deliverWebhook: a 5xx at maxAttempts dead-letters and deactivates without counting a failure', async () => {
+  test('deliverWebhook: a 5xx at maxAttempts dead-letters and deactivates', async () => {
     http.setResponse({ status: 500, body: 'boom' });
 
     const result = await service.deliverWebhook(deliveryInput({ attempt: 3, maxAttempts: 3 }));
@@ -232,8 +250,7 @@ describe('DeliveryService (unit, fake repositories)', () => {
     expect(result).toEqual({ success: false, deadLetter: true });
 
     expect(logs.updateStatus).toHaveBeenCalledWith(deliveryLogId, { status: 'dead_letter' });
-    // Only the deactivation write happens — no consecutive-failures increment.
-    expect(endpoints.findById).toHaveBeenCalledTimes(0);
+    // Retries are exhausted: deactivate and stop scheduling deliveries.
     expect(endpoints.updateEndpoint).toHaveBeenCalledTimes(1);
     expect(endpoints.updateEndpoint).toHaveBeenCalledWith(endpointId, { active: false });
     expect(redis.set).toHaveBeenCalledWith(`webhook:endpoint:${endpointId}:active`, '0', 'EX', 3600);
@@ -250,7 +267,7 @@ describe('DeliveryService (unit, fake repositories)', () => {
     expect(attempt.responseBody).toBe('');
     expect(attempt.error).toBe('connect ECONNREFUSED 8.8.8.8:443');
     expect(attempt.statusCode).toBeUndefined();
-    expect(endpoints.updateEndpoint).toHaveBeenCalledWith(endpointId, { consecutiveFailures: 1 });
+    expect(endpoints.updateEndpoint).toHaveBeenCalledTimes(0);
   });
 
   test('deliverWebhook: a timeout is recorded as such', async () => {
@@ -277,19 +294,17 @@ describe('DeliveryService (unit, fake repositories)', () => {
     expect(redis.set).toHaveBeenCalledWith(`webhook:endpoint:${endpointId}:active`, '0', 'EX', 3600);
   });
 
-  test('deliverWebhook: trips the circuit breaker on the 5th consecutive failure', async () => {
-    const breakerEndpointId = await seedEndpoint({ consecutiveFailures: 4 });
+  test('deliverWebhook: keeps the endpoint active while retries remain', async () => {
+    // The endpoint is deactivated only when the retry schedule is exhausted,
+    // not after a fixed number of consecutive failures.
+    const retryingEndpointId = await seedEndpoint({ consecutiveFailures: 4 });
     http.setResponse({ status: 500, body: 'boom' });
 
-    const result = await service.deliverWebhook(deliveryInput({ endpointId: breakerEndpointId }));
+    const result = await service.deliverWebhook(deliveryInput({ endpointId: retryingEndpointId }));
 
     expect(result).toEqual({ success: false, retry: true });
-    // The failure is counted first, then the endpoint is deactivated.
-    expect(endpoints.updateEndpoint.mock.calls).toEqual([
-      [breakerEndpointId, { consecutiveFailures: 5 }],
-      [breakerEndpointId, { active: false }],
-    ]);
-    expect(redis.set).toHaveBeenCalledWith(`webhook:endpoint:${breakerEndpointId}:active`, '0', 'EX', 3600);
+    expect(endpoints.updateEndpoint).toHaveBeenCalledTimes(0);
+    expect(redis.set).toHaveBeenCalledTimes(0);
   });
 
   test('deliverWebhook: an undecryptable secret is recorded as an error and retried', async () => {

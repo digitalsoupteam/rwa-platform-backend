@@ -17,7 +17,7 @@ const isPrivateIpv4 = (address: string): boolean => {
   if (parts.length !== 4 || parts.some((part) => Number.isNaN(part) || part < 0 || part > 255)) {
     return true; // malformed — treat as unsafe
   }
-  const [a, b] = parts;
+  const [a, b, c] = parts;
   return (
     a === 0 || // 0.0.0.0/8
     a === 10 || // 10.0.0.0/8
@@ -25,7 +25,12 @@ const isPrivateIpv4 = (address: string): boolean => {
     (a === 100 && b >= 64 && b <= 127) || // 100.64.0.0/10 (CGNAT)
     (a === 169 && b === 254) || // 169.254.0.0/16 (link-local, cloud metadata)
     (a === 172 && b >= 16 && b <= 31) || // 172.16.0.0/12
+    (a === 192 && b === 0 && c === 0) || // 192.0.0.0/24 (IETF protocol assignments)
+    (a === 192 && b === 0 && c === 2) || // 192.0.2.0/24 (TEST-NET-1)
     (a === 192 && b === 168) || // 192.168.0.0/16
+    (a === 198 && (b === 18 || b === 19)) || // 198.18.0.0/15 (benchmarking)
+    (a === 198 && b === 51 && c === 100) || // 198.51.100.0/24 (TEST-NET-2)
+    (a === 203 && b === 0 && c === 113) || // 203.0.113.0/24 (TEST-NET-3)
     a >= 224 // multicast / reserved
   );
 };
@@ -36,9 +41,12 @@ const isPrivateAddress = (address: string): boolean => {
   }
   const lower = address.toLowerCase();
   if (lower === '::' || lower === '::1') return true;
+  if (lower.startsWith('::ffff:')) return isPrivateIpv4(lower.slice(7)); // IPv4-mapped
   if (lower.startsWith('fc') || lower.startsWith('fd')) return true; // fc00::/7 (unique local)
   if (lower.startsWith('fe8') || lower.startsWith('fe9') || lower.startsWith('fea') || lower.startsWith('feb')) return true; // fe80::/10
-  if (lower.startsWith('::ffff:')) return isPrivateIpv4(lower.slice(7)); // IPv4-mapped
+  if (/^fe[c-f]/.test(lower)) return true; // fec0::/10 (deprecated site-local)
+  if (lower.startsWith('ff')) return true; // ff00::/8 (multicast)
+  if (lower.startsWith('2001:db8')) return true; // 2001:db8::/32 (documentation)
   return false;
 };
 
@@ -79,7 +87,9 @@ export class WebhookService {
       });
     }
 
-    const rawSecret = crypto.randomUUID() + crypto.randomBytes(16).toString('hex');
+    // Standard Webhooks secret format (`whsec_` + base64 of 32 bytes):
+    // verifier libraries for the standard scheme consume it as-is.
+    const rawSecret = `whsec_${crypto.randomBytes(32).toString('base64')}`;
     const encryptedSecret = this.encryptSecret(rawSecret);
 
     const doc = await this.endpointRepository.createEndpoint({
@@ -89,10 +99,8 @@ export class WebhookService {
       secret: encryptedSecret,
       events: data.events,
       description: data.description || '',
-      rateLimitPerMinute: data.rateLimitPerMinute || 100,
+      rateLimitPerMinute: data.rateLimitPerMinute ?? 100,
     });
-
-    await this.syncCacheOnCreate(doc._id.toString(), data.events);
 
     metrics.counter('webhook_endpoints_created_total');
 
@@ -180,8 +188,7 @@ export class WebhookService {
 
     let newSecret: string | undefined;
     if (data.url && data.url !== existing.url) {
-      const rawNewSecret = crypto.randomUUID() + crypto.randomBytes(16).toString('hex');
-      newSecret = rawNewSecret;
+      newSecret = `whsec_${crypto.randomBytes(32).toString('base64')}`;
     }
 
     const updateData: any = { ...data };
@@ -193,13 +200,6 @@ export class WebhookService {
     }
 
     const doc = await this.endpointRepository.updateEndpoint(data.id, updateData);
-
-    if (data.events) {
-      const oldEvents = existing.events;
-      const added = data.events.filter((e) => !oldEvents.includes(e));
-      const removed = oldEvents.filter((e) => !data.events!.includes(e));
-      await this.syncCacheOnUpdate(doc._id.toString(), added, removed);
-    }
 
     if (data.active !== undefined) {
       if (!data.active) {
@@ -234,9 +234,6 @@ export class WebhookService {
 
     const doc = await this.endpointRepository.deleteEndpoint(data.id);
 
-    for (const event of doc.events) {
-      await this.redisClient.srem(`webhook:events:${event}`, doc._id.toString());
-    }
     await this.redisClient.del(`webhook:endpoint:${doc._id.toString()}:active`);
 
     return { id: data.id };
@@ -244,18 +241,8 @@ export class WebhookService {
 
   @TraceDecorator()
   async findEndpointsByEvent(eventType: string) {
-    try {
-      const isConnected = this.redisClient.status === 'ready';
-      if (isConnected) {
-        const endpointIds = await this.redisClient.smembers(`webhook:events:${eventType}`);
-        if (endpointIds.length > 0) {
-          return await this.endpointRepository.findByEvents(eventType);
-        }
-      }
-    } catch {
-      // Redis unavailable, fall through
-    }
-
+    // The database is the source of truth for subscriptions; a Redis index
+    // would go stale on flushes and make subscribers miss events.
     return await this.endpointRepository.findByEvents(eventType);
   }
 
@@ -286,21 +273,6 @@ export class WebhookService {
       return count <= limit;
     } catch {
       return true;
-    }
-  }
-
-  private async syncCacheOnCreate(endpointId: string, events: string[]) {
-    for (const event of events) {
-      await this.redisClient.sadd(`webhook:events:${event}`, endpointId);
-    }
-  }
-
-  private async syncCacheOnUpdate(endpointId: string, added: string[], removed: string[]) {
-    for (const event of added) {
-      await this.redisClient.sadd(`webhook:events:${event}`, endpointId);
-    }
-    for (const event of removed) {
-      await this.redisClient.srem(`webhook:events:${event}`, endpointId);
     }
   }
 

@@ -23,7 +23,7 @@ export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
     return {
       RWA_Deployed: async (event: BlockchainEvent) => {
         // Update business contract data
-        await this.businessService.syncAfterDeployment(event.data as any);
+        await this.businessService.syncAfterDeployment(event.data as any, { sourceId: this.sourceIdOf(event) });
       },
 
       RWA_PausedStateChanged: async (event: BlockchainEvent) => {
@@ -33,7 +33,7 @@ export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
 
       Pool_Deployed: async (event: BlockchainEvent) => {
         // Update pool info with all parameters from event
-        await this.poolService.syncPoolAfterDeployment(event.data as any);
+        await this.poolService.syncPoolAfterDeployment(event.data as any, { sourceId: this.sourceIdOf(event) });
       },
 
       Pool_BonusWithdrawn: async (event: BlockchainEvent) => {
@@ -76,5 +76,10 @@ export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
         await this.poolService.syncPoolTargetReached(event.data as any);
       },
     };
+  }
+
+  /** Stable identity of the on-chain event; used as the webhook event id. */
+  private sourceIdOf(event: BlockchainEvent): string {
+    return `${event.chainId}:${event.transactionHash}:${event.logIndex}`;
   }
 }

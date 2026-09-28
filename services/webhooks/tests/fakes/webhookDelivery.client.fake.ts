@@ -2,24 +2,28 @@
  * In-memory fake of WebhookDeliveryClient for unit tests.
  *
  * consumeDelivery captures the handler the daemon registers; enqueues are kept
- * in `sentMessages` and acks/nacks are recorded, so tests can assert delivery
- * decisions and argument mapping. Every method is wrapped in bun:test mock()
- * and, when a shared `journal` array is passed in, each interaction is appended
- * to it so tests can assert ordering (e.g. ack before a retry re-enqueue).
+ * in `sentMessages`/`retriedMessages` and acks/nacks are recorded, so tests can
+ * assert delivery decisions and argument mapping. Every method is wrapped in
+ * bun:test mock() and, when a shared `journal` array is passed in, each
+ * interaction is appended to it so tests can assert ordering (e.g. the retry
+ * re-enqueue happens before the ack).
  */
 import { mock } from 'bun:test';
 
 export type FakeNackEntry = { message: any; requeue: boolean };
+export type FakeRetryEntry = { attempt: number; content: any };
 
 export function createFakeWebhookDeliveryClient(journal: string[] = []) {
   let capturedHandler: ((msg: any) => Promise<void>) | null = null;
   const sentMessages: any[] = [];
+  const retriedMessages: FakeRetryEntry[] = [];
   const ackedMessages: any[] = [];
   const nackedMessages: FakeNackEntry[] = [];
 
   const client = {
     journal,
     sentMessages,
+    retriedMessages,
     ackedMessages,
     nackedMessages,
 
@@ -28,6 +32,11 @@ export function createFakeWebhookDeliveryClient(journal: string[] = []) {
     sendToDeliveryQueue: mock(async (content: any): Promise<void> => {
       sentMessages.push(content);
       journal.push('sendToDeliveryQueue');
+    }),
+
+    sendToRetryQueue: mock(async (attempt: number, content: any): Promise<void> => {
+      retriedMessages.push({ attempt, content });
+      journal.push('sendToRetryQueue');
     }),
 
     consumeDelivery: mock(async (handler: (msg: any) => Promise<void>): Promise<void> => {

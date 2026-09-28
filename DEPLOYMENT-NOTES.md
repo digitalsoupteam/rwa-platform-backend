@@ -109,3 +109,23 @@ Creates an archive of databases, configs, and SSL:
 ```bash
 ./deployments/scripts/backup.sh
 ```
+
+---
+
+## 🪝 Webhooks Service Upgrade (one-time, existing environments)
+
+1.  **Recreate the events queue.** The webhooks consumer now declares
+    `webhooks.events.webhooks` with dead-letter configuration, and RabbitMQ
+    queue arguments are immutable. In RabbitMQ Management UI → Queues, delete
+    `webhooks.events.webhooks` once before starting the new version — it will
+    be re-created automatically with the new arguments.
+2.  **Update legacy subscriptions.** Endpoints subscribed to removed event
+    types (`pool.created`, `pool.staked`, `business.created`, `vote.cast`, …)
+    stay readable but never fire. Re-subscribe them to the current events:
+    `pool.deployed`, `business.deployed`. New/updated subscriptions are
+    validated against this list.
+3.  **Receiver-side signature check.** Deliveries are signed per the Standard
+    Webhooks scheme (`webhook-id`, `webhook-timestamp`,
+    `webhook-signature: v1,<base64>`), computed over
+    `<id>.<timestamp>.<raw body>`; new endpoint secrets use the `whsec_…`
+    format. Verifiers should reject timestamps older than ~5 minutes.

@@ -115,7 +115,9 @@ services:
       PORT: ${WEBHOOKS_PORT}
       REDIS_URL: ${REDIS_URL}
       WEBHOOKS_ENCRYPTION_KEY: ${WEBHOOKS_ENCRYPTION_KEY}
-      NODE_TLS_REJECT_UNAUTHORIZED: ${NODE_TLS_REJECT_UNAUTHORIZED:-0}
+      # Keep TLS verification on for outbound webhook deliveries by default;
+      # set NODE_TLS_REJECT_UNAUTHORIZED=0 explicitly only in dev/test envs.
+      NODE_TLS_REJECT_UNAUTHORIZED: ${NODE_TLS_REJECT_UNAUTHORIZED:-1}
     volumes: *monitoring-volumes
     networks:
       - app-network

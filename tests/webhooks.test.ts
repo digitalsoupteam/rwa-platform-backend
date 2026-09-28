@@ -30,7 +30,7 @@ describe("Webhooks Flow", () => {
       const result = await makeGraphQLRequest(CREATE_WEBHOOK_ENDPOINT, {
         input: {
           url: "https://example.com/webhook",
-          events: ["pool.created"],
+          events: ["pool.deployed"],
         },
       });
 
@@ -83,7 +83,7 @@ describe("Webhooks Flow", () => {
         {
           input: {
             url: "https://example.com/webhook",
-            events: ["pool.created", "pool.staked"],
+            events: ["pool.deployed", "business.deployed"],
             description: "Test webhook",
           },
         },
@@ -94,7 +94,7 @@ describe("Webhooks Flow", () => {
       expect(result.data.createWebhookEndpoint).toBeDefined();
       expect(result.data.createWebhookEndpoint.id).toBeDefined();
       expect(result.data.createWebhookEndpoint.url).toBe("https://example.com/webhook");
-      expect(result.data.createWebhookEndpoint.events).toEqual(["pool.created", "pool.staked"]);
+      expect(result.data.createWebhookEndpoint.events).toEqual(["pool.deployed", "business.deployed"]);
       expect(result.data.createWebhookEndpoint.description).toBe("Test webhook");
       expect(result.data.createWebhookEndpoint.active).toBe(true);
       expect(result.data.createWebhookEndpoint.rateLimitPerMinute).toBe(100);
@@ -115,7 +115,7 @@ describe("Webhooks Flow", () => {
       const endpoint = result.data.getWebhookEndpoints.find((e: any) => e.id === endpointId);
       expect(endpoint).toBeDefined();
       expect(endpoint.url).toBe("https://example.com/webhook");
-      expect(endpoint.events).toEqual(["pool.created", "pool.staked"]);
+      expect(endpoint.events).toEqual(["pool.deployed", "business.deployed"]);
       expect(endpoint.active).toBe(true);
     });
 
@@ -130,7 +130,7 @@ describe("Webhooks Flow", () => {
       expect(result.data.getWebhookEndpoint).toBeDefined();
       expect(result.data.getWebhookEndpoint.id).toBe(endpointId);
       expect(result.data.getWebhookEndpoint.url).toBe("https://example.com/webhook");
-      expect(result.data.getWebhookEndpoint.events).toEqual(["pool.created", "pool.staked"]);
+      expect(result.data.getWebhookEndpoint.events).toEqual(["pool.deployed", "business.deployed"]);
       expect(result.data.getWebhookEndpoint.userId).toBe(userId);
       expect(result.data.getWebhookEndpoint.active).toBe(true);
     });
@@ -142,7 +142,7 @@ describe("Webhooks Flow", () => {
           input: {
             id: endpointId,
             url: "https://example.com/webhook-v2",
-            events: ["pool.created", "pool.burned"],
+            events: ["pool.deployed"],
             description: "Updated webhook",
           },
         },
@@ -153,7 +153,7 @@ describe("Webhooks Flow", () => {
       expect(result.data.updateWebhookEndpoint).toBeDefined();
       expect(result.data.updateWebhookEndpoint.id).toBe(endpointId);
       expect(result.data.updateWebhookEndpoint.url).toBe("https://example.com/webhook-v2");
-      expect(result.data.updateWebhookEndpoint.events).toEqual(["pool.created", "pool.burned"]);
+      expect(result.data.updateWebhookEndpoint.events).toEqual(["pool.deployed"]);
       expect(result.data.updateWebhookEndpoint.description).toBe("Updated webhook");
       expect(result.data.updateWebhookEndpoint.active).toBe(true);
     });
@@ -187,7 +187,7 @@ describe("Webhooks Flow", () => {
         {
           input: {
             url: "https://example.com/private-webhook",
-            events: ["pool.created"],
+            events: ["pool.deployed"],
           },
         },
         accessToken
@@ -243,7 +243,7 @@ describe("Webhooks Flow", () => {
         {
           input: {
             url: "https://example.com/idor-get-webhook",
-            events: ["pool.created"],
+            events: ["pool.deployed"],
             description: "IDOR get test webhook",
           },
         },
@@ -288,7 +288,7 @@ describe("Webhooks Flow", () => {
         {
           input: {
             url: "https://example.com/idor-update-webhook",
-            events: ["pool.created"],
+            events: ["pool.deployed"],
             description: "IDOR update test webhook",
           },
         },
@@ -305,7 +305,7 @@ describe("Webhooks Flow", () => {
           input: {
             id: foreignEndpointId,
             url: "https://example.com/hijacked-webhook",
-            events: ["pool.burned"],
+            events: ["business.deployed"],
             active: false,
           },
         },
@@ -324,7 +324,7 @@ describe("Webhooks Flow", () => {
 
       expect(ownerResult.errors).toBeUndefined();
       expect(ownerResult.data.getWebhookEndpoint.url).toBe("https://example.com/idor-update-webhook");
-      expect(ownerResult.data.getWebhookEndpoint.events).toEqual(["pool.created"]);
+      expect(ownerResult.data.getWebhookEndpoint.events).toEqual(["pool.deployed"]);
       expect(ownerResult.data.getWebhookEndpoint.active).toBe(true);
 
       // Clean up
@@ -342,7 +342,7 @@ describe("Webhooks Flow", () => {
         {
           input: {
             url: "https://example.com/idor-delete-webhook",
-            events: ["pool.created"],
+            events: ["pool.deployed"],
             description: "IDOR delete test webhook",
           },
         },

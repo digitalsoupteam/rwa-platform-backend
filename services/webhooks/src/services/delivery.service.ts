@@ -9,7 +9,6 @@ import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 import { metrics } from '@shared/monitoring/src/metrics';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 
-const CIRCUIT_BREAKER_THRESHOLD = 5;
 const CIRCUIT_BREAKER_TTL = 3600;
 const MAX_PAYLOAD_SIZE = 256 * 1024;
 
@@ -62,20 +61,30 @@ export class DeliveryService {
 
       const body = JSON.stringify(data.payload);
       if (Buffer.byteLength(body, 'utf8') > MAX_PAYLOAD_SIZE) {
-        logger.warn('Payload exceeds max size, truncating', { eventId: data.eventId });
+        logger.warn('Payload exceeds max size, dead-lettering', { eventId: data.eventId });
         await this.recordFailure(data.deliveryLogId, data.attempt, 413, '', 'Payload too large');
+        await this.markDeadLetter(data.deliveryLogId);
+        metrics.counter('webhook_delivery_total', { status: 'dead_letter' });
         return { success: false, deadLetter: true };
       }
 
-      const signature = crypto.createHmac('sha256', decryptedSecret).update(body).digest('hex');
+      // Standard Webhooks scheme: the signature covers `<id>.<timestamp>.<body>`
+      // so receivers can reject replays. `webhook-id` stays the same across
+      // retries of the same message and is the receiver's deduplication key.
+      const timestamp = Math.floor(Date.now() / 1000);
+      const signature = crypto
+        .createHmac('sha256', this.secretKeyBytes(decryptedSecret))
+        .update(`${data.eventId}.${timestamp}.${body}`)
+        .digest('base64');
 
       const response = await fetch(data.url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Webhook-Id': data.eventId,
-          'X-Webhook-Timestamp': String(Date.now()),
-          'X-Webhook-Signature': `sha256=${signature}`,
+          'webhook-id': data.eventId,
+          'webhook-timestamp': String(timestamp),
+          'webhook-signature': `v1,${signature}`,
+          'webhook-event': data.eventType,
         },
         body,
         redirect: 'manual',
@@ -87,7 +96,6 @@ export class DeliveryService {
 
       if (response.ok) {
         await this.recordSuccess(data.deliveryLogId, data.attempt, response.status);
-        await this.resetCircuitBreaker(data.endpointId);
         metrics.counter('webhook_delivery_total', { status: 'success' });
         return { success: true };
       }
@@ -97,6 +105,7 @@ export class DeliveryService {
       // treat it like 400/404/410: record a failure, dead letter and deactivate.
       if (response.status === 0 || (response.status >= 300 && response.status < 400)) {
         await this.recordFailure(data.deliveryLogId, data.attempt, response.status, '', 'Redirects are not followed');
+        await this.markDeadLetter(data.deliveryLogId);
         await this.deactivateEndpoint(data.endpointId);
         metrics.counter('webhook_delivery_total', { status: 'dead_letter' });
         return { success: false, deadLetter: true };
@@ -111,6 +120,7 @@ export class DeliveryService {
           responseBody,
           `HTTP ${response.status}`,
         );
+        await this.markDeadLetter(data.deliveryLogId);
         await this.deactivateEndpoint(data.endpointId);
         metrics.counter('webhook_delivery_total', { status: 'dead_letter' });
         return { success: false, deadLetter: true };
@@ -132,7 +142,6 @@ export class DeliveryService {
         return { success: false, deadLetter: true };
       }
 
-      await this.incrementConsecutiveFailures(data.endpointId);
       metrics.counter('webhook_delivery_total', { status: 'retry' });
       return { success: false, retry: true };
     } catch (error: any) {
@@ -149,7 +158,6 @@ export class DeliveryService {
         return { success: false, deadLetter: true };
       }
 
-      await this.incrementConsecutiveFailures(data.endpointId);
       metrics.counter('webhook_delivery_total', { status: 'retry' });
       return { success: false, retry: true };
     }
@@ -192,28 +200,15 @@ export class DeliveryService {
     }
   }
 
-  private async resetCircuitBreaker(endpointId: string) {
-    try {
-      await this.endpointRepository.updateEndpoint(endpointId, { consecutiveFailures: 0 });
-    } catch {
-      // Best effort
+  /**
+   * Standard Webhooks secrets arrive as `whsec_<base64>`; anything else
+   * (legacy secrets) is used verbatim as UTF-8 key material.
+   */
+  private secretKeyBytes(secret: string): Buffer {
+    if (secret.startsWith('whsec_')) {
+      return Buffer.from(secret.slice('whsec_'.length), 'base64');
     }
-  }
-
-  private async incrementConsecutiveFailures(endpointId: string) {
-    try {
-      const doc = await this.endpointRepository.findById(endpointId).catch(() => null);
-      if (doc) {
-        const newCount = (doc.consecutiveFailures || 0) + 1;
-        await this.endpointRepository.updateEndpoint(endpointId, { consecutiveFailures: newCount });
-
-        if (newCount >= CIRCUIT_BREAKER_THRESHOLD) {
-          await this.deactivateEndpoint(endpointId);
-        }
-      }
-    } catch {
-      // Best effort
-    }
+    return Buffer.from(secret, 'utf8');
   }
 
   private decryptSecret(encrypted: string): string {

@@ -33,7 +33,14 @@ export class DeliveryDaemon {
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({
-    args: (a) => ({ endpointId: a[0]?.content?.endpointId, eventId: a[0]?.content?.eventId }),
+    args: (a) => {
+      try {
+        const delivery = JSON.parse(a[0]?.content?.toString() ?? '');
+        return { endpointId: delivery.endpointId, eventId: delivery.eventId };
+      } catch {
+        return {};
+      }
+    },
   })
   private async handleDelivery(message: ConsumeMessage | null): Promise<void> {
     if (!message) return;
@@ -59,22 +66,21 @@ export class DeliveryDaemon {
         // nack(requeue=false) → DLQ
         await this.webhookDeliveryClient.nackMessage(message, false);
       } else if (result.retry) {
-        // Re-enqueue with incremented attempt
-        const retryDelay = Math.min(1000 * Math.pow(2, delivery.attempt) + Math.random() * 250, 128000);
+        // Park the message in the retry bucket for the next backoff step, then
+        // ack. The retry message is published first: if the broker rejects it,
+        // the current message is requeued instead of being lost.
         const retryMessage: DeliveryMessage = {
           ...delivery,
           attempt: delivery.attempt + 1,
         };
 
-        // ack current, send new with delay
-        await this.webhookDeliveryClient.ackMessage(message);
-        setTimeout(async () => {
-          try {
-            await this.webhookDeliveryClient.sendToDeliveryQueue(retryMessage);
-          } catch (error) {
-            logger.error('Failed to re-enqueue delivery for retry:', error);
-          }
-        }, retryDelay);
+        try {
+          await this.webhookDeliveryClient.sendToRetryQueue(delivery.attempt, retryMessage);
+          await this.webhookDeliveryClient.ackMessage(message);
+        } catch (error) {
+          logger.error('Failed to schedule delivery retry:', error);
+          await this.webhookDeliveryClient.nackMessage(message, true);
+        }
       }
     } catch (error) {
       logger.error('Failed to handle delivery:', error);

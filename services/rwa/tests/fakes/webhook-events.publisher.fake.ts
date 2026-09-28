@@ -10,7 +10,7 @@ export function createFakeWebhookEventsPublisher() {
   return {
     initialize: mock(async (): Promise<void> => {}),
 
-    publish: mock(async (_eventType: string, _payload: unknown): Promise<void> => {}),
+    publish: mock(async (_eventType: string, _payload: unknown, _sourceId?: string): Promise<void> => {}),
   };
 }
 

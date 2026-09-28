@@ -1,4 +1,13 @@
 import { t } from 'elysia';
+import { webhookEventTypeSchema } from '../shared/enums.model';
+
+/*
+ * Requests accept only known event types, so a typo cannot silently create a
+ * subscription that never fires. Responses stay permissive: endpoints created
+ * before an event type was removed must remain readable.
+ */
+const requestEventsSchema = t.Array(webhookEventTypeSchema, { uniqueItems: true });
+const requestRateLimitSchema = t.Number({ minimum: 1, maximum: 100000 });
 
 /*
  * Base endpoint schema
@@ -22,8 +31,9 @@ export type IEndpointDTO = typeof endpointSchema.static;
  * Create endpoint
  */
 export const createEndpointRequest = t.Composite([
-  t.Pick(endpointSchema, ['userId', 'wallet', 'url', 'events']),
-  t.Partial(t.Pick(endpointSchema, ['description', 'rateLimitPerMinute'])),
+  t.Pick(endpointSchema, ['userId', 'wallet', 'url']),
+  t.Object({ events: requestEventsSchema }),
+  t.Partial(t.Object({ description: t.String(), rateLimitPerMinute: requestRateLimitSchema })),
 ]);
 export const createEndpointResponse = t.Composite([
   t.Pick(endpointSchema, [
@@ -74,7 +84,15 @@ export const getEndpointResponse = endpointSchema;
  */
 export const updateEndpointRequest = t.Composite([
   t.Pick(endpointSchema, ['id', 'userId', 'wallet']),
-  t.Partial(t.Pick(endpointSchema, ['url', 'events', 'description', 'active', 'rateLimitPerMinute'])),
+  t.Partial(
+    t.Object({
+      url: t.String(),
+      events: requestEventsSchema,
+      description: t.String(),
+      active: t.Boolean(),
+      rateLimitPerMinute: requestRateLimitSchema,
+    }),
+  ),
 ]);
 export const updateEndpointResponse = t.Composite([
   t.Pick(endpointSchema, [

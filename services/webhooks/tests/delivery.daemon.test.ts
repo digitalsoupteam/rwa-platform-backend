@@ -6,9 +6,10 @@
  * on globalThis.fetch and a fake RabbitMQ-backed delivery client
  * (tests/fakes/*.fake.ts). The fake client captures the handler registered
  * through consumeDelivery; tests invoke it with synthetic amqplib-shaped
- * messages and assert the ack/nack/retry decisions and the retry backoff. The
- * retry timer is captured (setTimeout is stubbed) and fired manually — nothing
- * is ever waited on. No database, no broker, no network.
+ * messages and assert the ack/nack/retry decisions. Retries are parked in
+ * RabbitMQ retry buckets (no in-process timers), so there is nothing to wait
+ * on: nothing is ever scheduled in this process. No database, no broker, no
+ * network.
  */
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test';
 import { DeliveryDaemon } from '../src/daemons/delivery.daemon';
@@ -29,35 +30,9 @@ import { createSyntheticMessage } from './fakes/consumerMessage.fake';
 
 const ENCRYPTION_KEY = Buffer.alloc(32, 7).toString('base64');
 
-const RAW_SECRET = 'whsec_test_secret';
+const RAW_SECRET = `whsec_${Buffer.alloc(32, 9).toString('base64')}`;
 const HOOK_URL = 'https://8.8.8.8/hooks';
 const EVENT_ID = 'evt-1';
-
-type ScheduledTimer = { callback: () => unknown; delayMs: number };
-
-/**
- * Replaces globalThis.setTimeout with a recording stub so the daemon's retry
- * backoff can be asserted and fired deterministically, with no real waiting.
- */
-function installFakeTimers() {
-  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'setTimeout');
-  const timers: ScheduledTimer[] = [];
-
-  const stub = (callback: () => unknown, delayMs?: number) => {
-    timers.push({ callback, delayMs: delayMs ?? 0 });
-    return 0 as unknown as ReturnType<typeof setTimeout>;
-  };
-
-  Object.defineProperty(globalThis, 'setTimeout', { value: stub, writable: true, configurable: true });
-
-  return {
-    timers,
-    restore: () => {
-      if (descriptor) Object.defineProperty(globalThis, 'setTimeout', descriptor);
-      else delete (globalThis as any).setTimeout;
-    },
-  };
-}
 
 describe('DeliveryDaemon (unit, fake clients and repositories)', () => {
   let logs: FakeDeliveryLogRepository;
@@ -67,7 +42,6 @@ describe('DeliveryDaemon (unit, fake clients and repositories)', () => {
   let http: FakeFetch;
   let deliveryClient: FakeWebhookDeliveryClient;
   let daemon: DeliveryDaemon;
-  let fakeTimers: ReturnType<typeof installFakeTimers>;
   let journal: string[];
   let handler: ((msg: any) => Promise<void>) | null;
 
@@ -82,7 +56,6 @@ describe('DeliveryDaemon (unit, fake clients and repositories)', () => {
     box = createSecretBox(ENCRYPTION_KEY);
     http = createFakeFetch();
     http.install();
-    fakeTimers = installFakeTimers();
     journal = [];
     deliveryClient = createFakeWebhookDeliveryClient(journal);
 
@@ -102,20 +75,19 @@ describe('DeliveryDaemon (unit, fake clients and repositories)', () => {
       wallet: '0xAbC0000000000000000000000000000000000001',
       url: HOOK_URL,
       secret: 'encrypted-at-rest',
-      events: ['pool.created'],
+      events: ['pool.deployed'],
     });
     endpointId = created._id.toString();
     encryptedSecret = box.encrypt(RAW_SECRET);
     deliveryLogId = await deliveryService.createDeliveryLog({
       endpointId,
-      eventType: 'pool.created',
+      eventType: 'pool.deployed',
       eventId: EVENT_ID,
       payload: { hello: 'world' },
     });
   });
 
   afterEach(() => {
-    fakeTimers.restore();
     http.restore();
   });
 
@@ -123,7 +95,7 @@ describe('DeliveryDaemon (unit, fake clients and repositories)', () => {
     return {
       endpointId,
       eventId: EVENT_ID,
-      eventType: 'pool.created',
+      eventType: 'pool.deployed',
       payload: { hello: 'world' },
       attempt: 0,
       maxAttempts: 3,
@@ -148,12 +120,14 @@ describe('DeliveryDaemon (unit, fake clients and repositories)', () => {
     expect(deliveryClient.ackMessage).toHaveBeenCalledTimes(1);
     expect(deliveryClient.nackMessage).toHaveBeenCalledTimes(0);
     expect(deliveryClient.sendToDeliveryQueue).toHaveBeenCalledTimes(0);
-    expect(fakeTimers.timers).toHaveLength(0);
+    expect(deliveryClient.sendToRetryQueue).toHaveBeenCalledTimes(0);
     expect(journal).toEqual(['ackMessage']);
 
     expect(http.calls).toHaveLength(1);
     expect(http.calls[0].url).toBe(HOOK_URL);
-    expect(http.calls[0].init.headers['X-Webhook-Id']).toBe(EVENT_ID);
+    // Standard Webhooks headers: the id is the receiver's deduplication key.
+    expect(http.calls[0].init.headers['webhook-id']).toBe(EVENT_ID);
+    expect(http.calls[0].init.headers['webhook-event']).toBe('pool.deployed');
     expect(http.calls[0].init.body).toBe(JSON.stringify(message.payload));
     expect(logs.updateStatus).toHaveBeenCalledWith(deliveryLogId, { status: 'delivered' });
   });
@@ -168,50 +142,43 @@ describe('DeliveryDaemon (unit, fake clients and repositories)', () => {
     expect(deliveryClient.nackedMessages[0].message).toBe(message);
     expect(deliveryClient.nackedMessages[0].requeue).toBe(false);
     expect(deliveryClient.ackMessage).toHaveBeenCalledTimes(0);
-    expect(fakeTimers.timers).toHaveLength(0);
+    expect(deliveryClient.sendToRetryQueue).toHaveBeenCalledTimes(0);
+    expect(logs.updateStatus).toHaveBeenCalledWith(deliveryLogId, { status: 'dead_letter' });
     expect(journal).toEqual(['nackMessage']);
   });
 
-  test('handler: acks the current message and schedules the re-enqueue on retry', async () => {
+  test('handler: parks the retry in a broker bucket, then acks — in that order', async () => {
     http.setResponse({ status: 500, body: 'boom' });
     const message = deliveryMessage();
 
     await handler!(createSyntheticMessage(message));
 
+    // No in-process timer: the message is republished into the retry bucket
+    // selected by the incoming attempt, the original one is acked afterwards.
+    expect(deliveryClient.retriedMessages).toHaveLength(1);
+    expect(deliveryClient.retriedMessages[0].attempt).toBe(0);
+    expect(deliveryClient.retriedMessages[0].content).toEqual({ ...message, attempt: 1 });
     expect(deliveryClient.ackMessage).toHaveBeenCalledTimes(1);
     expect(deliveryClient.nackMessage).toHaveBeenCalledTimes(0);
-    expect(deliveryClient.sendToDeliveryQueue).toHaveBeenCalledTimes(0); // only after the timer fires
-    expect(fakeTimers.timers).toHaveLength(1);
-
-    const timer = fakeTimers.timers[0];
-    // 1000 * 2^attempt + up to 250 ms of jitter, computed from the incoming attempt.
-    expect(timer.delayMs).toBeGreaterThanOrEqual(1000);
-    expect(timer.delayMs).toBeLessThanOrEqual(1250);
-    expect(journal).toEqual(['ackMessage']);
-
-    await timer.callback();
-
-    expect(deliveryClient.sendToDeliveryQueue).toHaveBeenCalledTimes(1);
-    // The retried message is the original with the attempt incremented once.
-    expect(deliveryClient.sentMessages[0]).toEqual({ ...message, attempt: 1 });
-    expect(journal).toEqual(['ackMessage', 'sendToDeliveryQueue']);
+    expect(deliveryClient.sendToDeliveryQueue).toHaveBeenCalledTimes(0);
+    expect(journal).toEqual(['sendToRetryQueue', 'ackMessage']);
   });
 
-  for (const { attempt, min, max } of [
-    { attempt: 1, min: 2000, max: 2250 },
-    { attempt: 3, min: 8000, max: 8250 },
-    { attempt: 10, min: 128000, max: 128000 }, // capped by Math.min(..., 128000)
-  ]) {
-    test(`handler: retry backoff for attempt ${attempt} is ${min}-${max}ms`, async () => {
-      http.setResponse({ status: 500, body: 'boom' });
-
-      await handler!(createSyntheticMessage(deliveryMessage({ attempt, maxAttempts: attempt + 2 })));
-
-      expect(fakeTimers.timers).toHaveLength(1);
-      expect(fakeTimers.timers[0].delayMs).toBeGreaterThanOrEqual(min);
-      expect(fakeTimers.timers[0].delayMs).toBeLessThanOrEqual(max);
+  test('handler: requeues the original message when the retry cannot be scheduled', async () => {
+    http.setResponse({ status: 500, body: 'boom' });
+    deliveryClient.sendToRetryQueue.mockImplementationOnce(async () => {
+      throw new Error('rabbit down');
     });
-  }
+    const message = createSyntheticMessage(deliveryMessage());
+
+    await handler!(message);
+
+    // Nothing was acked: the broker will redeliver this very message.
+    expect(deliveryClient.ackMessage).toHaveBeenCalledTimes(0);
+    expect(deliveryClient.nackedMessages).toHaveLength(1);
+    expect(deliveryClient.nackedMessages[0].message).toBe(message);
+    expect(deliveryClient.nackedMessages[0].requeue).toBe(true);
+  });
 
   test('handler: forwards the incremented attempt, so the boundary is evaluated on attempt+1', async () => {
     http.setResponse({ status: 500, body: 'boom' });
@@ -225,7 +192,7 @@ describe('DeliveryDaemon (unit, fake clients and repositories)', () => {
     expect(deliveryClient.nackedMessages[0].message).toBe(message);
     expect(deliveryClient.nackedMessages[0].requeue).toBe(false);
     expect(deliveryClient.ackMessage).toHaveBeenCalledTimes(0);
-    expect(fakeTimers.timers).toHaveLength(0);
+    expect(deliveryClient.sendToRetryQueue).toHaveBeenCalledTimes(0);
     expect(logs.updateStatus).toHaveBeenCalledWith(deliveryLogId, { status: 'dead_letter' });
   });
 
@@ -240,6 +207,7 @@ describe('DeliveryDaemon (unit, fake clients and repositories)', () => {
     expect(deliveryClient.nackedMessages[0].message).toBe(message);
     expect(deliveryClient.nackedMessages[0].requeue).toBe(false);
     expect(deliveryClient.ackMessage).toHaveBeenCalledTimes(0);
+    expect(logs.updateStatus).toHaveBeenCalledWith(deliveryLogId, { status: 'dead_letter' });
   });
 
   test('handler: ignores a null delivery', async () => {
@@ -247,7 +215,7 @@ describe('DeliveryDaemon (unit, fake clients and repositories)', () => {
 
     expect(deliveryClient.ackMessage).toHaveBeenCalledTimes(0);
     expect(deliveryClient.nackMessage).toHaveBeenCalledTimes(0);
-    expect(fakeTimers.timers).toHaveLength(0);
+    expect(deliveryClient.sendToRetryQueue).toHaveBeenCalledTimes(0);
   });
 
   test('handler: nacks without requeue when the content is not valid JSON', async () => {
@@ -259,7 +227,6 @@ describe('DeliveryDaemon (unit, fake clients and repositories)', () => {
     expect(deliveryClient.nackedMessages[0].message).toBe(message);
     expect(deliveryClient.nackedMessages[0].requeue).toBe(false);
     expect(deliveryClient.ackMessage).toHaveBeenCalledTimes(0);
-    expect(fakeTimers.timers).toHaveLength(0);
   });
 
   test('handler: nacks without requeue when the delivery service throws', async () => {
@@ -278,7 +245,6 @@ describe('DeliveryDaemon (unit, fake clients and repositories)', () => {
     expect(deliveryClient.nackedMessages[0].message).toBe(message);
     expect(deliveryClient.nackedMessages[0].requeue).toBe(false);
     expect(deliveryClient.ackMessage).toHaveBeenCalledTimes(0);
-    expect(fakeTimers.timers).toHaveLength(0);
     expect(journal).toEqual(['nackMessage']);
   });
 });

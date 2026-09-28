@@ -32,7 +32,7 @@ const ENCRYPTION_KEY = Buffer.alloc(32, 7).toString('base64');
 
 const EVENT = {
   id: 'evt-1',
-  type: 'pool.created',
+  type: 'pool.deployed',
   timestamp: 1766000000000,
   payload: { poolId: 'pool-1', amount: '100' },
 };
@@ -79,7 +79,7 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
       wallet: '0xAbC0000000000000000000000000000000000001',
       url: 'https://8.8.8.8/hooks',
       secret: 'encrypted-at-rest',
-      events: ['pool.created'],
+      events: ['pool.deployed'],
     });
     Object.assign(created as any, overrides);
     return created;
@@ -91,12 +91,12 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
   });
 
   test('handler: acks an event that no endpoint subscribes to', async () => {
-    await seedEndpoint({ events: ['vote.cast'] });
+    await seedEndpoint({ events: ['business.deployed'] });
 
     const message = createSyntheticMessage(EVENT);
     await handler!(message);
 
-    expect(endpoints.findByEvents).toHaveBeenCalledWith('pool.created');
+    expect(endpoints.findByEvents).toHaveBeenCalledWith('pool.deployed');
     expect(eventsClient.ackMessage).toHaveBeenCalledWith(message);
     expect(eventsClient.nackMessage).toHaveBeenCalledTimes(0);
     expect(logs.createDeliveryLog).toHaveBeenCalledTimes(0);
@@ -110,7 +110,6 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
     const message = createSyntheticMessage(EVENT);
     await handler!(message);
 
-    expect(redis.smembers).toHaveBeenCalledWith('webhook:events:pool.created');
     expect(logs.createDeliveryLog).toHaveBeenCalledTimes(2);
     expect(deliveryClient.sendToDeliveryQueue).toHaveBeenCalledTimes(2);
 
@@ -164,20 +163,6 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
     expect(eventsClient.ackMessage).toHaveBeenCalledTimes(1);
   });
 
-  test('handler: still delivers when the Redis index is unavailable', async () => {
-    await seedEndpoint();
-    redis.smembers.mockImplementationOnce(async () => {
-      throw new Error('redis down');
-    });
-
-    const message = createSyntheticMessage(EVENT);
-    await handler!(message);
-
-    expect(endpoints.findByEvents).toHaveBeenCalledTimes(1);
-    expect(deliveryClient.sendToDeliveryQueue).toHaveBeenCalledTimes(1);
-    expect(eventsClient.ackMessage).toHaveBeenCalledTimes(1);
-  });
-
   test('handler: skips an endpoint that exceeded its rate limit', async () => {
     const endpoint = await seedEndpoint({ rateLimitPerMinute: 10 });
     const rateLimitKey = `webhook:endpoint:${endpoint._id.toString()}:rl`;
@@ -214,19 +199,72 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
     expect(logs.createDeliveryLog).toHaveBeenCalledTimes(0);
   });
 
-  test('handler: nacks without requeue when the content is not valid JSON', async () => {
-    const message = createSyntheticMessage('{not json');
+  test('handler: a failing subscriber does not stop the others and earns one redelivery', async () => {
+    await seedEndpoint({ userId: 'user-1' });
+    const second = await seedEndpoint({ userId: 'user-2', url: 'https://9.9.9.9/hooks', secret: 'encrypted-second' });
+    deliveryClient.sendToDeliveryQueue.mockImplementationOnce(async () => {
+      throw new Error('rabbit hiccup');
+    });
 
+    const message = createSyntheticMessage(EVENT);
+    await handler!(message);
+
+    // The second subscriber still got its delivery …
+    expect(deliveryClient.sendToDeliveryQueue).toHaveBeenCalledTimes(2);
+    expect(deliveryClient.sentMessages.at(-1)!.endpointId).toBe(second._id.toString());
+    // … and the event is requeued once instead of being dropped silently.
+    expect(eventsClient.nackedMessages).toHaveLength(1);
+    expect(eventsClient.nackedMessages[0].requeue).toBe(true);
+    expect(eventsClient.ackMessage).toHaveBeenCalledTimes(0);
+  });
+
+  test('handler: parks the event when the redelivered attempt fails again', async () => {
+    await seedEndpoint();
+    deliveryClient.sendToDeliveryQueue.mockImplementation(async () => {
+      throw new Error('mongo down');
+    });
+
+    const message = createSyntheticMessage(EVENT, { redelivered: true });
+    await handler!(message);
+
+    expect(eventsClient.nackedMessages).toHaveLength(1);
+    expect(eventsClient.nackedMessages[0].requeue).toBe(false); // → DLQ
+  });
+
+  test('handler: a duplicate delivery log (redelivery) is treated as already enqueued', async () => {
+    await seedEndpoint();
+    // Mongo raises 11000 when the (endpointId, eventId) unique index collides:
+    // the previous attempt already created the log and enqueued the delivery.
+    logs.createDeliveryLog.mockImplementationOnce(async () => {
+      throw Object.assign(new Error('E11000 duplicate key error'), { code: 11000 });
+    });
+
+    const message = createSyntheticMessage(EVENT);
+    await handler!(message);
+
+    expect(deliveryClient.sendToDeliveryQueue).toHaveBeenCalledTimes(0);
+    expect(eventsClient.ackMessage).toHaveBeenCalledTimes(1);
+    expect(eventsClient.nackMessage).toHaveBeenCalledTimes(0);
+  });
+
+  test('handler: nacks with requeue once for a malformed message, then parks it', async () => {
+    const message = createSyntheticMessage('{not json');
     await handler!(message);
 
     expect(eventsClient.nackedMessages).toHaveLength(1);
     expect(eventsClient.nackedMessages[0].message).toBe(message);
-    expect(eventsClient.nackedMessages[0].requeue).toBe(false);
+    expect(eventsClient.nackedMessages[0].requeue).toBe(true);
     expect(eventsClient.ackMessage).toHaveBeenCalledTimes(0);
+
+    const redelivered = createSyntheticMessage('{not json', { redelivered: true });
+    await handler!(redelivered);
+
+    expect(eventsClient.nackedMessages).toHaveLength(2);
+    expect(eventsClient.nackedMessages[1].message).toBe(redelivered);
+    expect(eventsClient.nackedMessages[1].requeue).toBe(false); // → DLQ
   });
 
-  test('handler: nacks without requeue when the event cannot be processed', async () => {
-    redis.status = 'end'; // bypass the Redis cache read
+  test('handler: nacks with requeue once when the subscription lookup fails, then parks', async () => {
     endpoints.findByEvents.mockImplementationOnce(async () => {
       throw new Error('mongo down');
     });
@@ -236,16 +274,25 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
 
     expect(eventsClient.nackedMessages).toHaveLength(1);
     expect(eventsClient.nackedMessages[0].message).toBe(message);
-    expect(eventsClient.nackedMessages[0].requeue).toBe(false);
+    expect(eventsClient.nackedMessages[0].requeue).toBe(true);
     expect(eventsClient.ackMessage).toHaveBeenCalledTimes(0);
+
+    endpoints.findByEvents.mockImplementationOnce(async () => {
+      throw new Error('mongo down');
+    });
+    const redelivered = createSyntheticMessage(EVENT, { redelivered: true });
+    await handler!(redelivered);
+
+    expect(eventsClient.nackedMessages).toHaveLength(2);
+    expect(eventsClient.nackedMessages[1].requeue).toBe(false); // → DLQ
   });
 
-  test('handler: oversized events are still enqueued (the daemon only warns)', async () => {
+  test('handler: oversized events are enqueued as-is; the DeliveryService dead-letters them', async () => {
     await seedEndpoint();
 
-    // Faithful to src: the size check logs 'truncating' but does not truncate
-    // or reject — the delivery is created and the DeliveryService later
-    // dead-letters it (see the delivery.service tests).
+    // The daemon does not size-check anymore (it used to log "truncating"
+    // without truncating): the single enforcement point is the DeliveryService,
+    // which dead-letters oversized payloads without touching the endpoint.
     const payload = { blob: 'x'.repeat(256 * 1024) + 'x' };
     const message = createSyntheticMessage({ ...EVENT, payload });
     await handler!(message);

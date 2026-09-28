@@ -32,7 +32,7 @@ const CREATE_BODY = {
   userId: 'user-1',
   wallet: '0xAbC0000000000000000000000000000000000001',
   url: PUBLIC_URL,
-  events: ['pool.created', 'vote.cast'],
+  events: ['pool.deployed', 'business.deployed'],
 };
 
 function buildApp(
@@ -104,9 +104,7 @@ describe('webhooks HTTP layer (component, fake repositories and clients)', () =>
     });
     expect(typeof created.body.id).toBe('string');
     expect(created.body.id).toHaveLength(24); // Mongo ObjectId hex
-    expect(typeof created.body.secret).toBe('string');
-    expect(typeof created.body.createdAt).toBe('number');
-    expect(redis.sadd).toHaveBeenCalledWith('webhook:events:pool.created', created.body.id);
+    expect(created.body.secret).toMatch(/^whsec_/); // Standard Webhooks secret format
 
     const fetched = await post(app, '/getEndpoint', {
       id: created.body.id,
@@ -130,6 +128,22 @@ describe('webhooks HTTP layer (component, fake repositories and clients)', () =>
       url: PUBLIC_URL,
       events: CREATE_BODY.events,
     }); // wallet is missing
+
+    expect(response.status).not.toBe(200);
+    expect(endpoints.createEndpoint).toHaveBeenCalledTimes(0);
+  });
+
+  test('createEndpoint: an unknown event type is rejected before the repository', async () => {
+    // A typo or a removed event type must fail fast instead of creating a
+    // subscription that never fires.
+    const response = await post(app, '/createEndpoint', { ...CREATE_BODY, events: ['pool.created'] });
+
+    expect(response.status).not.toBe(200);
+    expect(endpoints.createEndpoint).toHaveBeenCalledTimes(0);
+  });
+
+  test('createEndpoint: a rate limit below 1 is rejected before the repository', async () => {
+    const response = await post(app, '/createEndpoint', { ...CREATE_BODY, rateLimitPerMinute: 0 });
 
     expect(response.status).not.toBe(200);
     expect(endpoints.createEndpoint).toHaveBeenCalledTimes(0);
@@ -196,18 +210,15 @@ describe('webhooks HTTP layer (component, fake repositories and clients)', () =>
       userId: CREATE_BODY.userId,
       wallet: CREATE_BODY.wallet,
       url: 'https://9.9.9.9/hooks-v2',
-      events: ['pool.created', 'pool.burned'],
+      events: ['business.deployed'],
     });
 
     expect(updated.status).toBe(200);
     expect(updated.body.url).toBe('https://9.9.9.9/hooks-v2');
-    expect(updated.body.events).toEqual(['pool.created', 'pool.burned']);
+    expect(updated.body.events).toEqual(['business.deployed']);
     expect(typeof updated.body.secret).toBe('string');
+    expect(updated.body.secret).toMatch(/^whsec_/);
     expect(updated.body.secret).not.toBe(created.secret);
-
-    // The event cache follows the update through the service.
-    expect(redis.sadd).toHaveBeenCalledWith('webhook:events:pool.burned', created.id);
-    expect(redis.srem).toHaveBeenCalledWith('webhook:events:vote.cast', created.id);
 
     const fetched = await post(app, '/getEndpoint', {
       id: created.id,
@@ -215,7 +226,7 @@ describe('webhooks HTTP layer (component, fake repositories and clients)', () =>
       wallet: CREATE_BODY.wallet,
     });
     expect(fetched.body.url).toBe('https://9.9.9.9/hooks-v2');
-    expect(fetched.body.events).toEqual(['pool.created', 'pool.burned']);
+    expect(fetched.body.events).toEqual(['business.deployed']);
   });
 
   test('updateEndpoint: a new URL plus active=false trips the Redis breaker key', async () => {
@@ -264,7 +275,7 @@ describe('webhooks HTTP layer (component, fake repositories and clients)', () =>
     expect(endpoints.updateEndpoint).toHaveBeenCalledTimes(0);
   });
 
-  test('deleteEndpoint: removes the endpoint and cleans the event cache', async () => {
+  test('deleteEndpoint: removes the endpoint and its breaker key', async () => {
     const created = (await post(app, '/createEndpoint', CREATE_BODY)).body;
 
     const deleted = await post(app, '/deleteEndpoint', {
@@ -275,8 +286,6 @@ describe('webhooks HTTP layer (component, fake repositories and clients)', () =>
 
     expect(deleted.status).toBe(200);
     expect(deleted.body).toEqual({ id: created.id });
-    expect(redis.srem).toHaveBeenCalledWith('webhook:events:pool.created', created.id);
-    expect(redis.srem).toHaveBeenCalledWith('webhook:events:vote.cast', created.id);
     expect(redis.del).toHaveBeenCalledWith(`webhook:endpoint:${created.id}:active`);
 
     const after = await post(app, '/getEndpoint', {

@@ -69,7 +69,7 @@ describe("Webhooks E2E — Business Deployment", () => {
       {
         input: {
           url: webhookServer.getUrl(),
-          events: ["business.created"],
+          events: ["business.deployed"],
           description: "E2E test webhook",
         },
       },
@@ -79,7 +79,7 @@ describe("Webhooks E2E — Business Deployment", () => {
     expect(result.errors).toBeUndefined();
     expect(result.data.createWebhookEndpoint).toBeDefined();
     expect(result.data.createWebhookEndpoint.url).toBe(webhookServer.getUrl());
-    expect(result.data.createWebhookEndpoint.events).toEqual(["business.created"]);
+    expect(result.data.createWebhookEndpoint.events).toEqual(["business.deployed"]);
     expect(result.data.createWebhookEndpoint.secret).toBeDefined();
 
     endpointId = result.data.createWebhookEndpoint.id;
@@ -222,11 +222,12 @@ describe("Webhooks E2E — Business Deployment", () => {
     expect((delivery.body as any).ownerId).toBe(companyId);
     expect((delivery.body as any).ownerType).toBe("company");
 
-    // Verify webhook headers
-    expect(delivery.headers["x-webhook-id"]).toBeDefined();
-    expect(delivery.headers["x-webhook-timestamp"]).toBeDefined();
-    expect(delivery.headers["x-webhook-signature"]).toBeDefined();
-    expect(delivery.headers["x-webhook-signature"]).toMatch(/^sha256=/);
+    // Verify webhook headers (Standard Webhooks scheme)
+    expect(delivery.headers["webhook-id"]).toBeDefined();
+    expect(delivery.headers["webhook-timestamp"]).toBeDefined();
+    expect(delivery.headers["webhook-signature"]).toBeDefined();
+    expect(delivery.headers["webhook-signature"]).toMatch(/^v1,/);
+    expect(delivery.headers["webhook-event"]).toBe("business.deployed");
     expect(delivery.headers["content-type"]).toBe("application/json");
   });
 
@@ -239,7 +240,7 @@ describe("Webhooks E2E — Business Deployment", () => {
       {
         input: {
           url: idorEndpointUrl,
-          events: ["pool.created"],
+          events: ["pool.deployed"],
           description: "IDOR test webhook",
         },
       },
@@ -268,7 +269,7 @@ describe("Webhooks E2E — Business Deployment", () => {
         input: {
           id: idorEndpointId,
           url: "https://example.com/hijacked-webhook",
-          events: ["pool.burned"],
+          events: ["business.deployed"],
           active: false,
         },
       },
@@ -298,7 +299,7 @@ describe("Webhooks E2E — Business Deployment", () => {
     expect(ownerResult.errors).toBeUndefined();
     expect(ownerResult.data.getWebhookEndpoint.id).toBe(idorEndpointId);
     expect(ownerResult.data.getWebhookEndpoint.url).toBe(idorEndpointUrl);
-    expect(ownerResult.data.getWebhookEndpoint.events).toEqual(["pool.created"]);
+    expect(ownerResult.data.getWebhookEndpoint.events).toEqual(["pool.deployed"]);
     expect(ownerResult.data.getWebhookEndpoint.active).toBe(true);
 
     // Clean up the endpoint created by this test
@@ -318,7 +319,7 @@ describe("Webhooks E2E — Business Deployment", () => {
       {
         input: {
           url: "https://172.20.0.5/internal",
-          events: ["pool.created"],
+          events: ["pool.deployed"],
         },
       },
       accessToken
@@ -334,7 +335,7 @@ describe("Webhooks E2E — Business Deployment", () => {
       {
         input: {
           url: "https://[::1]/internal",
-          events: ["pool.created"],
+          events: ["pool.deployed"],
         },
       },
       accessToken

@@ -97,7 +97,9 @@ describe('BlockchainEventsDaemon (unit, fake clients and services)', () => {
     await daemon.routing()[BUSINESS_EVENT](event);
 
     expect(businessService.syncAfterDeployment).toHaveBeenCalledTimes(1);
-    expect(businessService.syncAfterDeployment).toHaveBeenCalledWith(event.data);
+    expect(businessService.syncAfterDeployment).toHaveBeenCalledWith(event.data, {
+      sourceId: `${event.chainId}:${event.transactionHash}:${event.logIndex}`,
+    });
     expect(businessService.syncAfterDeployment.mock.calls[0][0]).toBe(event.data); // same reference, no re-mapping
     expect(poolService.syncPoolAfterDeployment).toHaveBeenCalledTimes(0);
   });
@@ -120,7 +122,15 @@ describe('BlockchainEventsDaemon (unit, fake clients and services)', () => {
       await daemon.routing()[eventName](event);
 
       expect(poolService[method]).toHaveBeenCalledTimes(1);
-      expect(poolService[method]).toHaveBeenCalledWith(event.data);
+      if (eventName === 'Pool_Deployed') {
+        // The deployment event also carries the stable source id used to make
+        // webhook deliveries deduplicable across scanner replays.
+        expect(poolService[method]).toHaveBeenCalledWith(event.data, {
+          sourceId: `${event.chainId}:${event.transactionHash}:${event.logIndex}`,
+        });
+      } else {
+        expect(poolService[method]).toHaveBeenCalledWith(event.data);
+      }
       expect(poolService[method].mock.calls[0][0]).toBe(event.data); // same reference, no re-mapping
     });
   }

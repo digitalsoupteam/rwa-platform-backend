@@ -49,6 +49,8 @@ const deliveryLogSchema = new Schema(deliveryLogSchemaDefinition);
 
 deliveryLogSchema.index({ endpointId: 1, eventId: 1 }, { unique: true });
 deliveryLogSchema.index({ status: 1, nextRetryAt: 1 });
+// Delivery logs are kept for 30 days; older records expire automatically.
+deliveryLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60 });
 
 export type IDeliveryLogEntity = InferRawDocType<typeof deliveryLogSchemaDefinition> & { _id: Types.ObjectId };
 export const DeliveryLogEntity = mongoose.model('WebhookDeliveryLog', deliveryLogSchema);
