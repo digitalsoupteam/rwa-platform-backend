@@ -71,6 +71,8 @@ export class LoyaltyService {
     };
     chainId: number;
     transactionHash: string;
+    logIndex: number;
+    blockNumber: number;
   }) {
     setSpanAttributes({
       wallet: event.data.sender,
@@ -138,6 +140,8 @@ export class LoyaltyService {
     };
     chainId: number;
     transactionHash: string;
+    logIndex: number;
+    blockNumber: number;
   }) {
     setSpanAttributes({
       wallet: event.data.sender,
@@ -212,6 +216,8 @@ export class LoyaltyService {
     };
     chainId: number;
     transactionHash: string;
+    logIndex: number;
+    blockNumber: number;
   }) {
     setSpanAttributes({
       wallet: event.data.minter,
@@ -282,6 +288,8 @@ export class LoyaltyService {
     };
     chainId: number;
     transactionHash: string;
+    logIndex: number;
+    blockNumber: number;
   }) {
     setSpanAttributes({
       wallet: event.data.burner,
