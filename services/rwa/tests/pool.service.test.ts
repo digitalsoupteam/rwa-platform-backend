@@ -30,7 +30,7 @@ import {
   createFakeWebhookEventsPublisher,
   type FakeWebhookEventsPublisher,
 } from './fakes/webhook-events.publisher.fake';
-import { createFakePoolService, type FakePoolService } from './fakes/pool.service.fake';
+import type { FakePoolService } from './fakes/pool.service.fake';
 
 const OWNER_ID = 'owner-1';
 const OWNER_TYPE = 'business';
@@ -583,7 +583,7 @@ describe('PoolService (unit, fake repositories and clients)', () => {
 
     const before = Math.floor(Date.now() / 1000);
     const result = await service.requestApprovalSignatures({
-      id: pool.id,
+      id: pool._id.toString(),
       ownerWallet: OWNER_WALLET,
       deployerWallet: DEPLOYER_WALLET,
       createPoolFeeRatio: CREATE_POOL_FEE_RATIO,
@@ -602,7 +602,7 @@ describe('PoolService (unit, fake repositories and clients)', () => {
     expect(body.expired).toBeGreaterThanOrEqual(before + 86400);
     expect(body.expired).toBeLessThanOrEqual(after + 86400);
 
-    const stored = pools.store.get(pool.id)!;
+    const stored = pools.store.get(pool._id.toString())!;
     expect(stored.approvalSignaturesTaskId).toBe(DEFAULT_SIGNATURE_TASK_ID);
     expect(stored.approvalSignaturesTaskExpired).toBe(body.expired);
   });
@@ -612,13 +612,13 @@ describe('PoolService (unit, fake repositories and clients)', () => {
     const second = await pools.createPool({ ...SIGNATURE_POOL, expectedHoldAmount: '2000' });
 
     await service.requestApprovalSignatures({
-      id: first.id,
+      id: first._id.toString(),
       ownerWallet: OWNER_WALLET,
       deployerWallet: DEPLOYER_WALLET,
       createPoolFeeRatio: CREATE_POOL_FEE_RATIO,
     });
     await service.requestApprovalSignatures({
-      id: second.id,
+      id: second._id.toString(),
       ownerWallet: OWNER_WALLET,
       deployerWallet: DEPLOYER_WALLET,
       createPoolFeeRatio: CREATE_POOL_FEE_RATIO,
@@ -631,11 +631,11 @@ describe('PoolService (unit, fake repositories and clients)', () => {
 
   test('requestApprovalSignatures: rejects a pool that already has an active task', async () => {
     const pool = await pools.createPool(SIGNATURE_POOL);
-    await pools.updatePool(pool.id, { approvalSignaturesTaskId: 'task-existing' });
+    await pools.updatePool(pool._id.toString(), { approvalSignaturesTaskId: 'task-existing' });
 
     await expect(
       service.requestApprovalSignatures({
-        id: pool.id,
+        id: pool._id.toString(),
         ownerWallet: OWNER_WALLET,
         deployerWallet: DEPLOYER_WALLET,
         createPoolFeeRatio: CREATE_POOL_FEE_RATIO,
@@ -655,7 +655,7 @@ describe('PoolService (unit, fake repositories and clients)', () => {
 
       await expect(
         service.requestApprovalSignatures({
-          id: pool.id,
+          id: pool._id.toString(),
           ownerWallet: OWNER_WALLET,
           deployerWallet: DEPLOYER_WALLET,
           createPoolFeeRatio: CREATE_POOL_FEE_RATIO,
@@ -673,7 +673,7 @@ describe('PoolService (unit, fake repositories and clients)', () => {
 
     await expect(
       service.requestApprovalSignatures({
-        id: pool.id,
+        id: pool._id.toString(),
         ownerWallet: OWNER_WALLET,
         deployerWallet: DEPLOYER_WALLET,
         createPoolFeeRatio: CREATE_POOL_FEE_RATIO,
@@ -702,18 +702,19 @@ describe('PoolService (unit, fake repositories and clients)', () => {
 
     await expect(
       service.requestApprovalSignatures({
-        id: pool.id,
+        id: pool._id.toString(),
         ownerWallet: OWNER_WALLET,
         deployerWallet: DEPLOYER_WALLET,
         createPoolFeeRatio: CREATE_POOL_FEE_RATIO,
       }),
     ).rejects.toBe(taskError);
 
-    expect(pools.store.get(pool.id)!.approvalSignaturesTaskId).toBeUndefined();
+    expect(pools.store.get(pool._id.toString())!.approvalSignaturesTaskId).toBeUndefined();
   });
 
   test('rejectApprovalSignatures: rejects a deployed pool with 403 NOT_ALLOWED', async () => {
-    const created = await service.createPool({ ...POOL, poolAddress: POOL_ADDRESS });
+    const created = await service.createPool(POOL);
+    await pools.updatePool(created.id, { poolAddress: POOL_ADDRESS });
 
     await expect(service.rejectApprovalSignatures(created.id)).rejects.toMatchObject({
       statusCode: 403,
@@ -765,13 +766,13 @@ describe('PoolService (unit, fake repositories and clients)', () => {
 
   test('syncPoolAfterDeployment: maps the deployment event, publishes redis and webhook events', async () => {
     const pool = await pools.createPool(POOL);
-    const event = { ...DEPLOYMENT_EVENT, entityId: pool.id };
+    const event = { ...DEPLOYMENT_EVENT, entityId: pool._id.toString() };
 
     const result = await service.syncPoolAfterDeployment(event);
 
     expect(pools.updatePool).toHaveBeenCalledTimes(1);
     const [updatedId, updateData] = pools.updatePool.mock.calls[0];
-    expect(updatedId).toBe(pool.id);
+    expect(updatedId).toBe(pool._id.toString());
     expect(updateData).toMatchObject({
       poolAddress: event.emittedFrom,
       holdToken: event.holdToken,
@@ -808,13 +809,13 @@ describe('PoolService (unit, fake repositories and clients)', () => {
     expect(result.tokenId).toBe(event.tokenId);
 
     expect(poolEvents.publishPoolDeployed).toHaveBeenCalledTimes(1);
-    expect(poolEvents.publishPoolDeployed).toHaveBeenCalledWith(expect.objectContaining({ id: pool.id, poolAddress: POOL_ADDRESS }));
+    expect(poolEvents.publishPoolDeployed).toHaveBeenCalledWith(expect.objectContaining({ id: pool._id.toString(), poolAddress: POOL_ADDRESS }));
     // The fake pool-events client delegates to redis like the real one.
     expect(poolEvents.redisClient.publish).toHaveBeenCalledWith('pool:deployed', 'POOL_DEPLOYED', expect.any(Object));
 
     expect(webhooks.publish).toHaveBeenCalledTimes(1);
     expect(webhooks.publish).toHaveBeenCalledWith('pool.staked', {
-      poolId: pool.id,
+      poolId: pool._id.toString(),
       poolAddress: POOL_ADDRESS,
       ownerId: OWNER_ID,
       ownerWallet: event.owner,
@@ -849,7 +850,7 @@ describe('PoolService (unit, fake repositories and clients)', () => {
       const result = await handler(event);
 
       expect(pools.updatePoolByAddress).toHaveBeenCalledWith(POOL_ADDRESS, expected);
-      expect(result.id).toBe(pool.id);
+      expect(result.id).toBe(pool._id.toString());
     });
   }
 
@@ -878,7 +879,7 @@ describe('PoolService (unit, fake repositories and clients)', () => {
       ],
     });
     expect(result.incomingTranches?.[1]?.returnedAmount).toBe('150');
-    expect(result.id).toBe(pool.id);
+    expect(result.id).toBe(pool._id.toString());
   });
 
   test('syncPoolIncomingTrancheUpdate: rejects an out-of-range tranche index with 400 VALIDATION_ERROR', async () => {
@@ -944,7 +945,7 @@ describe('PoolService (unit, fake repositories and clients)', () => {
       ],
     });
     expect(result.outgoingTranches?.[0]?.executedAmount).toBe('90');
-    expect(result.id).toBe(pool.id);
+    expect(result.id).toBe(pool._id.toString());
   });
 
   test('syncPoolOutgoingTrancheClaimed: rejects an out-of-range tranche index with 400 VALIDATION_ERROR', async () => {

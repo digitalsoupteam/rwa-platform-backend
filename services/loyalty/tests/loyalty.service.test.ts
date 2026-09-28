@@ -56,14 +56,63 @@ const SUPPORTED_NETWORKS = [
   { chainId: CHAIN_ID, name: 'BSC Testnet', referralTreasuryAddress: REFERRAL_TREASURY_ADDRESS },
 ];
 
-/**
- * The service reads event.logIndex / event.blockNumber even though its declared
- * parameter type does not list them (the daemon passes the full BlockchainEvent),
- * so the tests build the same full event objects.
- */
-type SyntheticEvent = Record<string, any>;
+// The builders return exactly the event shapes the service declares for each
+// handler; the daemon passes the full BlockchainEvent decoded from the chain,
+// so the tests build the same full event objects.
+type FeeCollectedSyntheticEvent = {
+  data: { sender: string; amount: string; token: string };
+  chainId: number;
+  transactionHash: string;
+  logIndex: number;
+  blockNumber: number;
+};
 
-function buildTokenFeeEvent(overrides: { sender?: string; amount?: string; token?: string } = {}): SyntheticEvent {
+type RwaMintedSyntheticEvent = {
+  data: {
+    minter: string;
+    rwaAmountMinted: string;
+    holdAmountPaid: string;
+    feePaid: string;
+    percentBefore: string;
+    userPercent: string;
+    targetReached: boolean;
+    businessId: string;
+    poolId: string;
+    holdToken: string;
+  };
+  chainId: number;
+  transactionHash: string;
+  logIndex: number;
+  blockNumber: number;
+};
+
+type RwaBurnedSyntheticEvent = {
+  data: {
+    burner: string;
+    rwaAmountBurned: string;
+    holdAmountReceived: string;
+    bonusAmountReceived: string;
+    holdFeePaid: string;
+    bonusFeePaid: string;
+    percentBefore: string;
+    userPercent: string;
+    targetReached: boolean;
+    businessId: string;
+    poolId: string;
+    holdToken: string;
+  };
+  chainId: number;
+  transactionHash: string;
+  logIndex: number;
+  blockNumber: number;
+};
+
+type TreasuryWithdrawnSyntheticEvent = {
+  data: { user: string; token: string; amount: string };
+  chainId: number;
+};
+
+function buildTokenFeeEvent(overrides: { sender?: string; amount?: string; token?: string } = {}): FeeCollectedSyntheticEvent {
   return {
     data: {
       sender: overrides.sender ?? LOWER_CASED_WALLET,
@@ -77,7 +126,7 @@ function buildTokenFeeEvent(overrides: { sender?: string; amount?: string; token
   };
 }
 
-function buildPoolFeeEvent(overrides: { sender?: string; amount?: string; token?: string } = {}): SyntheticEvent {
+function buildPoolFeeEvent(overrides: { sender?: string; amount?: string; token?: string } = {}): FeeCollectedSyntheticEvent {
   return {
     data: {
       sender: overrides.sender ?? LOWER_CASED_WALLET,
@@ -91,7 +140,7 @@ function buildPoolFeeEvent(overrides: { sender?: string; amount?: string; token?
   };
 }
 
-function buildRwaMintedEvent(overrides: { minter?: string; feePaid?: string } = {}): SyntheticEvent {
+function buildRwaMintedEvent(overrides: { minter?: string; feePaid?: string } = {}): RwaMintedSyntheticEvent {
   return {
     data: {
       minter: overrides.minter ?? LOWER_CASED_WALLET,
@@ -112,7 +161,7 @@ function buildRwaMintedEvent(overrides: { minter?: string; feePaid?: string } = 
   };
 }
 
-function buildRwaBurnedEvent(overrides: { burner?: string; holdFeePaid?: string; bonusFeePaid?: string } = {}): SyntheticEvent {
+function buildRwaBurnedEvent(overrides: { burner?: string; holdFeePaid?: string; bonusFeePaid?: string } = {}): RwaBurnedSyntheticEvent {
   return {
     data: {
       burner: overrides.burner ?? LOWER_CASED_WALLET,
@@ -135,7 +184,7 @@ function buildRwaBurnedEvent(overrides: { burner?: string; holdFeePaid?: string;
   };
 }
 
-function buildTreasuryWithdrawnEvent(overrides: { user?: string; token?: string; amount?: string } = {}): SyntheticEvent {
+function buildTreasuryWithdrawnEvent(overrides: { user?: string; token?: string; amount?: string } = {}): TreasuryWithdrawnSyntheticEvent {
   return {
     data: {
       user: overrides.user ?? LOWER_CASED_WALLET,
