@@ -6,6 +6,10 @@ import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
 /**
  * DAO service implementation of blockchain events daemon
+ *
+ * Handlers forward the full blockchain event to the service: decoded contract
+ * fields live in `event.data`, the envelope (chainId, transactionHash, logIndex,
+ * blockNumber) sits on the root.
  */
 
 export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
@@ -20,43 +24,43 @@ export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
   protected getEventRouting(): EventRouting {
     return {
       Governance_ProposalCreated: async (event: BlockchainEvent) => {
-        await this.daoService.processProposalCreated(event.data as any);
+        await this.daoService.processProposalCreated(event as any);
       },
 
       Governance_ProposalExecuted: async (event: BlockchainEvent) => {
-        await this.daoService.processProposalExecuted(event.data as any);
+        await this.daoService.processProposalExecuted(event as any);
       },
 
       Governance_ProposalCancelled: async (event: BlockchainEvent) => {
-        await this.daoService.processProposalCancelled(event.data as any);
+        await this.daoService.processProposalCancelled(event as any);
       },
 
       Governance_VoteCast: async (event: BlockchainEvent) => {
-        await this.daoService.processVoteCast(event.data as any);
+        await this.daoService.processVoteCast(event as any);
       },
 
       DaoStaking_TokensStaked: async (event: BlockchainEvent) => {
-        await this.daoService.processTokensStaked(event.data as any);
+        await this.daoService.processTokensStaked(event as any);
       },
 
       DaoStaking_TokensUnstaked: async (event: BlockchainEvent) => {
-        await this.daoService.processTokensUnstaked(event.data as any);
+        await this.daoService.processTokensUnstaked(event as any);
       },
 
       Timelock_TransactionQueued: async (event: BlockchainEvent) => {
-        await this.daoService.processTransactionQueued(event.data as any);
+        await this.daoService.processTransactionQueued(event as any);
       },
 
       Timelock_TransactionExecuted: async (event: BlockchainEvent) => {
-        await this.daoService.processTransactionExecuted(event.data as any);
+        await this.daoService.processTransactionExecuted(event as any);
       },
 
       Timelock_TransactionCancelled: async (event: BlockchainEvent) => {
-        await this.daoService.processTransactionCancelled(event.data as any);
+        await this.daoService.processTransactionCancelled(event as any);
       },
 
       Treasury_Withdrawal: async (event: BlockchainEvent) => {
-        await this.daoService.processTreasuryWithdrawal(event.data as any);
+        await this.daoService.processTreasuryWithdrawal(event as any);
       },
     };
   }

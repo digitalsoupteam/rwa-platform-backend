@@ -72,6 +72,7 @@ function messageFor(event: BlockchainEvent): FakeConsumeMessage {
   };
 }
 
+/** event.data exactly as the scanner decodes it (contract fields only). */
 const PROPOSAL_CREATED_DATA = {
   emittedFrom: '0xGovernance',
   proposalId: '7',
@@ -79,11 +80,12 @@ const PROPOSAL_CREATED_DATA = {
   target: '0xTreasury',
   data: '0xdeadbeef',
   description: 'Raise the staking cap',
-  startTime: 1_700_000_000,
-  endTime: 1_700_086_400,
-  chainId: '1',
-  transactionHash: '0xtx1',
-  logIndex: 0,
+  votesFor: '0',
+  votesAgainst: '0',
+  creationTime: '1700000000',
+  endTime: '1700086400',
+  executed: false,
+  cancelled: false,
 };
 
 const VOTE_CAST_DATA = {
@@ -93,10 +95,6 @@ const VOTE_CAST_DATA = {
   support: true,
   weight: '123.45',
   reason: 'Good proposal',
-  chainId: '1',
-  transactionHash: '0xtx3',
-  logIndex: 0,
-  blockNumber: 42,
 };
 
 const STAKING_DATA = {
@@ -104,9 +102,6 @@ const STAKING_DATA = {
   staker: '0xBob',
   amount: '250',
   newVotingPower: '250',
-  chainId: '1',
-  transactionHash: '0xtx4',
-  logIndex: 1,
 };
 
 const TIMELOCK_DATA = {
@@ -114,10 +109,7 @@ const TIMELOCK_DATA = {
   txHash: '0xtimelock1',
   target: '0xTreasury',
   data: '0xdeadbeef',
-  eta: 1_700_090_000,
-  chainId: '1',
-  transactionHash: '0xtx6',
-  logIndex: 3,
+  eta: '1700090000',
 };
 
 const TREASURY_WITHDRAWAL_DATA = {
@@ -125,9 +117,6 @@ const TREASURY_WITHDRAWAL_DATA = {
   to: '0xBob',
   token: '0xToken',
   amount: '500',
-  chainId: '1',
-  transactionHash: '0xtx8',
-  logIndex: 5,
 };
 
 describe('BlockchainEventsDaemon (unit, fake rabbit client and fake service)', () => {
@@ -206,7 +195,9 @@ describe('BlockchainEventsDaemon (unit, fake rabbit client and fake service)', (
     await daemon.getRouting()[event.name](event);
 
     expect(daoService.processProposalCreated).toHaveBeenCalledTimes(1);
-    expect(daoService.processProposalCreated).toHaveBeenCalledWith(event.data);
+    // The full event is forwarded: contract fields live in `data`, the
+    // envelope (chainId, transactionHash, logIndex, blockNumber) on the root.
+    expect(daoService.processProposalCreated).toHaveBeenCalledWith(event);
     // Only the routed handler runs.
     expect(daoService.processProposalExecuted).not.toHaveBeenCalled();
     expect(daoService.processVoteCast).not.toHaveBeenCalled();
@@ -217,15 +208,12 @@ describe('BlockchainEventsDaemon (unit, fake rabbit client and fake service)', (
       emittedFrom: '0xGovernance',
       proposalId: '7',
       executor: '0xAlice',
-      chainId: '1',
-      transactionHash: '0xtx2',
-      logIndex: 1,
     });
 
     await daemon.getRouting()[event.name](event);
 
     expect(daoService.processProposalExecuted).toHaveBeenCalledTimes(1);
-    expect(daoService.processProposalExecuted).toHaveBeenCalledWith(event.data);
+    expect(daoService.processProposalExecuted).toHaveBeenCalledWith(event);
   });
 
   test('Governance_ProposalCancelled routes to processProposalCancelled', async () => {
@@ -233,15 +221,12 @@ describe('BlockchainEventsDaemon (unit, fake rabbit client and fake service)', (
       emittedFrom: '0xGovernance',
       proposalId: '7',
       canceller: '0xAlice',
-      chainId: '1',
-      transactionHash: '0xtx3',
-      logIndex: 2,
     });
 
     await daemon.getRouting()[event.name](event);
 
     expect(daoService.processProposalCancelled).toHaveBeenCalledTimes(1);
-    expect(daoService.processProposalCancelled).toHaveBeenCalledWith(event.data);
+    expect(daoService.processProposalCancelled).toHaveBeenCalledWith(event);
   });
 
   test('Governance_VoteCast routes to processVoteCast', async () => {
@@ -250,7 +235,7 @@ describe('BlockchainEventsDaemon (unit, fake rabbit client and fake service)', (
     await daemon.getRouting()[event.name](event);
 
     expect(daoService.processVoteCast).toHaveBeenCalledTimes(1);
-    expect(daoService.processVoteCast).toHaveBeenCalledWith(event.data);
+    expect(daoService.processVoteCast).toHaveBeenCalledWith(event);
   });
 
   test('DaoStaking_TokensStaked routes to processTokensStaked', async () => {
@@ -259,7 +244,7 @@ describe('BlockchainEventsDaemon (unit, fake rabbit client and fake service)', (
     await daemon.getRouting()[event.name](event);
 
     expect(daoService.processTokensStaked).toHaveBeenCalledTimes(1);
-    expect(daoService.processTokensStaked).toHaveBeenCalledWith(event.data);
+    expect(daoService.processTokensStaked).toHaveBeenCalledWith(event);
   });
 
   test('DaoStaking_TokensUnstaked routes to processTokensUnstaked', async () => {
@@ -268,7 +253,7 @@ describe('BlockchainEventsDaemon (unit, fake rabbit client and fake service)', (
     await daemon.getRouting()[event.name](event);
 
     expect(daoService.processTokensUnstaked).toHaveBeenCalledTimes(1);
-    expect(daoService.processTokensUnstaked).toHaveBeenCalledWith(event.data);
+    expect(daoService.processTokensUnstaked).toHaveBeenCalledWith(event);
   });
 
   test('Timelock_TransactionQueued routes to processTransactionQueued', async () => {
@@ -277,7 +262,7 @@ describe('BlockchainEventsDaemon (unit, fake rabbit client and fake service)', (
     await daemon.getRouting()[event.name](event);
 
     expect(daoService.processTransactionQueued).toHaveBeenCalledTimes(1);
-    expect(daoService.processTransactionQueued).toHaveBeenCalledWith(event.data);
+    expect(daoService.processTransactionQueued).toHaveBeenCalledWith(event);
   });
 
   test('Timelock_TransactionExecuted routes to processTransactionExecuted', async () => {
@@ -286,7 +271,7 @@ describe('BlockchainEventsDaemon (unit, fake rabbit client and fake service)', (
     await daemon.getRouting()[event.name](event);
 
     expect(daoService.processTransactionExecuted).toHaveBeenCalledTimes(1);
-    expect(daoService.processTransactionExecuted).toHaveBeenCalledWith(event.data);
+    expect(daoService.processTransactionExecuted).toHaveBeenCalledWith(event);
   });
 
   test('Timelock_TransactionCancelled routes to processTransactionCancelled', async () => {
@@ -295,7 +280,7 @@ describe('BlockchainEventsDaemon (unit, fake rabbit client and fake service)', (
     await daemon.getRouting()[event.name](event);
 
     expect(daoService.processTransactionCancelled).toHaveBeenCalledTimes(1);
-    expect(daoService.processTransactionCancelled).toHaveBeenCalledWith(event.data);
+    expect(daoService.processTransactionCancelled).toHaveBeenCalledWith(event);
   });
 
   test('Treasury_Withdrawal routes to processTreasuryWithdrawal', async () => {
@@ -304,7 +289,7 @@ describe('BlockchainEventsDaemon (unit, fake rabbit client and fake service)', (
     await daemon.getRouting()[event.name](event);
 
     expect(daoService.processTreasuryWithdrawal).toHaveBeenCalledTimes(1);
-    expect(daoService.processTreasuryWithdrawal).toHaveBeenCalledWith(event.data);
+    expect(daoService.processTreasuryWithdrawal).toHaveBeenCalledWith(event);
   });
 
   test('consume callback: an event without a handler is acknowledged and ignored', async () => {
@@ -331,7 +316,7 @@ describe('BlockchainEventsDaemon (unit, fake rabbit client and fake service)', (
     await consumer(message);
 
     expect(daoService.processVoteCast).toHaveBeenCalledTimes(1);
-    expect(daoService.processVoteCast).toHaveBeenCalledWith(event.data);
+    expect(daoService.processVoteCast).toHaveBeenCalledWith(event);
     expect(rabbit.ack).toHaveBeenCalledWith(message);
     expect(rabbit.nack).not.toHaveBeenCalled();
   });

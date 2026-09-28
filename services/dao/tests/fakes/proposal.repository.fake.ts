@@ -16,7 +16,7 @@ export type FakeProposalDoc = {
   target: string;
   data: string;
   description: string;
-  startTime: number;
+  creationTime: number;
   endTime: number;
   state: 'pending' | 'executed' | 'canceled';
   chainId: string;

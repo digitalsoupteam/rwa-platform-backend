@@ -15,7 +15,7 @@ export class ProposalRepository {
       | 'target'
       | 'data'
       | 'description'
-      | 'startTime'
+      | 'creationTime'
       | 'endTime'
       | 'chainId'
       | 'transactionHash'

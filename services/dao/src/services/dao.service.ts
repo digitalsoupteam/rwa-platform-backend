@@ -16,6 +16,13 @@ import { MetricsDecorator } from '@shared/monitoring/src/metricsDecorator';
 import { LogDecorator } from '@shared/monitoring/src/logDecorator';
 import { setSpanAttributes } from '@shared/monitoring/src/tracing';
 
+/**
+ * DAO event handlers.
+ *
+ * Handlers receive the full blockchain event: decoded contract fields live in
+ * `event.data` (exactly as the contracts emit them), while the envelope
+ * (chainId, transactionHash, logIndex, blockNumber) sits on the root.
+ */
 export class DaoService {
   constructor(
     private readonly proposalRepository: ProposalRepository,
@@ -33,41 +40,44 @@ export class DaoService {
   @MetricsDecorator()
   @LogDecorator({
     args: (a) => ({
-      emittedFrom: a[0].emittedFrom,
-      proposalId: a[0].proposalId,
+      emittedFrom: a[0].data.emittedFrom,
+      proposalId: a[0].data.proposalId,
       chainId: a[0].chainId,
       transactionHash: a[0].transactionHash,
       logIndex: a[0].logIndex,
     }),
   })
   async processProposalCreated(event: {
-    emittedFrom: string;
-    proposalId: string;
-    proposer: string;
-    target: string;
-    data: string;
-    description: string;
-    startTime: number;
-    endTime: number;
-    chainId: string;
+    data: {
+      emittedFrom: string;
+      proposalId: string;
+      proposer: string;
+      target: string;
+      data: string;
+      description: string;
+      creationTime: string;
+      endTime: string;
+    };
+    chainId: number;
     transactionHash: string;
     logIndex: number;
+    blockNumber: number;
   }) {
     setSpanAttributes({
-      wallet: event.proposer,
-      proposalId: event.proposalId,
-      chainId: event.chainId,
+      wallet: event.data.proposer,
+      proposalId: event.data.proposalId,
+      chainId: String(event.chainId),
       transactionHash: event.transactionHash,
     });
     await this.proposalRepository.create({
-      proposalId: event.proposalId,
-      proposer: event.proposer,
-      target: event.target,
-      data: event.data,
-      description: event.description,
-      startTime: event.startTime,
-      endTime: event.endTime,
-      chainId: event.chainId,
+      proposalId: event.data.proposalId,
+      proposer: event.data.proposer,
+      target: event.data.target,
+      data: event.data.data,
+      description: event.data.description,
+      creationTime: Number(event.data.creationTime),
+      endTime: Number(event.data.endTime),
+      chainId: String(event.chainId),
       transactionHash: event.transactionHash,
       logIndex: event.logIndex,
     });
@@ -80,28 +90,31 @@ export class DaoService {
   @MetricsDecorator()
   @LogDecorator({
     args: (a) => ({
-      emittedFrom: a[0].emittedFrom,
-      proposalId: a[0].proposalId,
+      emittedFrom: a[0].data.emittedFrom,
+      proposalId: a[0].data.proposalId,
       chainId: a[0].chainId,
       transactionHash: a[0].transactionHash,
       logIndex: a[0].logIndex,
     }),
   })
   async processProposalExecuted(event: {
-    emittedFrom: string;
-    proposalId: string;
-    executor: string;
-    chainId: string;
+    data: {
+      emittedFrom: string;
+      proposalId: string;
+      executor: string;
+    };
+    chainId: number;
     transactionHash: string;
     logIndex: number;
+    blockNumber: number;
   }) {
     setSpanAttributes({
-      wallet: event.executor,
-      proposalId: event.proposalId,
-      chainId: event.chainId,
+      wallet: event.data.executor,
+      proposalId: event.data.proposalId,
+      chainId: String(event.chainId),
       transactionHash: event.transactionHash,
     });
-    await this.proposalRepository.updateState(event.proposalId, 'executed');
+    await this.proposalRepository.updateState(event.data.proposalId, 'executed');
   }
 
   /**
@@ -111,28 +124,31 @@ export class DaoService {
   @MetricsDecorator()
   @LogDecorator({
     args: (a) => ({
-      emittedFrom: a[0].emittedFrom,
-      proposalId: a[0].proposalId,
+      emittedFrom: a[0].data.emittedFrom,
+      proposalId: a[0].data.proposalId,
       chainId: a[0].chainId,
       transactionHash: a[0].transactionHash,
       logIndex: a[0].logIndex,
     }),
   })
   async processProposalCancelled(event: {
-    emittedFrom: string;
-    proposalId: string;
-    canceller: string;
-    chainId: string;
+    data: {
+      emittedFrom: string;
+      proposalId: string;
+      canceller: string;
+    };
+    chainId: number;
     transactionHash: string;
     logIndex: number;
+    blockNumber: number;
   }) {
     setSpanAttributes({
-      wallet: event.canceller,
-      proposalId: event.proposalId,
-      chainId: event.chainId,
+      wallet: event.data.canceller,
+      proposalId: event.data.proposalId,
+      chainId: String(event.chainId),
       transactionHash: event.transactionHash,
     });
-    await this.proposalRepository.updateState(event.proposalId, 'canceled');
+    await this.proposalRepository.updateState(event.data.proposalId, 'canceled');
   }
 
   /**
@@ -142,39 +158,41 @@ export class DaoService {
   @MetricsDecorator()
   @LogDecorator({
     args: (a) => ({
-      emittedFrom: a[0].emittedFrom,
-      proposalId: a[0].proposalId,
+      emittedFrom: a[0].data.emittedFrom,
+      proposalId: a[0].data.proposalId,
       chainId: a[0].chainId,
       transactionHash: a[0].transactionHash,
       logIndex: a[0].logIndex,
     }),
   })
   async processVoteCast(event: {
-    emittedFrom: string;
-    proposalId: string;
-    voter: string;
-    support: boolean;
-    weight: string;
-    reason: string;
-    chainId: string;
+    data: {
+      emittedFrom: string;
+      proposalId: string;
+      voter: string;
+      support: boolean;
+      weight: string;
+      reason: string;
+    };
+    chainId: number;
     transactionHash: string;
     logIndex: number;
     blockNumber: number;
   }) {
     setSpanAttributes({
-      voter: event.voter,
-      proposalId: event.proposalId,
-      chainId: event.chainId,
+      voter: event.data.voter,
+      proposalId: event.data.proposalId,
+      chainId: String(event.chainId),
       transactionHash: event.transactionHash,
     });
     await this.voteRepository.create({
-      proposalId: event.proposalId,
-      chainId: event.chainId,
-      governanceAddress: event.emittedFrom,
-      voterWallet: event.voter,
-      support: event.support,
-      weight: event.weight,
-      reason: event.reason,
+      proposalId: event.data.proposalId,
+      chainId: String(event.chainId),
+      governanceAddress: event.data.emittedFrom,
+      voterWallet: event.data.voter,
+      support: event.data.support,
+      weight: event.data.weight,
+      reason: event.data.reason,
       transactionHash: event.transactionHash,
       logIndex: event.logIndex,
       blockNumber: event.blockNumber,
@@ -188,36 +206,43 @@ export class DaoService {
   @MetricsDecorator()
   @LogDecorator({
     args: (a) => ({
-      emittedFrom: a[0].emittedFrom,
-      proposalId: a[0].proposalId,
+      emittedFrom: a[0].data.emittedFrom,
+      staker: a[0].data.staker,
       chainId: a[0].chainId,
       transactionHash: a[0].transactionHash,
       logIndex: a[0].logIndex,
     }),
   })
   async processTokensStaked(event: {
-    emittedFrom: string;
-    staker: string;
-    amount: string;
-    newVotingPower: string;
-    chainId: string;
+    data: {
+      emittedFrom: string;
+      staker: string;
+      amount: string;
+    };
+    chainId: number;
     transactionHash: string;
     logIndex: number;
+    blockNumber: number;
   }) {
     setSpanAttributes({
-      wallet: event.staker,
-      chainId: event.chainId,
+      wallet: event.data.staker,
+      chainId: String(event.chainId),
       transactionHash: event.transactionHash,
     });
     // Add stake amount to user's total
-    await this.stakingRepository.addStake(event.staker, event.chainId, event.amount, Math.floor(Date.now() / 1000));
+    await this.stakingRepository.addStake(
+      event.data.staker,
+      String(event.chainId),
+      event.data.amount,
+      Math.floor(Date.now() / 1000),
+    );
 
     // Record staking history
     await this.stakingHistoryRepository.create({
-      staker: event.staker,
-      amount: event.amount,
+      staker: event.data.staker,
+      amount: event.data.amount,
       operation: 'staked',
-      chainId: event.chainId,
+      chainId: String(event.chainId),
       transactionHash: event.transactionHash,
       logIndex: event.logIndex,
     });
@@ -230,36 +255,38 @@ export class DaoService {
   @MetricsDecorator()
   @LogDecorator({
     args: (a) => ({
-      emittedFrom: a[0].emittedFrom,
-      proposalId: a[0].proposalId,
+      emittedFrom: a[0].data.emittedFrom,
+      staker: a[0].data.staker,
       chainId: a[0].chainId,
       transactionHash: a[0].transactionHash,
       logIndex: a[0].logIndex,
     }),
   })
   async processTokensUnstaked(event: {
-    emittedFrom: string;
-    staker: string;
-    amount: string;
-    newVotingPower: string;
-    chainId: string;
+    data: {
+      emittedFrom: string;
+      staker: string;
+      amount: string;
+    };
+    chainId: number;
     transactionHash: string;
     logIndex: number;
+    blockNumber: number;
   }) {
     setSpanAttributes({
-      wallet: event.staker,
-      chainId: event.chainId,
+      wallet: event.data.staker,
+      chainId: String(event.chainId),
       transactionHash: event.transactionHash,
     });
     // Subtract stake amount from user's total
-    await this.stakingRepository.subStake(event.staker, event.chainId, event.amount);
+    await this.stakingRepository.subStake(event.data.staker, String(event.chainId), event.data.amount);
 
     // Record staking history
     await this.stakingHistoryRepository.create({
-      staker: event.staker,
-      amount: event.amount,
+      staker: event.data.staker,
+      amount: event.data.amount,
       operation: 'unstaked',
-      chainId: event.chainId,
+      chainId: String(event.chainId),
       transactionHash: event.transactionHash,
       logIndex: event.logIndex,
     });
@@ -272,33 +299,36 @@ export class DaoService {
   @MetricsDecorator()
   @LogDecorator({
     args: (a) => ({
-      emittedFrom: a[0].emittedFrom,
-      proposalId: a[0].proposalId,
+      emittedFrom: a[0].data.emittedFrom,
+      txHash: a[0].data.txHash,
       chainId: a[0].chainId,
       transactionHash: a[0].transactionHash,
       logIndex: a[0].logIndex,
     }),
   })
   async processTransactionQueued(event: {
-    emittedFrom: string;
-    txHash: string;
-    target: string;
-    data: string;
-    eta: number;
-    chainId: string;
+    data: {
+      emittedFrom: string;
+      txHash: string;
+      target: string;
+      data: string;
+      eta: string;
+    };
+    chainId: number;
     transactionHash: string;
     logIndex: number;
+    blockNumber: number;
   }) {
     setSpanAttributes({
-      chainId: event.chainId,
+      chainId: String(event.chainId),
       transactionHash: event.transactionHash,
     });
     await this.timelockTaskRepository.create({
-      txHash: event.txHash,
-      target: event.target,
-      data: event.data,
-      eta: event.eta,
-      chainId: event.chainId,
+      txHash: event.data.txHash,
+      target: event.data.target,
+      data: event.data.data,
+      eta: Number(event.data.eta),
+      chainId: String(event.chainId),
     });
   }
 
@@ -309,28 +339,31 @@ export class DaoService {
   @MetricsDecorator()
   @LogDecorator({
     args: (a) => ({
-      emittedFrom: a[0].emittedFrom,
-      proposalId: a[0].proposalId,
+      emittedFrom: a[0].data.emittedFrom,
+      txHash: a[0].data.txHash,
       chainId: a[0].chainId,
       transactionHash: a[0].transactionHash,
       logIndex: a[0].logIndex,
     }),
   })
   async processTransactionExecuted(event: {
-    emittedFrom: string;
-    txHash: string;
-    target: string;
-    data: string;
-    eta: number;
-    chainId: string;
+    data: {
+      emittedFrom: string;
+      txHash: string;
+      target: string;
+      data: string;
+      eta: string;
+    };
+    chainId: number;
     transactionHash: string;
     logIndex: number;
+    blockNumber: number;
   }) {
     setSpanAttributes({
-      chainId: event.chainId,
+      chainId: String(event.chainId),
       transactionHash: event.transactionHash,
     });
-    await this.timelockTaskRepository.updateExecuted(event.txHash, true);
+    await this.timelockTaskRepository.updateExecuted(event.data.txHash, true);
   }
 
   /**
@@ -340,25 +373,28 @@ export class DaoService {
   @MetricsDecorator()
   @LogDecorator({
     args: (a) => ({
-      emittedFrom: a[0].emittedFrom,
-      proposalId: a[0].proposalId,
+      emittedFrom: a[0].data.emittedFrom,
+      txHash: a[0].data.txHash,
       chainId: a[0].chainId,
       transactionHash: a[0].transactionHash,
       logIndex: a[0].logIndex,
     }),
   })
   async processTransactionCancelled(event: {
-    emittedFrom: string;
-    txHash: string;
-    target: string;
-    data: string;
-    eta: number;
-    chainId: string;
+    data: {
+      emittedFrom: string;
+      txHash: string;
+      target: string;
+      data: string;
+      eta: string;
+    };
+    chainId: number;
     transactionHash: string;
     logIndex: number;
+    blockNumber: number;
   }) {
     setSpanAttributes({
-      chainId: event.chainId,
+      chainId: String(event.chainId),
       transactionHash: event.transactionHash,
     });
     // For cancelled transactions, we might want to remove them or mark as cancelled
@@ -372,32 +408,35 @@ export class DaoService {
   @MetricsDecorator()
   @LogDecorator({
     args: (a) => ({
-      emittedFrom: a[0].emittedFrom,
-      proposalId: a[0].proposalId,
+      emittedFrom: a[0].data.emittedFrom,
+      to: a[0].data.to,
       chainId: a[0].chainId,
       transactionHash: a[0].transactionHash,
       logIndex: a[0].logIndex,
     }),
   })
   async processTreasuryWithdrawal(event: {
-    emittedFrom: string;
-    to: string;
-    token: string;
-    amount: string;
-    chainId: string;
+    data: {
+      emittedFrom: string;
+      to: string;
+      token: string;
+      amount: string;
+    };
+    chainId: number;
     transactionHash: string;
     logIndex: number;
+    blockNumber: number;
   }) {
     setSpanAttributes({
-      wallet: event.to,
-      chainId: event.chainId,
+      wallet: event.data.to,
+      chainId: String(event.chainId),
       transactionHash: event.transactionHash,
     });
     await this.treasuryWithdrawRepository.create({
-      recipient: event.to,
-      token: event.token,
-      amount: event.amount,
-      chainId: event.chainId,
+      recipient: event.data.to,
+      token: event.data.token,
+      amount: event.data.amount,
+      chainId: String(event.chainId),
       transactionHash: event.transactionHash,
       logIndex: event.logIndex,
     });
@@ -412,7 +451,7 @@ export class DaoService {
       target: proposal.target,
       data: proposal.data,
       description: proposal.description,
-      startTime: proposal.startTime,
+      creationTime: proposal.creationTime,
       endTime: proposal.endTime,
       state: proposal.state ?? undefined,
       chainId: proposal.chainId,

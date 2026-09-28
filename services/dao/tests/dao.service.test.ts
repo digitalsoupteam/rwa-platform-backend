@@ -35,13 +35,17 @@ import {
   type FakeTreasuryWithdrawRepository,
 } from './fakes/treasuryWithdraw.repository.fake';
 
+// Blockchain events as the daemon forwards them: decoded contract fields live
+// in `data`, the envelope (chainId, transactionHash, logIndex, blockNumber)
+// sits on the root.
+
 const PROPOSAL = {
   proposalId: '7',
   proposer: '0xAlice',
   target: '0xTreasury',
   data: '0xdeadbeef',
   description: 'Raise the staking cap',
-  startTime: 1_700_000_000,
+  creationTime: 1_700_000_000,
   endTime: 1_700_086_400,
   chainId: '1',
   transactionHash: '0xtx1',
@@ -49,38 +53,47 @@ const PROPOSAL = {
 };
 
 const PROPOSAL_CREATED_EVENT = {
-  emittedFrom: '0xGovernance',
-  proposalId: '7',
-  proposer: '0xAlice',
-  target: '0xTreasury',
-  data: '0xdeadbeef',
-  description: 'Raise the staking cap',
-  startTime: 1_700_000_000,
-  endTime: 1_700_086_400,
-  chainId: '1',
+  data: {
+    emittedFrom: '0xGovernance',
+    proposalId: '7',
+    proposer: '0xAlice',
+    target: '0xTreasury',
+    data: '0xdeadbeef',
+    description: 'Raise the staking cap',
+    creationTime: '1700000000',
+    endTime: '1700086400',
+  },
+  chainId: 1,
   transactionHash: '0xtx1',
   logIndex: 4,
+  blockNumber: 123_456,
 };
 
 const STAKING_EVENT = {
-  emittedFrom: '0xStaking',
-  staker: '0xBob',
-  amount: '250',
-  newVotingPower: '250',
-  chainId: '1',
+  data: {
+    emittedFrom: '0xStaking',
+    staker: '0xBob',
+    amount: '250',
+    newVotingPower: '250',
+  },
+  chainId: 1,
   transactionHash: '0xtx4',
   logIndex: 1,
+  blockNumber: 123_456,
 };
 
 const TIMELOCK_EVENT = {
-  emittedFrom: '0xTimelock',
-  txHash: '0xtimelock1',
-  target: '0xTreasury',
-  data: '0xdeadbeef',
-  eta: 1_700_090_000,
-  chainId: '1',
+  data: {
+    emittedFrom: '0xTimelock',
+    txHash: '0xtimelock1',
+    target: '0xTreasury',
+    data: '0xdeadbeef',
+    eta: '1700090000',
+  },
+  chainId: 1,
   transactionHash: '0xtx6',
   logIndex: 3,
+  blockNumber: 123_456,
 };
 
 describe('DaoService (unit, fake repositories)', () => {
@@ -119,7 +132,7 @@ describe('DaoService (unit, fake repositories)', () => {
       target: '0xTreasury',
       data: '0xdeadbeef',
       description: 'Raise the staking cap',
-      startTime: 1_700_000_000,
+      creationTime: 1_700_000_000,
       endTime: 1_700_086_400,
       chainId: '1',
       transactionHash: '0xtx1',
@@ -130,6 +143,7 @@ describe('DaoService (unit, fake repositories)', () => {
     const stored = Array.from(proposals.store.values());
     expect(stored).toHaveLength(1);
     expect(stored[0].state).toBe('pending'); // schema default, same as ProposalEntity
+    expect(stored[0].creationTime).toBe(1_700_000_000); // bigint string from the scanner, stored as a number
   });
 
   test('processProposalExecuted: marks the proposal executed', async () => {
@@ -137,12 +151,15 @@ describe('DaoService (unit, fake repositories)', () => {
 
     await expect(
       service.processProposalExecuted({
-        emittedFrom: '0xGovernance',
-        proposalId: '7',
-        executor: '0xAlice',
-        chainId: '1',
+        data: {
+          emittedFrom: '0xGovernance',
+          proposalId: '7',
+          executor: '0xAlice',
+        },
+        chainId: 1,
         transactionHash: '0xtx2',
         logIndex: 1,
+        blockNumber: 123_456,
       }),
     ).resolves.toBeUndefined();
 
@@ -156,12 +173,15 @@ describe('DaoService (unit, fake repositories)', () => {
     // the service ignores the return value, so nothing is thrown and nothing is written.
     await expect(
       service.processProposalExecuted({
-        emittedFrom: '0xGovernance',
-        proposalId: 'unknown',
-        executor: '0xAlice',
-        chainId: '1',
+        data: {
+          emittedFrom: '0xGovernance',
+          proposalId: 'unknown',
+          executor: '0xAlice',
+        },
+        chainId: 1,
         transactionHash: '0xtx2',
         logIndex: 1,
+        blockNumber: 123_456,
       }),
     ).resolves.toBeUndefined();
 
@@ -173,12 +193,15 @@ describe('DaoService (unit, fake repositories)', () => {
     await service.processProposalCreated(PROPOSAL_CREATED_EVENT);
 
     await service.processProposalCancelled({
-      emittedFrom: '0xGovernance',
-      proposalId: '7',
-      canceller: '0xAlice',
-      chainId: '1',
+      data: {
+        emittedFrom: '0xGovernance',
+        proposalId: '7',
+        canceller: '0xAlice',
+      },
+      chainId: 1,
       transactionHash: '0xtx3',
       logIndex: 2,
+      blockNumber: 123_456,
     });
 
     // 'canceled' (single l) is the value pinned in ProposalStateList.
@@ -189,13 +212,15 @@ describe('DaoService (unit, fake repositories)', () => {
   test('processVoteCast: stores the vote with governanceAddress mapped from emittedFrom', async () => {
     await expect(
       service.processVoteCast({
-        emittedFrom: '0xGovernance',
-        proposalId: '7',
-        voter: '0xCarol',
-        support: true,
-        weight: '123.45',
-        reason: 'Good proposal',
-        chainId: '1',
+        data: {
+          emittedFrom: '0xGovernance',
+          proposalId: '7',
+          voter: '0xCarol',
+          support: true,
+          weight: '123.45',
+          reason: 'Good proposal',
+        },
+        chainId: 1,
         transactionHash: '0xtx3',
         logIndex: 0,
         blockNumber: 42,
@@ -252,9 +277,13 @@ describe('DaoService (unit, fake repositories)', () => {
   });
 
   test('processTokensStaked: repeated stakes accumulate per staker and chain', async () => {
-    await service.processTokensStaked({ ...STAKING_EVENT, amount: '100' });
-    await service.processTokensStaked({ ...STAKING_EVENT, amount: '50.5', transactionHash: '0xtx5' });
-    await service.processTokensStaked({ ...STAKING_EVENT, amount: '7', chainId: '137' });
+    await service.processTokensStaked({ ...STAKING_EVENT, data: { ...STAKING_EVENT.data, amount: '100' } });
+    await service.processTokensStaked({
+      ...STAKING_EVENT,
+      data: { ...STAKING_EVENT.data, amount: '50.5' },
+      transactionHash: '0xtx5',
+    });
+    await service.processTokensStaked({ ...STAKING_EVENT, data: { ...STAKING_EVENT.data, amount: '7' }, chainId: 137 });
 
     expect(staking.addStake).toHaveBeenCalledTimes(3);
     expect(staking.store.get('0xBob|1')?.amount).toBe('150.5');
@@ -262,9 +291,14 @@ describe('DaoService (unit, fake repositories)', () => {
   });
 
   test('processTokensUnstaked: subtracts the stake and records the staking history', async () => {
-    await service.processTokensStaked({ ...STAKING_EVENT, amount: '100' });
+    await service.processTokensStaked({ ...STAKING_EVENT, data: { ...STAKING_EVENT.data, amount: '100' } });
 
-    await service.processTokensUnstaked({ ...STAKING_EVENT, amount: '40', transactionHash: '0xtx5', logIndex: 2 });
+    await service.processTokensUnstaked({
+      ...STAKING_EVENT,
+      data: { ...STAKING_EVENT.data, amount: '40' },
+      transactionHash: '0xtx5',
+      logIndex: 2,
+    });
 
     // The service forwards the raw decimal string; the sign is added inside the repository.
     expect(staking.subStake).toHaveBeenCalledTimes(1);
@@ -333,13 +367,16 @@ describe('DaoService (unit, fake repositories)', () => {
   test('processTreasuryWithdrawal: maps `to` to recipient and stores the withdrawal', async () => {
     await expect(
       service.processTreasuryWithdrawal({
-        emittedFrom: '0xTreasury',
-        to: '0xBob',
-        token: '0xToken',
-        amount: '500',
-        chainId: '1',
+        data: {
+          emittedFrom: '0xTreasury',
+          to: '0xBob',
+          token: '0xToken',
+          amount: '500',
+        },
+        chainId: 1,
         transactionHash: '0xtx8',
         logIndex: 5,
+        blockNumber: 123_456,
       }),
     ).resolves.toBeUndefined();
 
@@ -358,7 +395,12 @@ describe('DaoService (unit, fake repositories)', () => {
     const created = await proposals.create(PROPOSAL);
     await proposals.create({ ...PROPOSAL, proposalId: '8', chainId: '137', transactionHash: '0xtx9' });
 
-    const result = await service.getProposals({ filter: { chainId: '1' }, sort: { createdAt: 'desc' }, limit: 10, offset: 0 });
+    const result = await service.getProposals({
+      filter: { chainId: '1' },
+      sort: { createdAt: 'desc' },
+      limit: 10,
+      offset: 0,
+    });
 
     expect(proposals.findAll).toHaveBeenCalledWith({ chainId: '1' }, { createdAt: 'desc' }, 10, 0);
     expect(result).toHaveLength(1);

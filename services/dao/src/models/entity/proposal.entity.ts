@@ -26,7 +26,7 @@ const proposalSchemaDefinition = {
     type: String,
     required: true,
   },
-  startTime: {
+  creationTime: {
     type: Number,
     required: true,
   },
@@ -74,7 +74,7 @@ proposalSchema.index({ proposalId: 1 }, { unique: true });
 proposalSchema.index({ proposer: 1 });
 proposalSchema.index({ chainId: 1 });
 proposalSchema.index({ state: 1 });
-proposalSchema.index({ startTime: 1 });
+proposalSchema.index({ creationTime: 1 });
 proposalSchema.index({ endTime: 1 });
 proposalSchema.index({ transactionHash: 1 });
 proposalSchema.index({ createdAt: -1 });

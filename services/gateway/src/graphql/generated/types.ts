@@ -1328,7 +1328,7 @@ export type Proposal = {
   logIndex: Scalars['Float']['output'];
   proposalId: Scalars['String']['output'];
   proposer: Scalars['String']['output'];
-  startTime: Scalars['Float']['output'];
+  creationTime: Scalars['Float']['output'];
   state: Scalars['String']['output'];
   target: Scalars['String']['output'];
   transactionHash: Scalars['String']['output'];
@@ -3552,7 +3552,7 @@ export type ProposalResolvers<
   logIndex?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   proposalId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   proposer?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  startTime?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  creationTime?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   state?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   target?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   transactionHash?: Resolver<ResolversTypes['String'], ParentType, ContextType>;

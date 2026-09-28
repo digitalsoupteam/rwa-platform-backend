@@ -37,7 +37,7 @@ const PROPOSAL = {
   target: '0xTreasury',
   data: '0xdeadbeef',
   description: 'Raise the staking cap',
-  startTime: 1_700_000_000,
+  creationTime: 1_700_000_000,
   endTime: 1_700_086_400,
   chainId: '1',
   transactionHash: '0xtx1',
@@ -159,6 +159,7 @@ describe('dao HTTP layer (component, fake repositories)', () => {
     expect(response.body[0]).toMatchObject({
       proposalId: '7',
       proposer: '0xAlice',
+      creationTime: 1_700_000_000,
       state: 'pending',
       chainId: '1',
       logIndex: 4,

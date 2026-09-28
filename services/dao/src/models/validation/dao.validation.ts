@@ -11,7 +11,7 @@ export const proposalSchema = t.Object({
   target: t.String(),
   data: t.String(),
   description: t.String(),
-  startTime: t.Number(),
+  creationTime: t.Number(),
   endTime: t.Number(),
   state: proposalStateSchema,
   chainId: t.String(),

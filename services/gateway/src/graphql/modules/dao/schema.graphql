@@ -17,7 +17,7 @@ type Proposal {
   target: String!
   data: String!
   description: String!
-  startTime: Float!
+  creationTime: Float!
   endTime: Float!
   state: String!
   chainId: String!
