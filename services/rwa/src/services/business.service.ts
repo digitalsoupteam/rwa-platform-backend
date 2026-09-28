@@ -6,7 +6,6 @@ import { OpenRouterClient } from '@shared/openrouter/client';
 import { ethers } from 'ethers';
 import type { SortOrder } from 'mongoose';
 import type { SignersManagerClient } from '../clients/eden.clients';
-import type { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
 import type { EvaluationRequestsClient } from '../clients/evaluationRequests.client';
 import type { WebhookEventsPublisher } from '@shared/webhooks/src';
 import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
@@ -30,7 +29,6 @@ export class BusinessService {
     private readonly businessRepository: BusinessRepository,
     private readonly openRouterClient: OpenRouterClient,
     private readonly signersManagerClient: SignersManagerClient,
-    private readonly rabbitMQClient: RabbitMQClient,
     private readonly evaluationRequestsClient: EvaluationRequestsClient,
     private readonly webhookEventsPublisher: WebhookEventsPublisher,
     private readonly supportedNetworks: NetworkConfig[],

@@ -12,7 +12,6 @@ import type { PoolRepository } from '../src/repositories/pool.repository';
 import type { PoolEventsClient } from '../src/clients/poolEvents.client';
 import type { SignersManagerClient } from '../src/clients/eden.clients';
 import type { OpenRouterClient } from '@shared/openrouter/client';
-import type { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
 import type { EvaluationRequestsClient } from '../src/clients/evaluationRequests.client';
 import type { WebhookEventsPublisher } from '@shared/webhooks/src';
 import { createFakePoolRepository, type CreatePoolInput, type FakePoolRepository } from './fakes/pool.repository.fake';
@@ -23,7 +22,6 @@ import {
   type FakeSignersManagerClient,
 } from './fakes/signers-manager.client.fake';
 import { createFakePoolEventsClient, type FakePoolEventsClient } from './fakes/pool-events.client.fake';
-import { createFakeRabbitMQClient, type FakeRabbitMQClient } from './fakes/rabbitmq.client.fake';
 import {
   createFakeEvaluationRequestsClient,
   type FakeEvaluationRequestsClient,
@@ -211,7 +209,6 @@ describe('PoolService (unit, fake repositories and clients)', () => {
   let openRouter: FakeOpenRouterClient;
   let signersManager: FakeSignersManagerClient;
   let poolEvents: FakePoolEventsClient;
-  let rabbitMQ: FakeRabbitMQClient;
   let evaluationRequests: FakeEvaluationRequestsClient;
   let webhooks: FakeWebhookEventsPublisher;
   let service: PoolService;
@@ -221,7 +218,6 @@ describe('PoolService (unit, fake repositories and clients)', () => {
     openRouter = createFakeOpenRouterClient(POOL_AI_CONTENT);
     signersManager = createFakeSignersManagerClient();
     poolEvents = createFakePoolEventsClient();
-    rabbitMQ = createFakeRabbitMQClient();
     evaluationRequests = createFakeEvaluationRequestsClient();
     webhooks = createFakeWebhookEventsPublisher();
     service = new PoolService(
@@ -229,7 +225,6 @@ describe('PoolService (unit, fake repositories and clients)', () => {
       openRouter as unknown as OpenRouterClient,
       signersManager as unknown as SignersManagerClient,
       poolEvents as unknown as PoolEventsClient,
-      rabbitMQ as unknown as RabbitMQClient,
       evaluationRequests as unknown as EvaluationRequestsClient,
       webhooks as unknown as WebhookEventsPublisher,
       SUPPORTED_NETWORKS,

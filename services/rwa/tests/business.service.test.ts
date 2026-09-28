@@ -12,7 +12,6 @@ import { BusinessService } from '../src/services/business.service';
 import type { BusinessRepository } from '../src/repositories/business.repository';
 import type { SignersManagerClient } from '../src/clients/eden.clients';
 import type { OpenRouterClient } from '@shared/openrouter/client';
-import type { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
 import type { EvaluationRequestsClient } from '../src/clients/evaluationRequests.client';
 import type { WebhookEventsPublisher } from '@shared/webhooks/src';
 import { createFakeBusinessRepository, type FakeBusinessRepository } from './fakes/business.repository.fake';
@@ -22,7 +21,6 @@ import {
   DEFAULT_SIGNATURE_TASK_ID,
   type FakeSignersManagerClient,
 } from './fakes/signers-manager.client.fake';
-import { createFakeRabbitMQClient, type FakeRabbitMQClient } from './fakes/rabbitmq.client.fake';
 import {
   createFakeEvaluationRequestsClient,
   type FakeEvaluationRequestsClient,
@@ -61,7 +59,6 @@ describe('BusinessService (unit, fake repositories and clients)', () => {
   let businesses: FakeBusinessRepository;
   let openRouter: FakeOpenRouterClient;
   let signersManager: FakeSignersManagerClient;
-  let rabbitMQ: FakeRabbitMQClient;
   let evaluationRequests: FakeEvaluationRequestsClient;
   let webhooks: FakeWebhookEventsPublisher;
   let service: BusinessService;
@@ -70,14 +67,12 @@ describe('BusinessService (unit, fake repositories and clients)', () => {
     businesses = createFakeBusinessRepository();
     openRouter = createFakeOpenRouterClient(BUSINESS_AI_CONTENT);
     signersManager = createFakeSignersManagerClient();
-    rabbitMQ = createFakeRabbitMQClient();
     evaluationRequests = createFakeEvaluationRequestsClient();
     webhooks = createFakeWebhookEventsPublisher();
     service = new BusinessService(
       businesses as unknown as BusinessRepository,
       openRouter as unknown as OpenRouterClient,
       signersManager as unknown as SignersManagerClient,
-      rabbitMQ as unknown as RabbitMQClient,
       evaluationRequests as unknown as EvaluationRequestsClient,
       webhooks as unknown as WebhookEventsPublisher,
       SUPPORTED_NETWORKS,

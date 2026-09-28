@@ -5,7 +5,6 @@ import type { SignersManagerClient } from '../clients/eden.clients';
 import { ethers } from 'ethers';
 import type { SortOrder } from 'mongoose';
 import { PoolEventsClient } from '../clients/poolEvents.client';
-import type { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
 import type { EvaluationRequestsClient } from '../clients/evaluationRequests.client';
 import type { WebhookEventsPublisher } from '@shared/webhooks/src';
 import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
@@ -24,7 +23,6 @@ export class PoolService {
     private readonly openRouterClient: OpenRouterClient,
     private readonly signersManagerClient: SignersManagerClient,
     private readonly poolEventsClient: PoolEventsClient,
-    private readonly rabbitMQClient: RabbitMQClient,
     private readonly evaluationRequestsClient: EvaluationRequestsClient,
     private readonly webhookEventsPublisher: WebhookEventsPublisher,
     private readonly supportedNetworks: {
