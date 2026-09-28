@@ -58,6 +58,21 @@ export class BusinessRepository {
   }
 
   @TraceDecorator()
+  async updateBusinessByTokenAddress(tokenAddress: string, data: Partial<Pick<IBusinessEntity, 'paused'>>) {
+    const doc = await this.model.findOneAndUpdate({ tokenAddress }, data, { new: true }).lean();
+
+    if (!doc) {
+      throw new AppError({
+        message: `Business with token address ${tokenAddress} not found`,
+        statusCode: 404,
+        code: 'NOT_FOUND',
+      });
+    }
+
+    return doc;
+  }
+
+  @TraceDecorator()
   async findById(id: string) {
     const doc = await this.model.findById(id).lean();
 

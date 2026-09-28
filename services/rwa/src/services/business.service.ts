@@ -500,6 +500,19 @@ Response format:
     return businessDto;
   }
 
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({ tokenAddress: a[0].emittedFrom, isPaused: a[0].isPaused }),
+  })
+  async syncPausedState(event: { emittedFrom: string; isPaused: boolean }) {
+    setSpanAttributes({ entityType: 'business', tokenAddress: event.emittedFrom });
+    const updated = await this.businessRepository.updateBusinessByTokenAddress(event.emittedFrom, {
+      paused: event.isPaused,
+    });
+    return this.mapBusiness(updated);
+  }
+
   private mapBusiness(business: IBusinessEntity) {
     return {
       id: business._id.toString(),

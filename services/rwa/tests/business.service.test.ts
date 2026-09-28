@@ -590,6 +590,24 @@ describe('BusinessService (unit, fake repositories and clients)', () => {
     });
   });
 
+  test('syncPausedState: flips the pause flag on the business found by token address', async () => {
+    const created = await service.createBusiness(BUSINESS);
+    const tokenAddress = '0x00000000000000000000000000000000000000aa';
+    await service.syncAfterDeployment({ entityId: created.id, emittedFrom: tokenAddress, owner: OWNER_WALLET });
+
+    const result = await service.syncPausedState({ emittedFrom: tokenAddress, isPaused: true });
+
+    expect(businesses.updateBusinessByTokenAddress).toHaveBeenLastCalledWith(tokenAddress, { paused: true });
+    expect(result.paused).toBe(true);
+  });
+
+  test('syncPausedState: propagates NOT_FOUND for an unknown token address', async () => {
+    await expect(service.syncPausedState({ emittedFrom: '0xunknown', isPaused: true })).rejects.toMatchObject({
+      statusCode: 404,
+      code: 'NOT_FOUND',
+    });
+  });
+
   test('getBusiness: returns the mapped business', async () => {
     const created = await service.createBusiness(BUSINESS);
 

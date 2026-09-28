@@ -26,6 +26,11 @@ export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
         await this.businessService.syncAfterDeployment(event.data as any);
       },
 
+      RWA_PausedStateChanged: async (event: BlockchainEvent) => {
+        // Update business pause flag
+        await this.businessService.syncPausedState(event.data as any);
+      },
+
       Pool_Deployed: async (event: BlockchainEvent) => {
         // Update pool info with all parameters from event
         await this.poolService.syncPoolAfterDeployment(event.data as any);

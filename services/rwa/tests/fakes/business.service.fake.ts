@@ -11,6 +11,8 @@ export function createFakeBusinessService() {
   return {
     syncAfterDeployment: mock(async (_eventData: Record<string, unknown>) => ({})),
 
+    syncPausedState: mock(async (_eventData: Record<string, unknown>) => ({})),
+
     setRiskScore: mock(async (_params: { id: string; riskScore: number }) => ({})),
 
     resetEvaluation: mock(async (_params: { id: string }) => ({})),

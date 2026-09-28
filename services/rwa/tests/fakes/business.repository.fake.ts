@@ -106,6 +106,21 @@ export function createFakeBusinessRepository() {
       return next;
     }),
 
+    updateBusinessByTokenAddress: mock(async (tokenAddress: string, data: UpdateBusinessInput) => {
+      const doc = Array.from(store.values()).find((candidate) => candidate.tokenAddress === tokenAddress);
+      if (!doc) {
+        throw new AppError({
+          message: `Business with token address ${tokenAddress} not found`,
+          statusCode: 404,
+          code: 'NOT_FOUND',
+        });
+      }
+
+      const next: FakeBusinessDoc = { ...doc, ...data, updatedAt: Math.floor(Date.now() / 1000) };
+      store.set(doc._id.toString(), next);
+      return next;
+    }),
+
     findById: mock(async (id: string) => {
       const doc = store.get(id);
       if (!doc) throw notFound(id);

@@ -29,6 +29,7 @@ class TestBlockchainEventsDaemon extends BlockchainEventsDaemon {
 }
 
 const BUSINESS_EVENT = 'RWA_Deployed';
+const BUSINESS_PAUSED_EVENT = 'RWA_PausedStateChanged';
 
 // Every pool event the daemon routes, and the PoolService method it must call.
 const POOL_EVENT_ROUTING: Array<[string, keyof FakePoolService]> = [
@@ -78,7 +79,11 @@ describe('BlockchainEventsDaemon (unit, fake clients and services)', () => {
   test('getEventRouting: exposes exactly the expected event handlers', () => {
     const routing = daemon.routing();
 
-    const expectedEvents = [BUSINESS_EVENT, ...POOL_EVENT_ROUTING.map(([eventName]) => eventName)];
+    const expectedEvents = [
+      BUSINESS_EVENT,
+      BUSINESS_PAUSED_EVENT,
+      ...POOL_EVENT_ROUTING.map(([eventName]) => eventName),
+    ];
     expect(Object.keys(routing).sort()).toEqual(expectedEvents.sort());
   });
 
@@ -95,6 +100,17 @@ describe('BlockchainEventsDaemon (unit, fake clients and services)', () => {
     expect(businessService.syncAfterDeployment).toHaveBeenCalledWith(event.data);
     expect(businessService.syncAfterDeployment.mock.calls[0][0]).toBe(event.data); // same reference, no re-mapping
     expect(poolService.syncPoolAfterDeployment).toHaveBeenCalledTimes(0);
+  });
+
+  test('RWA_PausedStateChanged: routes to businessService.syncPausedState with event.data', async () => {
+    const event = blockchainEvent(BUSINESS_PAUSED_EVENT, { emittedFrom: '0xtoken', isPaused: true });
+
+    await daemon.routing()[BUSINESS_PAUSED_EVENT](event);
+
+    expect(businessService.syncPausedState).toHaveBeenCalledTimes(1);
+    expect(businessService.syncPausedState).toHaveBeenCalledWith(event.data);
+    expect(businessService.syncPausedState.mock.calls[0][0]).toBe(event.data); // same reference, no re-mapping
+    expect(poolService.syncPoolPausedState).toHaveBeenCalledTimes(0);
   });
 
   for (const [eventName, method] of POOL_EVENT_ROUTING) {
