@@ -944,19 +944,6 @@ Example response:
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({
-    args: (a) => ({ poolAddress: a[0].emittedFrom, awaitingBonusAmount: a[0].awaitingBonusAmount }),
-  })
-  async syncPoolAwaitingBonusAmount(event: { emittedFrom: string; awaitingBonusAmount: string }) {
-    setSpanAttributes({ entityType: 'pool', poolAddress: event.emittedFrom });
-    const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
-      awaitingBonusAmount: event.awaitingBonusAmount,
-    });
-    return this.mapPool(updated);
-  }
-
-  @TraceDecorator()
-  @MetricsDecorator()
-  @LogDecorator({
     args: (a) => ({ poolAddress: a[0].emittedFrom, awaitingRwaAmount: a[0].awaitingRwaAmount }),
   })
   async syncPoolAwaitingRwaAmount(event: { emittedFrom: string; awaitingRwaAmount: string }) {

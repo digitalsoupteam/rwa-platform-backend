@@ -160,11 +160,6 @@ const UPDATE_BY_ADDRESS_CASES: Array<{
   expected: Record<string, unknown>;
 }> = [
   {
-    method: 'syncPoolAwaitingBonusAmount',
-    event: { emittedFrom: POOL_ADDRESS, awaitingBonusAmount: '10' },
-    expected: { awaitingBonusAmount: '10' },
-  },
-  {
     method: 'syncPoolAwaitingRwaAmount',
     event: { emittedFrom: POOL_ADDRESS, awaitingRwaAmount: '20' },
     expected: { awaitingRwaAmount: '20' },
