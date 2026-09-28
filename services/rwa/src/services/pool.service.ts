@@ -959,11 +959,11 @@ Example response:
   @LogDecorator({
     args: (a) => ({ poolAddress: a[0].emittedFrom, timestamp: a[0].timestamp }),
   })
-  async syncPoolFundsFullyReturned(event: { emittedFrom: string; timestamp: number }) {
+  async syncPoolFundsFullyReturned(event: { emittedFrom: string; timestamp: string }) {
     setSpanAttributes({ entityType: 'pool', poolAddress: event.emittedFrom });
     const updated = await this.poolRepository.updatePoolByAddress(event.emittedFrom, {
       isFullyReturned: true,
-      fullReturnTimestamp: event.timestamp,
+      fullReturnTimestamp: Number(event.timestamp),
     });
     return this.mapPool(updated);
   }

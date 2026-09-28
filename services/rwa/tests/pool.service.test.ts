@@ -166,7 +166,7 @@ const UPDATE_BY_ADDRESS_CASES: Array<{
   },
   {
     method: 'syncPoolFundsFullyReturned',
-    event: { emittedFrom: POOL_ADDRESS, timestamp: 1717000000 },
+    event: { emittedFrom: POOL_ADDRESS, timestamp: '1717000000' },
     expected: { isFullyReturned: true, fullReturnTimestamp: 1717000000 },
   },
   {
