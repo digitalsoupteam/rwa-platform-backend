@@ -1,33 +1,27 @@
 /**
  * In-memory fake of SignerClient for unit tests.
  *
- * The real client publishes requests to a RabbitMQ fanout exchange and consumes
- * responses from a queue. The fake records every call as a bun:test mock and
- * captures the handler passed to consumeResponses, so daemon tests can drive it
- * with synthetic amqplib messages. No broker is involved.
+ * The real client publishes requests to a RabbitMQ fanout exchange and declares
+ * the responses topology (the consuming side lives in ReliableConsumer, wired
+ * by the daemon to the fake RabbitMQ client directly). Tests use this fake to
+ * keep the service layer isolated: no broker, no network, deterministic
+ * results.
  */
 import { mock } from 'bun:test';
-import type { ConsumeMessage } from 'amqplib';
 import type { SignatureRequest } from '../../src/clients/signer.client';
 
 export function createFakeSignerClient() {
-  let responsesHandler: ((message: ConsumeMessage | null) => Promise<void>) | null = null;
+  // Signature requests pushed to the signers through sendSignatureTask().
+  const sentRequests: SignatureRequest[] = [];
 
   const client = {
-    sendSignatureTask: mock(async (_request: SignatureRequest): Promise<void> => {}),
+    sentRequests,
 
     initialize: mock(async (): Promise<void> => {}),
 
-    consumeResponses: mock(async (handler: (message: ConsumeMessage | null) => Promise<void>): Promise<void> => {
-      responsesHandler = handler;
+    sendSignatureTask: mock(async (request: SignatureRequest): Promise<void> => {
+      sentRequests.push(request);
     }),
-
-    ackMessage: mock(async (_message: ConsumeMessage): Promise<void> => {}),
-
-    nackMessage: mock(async (_message: ConsumeMessage, _requeue: boolean = true): Promise<void> => {}),
-
-    /** Handler registered through consumeResponses (null until it has been called). */
-    getResponsesHandler: () => responsesHandler,
   };
 
   return client;

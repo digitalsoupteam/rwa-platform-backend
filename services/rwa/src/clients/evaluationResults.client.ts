@@ -1,5 +1,5 @@
-import type { ConsumeMessage } from 'amqplib';
 import { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
+import { setupDlxRetryTopology } from '@shared/rabbitmq/src/reliability';
 import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
 export interface EvaluationResultMessage {
@@ -10,30 +10,20 @@ export interface EvaluationResultMessage {
   riskScore?: number;
 }
 
-export class EvaluationResultsClient {
-  private readonly EVALUATION_RESULTS_QUEUE = 'evaluation.results';
+/** The queue evaluation results land in; consumed through ReliableConsumer. */
+export const EVALUATION_RESULTS_QUEUE = 'evaluation.results';
+const RESULTS_RETRY_DELAY_MS = 10_000;
 
+export class EvaluationResultsClient {
   constructor(private readonly rabbitClient: RabbitMQClient) {}
 
   @TraceDecorator()
   async initialize(): Promise<void> {
-    await this.rabbitClient.setupQueue(this.EVALUATION_RESULTS_QUEUE, {
-      durable: true,
-    });
-  }
-
-  @TraceDecorator()
-  async consumeResults(handler: (msg: ConsumeMessage | null) => Promise<void>): Promise<void> {
-    await this.rabbitClient.consume(this.EVALUATION_RESULTS_QUEUE, handler, { noAck: false });
-  }
-
-  @TraceDecorator()
-  async ackMessage(msg: ConsumeMessage): Promise<void> {
-    await this.rabbitClient.ack(msg);
-  }
-
-  @TraceDecorator()
-  async nackMessage(msg: ConsumeMessage, requeue: boolean = true): Promise<void> {
-    await this.rabbitClient.nack(msg, requeue);
+    // The queue gets the standard retry topology: failed results are retried
+    // through `evaluation.results.retry` and parked in `evaluation.results.parked`.
+    // Both sides (this service and ai-evaluator) declare the same arguments;
+    // queue arguments are immutable in RabbitMQ — an existing environment must
+    // recreate `evaluation.results` once before starting the new version.
+    await setupDlxRetryTopology(this.rabbitClient, EVALUATION_RESULTS_QUEUE, RESULTS_RETRY_DELAY_MS);
   }
 }

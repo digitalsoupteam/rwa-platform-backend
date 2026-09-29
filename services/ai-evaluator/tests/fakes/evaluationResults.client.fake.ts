@@ -11,7 +11,7 @@
  * exact sequence of completed/failed publications without digging into mock calls.
  */
 import { mock } from 'bun:test';
-import type { EvaluationResultMessage } from '../src/clients/evaluationResults.client';
+import type { EvaluationResultMessage } from '../../src/clients/evaluationResults.client';
 
 export function createFakeEvaluationResultsClient() {
   const published: EvaluationResultMessage[] = [];

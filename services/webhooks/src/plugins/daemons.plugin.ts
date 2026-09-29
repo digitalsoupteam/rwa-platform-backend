@@ -11,7 +11,7 @@ export const createDaemonsPlugin = async (clientsPlugin: ClientsPlugin, services
     'webhooks.init.daemons.webhook_events',
     () =>
       new WebhookEventsDaemon(
-        clientsPlugin.decorator.webhookEventsClient,
+        clientsPlugin.decorator.rabbitMQClient,
         clientsPlugin.decorator.webhookDeliveryClient,
         servicesPlugin.decorator.webhookService,
         servicesPlugin.decorator.deliveryService,
@@ -20,7 +20,7 @@ export const createDaemonsPlugin = async (clientsPlugin: ClientsPlugin, services
 
   const deliveryDaemon = withTraceSync(
     'webhooks.init.daemons.delivery',
-    () => new DeliveryDaemon(clientsPlugin.decorator.webhookDeliveryClient, servicesPlugin.decorator.deliveryService),
+    () => new DeliveryDaemon(clientsPlugin.decorator.rabbitMQClient, servicesPlugin.decorator.deliveryService),
   );
 
   await withTraceAsync('webhooks.init.daemons.initialize', async () => {

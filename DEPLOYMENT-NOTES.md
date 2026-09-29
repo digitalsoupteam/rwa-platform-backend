@@ -128,4 +128,17 @@ Creates an archive of databases, configs, and SSL:
     Webhooks scheme (`webhook-id`, `webhook-timestamp`,
     `webhook-signature: v1,<base64>`), computed over
     `<id>.<timestamp>.<raw body>`; new endpoint secrets use the `whsec_…`
-    format. Verifiers should reject timestamps older than ~5 minutes.
+    format. Verify the signature and reject timestamps older than ~5 minutes.
+
+## 🔁 Queue Reliability Upgrade (one-time, existing environments)
+
+All queue consumers now share one reliability contract (retries with broker
+delays + park queues for failed messages). The following existing queues
+changed their arguments and must be **recreated once** before the first start
+of the upgraded services (RabbitMQ queue arguments are immutable):
+
+- `webhooks.events.webhooks` (see the webhooks section above),
+- `evaluation.requests`, `evaluation.results`, `sign.responses`.
+
+The retry/parked queues (`<queue>.retry`, `<queue>.parked`, retry exchanges)
+are new and are created automatically. Fresh stands need no manual steps.

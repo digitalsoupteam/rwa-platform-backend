@@ -1,5 +1,5 @@
-import type { ConsumeMessage } from 'amqplib';
 import { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
+import { setupDlxRetryTopology } from '@shared/rabbitmq/src/reliability';
 import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 
 export interface SignatureResponse {
@@ -9,9 +9,12 @@ export interface SignatureResponse {
   signature: string;
 }
 
+/** The queue signature responses are sent through; consumed by the manager. */
+export const SIGN_RESPONSES_QUEUE = 'sign.responses';
+const RESPONSES_RETRY_DELAY_MS = 10_000;
+
 export class SignersManagerClient {
   private readonly SIGN_EXCHANGE = 'sign.exchange';
-  private readonly RESPONSES_QUEUE = 'sign.responses';
   private readonly REQUESTS_QUEUE: string;
 
   constructor(
@@ -39,12 +42,14 @@ export class SignersManagerClient {
     });
     await this.rabbitClient.bindQueue(this.REQUESTS_QUEUE, this.SIGN_EXCHANGE, '');
 
-    // Setup responses queue
-    await this.rabbitClient.setupQueue(this.RESPONSES_QUEUE, {
-      durable: true,
-      arguments: {
-        'x-message-ttl': 3600000, // 1 hour
-      },
+    // Setup responses queue: the 1h TTL stays, and failed responses are
+    // retried through the standard retry topology (`sign.responses.retry`)
+    // before being parked in `sign.responses.parked`. Both sides (this service
+    // and the manager) declare the same arguments; queue arguments are
+    // immutable in RabbitMQ — an existing environment must recreate
+    // `sign.responses` once before starting the new version.
+    await setupDlxRetryTopology(this.rabbitClient, SIGN_RESPONSES_QUEUE, RESPONSES_RETRY_DELAY_MS, {
+      'x-message-ttl': 3600000, // 1 hour
     });
   }
 
@@ -53,24 +58,11 @@ export class SignersManagerClient {
    */
   @TraceDecorator()
   async sendSignature(response: SignatureResponse): Promise<void> {
-    await this.rabbitClient.sendToQueue(this.RESPONSES_QUEUE, response);
+    await this.rabbitClient.sendToQueue(SIGN_RESPONSES_QUEUE, response);
   }
 
-  /**
-   * Start consuming signature requests
-   */
-  @TraceDecorator()
-  async consumeRequests(handler: (msg: ConsumeMessage | null) => Promise<void>): Promise<void> {
-    await this.rabbitClient.consume(this.REQUESTS_QUEUE, handler, { noAck: false });
-  }
-
-  @TraceDecorator()
-  async ackMessage(msg: ConsumeMessage): Promise<void> {
-    await this.rabbitClient.ack(msg);
-  }
-
-  @TraceDecorator()
-  async nackMessage(msg: ConsumeMessage, requeue: boolean = true): Promise<void> {
-    await this.rabbitClient.nack(msg, requeue);
+  /** The per-signer requests queue the daemon consumes through ReliableConsumer. */
+  requestsQueueName(): string {
+    return this.REQUESTS_QUEUE;
   }
 }

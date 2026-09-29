@@ -9,7 +9,8 @@
  *
  * consume() additionally records the registered consumer (queue, handler,
  * options) and exposes it through getConsumer(), so a test can drive the handler
- * with synthetic amqplib messages without a broker.
+ * with synthetic amqplib messages without a broker. sent/acked/nacked messages
+ * are recorded for assertions.
  */
 import { mock } from 'bun:test';
 import type { ConsumeMessage } from 'amqplib';
@@ -22,8 +23,15 @@ export type FakeConsumer = {
 
 export function createFakeRabbitMQClient() {
   let consumer: FakeConsumer | null = null;
+  const sent: Array<{ queue: string; content: any; options?: any }> = [];
+  const acked: ConsumeMessage[] = [];
+  const nacked: Array<{ message: ConsumeMessage; requeue: boolean }> = [];
 
   const client = {
+    sent,
+    acked,
+    nacked,
+
     connect: mock(async (): Promise<void> => {}),
 
     disconnect: mock(async (): Promise<void> => {}),
@@ -36,7 +44,9 @@ export function createFakeRabbitMQClient() {
 
     publish: mock(async (_exchange: string, _routingKey: string, _content: any, _options?: any): Promise<void> => {}),
 
-    sendToQueue: mock(async (_queue: string, _content: any, _options?: any): Promise<void> => {}),
+    sendToQueue: mock(async (queue: string, content: any, options?: any): Promise<void> => {
+      sent.push({ queue, content, options });
+    }),
 
     consume: mock(
       async (
@@ -48,9 +58,13 @@ export function createFakeRabbitMQClient() {
       },
     ),
 
-    ack: mock(async (_message: ConsumeMessage): Promise<void> => {}),
+    ack: mock(async (message: ConsumeMessage): Promise<void> => {
+      acked.push(message);
+    }),
 
-    nack: mock(async (_message: ConsumeMessage, _requeue = true): Promise<void> => {}),
+    nack: mock(async (message: ConsumeMessage, requeue = true): Promise<void> => {
+      nacked.push({ message, requeue });
+    }),
 
     /** Consumer registered through consume(), so tests can invoke the handler directly. */
     getConsumer(): FakeConsumer | null {

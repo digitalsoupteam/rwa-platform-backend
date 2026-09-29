@@ -4,17 +4,24 @@
  * The real client talks to a broker; this fake mirrors its public API with
  * bun:test mocks and captures every handler registered through consume() in
  * `consumedHandlers` (keyed by queue name), so daemon tests can assert wiring.
+ * sent/acked/nacked messages are recorded for assertions.
  */
 import { mock } from 'bun:test';
 import type { ConsumeMessage } from 'amqplib';
 
 export function createFakeRabbitMQClient() {
   const consumedHandlers = new Map<string, (message: ConsumeMessage | null) => Promise<void>>();
+  const sent: Array<{ queue: string; content: any; options?: unknown }> = [];
+  const acked: ConsumeMessage[] = [];
+  const nacked: Array<{ message: ConsumeMessage; requeue: boolean }> = [];
 
   return {
     // Handlers registered through consume(); consumers re-register on reconnect
     // in the real client, so the newest handler per queue wins here as well.
     consumedHandlers,
+    sent,
+    acked,
+    nacked,
 
     connect: mock(async (): Promise<void> => {}),
 
@@ -28,7 +35,9 @@ export function createFakeRabbitMQClient() {
 
     publish: mock(async (_exchange: string, _routingKey: string, _content: unknown, _options?: unknown): Promise<void> => {}),
 
-    sendToQueue: mock(async (_queue: string, _content: unknown, _options?: unknown): Promise<void> => {}),
+    sendToQueue: mock(async (queue: string, content: any, options?: unknown): Promise<void> => {
+      sent.push({ queue, content, options });
+    }),
 
     consume: mock(
       async (
@@ -40,9 +49,13 @@ export function createFakeRabbitMQClient() {
       },
     ),
 
-    ack: mock(async (_message: ConsumeMessage): Promise<void> => {}),
+    ack: mock(async (message: ConsumeMessage): Promise<void> => {
+      acked.push(message);
+    }),
 
-    nack: mock(async (_message: ConsumeMessage, _requeue: boolean = true): Promise<void> => {}),
+    nack: mock(async (message: ConsumeMessage, requeue: boolean = true): Promise<void> => {
+      nacked.push({ message, requeue });
+    }),
   };
 }
 

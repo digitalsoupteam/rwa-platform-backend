@@ -8,7 +8,7 @@ import { withTraceSync, withTraceAsync } from '@shared/monitoring/src/tracing';
 export const createDaemonsPlugin = async (clientsPlugin: ClientsPlugin, servicesPlugin: ServicesPlugin) => {
   const taskResponsesDaemon = withTraceSync(
     'signers-manager.init.daemons.task_responses',
-    () => new TaskResponsesDaemon(clientsPlugin.decorator.signerClient, servicesPlugin.decorator.signaturesService),
+    () => new TaskResponsesDaemon(clientsPlugin.decorator.rabbitMQClient, servicesPlugin.decorator.signaturesService),
   );
 
   await withTraceAsync('signers-manager.init.daemons.initialize', async () => {

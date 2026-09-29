@@ -1,12 +1,13 @@
 /**
  * Daemon tests for SignatureDaemon.
  *
- * Scope: the daemon wired to the real SignatureService and a fake
- * signers-manager client. The fake captures the consumer callback passed to
- * consumeRequests(), so the tests invoke the daemon exactly the way RabbitMQ
- * would — with synthetic amqplib-shaped ConsumeMessage objects carrying the
- * serialized { hash, taskId, expired } request. No broker, no network. Run with
- * `bun test` from services/signer.
+ * Scope: the daemon wired to the real SignatureService (with a fake
+ * signers-manager client) and the fake RabbitMQ client. The reliability
+ * contract registers its consumer on the fake broker; tests invoke that
+ * handler — exactly the way RabbitMQ would — with synthetic amqplib-shaped
+ * ConsumeMessage objects carrying the serialized { hash, taskId, expired }
+ * request, and assert the resulting ack/nack decisions. No broker, no
+ * network. Run with `bun test` from services/signer.
  */
 import { beforeEach, describe, expect, test } from 'bun:test';
 import type { ConsumeMessage } from 'amqplib';
@@ -14,6 +15,7 @@ import { SignatureDaemon } from '../src/daemons/signature.daemon';
 import { SignatureService } from '../src/services/signature.service';
 import type { SignersManagerClient } from '../src/clients/signersManager.client';
 import { createFakeSignersManagerClient, type FakeSignersManagerClient } from './fakes/signersManager.client.fake';
+import { createFakeRabbitMQClient, type FakeRabbitMQClient } from './fakes/rabbitmq.client.fake';
 
 // Same deterministic signer as in signature.service.test.ts.
 const PRIVATE_KEY = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
@@ -21,6 +23,7 @@ const SIGNER_ADDRESS = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
 
 const HASH = `0x${'11'.repeat(32)}`;
 const TASK_ID = 'task-42';
+const REQUESTS_QUEUE = 'sign.requests.0xtest';
 
 const FUTURE_EXPIRED = 4102444800; // 2100-01-01T00:00:00Z
 const PAST_EXPIRED = 1000000000; // 2001-09-09T01:46:40Z
@@ -29,10 +32,9 @@ type SignatureRequest = { hash?: string; taskId?: string; expired?: number };
 
 /**
  * Synthetic delivery shaped like amqplib's ConsumeMessage: content/fields/
- * properties plus the top-level `redelivered` flag the daemon reads
- * (src/daemons/signature.daemon.ts:75).
- *
- * A string payload is used verbatim — that is how an unparseable body is built.
+ * properties, with `redelivered` inside `fields` — exactly where a real broker
+ * puts it (ReliableConsumer reads it from there). A string payload is used
+ * verbatim — that is how an unparseable body is built.
  */
 function makeDelivery(payload: SignatureRequest | string, redelivered = false): ConsumeMessage {
   const content = Buffer.from(typeof payload === 'string' ? payload : JSON.stringify(payload));
@@ -47,37 +49,28 @@ function makeDelivery(payload: SignatureRequest | string, redelivered = false): 
       routingKey: '',
     },
     properties: {},
-    redelivered,
   } as unknown as ConsumeMessage;
 }
 
-/**
- * The same delivery without the top-level flag — the exact shape amqplib builds
- * ({ fields, properties, content }), where `redelivered` lives only in `fields`.
- */
-function toAmqplibShape(message: ConsumeMessage): ConsumeMessage {
-  const raw = { ...(message as unknown as Record<string, unknown>) };
-  delete raw.redelivered;
-  return raw as unknown as ConsumeMessage;
-}
-
-describe('SignatureDaemon (fake signers-manager client, real SignatureService)', () => {
+describe('SignatureDaemon (fake broker, fake manager client, real SignatureService)', () => {
   let manager: FakeSignersManagerClient;
-  let service: SignatureService;
+  let rabbit: FakeRabbitMQClient;
   let daemon: SignatureDaemon;
   let deliver: (msg: ConsumeMessage | null) => Promise<void>;
 
   beforeEach(async () => {
     manager = createFakeSignersManagerClient();
-    service = new SignatureService(manager as unknown as SignersManagerClient, PRIVATE_KEY);
-    daemon = new SignatureDaemon(manager as unknown as SignersManagerClient, service);
+    rabbit = createFakeRabbitMQClient();
+    const service = new SignatureService(manager as unknown as SignersManagerClient, PRIVATE_KEY);
+    daemon = new SignatureDaemon(rabbit as any, REQUESTS_QUEUE, service);
 
     await daemon.initialize();
-    deliver = manager.capturedHandler!;
+    deliver = rabbit.handlers.get(REQUESTS_QUEUE)!;
   });
 
   test('initialize: subscribes to the requests queue exactly once', () => {
-    expect(manager.consumeRequests).toHaveBeenCalledTimes(1);
+    expect(rabbit.consume).toHaveBeenCalledTimes(1);
+    expect(rabbit.consume.mock.calls[0][0]).toBe(REQUESTS_QUEUE);
     expect(typeof deliver).toBe('function');
   });
 
@@ -108,9 +101,8 @@ describe('SignatureDaemon (fake signers-manager client, real SignatureService)',
     expect(response.signer).toBe(SIGNER_ADDRESS);
     expect(response.signature).toMatch(/^0x[0-9a-f]{130}$/i);
 
-    expect(manager.ackMessage).toHaveBeenCalledTimes(1);
-    expect(manager.ackMessage).toHaveBeenCalledWith(message);
-    expect(manager.nackMessage).toHaveBeenCalledTimes(0);
+    expect(rabbit.acked).toEqual([message]);
+    expect(rabbit.nacked).toHaveLength(0);
   });
 
   test('request with any required field missing: dropped with ack, never signed', async () => {
@@ -122,11 +114,11 @@ describe('SignatureDaemon (fake signers-manager client, real SignatureService)',
     for (const message of [missingHash, missingTaskId, missingExpired]) await deliver(message);
 
     expect(manager.sendSignature).toHaveBeenCalledTimes(0);
-    expect(manager.nackMessage).toHaveBeenCalledTimes(0);
-    expect(manager.ackMessage).toHaveBeenCalledTimes(3);
-    expect(manager.ackMessage).toHaveBeenCalledWith(missingHash);
-    expect(manager.ackMessage).toHaveBeenCalledWith(missingTaskId);
-    expect(manager.ackMessage).toHaveBeenCalledWith(missingExpired);
+    expect(rabbit.nacked).toHaveLength(0);
+    expect(rabbit.acked).toHaveLength(3);
+    expect(rabbit.acked).toContain(missingHash);
+    expect(rabbit.acked).toContain(missingTaskId);
+    expect(rabbit.acked).toContain(missingExpired);
   });
 
   test('request with expired: 0: rejected as malformed (the field check treats 0 as absent)', async () => {
@@ -137,8 +129,8 @@ describe('SignatureDaemon (fake signers-manager client, real SignatureService)',
     await deliver(message);
 
     expect(manager.sendSignature).toHaveBeenCalledTimes(0);
-    expect(manager.ackMessage).toHaveBeenCalledWith(message);
-    expect(manager.nackMessage).toHaveBeenCalledTimes(0);
+    expect(rabbit.acked).toEqual([message]);
+    expect(rabbit.nacked).toHaveLength(0);
   });
 
   test('request with a malformed hash: dropped with ack, never signed', async () => {
@@ -148,8 +140,8 @@ describe('SignatureDaemon (fake signers-manager client, real SignatureService)',
     await deliver(message);
 
     expect(manager.sendSignature).toHaveBeenCalledTimes(0);
-    expect(manager.ackMessage).toHaveBeenCalledWith(message);
-    expect(manager.nackMessage).toHaveBeenCalledTimes(0);
+    expect(rabbit.acked).toEqual([message]);
+    expect(rabbit.nacked).toHaveLength(0);
   });
 
   test('expired request: dropped with ack (EXPIRED is permanent), never nacked', async () => {
@@ -158,9 +150,8 @@ describe('SignatureDaemon (fake signers-manager client, real SignatureService)',
     await deliver(message);
 
     expect(manager.sendSignature).toHaveBeenCalledTimes(0);
-    expect(manager.ackMessage).toHaveBeenCalledTimes(1);
-    expect(manager.ackMessage).toHaveBeenCalledWith(message);
-    expect(manager.nackMessage).toHaveBeenCalledTimes(0);
+    expect(rabbit.acked).toEqual([message]);
+    expect(rabbit.nacked).toHaveLength(0);
   });
 
   test('transient failure: nacked with requeue=true exactly once, not acked', async () => {
@@ -171,15 +162,18 @@ describe('SignatureDaemon (fake signers-manager client, real SignatureService)',
     });
     const message = makeDelivery({ hash: HASH, taskId: TASK_ID, expired: FUTURE_EXPIRED });
 
-    await expect(deliver(message)).resolves.toBeUndefined(); // the daemon swallows the error
+    await deliver(message);
 
     expect(manager.sendSignature).toHaveBeenCalledTimes(1);
-    expect(manager.nackMessage).toHaveBeenCalledTimes(1);
-    expect(manager.nackMessage).toHaveBeenCalledWith(message, true);
-    expect(manager.ackMessage).toHaveBeenCalledTimes(0);
+    expect(rabbit.nacked).toHaveLength(1);
+    expect(rabbit.nacked[0].message).toBe(message);
+    expect(rabbit.nacked[0].requeue).toBe(true);
+    expect(rabbit.acked).toHaveLength(0);
   });
 
   test('redelivered transient failure: dropped with ack instead of another nack', async () => {
+    // `redelivered` is read from `fields` (where amqplib puts it), so the
+    // drop-after-one-failed-delivery branch works with real broker deliveries.
     manager.sendSignature.mockImplementationOnce(async () => {
       throw new Error('broker unavailable');
     });
@@ -187,22 +181,22 @@ describe('SignatureDaemon (fake signers-manager client, real SignatureService)',
 
     await deliver(message);
 
-    expect(manager.nackMessage).toHaveBeenCalledTimes(0);
-    expect(manager.ackMessage).toHaveBeenCalledTimes(1);
-    expect(manager.ackMessage).toHaveBeenCalledWith(message);
+    expect(rabbit.nacked).toHaveLength(0);
+    expect(rabbit.acked).toEqual([message]);
   });
 
   test('unparseable JSON: nacked with requeue=true on the first delivery', async () => {
-    // JSON.parse throws a plain SyntaxError (no AppError code), so the daemon
-    // treats a broken body as transient and asks for one redelivery.
+    // JSON.parse throws a plain SyntaxError (no AppError code), so the consumer
+    // treats a broken body as retryable and asks for one redelivery.
     const message = makeDelivery('{ not json');
 
     await deliver(message);
 
     expect(manager.sendSignature).toHaveBeenCalledTimes(0);
-    expect(manager.nackMessage).toHaveBeenCalledTimes(1);
-    expect(manager.nackMessage).toHaveBeenCalledWith(message, true);
-    expect(manager.ackMessage).toHaveBeenCalledTimes(0);
+    expect(rabbit.nacked).toHaveLength(1);
+    expect(rabbit.nacked[0].message).toBe(message);
+    expect(rabbit.nacked[0].requeue).toBe(true);
+    expect(rabbit.acked).toHaveLength(0);
   });
 
   test('unparseable JSON: dropped with ack once redelivered', async () => {
@@ -211,28 +205,7 @@ describe('SignatureDaemon (fake signers-manager client, real SignatureService)',
     await deliver(message);
 
     expect(manager.sendSignature).toHaveBeenCalledTimes(0);
-    expect(manager.nackMessage).toHaveBeenCalledTimes(0);
-    expect(manager.ackMessage).toHaveBeenCalledWith(message);
-  });
-
-  test('amqplib-shaped redelivered failure is nacked again (documented flag-location mismatch)', async () => {
-    // A real broker delivery carries `redelivered` only in message.fields
-    // (verified against amqplib 0.10.8 lib/channel.js, which builds
-    // { fields, properties, content }), while the daemon reads a top-level
-    // `message.redelivered` (src/daemons/signature.daemon.ts:75). With genuine
-    // broker deliveries the flag is therefore never seen and the
-    // "drop after one failed delivery" branch stays dead — a transient failure
-    // is requeued again instead of being dropped. This test pins the current
-    // behavior; flagged for the owner, not fixed here.
-    manager.sendSignature.mockImplementationOnce(async () => {
-      throw new Error('broker unavailable');
-    });
-    const message = toAmqplibShape(makeDelivery({ hash: HASH, taskId: TASK_ID, expired: FUTURE_EXPIRED }, true));
-
-    await deliver(message);
-
-    expect(manager.nackMessage).toHaveBeenCalledTimes(1);
-    expect(manager.nackMessage).toHaveBeenCalledWith(message, true);
-    expect(manager.ackMessage).toHaveBeenCalledTimes(0);
+    expect(rabbit.nacked).toHaveLength(0);
+    expect(rabbit.acked).toEqual([message]);
   });
 });

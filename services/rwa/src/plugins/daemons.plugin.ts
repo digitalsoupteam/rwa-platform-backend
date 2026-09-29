@@ -21,7 +21,7 @@ export const createDaemonsPlugin = async (clientsPlugin: ClientsPlugin, services
     'rwa.init.daemons.evaluation_results',
     () =>
       new EvaluationResultsDaemon(
-        clientsPlugin.decorator.evaluationResultsClient,
+        clientsPlugin.decorator.rabbitMQClient,
         servicesPlugin.decorator.poolService,
         servicesPlugin.decorator.businessService,
       ),

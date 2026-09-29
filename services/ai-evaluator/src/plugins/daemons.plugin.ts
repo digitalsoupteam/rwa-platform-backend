@@ -10,7 +10,7 @@ export const createDaemonsPlugin = async (clientsPlugin: ClientsPlugin, services
     'ai-evaluator.init.daemons.evaluation_requests',
     () =>
       new EvaluationRequestsDaemon(
-        clientsPlugin.decorator.evaluationRequestsClient,
+        clientsPlugin.decorator.rabbitMQClient,
         servicesPlugin.decorator.riskEvaluationService,
       ),
   );

@@ -1,15 +1,15 @@
 /**
  * Unit tests for EvaluationRequestsDaemon.
  *
- * Scope: the daemon layer only. The evaluation requests client is replaced with a
- * fake that captures the handler registered through consumeRequests(), and the
- * risk evaluation service is a fake too, so these tests need no broker, no
- * database and no network. Synthetic amqplib messages are built with
- * createConsumeMessage().
+ * Scope: the daemon layer only. The risk evaluation service is a fake, and the
+ * daemon registers its consumer on the fake RabbitMQ client — tests invoke the
+ * captured handler with synthetic amqplib messages (createConsumeMessage()) and
+ * assert the reliability decisions (ack / retry through the retry queue / park
+ * into evaluation.requests.parked). No broker, no database, no network.
  *
  * The second block drives the real EvaluationRequestsClient and
- * EvaluationResultsClient over a fake RabbitMQClient, to pin the queue names and
- * ack/nack semantics the daemon relies on.
+ * EvaluationResultsClient over a fake RabbitMQClient, to pin the queue names
+ * and the retry topology both sides rely on.
  * Run with `bun test` from services/ai-evaluator.
  */
 import { beforeEach, describe, expect, mock, test } from 'bun:test';
@@ -20,10 +20,6 @@ import { EvaluationRequestsClient } from '../src/clients/evaluationRequests.clie
 import { EvaluationResultsClient } from '../src/clients/evaluationResults.client';
 import { EvaluationRequestsDaemon } from '../src/daemons/evaluationRequests.daemon';
 import type { RiskEvaluationService } from '../src/services/riskEvaluation.service';
-import {
-  createFakeEvaluationRequestsClient,
-  type FakeEvaluationRequestsClient,
-} from './fakes/evaluationRequests.client.fake';
 import { createConsumeMessage, createFakeRabbitMQClient } from './fakes/rabbitmq.client.fake';
 
 function createFakeRiskEvaluationService() {
@@ -47,41 +43,37 @@ const BUSINESS_MESSAGE = {
   args: { businessId: 'business-1', ownerId: 'owner-1', ownerType: 'business' },
 };
 
-describe('EvaluationRequestsDaemon (unit, fake requests client and service)', () => {
-  let requestsClient: FakeEvaluationRequestsClient;
+describe('EvaluationRequestsDaemon (unit, fake broker and service)', () => {
+  let rabbit: ReturnType<typeof createFakeRabbitMQClient>;
   let service: FakeRiskEvaluationService;
   let daemon: EvaluationRequestsDaemon;
+  let handler: (message: ConsumeMessage | null) => Promise<void>;
 
-  beforeEach(() => {
-    requestsClient = createFakeEvaluationRequestsClient();
+  beforeEach(async () => {
+    rabbit = createFakeRabbitMQClient();
     service = createFakeRiskEvaluationService();
     daemon = new EvaluationRequestsDaemon(
-      requestsClient as unknown as EvaluationRequestsClient,
+      rabbit as unknown as RabbitMQClient,
       service as unknown as RiskEvaluationService,
     );
+
+    await daemon.initialize();
+    const consumer = rabbit.getConsumer();
+    if (!consumer) throw new Error('initialize() did not register a consumer');
+    handler = consumer.handler;
   });
 
-  /** Runs initialize() and returns the handler the daemon registered. */
-  async function registerConsumer() {
-    await daemon.initialize();
+  test('initialize: registers exactly one consumer on the evaluation.requests queue', () => {
+    const consumer = rabbit.getConsumer()!;
 
-    const handler = requestsClient.getHandler();
-    if (!handler) throw new Error('initialize() did not register a consumer');
-
-    return handler;
-  }
-
-  test('initialize: registers exactly one consumer through the requests client', async () => {
-    const handler = await registerConsumer();
-
-    expect(requestsClient.consumeRequests).toHaveBeenCalledTimes(1);
-    expect(typeof handler).toBe('function');
-    expect(requestsClient.ackMessage).toHaveBeenCalledTimes(0);
-    expect(requestsClient.nackMessage).toHaveBeenCalledTimes(0);
+    expect(rabbit.consume).toHaveBeenCalledTimes(1);
+    expect(consumer.queue).toBe('evaluation.requests');
+    expect(consumer.options).toEqual({ noAck: false });
+    expect(rabbit.acked).toHaveLength(0);
+    expect(rabbit.nacked).toHaveLength(0);
   });
 
   test('evaluatePool: forwards the message args and acks the message', async () => {
-    const handler = await registerConsumer();
     const message = createConsumeMessage(POOL_MESSAGE);
 
     await handler(message);
@@ -93,12 +85,11 @@ describe('EvaluationRequestsDaemon (unit, fake requests client and service)', ()
       ownerType: 'business',
     });
     expect(service.evaluateBusiness).toHaveBeenCalledTimes(0);
-    expect(requestsClient.ackMessage).toHaveBeenCalledWith(message);
-    expect(requestsClient.nackMessage).toHaveBeenCalledTimes(0);
+    expect(rabbit.acked).toEqual([message]);
+    expect(rabbit.nacked).toHaveLength(0);
   });
 
   test('evaluateBusiness: forwards the message args and acks the message', async () => {
-    const handler = await registerConsumer();
     const message = createConsumeMessage(BUSINESS_MESSAGE);
 
     await handler(message);
@@ -110,25 +101,24 @@ describe('EvaluationRequestsDaemon (unit, fake requests client and service)', ()
       ownerType: 'business',
     });
     expect(service.evaluatePool).toHaveBeenCalledTimes(0);
-    expect(requestsClient.ackMessage).toHaveBeenCalledWith(message);
-    expect(requestsClient.nackMessage).toHaveBeenCalledTimes(0);
+    expect(rabbit.acked).toEqual([message]);
+    expect(rabbit.nacked).toHaveLength(0);
   });
 
-  test('an unknown method is nacked without requeue and never reaches the service', async () => {
-    const handler = await registerConsumer();
+  test('an unknown method is parked and never reaches the service', async () => {
     const message = createConsumeMessage({ method: 'evaluateDao', args: { id: 'dao-1' } });
 
     await handler(message);
 
     expect(service.evaluatePool).toHaveBeenCalledTimes(0);
     expect(service.evaluateBusiness).toHaveBeenCalledTimes(0);
-    expect(requestsClient.ackMessage).toHaveBeenCalledTimes(0);
-    // requeue=false: an unknown method will never succeed on a redelivery.
-    expect(requestsClient.nackMessage).toHaveBeenCalledWith(message, false);
+    expect(rabbit.nacked).toHaveLength(0);
+    expect(rabbit.acked).toEqual([message]); // parked = republished into the park queue, then acked
+    expect(rabbit.sent).toHaveLength(1);
+    expect(rabbit.sent[0].queue).toBe('evaluation.requests.parked');
   });
 
-  test('a failing evaluation is nacked without requeue and never acked', async () => {
-    const handler = await registerConsumer();
+  test('a transient upstream failure is retried through the retry queue', async () => {
     service.evaluatePool.mockRejectedValueOnce(
       new AppError({ message: 'rwa service unavailable', statusCode: 502, code: 'UPSTREAM_ERROR' }),
     );
@@ -136,71 +126,64 @@ describe('EvaluationRequestsDaemon (unit, fake requests client and service)', ()
 
     await handler(message);
 
-    expect(requestsClient.nackMessage).toHaveBeenCalledWith(message, false);
-    expect(requestsClient.ackMessage).toHaveBeenCalledTimes(0);
+    // Dead-lettered into `evaluation.requests.retry` instead of being dropped.
+    expect(rabbit.nacked).toHaveLength(1);
+    expect(rabbit.nacked[0].message).toBe(message);
+    expect(rabbit.nacked[0].requeue).toBe(false);
+    expect(rabbit.acked).toHaveLength(0);
   });
 
-  test('a malformed payload is nacked without requeue', async () => {
-    const handler = await registerConsumer();
+  test('a malformed payload is parked', async () => {
     const message = createConsumeMessage('{"method": "evaluatePool"');
 
     await handler(message);
 
-    expect(requestsClient.nackMessage).toHaveBeenCalledWith(message, false);
-    expect(requestsClient.ackMessage).toHaveBeenCalledTimes(0);
+    expect(rabbit.acked).toEqual([message]);
+    expect(rabbit.nacked).toHaveLength(0);
+    expect(rabbit.sent[0].queue).toBe('evaluation.requests.parked');
     expect(service.evaluatePool).toHaveBeenCalledTimes(0);
     expect(service.evaluateBusiness).toHaveBeenCalledTimes(0);
   });
 
   test('a null message (consumer cancelled delivery) is ignored', async () => {
-    const handler = await registerConsumer();
-
     await handler(null);
 
-    expect(requestsClient.ackMessage).toHaveBeenCalledTimes(0);
-    expect(requestsClient.nackMessage).toHaveBeenCalledTimes(0);
+    expect(rabbit.acked).toHaveLength(0);
+    expect(rabbit.nacked).toHaveLength(0);
     expect(service.evaluatePool).toHaveBeenCalledTimes(0);
     expect(service.evaluateBusiness).toHaveBeenCalledTimes(0);
   });
 });
 
 describe('evaluation clients (real, over a fake RabbitMQClient)', () => {
-  test('EvaluationRequestsClient: initializes the durable queue and consumes with noAck false', async () => {
+  test('EvaluationRequestsClient: initializes the queue with the retry topology', async () => {
     const rabbit = createFakeRabbitMQClient();
     const client = new EvaluationRequestsClient(rabbit as unknown as RabbitMQClient);
-    const handler = mock(async (_message: ConsumeMessage | null): Promise<void> => {});
 
     await client.initialize();
-    await client.consumeRequests(handler);
 
-    expect(rabbit.setupQueue).toHaveBeenCalledWith('evaluation.requests', { durable: true });
-    expect(rabbit.consume).toHaveBeenCalledTimes(1);
-
-    const [queue, consumerHandler, options] = rabbit.consume.mock.calls[0];
-    expect(queue).toBe('evaluation.requests');
-    expect(consumerHandler).toBe(handler);
-    expect(options).toEqual({ noAck: false });
+    expect(rabbit.setupExchange).toHaveBeenCalledWith('evaluation.requests.retry.exchange', 'direct', {
+      durable: true,
+    });
+    expect(rabbit.setupQueue).toHaveBeenCalledWith('evaluation.requests', {
+      durable: true,
+      arguments: {
+        'x-dead-letter-exchange': 'evaluation.requests.retry.exchange',
+        'x-dead-letter-routing-key': 'evaluation.requests.retry',
+      },
+    });
+    expect(rabbit.setupQueue).toHaveBeenCalledWith('evaluation.requests.retry', {
+      durable: true,
+      arguments: {
+        'x-message-ttl': 10_000,
+        'x-dead-letter-exchange': '',
+        'x-dead-letter-routing-key': 'evaluation.requests',
+      },
+    });
+    expect(rabbit.setupQueue).toHaveBeenCalledWith('evaluation.requests.parked', { durable: true });
   });
 
-  test('EvaluationRequestsClient: ackMessage and nackMessage delegate to the rabbit client', async () => {
-    const rabbit = createFakeRabbitMQClient();
-    const client = new EvaluationRequestsClient(rabbit as unknown as RabbitMQClient);
-    const message = createConsumeMessage(POOL_MESSAGE);
-
-    await client.ackMessage(message);
-    await client.nackMessage(message);
-    await client.nackMessage(message, false);
-
-    expect(rabbit.ack).toHaveBeenCalledTimes(1);
-    expect(rabbit.ack).toHaveBeenCalledWith(message);
-    // nackMessage defaults to requeue=true and forwards the flag explicitly.
-    expect(rabbit.nack.mock.calls).toEqual([
-      [message, true],
-      [message, false],
-    ]);
-  });
-
-  test('EvaluationResultsClient: initializes the durable queue and publishes to it', async () => {
+  test('EvaluationResultsClient: initializes the queue with the retry topology and publishes to it', async () => {
     const rabbit = createFakeRabbitMQClient();
     const client = new EvaluationResultsClient(rabbit as unknown as RabbitMQClient);
     const result = {
@@ -214,34 +197,13 @@ describe('evaluation clients (real, over a fake RabbitMQClient)', () => {
     await client.initialize();
     await client.publishEvaluationResult(result);
 
-    expect(rabbit.setupQueue).toHaveBeenCalledWith('evaluation.results', { durable: true });
-    expect(rabbit.sendToQueue).toHaveBeenCalledWith('evaluation.results', result);
-  });
-
-  test('the consumer registered by the daemon is wired to the evaluation.requests queue', async () => {
-    const rabbit = createFakeRabbitMQClient();
-    const requestsClient = new EvaluationRequestsClient(rabbit as unknown as RabbitMQClient);
-    const service = createFakeRiskEvaluationService();
-    const daemon = new EvaluationRequestsDaemon(
-      requestsClient as unknown as EvaluationRequestsClient,
-      service as unknown as RiskEvaluationService,
-    );
-
-    await daemon.initialize();
-
-    const consumer = rabbit.getConsumer();
-    expect(consumer).not.toBeNull();
-    expect(consumer!.queue).toBe('evaluation.requests');
-    expect(consumer!.options).toEqual({ noAck: false });
-
-    const message = createConsumeMessage(BUSINESS_MESSAGE);
-    await consumer!.handler(message);
-
-    expect(service.evaluateBusiness).toHaveBeenCalledWith({
-      businessId: 'business-1',
-      ownerId: 'owner-1',
-      ownerType: 'business',
+    expect(rabbit.setupQueue).toHaveBeenCalledWith('evaluation.results', {
+      durable: true,
+      arguments: {
+        'x-dead-letter-exchange': 'evaluation.results.retry.exchange',
+        'x-dead-letter-routing-key': 'evaluation.results.retry',
+      },
     });
-    expect(rabbit.ack).toHaveBeenCalledWith(message);
+    expect(rabbit.sendToQueue).toHaveBeenCalledWith('evaluation.results', result);
   });
 });

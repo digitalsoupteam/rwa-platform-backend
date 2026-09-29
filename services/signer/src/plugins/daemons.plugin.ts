@@ -7,7 +7,12 @@ import { withTraceAsync, withTraceSync } from '@shared/monitoring/src/tracing';
 export const createDaemonsPlugin = async (servicesPlugin: ServicesPlugin) => {
   const signatureDaemon = withTraceSync(
     'signer.init.daemons.signature',
-    () => new SignatureDaemon(servicesPlugin.decorator.signersManagerClient, servicesPlugin.decorator.signatureService),
+    () =>
+      new SignatureDaemon(
+        servicesPlugin.decorator.rabbitMQClient,
+        servicesPlugin.decorator.signersManagerClient.requestsQueueName(),
+        servicesPlugin.decorator.signatureService,
+      ),
   );
 
   await withTraceAsync('signer.init.daemons.initialize', async () => {

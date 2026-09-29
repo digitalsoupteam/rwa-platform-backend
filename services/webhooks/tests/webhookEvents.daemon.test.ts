@@ -2,14 +2,16 @@
  * Unit tests for WebhookEventsDaemon.
  *
  * Scope: the daemon layer. The daemon is wired to the real WebhookService and
- * DeliveryService with in-memory repositories, a fake Redis client and fake
- * RabbitMQ-backed clients (tests/fakes/*.fake.ts). The fake events client
- * captures the handler registered through consumeEvents; tests invoke it with
- * synthetic amqplib-shaped messages (content Buffer, fields, redelivered) and
- * assert the resulting ack/nack decisions. No database, no broker, no network.
+ * DeliveryService with in-memory repositories, a fake Redis client and the fake
+ * RabbitMQ client (tests/fakes/*.fake.ts). The reliability contract registers
+ * its consumer on the fake broker; tests invoke that handler with synthetic
+ * amqplib-shaped messages (content Buffer, fields, redelivered) and assert the
+ * resulting ack/nack decisions on the same fake broker. No database, no
+ * broker, no network.
  */
 import { beforeEach, describe, expect, test } from 'bun:test';
 import { WebhookEventsDaemon } from '../src/daemons/webhookEvents.daemon';
+import { WEBHOOK_EVENTS_QUEUE } from '../src/clients/webhookEvents.client';
 import { WebhookService } from '../src/services/webhook.service';
 import { DeliveryService } from '../src/services/delivery.service';
 import type { EndpointRepository } from '../src/repositories/endpoint.repository';
@@ -18,10 +20,7 @@ import type { RedisWithTracing } from '@shared/monitoring/src/redis';
 import { createFakeEndpointRepository, type FakeEndpointRepository } from './fakes/endpoint.repository.fake';
 import { createFakeDeliveryLogRepository, type FakeDeliveryLogRepository } from './fakes/deliveryLog.repository.fake';
 import { createFakeRedisClient, type FakeRedisClient } from './fakes/redis.client.fake';
-import {
-  createFakeWebhookEventsClient,
-  type FakeWebhookEventsClient,
-} from './fakes/webhookEvents.client.fake';
+import { createFakeRabbitMQClient, type FakeRabbitMQClient } from './fakes/rabbitmq.client.fake';
 import {
   createFakeWebhookDeliveryClient,
   type FakeWebhookDeliveryClient,
@@ -37,11 +36,11 @@ const EVENT = {
   payload: { poolId: 'pool-1', amount: '100' },
 };
 
-describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
+describe('WebhookEventsDaemon (unit, fake broker and repositories)', () => {
   let endpoints: FakeEndpointRepository;
   let logs: FakeDeliveryLogRepository;
   let redis: FakeRedisClient;
-  let eventsClient: FakeWebhookEventsClient;
+  let rabbit: FakeRabbitMQClient;
   let deliveryClient: FakeWebhookDeliveryClient;
   let daemon: WebhookEventsDaemon;
   let journal: string[];
@@ -52,7 +51,7 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
     logs = createFakeDeliveryLogRepository();
     redis = createFakeRedisClient();
     journal = [];
-    eventsClient = createFakeWebhookEventsClient(journal);
+    rabbit = createFakeRabbitMQClient(journal);
     deliveryClient = createFakeWebhookDeliveryClient(journal);
 
     const webhookService = new WebhookService(
@@ -67,10 +66,10 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
       ENCRYPTION_KEY,
     );
 
-    daemon = new WebhookEventsDaemon(eventsClient as any, deliveryClient as any, webhookService, deliveryService);
+    daemon = new WebhookEventsDaemon(rabbit as any, deliveryClient as any, webhookService, deliveryService);
     await daemon.initialize();
-    handler = eventsClient.getHandler();
-    journal.length = 0; // drop the consumeEvents entry recorded by initialize()
+    handler = rabbit.handlers.get(WEBHOOK_EVENTS_QUEUE) ?? null;
+    journal.length = 0; // drop the consume entry recorded by initialize()
   });
 
   async function seedEndpoint(overrides: Record<string, unknown> = {}) {
@@ -86,8 +85,10 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
   }
 
   test('initialize: consumes the events queue with manual acknowledgements', async () => {
-    expect(eventsClient.consumeEvents).toHaveBeenCalledTimes(1);
-    expect(typeof eventsClient.getHandler()).toBe('function');
+    expect(rabbit.consume).toHaveBeenCalledTimes(1);
+    expect(rabbit.consume.mock.calls[0][0]).toBe(WEBHOOK_EVENTS_QUEUE);
+    expect(rabbit.consume.mock.calls[0][2]).toEqual({ noAck: false });
+    expect(typeof handler).toBe('function');
   });
 
   test('handler: acks an event that no endpoint subscribes to', async () => {
@@ -97,8 +98,8 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
     await handler!(message);
 
     expect(endpoints.findByEvents).toHaveBeenCalledWith('pool.deployed');
-    expect(eventsClient.ackMessage).toHaveBeenCalledWith(message);
-    expect(eventsClient.nackMessage).toHaveBeenCalledTimes(0);
+    expect(rabbit.acked).toEqual([message]);
+    expect(rabbit.nacked).toHaveLength(0);
     expect(logs.createDeliveryLog).toHaveBeenCalledTimes(0);
     expect(deliveryClient.sendToDeliveryQueue).toHaveBeenCalledTimes(0);
   });
@@ -129,11 +130,10 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
     expect(sent[0].url).toBe('https://8.8.8.8/hooks');
     expect(sent[0].secret).toBe('encrypted-at-rest');
 
-    expect(eventsClient.ackedMessages).toHaveLength(1);
-    expect(eventsClient.ackedMessages[0]).toBe(message);
-    expect(eventsClient.nackMessage).toHaveBeenCalledTimes(0);
+    expect(rabbit.acked).toEqual([message]);
+    expect(rabbit.nacked).toHaveLength(0);
     // The event is acked only after every delivery has been enqueued.
-    expect(journal).toEqual(['sendToDeliveryQueue', 'sendToDeliveryQueue', 'ackMessage']);
+    expect(journal).toEqual(['sendToDeliveryQueue', 'sendToDeliveryQueue', 'ack']);
   });
 
   test('handler: skips an endpoint whose breaker key is set in Redis but still acks', async () => {
@@ -145,7 +145,7 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
 
     expect(logs.createDeliveryLog).toHaveBeenCalledTimes(0);
     expect(deliveryClient.sendToDeliveryQueue).toHaveBeenCalledTimes(0);
-    expect(eventsClient.ackMessage).toHaveBeenCalledTimes(1);
+    expect(rabbit.acked).toEqual([message]);
   });
 
   test('handler: skips an endpoint deactivated after the subscription lookup', async () => {
@@ -160,7 +160,7 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
 
     expect(logs.createDeliveryLog).toHaveBeenCalledTimes(0);
     expect(deliveryClient.sendToDeliveryQueue).toHaveBeenCalledTimes(0);
-    expect(eventsClient.ackMessage).toHaveBeenCalledTimes(1);
+    expect(rabbit.acked).toEqual([message]);
   });
 
   test('handler: skips an endpoint that exceeded its rate limit', async () => {
@@ -175,7 +175,7 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
     expect(redis.expire).toHaveBeenCalledTimes(0); // TTL is only set on the first hit of a window
     expect(logs.createDeliveryLog).toHaveBeenCalledTimes(0);
     expect(deliveryClient.sendToDeliveryQueue).toHaveBeenCalledTimes(0);
-    expect(eventsClient.ackMessage).toHaveBeenCalledTimes(1);
+    expect(rabbit.acked).toEqual([message]);
   });
 
   test('handler: delivers when Redis rate limiting fails open', async () => {
@@ -188,14 +188,14 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
     await handler!(message);
 
     expect(deliveryClient.sendToDeliveryQueue).toHaveBeenCalledTimes(1);
-    expect(eventsClient.ackMessage).toHaveBeenCalledTimes(1);
+    expect(rabbit.acked).toEqual([message]);
   });
 
   test('handler: ignores a null delivery', async () => {
     await handler!(null);
 
-    expect(eventsClient.ackMessage).toHaveBeenCalledTimes(0);
-    expect(eventsClient.nackMessage).toHaveBeenCalledTimes(0);
+    expect(rabbit.acked).toHaveLength(0);
+    expect(rabbit.nacked).toHaveLength(0);
     expect(logs.createDeliveryLog).toHaveBeenCalledTimes(0);
   });
 
@@ -213,9 +213,10 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
     expect(deliveryClient.sendToDeliveryQueue).toHaveBeenCalledTimes(2);
     expect(deliveryClient.sentMessages.at(-1)!.endpointId).toBe(second._id.toString());
     // … and the event is requeued once instead of being dropped silently.
-    expect(eventsClient.nackedMessages).toHaveLength(1);
-    expect(eventsClient.nackedMessages[0].requeue).toBe(true);
-    expect(eventsClient.ackMessage).toHaveBeenCalledTimes(0);
+    expect(rabbit.nacked).toHaveLength(1);
+    expect(rabbit.nacked[0].message).toBe(message);
+    expect(rabbit.nacked[0].requeue).toBe(true);
+    expect(rabbit.acked).toHaveLength(0);
   });
 
   test('handler: parks the event when the redelivered attempt fails again', async () => {
@@ -227,8 +228,9 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
     const message = createSyntheticMessage(EVENT, { redelivered: true });
     await handler!(message);
 
-    expect(eventsClient.nackedMessages).toHaveLength(1);
-    expect(eventsClient.nackedMessages[0].requeue).toBe(false); // → DLQ
+    expect(rabbit.nacked).toHaveLength(1);
+    expect(rabbit.nacked[0].message).toBe(message);
+    expect(rabbit.nacked[0].requeue).toBe(false); // → DLQ
   });
 
   test('handler: a duplicate delivery log (redelivery) is treated as already enqueued', async () => {
@@ -243,25 +245,25 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
     await handler!(message);
 
     expect(deliveryClient.sendToDeliveryQueue).toHaveBeenCalledTimes(0);
-    expect(eventsClient.ackMessage).toHaveBeenCalledTimes(1);
-    expect(eventsClient.nackMessage).toHaveBeenCalledTimes(0);
+    expect(rabbit.acked).toEqual([message]);
+    expect(rabbit.nacked).toHaveLength(0);
   });
 
   test('handler: nacks with requeue once for a malformed message, then parks it', async () => {
     const message = createSyntheticMessage('{not json');
     await handler!(message);
 
-    expect(eventsClient.nackedMessages).toHaveLength(1);
-    expect(eventsClient.nackedMessages[0].message).toBe(message);
-    expect(eventsClient.nackedMessages[0].requeue).toBe(true);
-    expect(eventsClient.ackMessage).toHaveBeenCalledTimes(0);
+    expect(rabbit.nacked).toHaveLength(1);
+    expect(rabbit.nacked[0].message).toBe(message);
+    expect(rabbit.nacked[0].requeue).toBe(true);
+    expect(rabbit.acked).toHaveLength(0);
 
     const redelivered = createSyntheticMessage('{not json', { redelivered: true });
     await handler!(redelivered);
 
-    expect(eventsClient.nackedMessages).toHaveLength(2);
-    expect(eventsClient.nackedMessages[1].message).toBe(redelivered);
-    expect(eventsClient.nackedMessages[1].requeue).toBe(false); // → DLQ
+    expect(rabbit.nacked).toHaveLength(2);
+    expect(rabbit.nacked[1].message).toBe(redelivered);
+    expect(rabbit.nacked[1].requeue).toBe(false); // → DLQ
   });
 
   test('handler: nacks with requeue once when the subscription lookup fails, then parks', async () => {
@@ -272,10 +274,10 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
     const message = createSyntheticMessage(EVENT);
     await handler!(message);
 
-    expect(eventsClient.nackedMessages).toHaveLength(1);
-    expect(eventsClient.nackedMessages[0].message).toBe(message);
-    expect(eventsClient.nackedMessages[0].requeue).toBe(true);
-    expect(eventsClient.ackMessage).toHaveBeenCalledTimes(0);
+    expect(rabbit.nacked).toHaveLength(1);
+    expect(rabbit.nacked[0].message).toBe(message);
+    expect(rabbit.nacked[0].requeue).toBe(true);
+    expect(rabbit.acked).toHaveLength(0);
 
     endpoints.findByEvents.mockImplementationOnce(async () => {
       throw new Error('mongo down');
@@ -283,8 +285,9 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
     const redelivered = createSyntheticMessage(EVENT, { redelivered: true });
     await handler!(redelivered);
 
-    expect(eventsClient.nackedMessages).toHaveLength(2);
-    expect(eventsClient.nackedMessages[1].requeue).toBe(false); // → DLQ
+    expect(rabbit.nacked).toHaveLength(2);
+    expect(rabbit.nacked[1].message).toBe(redelivered);
+    expect(rabbit.nacked[1].requeue).toBe(false); // → DLQ
   });
 
   test('handler: oversized events are enqueued as-is; the DeliveryService dead-letters them', async () => {
@@ -300,6 +303,6 @@ describe('WebhookEventsDaemon (unit, fake clients and repositories)', () => {
     expect(logs.createDeliveryLog).toHaveBeenCalledTimes(1);
     expect(deliveryClient.sendToDeliveryQueue).toHaveBeenCalledTimes(1);
     expect(deliveryClient.sentMessages[0].payload).toEqual(payload);
-    expect(eventsClient.ackMessage).toHaveBeenCalledTimes(1);
+    expect(rabbit.acked).toEqual([message]);
   });
 });

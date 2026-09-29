@@ -1,31 +1,20 @@
 /**
  * In-memory fake of WebhookDeliveryClient for unit tests.
  *
- * consumeDelivery captures the handler the daemon registers; enqueues are kept
- * in `sentMessages`/`retriedMessages` and acks/nacks are recorded, so tests can
- * assert delivery decisions and argument mapping. Every method is wrapped in
- * bun:test mock() and, when a shared `journal` array is passed in, each
- * interaction is appended to it so tests can assert ordering (e.g. the retry
- * re-enqueue happens before the ack).
+ * Only the delivery enqueue path remains on the client (retries and acks are
+ * executed by ReliableConsumer against the fake RabbitMQ client); enqueues are
+ * kept in `sentMessages` and, when a shared `journal` array is passed in, each
+ * enqueue is appended to it so tests can assert ordering against the broker
+ * fake's entries.
  */
 import { mock } from 'bun:test';
 
-export type FakeNackEntry = { message: any; requeue: boolean };
-export type FakeRetryEntry = { attempt: number; content: any };
-
 export function createFakeWebhookDeliveryClient(journal: string[] = []) {
-  let capturedHandler: ((msg: any) => Promise<void>) | null = null;
   const sentMessages: any[] = [];
-  const retriedMessages: FakeRetryEntry[] = [];
-  const ackedMessages: any[] = [];
-  const nackedMessages: FakeNackEntry[] = [];
 
-  const client = {
+  return {
     journal,
     sentMessages,
-    retriedMessages,
-    ackedMessages,
-    nackedMessages,
 
     initialize: mock(async (): Promise<void> => {}),
 
@@ -33,31 +22,7 @@ export function createFakeWebhookDeliveryClient(journal: string[] = []) {
       sentMessages.push(content);
       journal.push('sendToDeliveryQueue');
     }),
-
-    sendToRetryQueue: mock(async (attempt: number, content: any): Promise<void> => {
-      retriedMessages.push({ attempt, content });
-      journal.push('sendToRetryQueue');
-    }),
-
-    consumeDelivery: mock(async (handler: (msg: any) => Promise<void>): Promise<void> => {
-      capturedHandler = handler;
-      journal.push('consumeDelivery');
-    }),
-
-    ackMessage: mock(async (msg: any): Promise<void> => {
-      ackedMessages.push(msg);
-      journal.push('ackMessage');
-    }),
-
-    nackMessage: mock(async (msg: any, requeue: boolean = true): Promise<void> => {
-      nackedMessages.push({ message: msg, requeue });
-      journal.push('nackMessage');
-    }),
-
-    getHandler: () => capturedHandler,
   };
-
-  return client;
 }
 
 export type FakeWebhookDeliveryClient = ReturnType<typeof createFakeWebhookDeliveryClient>;

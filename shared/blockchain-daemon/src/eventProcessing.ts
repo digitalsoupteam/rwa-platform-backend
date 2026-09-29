@@ -1,5 +1,6 @@
 import mongoose, { Schema } from 'mongoose';
 import type { Model } from 'mongoose';
+import { errorChain } from '@shared/rabbitmq/src/reliability';
 
 /**
  * Exactly-once processing of blockchain events.
@@ -57,17 +58,6 @@ export interface ProcessableEvent {
   name?: string;
 }
 
-/** All errors in the `cause` chain (services wrap low-level errors). */
-function errorChain(error: unknown): Array<Record<string, any>> {
-  const chain: Array<Record<string, any>> = [];
-  let current = error as Record<string, any> | null | undefined;
-  for (let i = 0; i < 10 && current; i++) {
-    chain.push(current);
-    current = current.cause as Record<string, any> | undefined;
-  }
-  return chain;
-}
-
 /** True when a unique index rejected the write (Mongo duplicate key). */
 export function isDuplicateKeyError(error: unknown): boolean {
   return errorChain(error).some((e) => e.code === 11000);
@@ -83,39 +73,6 @@ export function isEventDuplicateKeyError(error: unknown): boolean {
     const keyValue = (e.keyValue ?? {}) as Record<string, unknown>;
     const hasTransaction = typeof keyValue.transactionHash === 'string' || typeof keyValue.txHash === 'string';
     return hasTransaction && keyValue.logIndex !== undefined;
-  });
-}
-
-const TRANSIENT_ERROR_NAMES = new Set([
-  'MongoNetworkError',
-  'MongoNetworkTimeoutError',
-  'MongoServerSelectionError',
-  'MongooseServerSelectionError',
-  'MongoNotConnectedError',
-  'MongoTopologyClosedError',
-  'MongoExpiredSessionError',
-  'MongoPoolClosedError',
-]);
-
-const TRANSIENT_MESSAGE_PATTERNS = [
-  /buffering timed out/i,
-  /replica set member or mongos/i, // transactions attempted on a standalone deployment
-  /server selection timed out/i,
-  /topology is closed/i,
-  /client must be connected/i,
-  /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|socket hang up|connection .* closed/i,
-];
-
-/**
- * Infrastructure failures that resolve by themselves (database temporarily
- * unavailable, connection reset, replica set still booting). Such errors must
- * never push a message into the manual-review queue.
- */
-export function isTransientDbError(error: unknown): boolean {
-  return errorChain(error).some((e) => {
-    const name = typeof e.name === 'string' ? e.name : '';
-    const message = typeof e.message === 'string' ? e.message : '';
-    return TRANSIENT_ERROR_NAMES.has(name) || TRANSIENT_MESSAGE_PATTERNS.some((p) => p.test(message));
   });
 }
 

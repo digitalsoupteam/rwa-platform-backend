@@ -3,7 +3,8 @@
  *
  * Mirrors the public API of shared/rabbitmq/src/rabbitmq.client.ts without
  * touching amqp-connection-manager: every method is a bun:test mock, consumed
- * handlers are captured per queue, and `callLog` preserves invocation order.
+ * handlers are captured per queue, sent/acked/nacked messages are recorded for
+ * assertions, and `callLog` preserves invocation order.
  */
 import { mock } from 'bun:test';
 import type { ConsumeMessage } from 'amqplib';
@@ -11,10 +12,16 @@ import type { ConsumeMessage } from 'amqplib';
 export function createFakeRabbitMQClient() {
   const callLog: string[] = [];
   const consumedHandlers = new Map<string, (message: ConsumeMessage | null) => Promise<void>>();
+  const sent: Array<{ queue: string; content: any; options?: unknown }> = [];
+  const acked: ConsumeMessage[] = [];
+  const nacked: Array<{ message: ConsumeMessage; requeue: boolean }> = [];
 
   const client = {
     callLog,
     consumedHandlers,
+    sent,
+    acked,
+    nacked,
 
     connect: mock(async (): Promise<void> => {
       callLog.push('connect');
@@ -42,8 +49,9 @@ export function createFakeRabbitMQClient() {
       },
     ),
 
-    sendToQueue: mock(async (_queue: string, _content: unknown, _options?: unknown): Promise<void> => {
+    sendToQueue: mock(async (queue: string, content: any, options?: unknown): Promise<void> => {
       callLog.push('sendToQueue');
+      sent.push({ queue, content, options });
     }),
 
     consume: mock(
@@ -57,12 +65,14 @@ export function createFakeRabbitMQClient() {
       },
     ),
 
-    ack: mock(async (_message: ConsumeMessage): Promise<void> => {
+    ack: mock(async (message: ConsumeMessage): Promise<void> => {
       callLog.push('ack');
+      acked.push(message);
     }),
 
-    nack: mock(async (_message: ConsumeMessage, _requeue: boolean = true): Promise<void> => {
+    nack: mock(async (message: ConsumeMessage, requeue: boolean = true): Promise<void> => {
       callLog.push('nack');
+      nacked.push({ message, requeue });
     }),
 
     /** Handler registered for a queue through consume() (undefined until then). */

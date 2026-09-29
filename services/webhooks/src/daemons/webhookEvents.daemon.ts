@@ -1,5 +1,7 @@
 import type { ConsumeMessage } from 'amqplib';
-import { WebhookEventsClient } from '../clients/webhookEvents.client';
+import { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
+import { ReliableConsumer, done, type ConsumeOutcome } from '@shared/rabbitmq/src/reliableConsumer';
+import { WEBHOOK_EVENTS_QUEUE } from '../clients/webhookEvents.client';
 import { WebhookDeliveryClient } from '../clients/webhookDelivery.client';
 import { WebhookService } from '../services/webhook.service';
 import { DeliveryService } from '../services/delivery.service';
@@ -23,16 +25,30 @@ const isDuplicateKeyError = (error: unknown): boolean => {
 };
 
 export class WebhookEventsDaemon {
+  private readonly reliableConsumer: ReliableConsumer;
+
   constructor(
-    private readonly webhookEventsClient: WebhookEventsClient,
+    rabbitMQClient: RabbitMQClient,
     private readonly webhookDeliveryClient: WebhookDeliveryClient,
     private readonly webhookService: WebhookService,
     private readonly deliveryService: DeliveryService,
-  ) {}
+  ) {
+    this.reliableConsumer = new ReliableConsumer(rabbitMQClient, WEBHOOK_EVENTS_QUEUE, {
+      // One immediate redelivery, then the event is parked in the queue's DLQ
+      // (a persistent failure would spin on the same message forever).
+      retry: { mode: 'immediate-once' },
+      exhausted: 'park',
+      park: { mode: 'dlx' },
+      metricNames: {
+        retried: 'webhook_events_retried_total',
+        parked: 'webhook_events_parked_total',
+      },
+    });
+  }
 
   @TraceDecorator()
   async initialize(): Promise<void> {
-    await this.webhookEventsClient.consumeEvents(this.handleEvent.bind(this));
+    await this.reliableConsumer.consume((message) => this.handleEvent(message));
     logger.info('Webhook events daemon initialized, consuming from webhooks.events.webhooks queue');
   }
 
@@ -41,66 +57,51 @@ export class WebhookEventsDaemon {
   @LogDecorator({
     args: (a) => ({ routingKey: a[0]?.fields?.routingKey }),
   })
-  private async handleEvent(message: ConsumeMessage | null): Promise<void> {
-    if (!message) return;
+  private async handleEvent(message: ConsumeMessage): Promise<ConsumeOutcome | void> {
+    const event: WebhookEventMessage = JSON.parse(message.content.toString());
+    metrics.counter('webhook_events_received_total', { type: event.type });
 
-    try {
-      const event: WebhookEventMessage = JSON.parse(message.content.toString());
-      metrics.counter('webhook_events_received_total', { type: event.type });
+    // Find endpoints subscribed to this event type
+    const endpoints = await this.webhookService.findEndpointsByEvent(event.type);
 
-      // Find endpoints subscribed to this event type
-      const endpoints = await this.webhookService.findEndpointsByEvent(event.type);
+    if (endpoints.length === 0) {
+      // No subscribers, nothing to do
+      return done;
+    }
 
-      if (endpoints.length === 0) {
-        // No subscribers, ack and move on
-        await this.webhookEventsClient.ackMessage(message);
-        return;
-      }
+    let failed = false;
 
-      let failed = false;
-
-      for (const endpoint of endpoints) {
-        // One failing subscriber must not stop the others: errors are isolated
-        // per endpoint and reported for the whole message at the end.
-        try {
-          await this.enqueueDelivery(endpoint, event);
-        } catch (error: any) {
-          if (isDuplicateKeyError(error)) {
-            // The event was already enqueued for this endpoint (redelivery
-            // after a crash): at-least-once, skip instead of failing the batch.
-            logger.debug('Delivery already enqueued, skipping endpoint', {
-              endpointId: endpoint._id.toString(),
-              eventId: event.id,
-            });
-            continue;
-          }
-
-          failed = true;
-          logger.error('Failed to enqueue delivery', {
+    for (const endpoint of endpoints) {
+      // One failing subscriber must not stop the others: errors are isolated
+      // per endpoint and reported for the whole message at the end.
+      try {
+        await this.enqueueDelivery(endpoint, event);
+      } catch (error: any) {
+        if (isDuplicateKeyError(error)) {
+          // The event was already enqueued for this endpoint (redelivery
+          // after a crash): at-least-once, skip instead of failing the batch.
+          logger.debug('Delivery already enqueued, skipping endpoint', {
             endpointId: endpoint._id.toString(),
             eventId: event.id,
-            error,
           });
+          continue;
         }
-      }
 
-      if (failed) {
-        // One automatic redelivery, then park the event in the DLQ (the queue
-        // has a dead-letter config): retrying forever would spin on a
-        // persistent failure.
-        const redelivered = message.fields?.redelivered === true;
-        await this.webhookEventsClient.nackMessage(message, !redelivered);
-        return;
+        failed = true;
+        logger.error('Failed to enqueue delivery', {
+          endpointId: endpoint._id.toString(),
+          eventId: event.id,
+          error,
+        });
       }
-
-      await this.webhookEventsClient.ackMessage(message);
-    } catch (error) {
-      // Same rule as for per-endpoint failures: one automatic redelivery,
-      // then park (a poison message must not spin forever).
-      logger.error('Failed to handle webhook event:', error);
-      const redelivered = message.fields?.redelivered === true;
-      await this.webhookEventsClient.nackMessage(message, !redelivered);
     }
+
+    if (failed) {
+      // The reliability contract redelivers the event once and then parks it.
+      return { kind: 'retry' };
+    }
+
+    return done;
   }
 
   /**
