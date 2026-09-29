@@ -84,7 +84,11 @@ export function createFakePostRepository() {
         const doc = store.get(id);
         if (!doc) throw notFound(id);
 
-        const next: FakePostDoc = { ...doc, ...data, updatedAt: Math.floor(Date.now() / 1000) };
+        // Mongoose treats undefined values in an update as no-ops, and Elysia
+        // fills omitted optional keys with undefined — drop them before the
+        // spread so a partial update does not wipe stored fields.
+        const changes = Object.fromEntries(Object.entries(data).filter(([, value]) => value !== undefined));
+        const next: FakePostDoc = { ...doc, ...changes, updatedAt: Math.floor(Date.now() / 1000) };
         store.set(id, next);
         return next;
       },
