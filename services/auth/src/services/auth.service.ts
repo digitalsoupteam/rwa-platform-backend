@@ -112,7 +112,7 @@ export class AuthService {
     }
 
     // Delete the used refresh token (one-time use)
-    await this.refreshTokenRepository.deleteTokens(tokenRecord.userId, [tokenHash]);
+    await this.refreshTokenRepository.deleteTokens(tokenRecord.userId.toString(), [tokenHash]);
 
     // Get user by userId from token payload
     const user = await this.userRepository.findById(payload.userId);
