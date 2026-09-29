@@ -80,7 +80,8 @@ export class ReactionsService {
   @TraceDecorator()
   @MetricsDecorator()
   @LogDecorator({
-    args: (a) => ({ limit: a[0].limit, offset: a[0].offset }),
+    // params has a default value, so getReactions() may be called without arguments.
+    args: (a) => ({ limit: a[0]?.limit, offset: a[0]?.offset }),
   })
   async getReactions(
     params: {
