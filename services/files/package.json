@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "bun run --watch src/index.ts"
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "test": "OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 bun test"
   },
   "dependencies": {
     "@shared/errors": "workspace:*",

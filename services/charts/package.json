@@ -2,7 +2,11 @@
   "name": "@services/charts",
   "version": "1.0.0",
   "type": "module",
-  "scripts": {},
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "test": "OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 bun test"
+  },
   "dependencies": {
     "@shared/monitoring": "workspace:*",
     "@shared/errors": "workspace:*",
