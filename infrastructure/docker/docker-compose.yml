@@ -868,6 +868,7 @@ services:
     image: prom/prometheus:latest
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/rules:/etc/prometheus/rules:ro
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -879,6 +880,26 @@ services:
       - '--web.enable-remote-write-receiver'
       - '--web.external-url=https://prometheus.${BASE_DOMAIN}/'
       - '--web.route-prefix=/'
+    networks:
+      - app-network
+
+  alertmanager:
+    container_name: alertmanager
+    restart: unless-stopped
+    image: prom/alertmanager:latest
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
+      BASE_DOMAIN: ${BASE_DOMAIN}
+    volumes:
+      - ./alertmanager/alertmanager.yml.template:/etc/alertmanager/alertmanager.yml.template:ro
+      - ./alertmanager/entrypoint.sh:/entrypoint.sh:ro
+      - alertmanager_data:/alertmanager
+    # Renders the config from env (Alertmanager has no native env substitution),
+    # see infrastructure/docker/alertmanager/entrypoint.sh
+    entrypoint:
+      - /bin/sh
+      - /entrypoint.sh
     networks:
       - app-network
 
@@ -1052,6 +1073,7 @@ volumes:
   mongodb3_data:
   nginx_logs:
   prometheus_data:
+  alertmanager_data:
   grafana_data:
   loki_data:
   tempo_data:

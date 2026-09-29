@@ -1,0 +1,134 @@
+# Prometheus alerting rules for the RWA platform.
+# Loaded via rule_files in prometheus.yml; delivered by Alertmanager.
+# Metric names verified against live exporters (percona/mongodb_exporter 0.40
+# in compatible mode, oliver006/redis_exporter, rabbitmq_prometheus, nginx VTS).
+groups:
+  - name: host
+    rules:
+      - alert: HostDown
+        expr: up{job="node-exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Host is unreachable (node-exporter is down)"
+          description: "node-exporter has not responded for 2 minutes - the host or the monitoring stack may be down."
+
+      - alert: HostHighMemory
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host memory usage is above 90%"
+          description: "Memory usage has been above 90% for 10 minutes (current: {{ $value | printf \"%.1f\" }}%)."
+
+      - alert: HostHighCPU
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host CPU usage is above 90%"
+          description: "CPU usage has been above 90% for 15 minutes (current: {{ $value | printf \"%.1f\" }}%)."
+
+      - alert: HostLowDiskSpace
+        expr: |
+          (node_filesystem_avail_bytes{fstype!~"^(tmpfs|overlay|squashfs|ramfs|autofs|fuse.*)$"}
+          / node_filesystem_size_bytes{fstype!~"^(tmpfs|overlay|squashfs|ramfs|autofs|fuse.*)$"}) * 100 < 10
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space on {{ $labels.mountpoint }}"
+          description: "Less than 10% free on {{ $labels.device }} ({{ $labels.mountpoint }})."
+
+      - alert: HostDiskWillFillIn4Hours
+        expr: |
+          predict_linear(node_filesystem_avail_bytes{fstype!~"^(tmpfs|overlay|squashfs|ramfs|autofs|fuse.*)$"}[6h], 4 * 3600) < 0
+          and
+          (node_filesystem_avail_bytes{fstype!~"^(tmpfs|overlay|squashfs|ramfs|autofs|fuse.*)$"}
+          / node_filesystem_size_bytes{fstype!~"^(tmpfs|overlay|squashfs|ramfs|autofs|fuse.*)$"}) * 100 < 30
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk {{ $labels.mountpoint }} will fill up within 4 hours"
+          description: "Based on the 6h trend, {{ $labels.mountpoint }} is predicted to run out of space within 4 hours."
+
+  - name: exporters
+    rules:
+      - alert: TargetDown
+        expr: up{job!="node-exporter"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Scrape target {{ $labels.job }} is down"
+          description: "Prometheus cannot scrape {{ $labels.job }} ({{ $labels.instance }}) for 5 minutes."
+
+  - name: containers
+    rules:
+      - alert: ContainerRestartLoop
+        # A cgroup counter reset means the container restarted (same container id).
+        expr: resets(container_cpu_usage_seconds_total{cpu="total", name=~".+"}[1h]) > 2
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.name }} keeps restarting"
+          description: "Container {{ $labels.name }} restarted {{ $value }} times within the last hour."
+
+  - name: database
+    rules:
+      - alert: MongoDBDown
+        expr: mongodb_up == 0
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "MongoDB is down"
+          description: "mongodb_exporter cannot reach MongoDB for 3 minutes."
+
+      - alert: MongoDBReplicaSetMemberUnhealthy
+        expr: mongodb_members_health < 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "MongoDB replica set member {{ $labels.member_idx }} is unhealthy"
+          description: "Member {{ $labels.member_idx }} of replica set {{ $labels.rs_nm }} reports unhealthy for 5 minutes."
+
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "redis_exporter cannot reach Redis for 3 minutes."
+
+  - name: rabbitmq
+    rules:
+      - alert: RabbitMQQueueBacklog
+        expr: max by (queue) (rabbitmq_queue_messages_ready{queue!=""}) > 1000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "RabbitMQ queue {{ $labels.queue }} is backing up"
+          description: "Queue {{ $labels.queue }} holds more than 1000 ready messages for 10 minutes."
+
+  - name: nginx
+    rules:
+      - alert: NginxHigh5xxRate
+        expr: |
+          (sum(rate(nginx_vts_server_requests_total{code="5xx"}[5m]))
+          / sum(rate(nginx_vts_server_requests_total{code!="total"}[5m]))) > 0.05
+          and
+          sum(rate(nginx_vts_server_requests_total{code!="total"}[5m])) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Elevated 5xx rate on nginx"
+          description: "More than 5% of requests return 5xx for 10 minutes (at least 1 rps of traffic)."

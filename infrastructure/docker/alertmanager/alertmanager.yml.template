@@ -1,0 +1,26 @@
+# Alertmanager configuration template.
+# Rendered into /etc/alertmanager/alertmanager.yml by entrypoint.sh, which
+# substitutes values from the container environment (see .env.examples):
+#   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+#
+# Delivery: all alerts go to Telegram.
+# group_wait/group_interval/repeat_interval keep the channel free of noise.
+# (Email/SMTP delivery can be added later if needed.)
+
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: telegram
+  group_by: ['alertname', 'instance']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 6h
+
+receivers:
+  - name: telegram
+    telegram_configs:
+      - bot_token: '$TELEGRAM_BOT_TOKEN'
+        chat_id: $TELEGRAM_CHAT_ID
+        parse_mode: 'HTML'
+        send_resolved: true

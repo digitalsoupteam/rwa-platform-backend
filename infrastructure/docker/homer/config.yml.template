@@ -70,6 +70,9 @@ services:
       - name: "Uptime Kuma"
         icon: "fas fa-clock"
         url: "https://uptime.${BASE_DOMAIN}"
+      - name: "Alertmanager"
+        icon: "fas fa-bell"
+        url: "https://alertmanager.${BASE_DOMAIN}"
 
   - name: "Infrastructure"
     icon: "fas fa-server"
