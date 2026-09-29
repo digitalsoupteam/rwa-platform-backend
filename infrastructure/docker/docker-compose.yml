@@ -687,30 +687,97 @@ services:
   mongodb:
     restart: unless-stopped
     image: mongo:latest
-    # Single-node replica set: required for multi-document transactions
-    # (exactly-once processing of blockchain events in consumer services).
+    # Member of the 3-node replica set `rs0` (multi-document transactions and
+    # automatic failover). The set config is created by `mongodb-init`.
     command: ["--replSet", "rs0", "--bind_ip_all"]
     volumes:
       - mongodb_data:/data/db
     healthcheck:
-      # Initializes the replica set on the first start and reports healthy
-      # only once a primary has been elected (transactions require a primary).
+      # The replica set config exists and is usable (initiation happens in mongodb-init)
       test:
         - CMD
         - mongosh
         - --quiet
         - --eval
         - >-
-          const getStatus = () => { try { return rs.status(); } catch (e) { return null; } };
-          let status = getStatus();
-          if (status === null) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'mongodb:27017' }] }); sleep(3000); status = getStatus(); }
-          if (!status || status.ok !== 1) { throw new Error('replica set is not ready'); }
+          let ok=false; try { ok = rs.status().ok === 1; } catch (e) { ok=false; } if(!ok){ throw new Error('replica set is not ready'); }
       interval: 10s
       timeout: 10s
       retries: 10
       start_period: 15s
     networks:
       - app-network
+
+  mongodb-2:
+    restart: unless-stopped
+    image: mongo:latest
+    # Member of the 3-node replica set `rs0` (see `mongodb`).
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    volumes:
+      - mongodb2_data:/data/db
+    healthcheck:
+      test:
+        - CMD
+        - mongosh
+        - --quiet
+        - --eval
+        - >-
+          let ok=false; try { ok = rs.status().ok === 1; } catch (e) { ok=false; } if(!ok){ throw new Error('replica set is not ready'); }
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 15s
+    networks:
+      - app-network
+
+  mongodb-3:
+    restart: unless-stopped
+    image: mongo:latest
+    # Member of the 3-node replica set `rs0` (see `mongodb`).
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    volumes:
+      - mongodb3_data:/data/db
+    healthcheck:
+      test:
+        - CMD
+        - mongosh
+        - --quiet
+        - --eval
+        - >-
+          let ok=false; try { ok = rs.status().ok === 1; } catch (e) { ok=false; } if(!ok){ throw new Error('replica set is not ready'); }
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 15s
+    networks:
+      - app-network
+
+  # One-shot initializer: creates the replica set on the first start and adds
+  # missing members on later starts (safe to re-run; exits 0 when the set is ready).
+  mongodb-init:
+    image: mongo:latest
+    restart: "no"
+    depends_on:
+      mongodb:
+        condition: service_started
+      mongodb-2:
+        condition: service_started
+      mongodb-3:
+        condition: service_started
+    networks:
+      - app-network
+    entrypoint:
+      - bash
+      - -c
+      - |
+        for i in $$(seq 1 40); do
+          mongosh --host mongodb --quiet --eval 'try { const st = rs.status(); const want = ["mongodb:27017","mongodb-2:27017","mongodb-3:27017"]; const have = st.members.map(m => m.name); for (const w of want) { if (!have.includes(w)) { rs.add(w); print("ADDED " + w); } } } catch (e) { rs.initiate({ _id: "rs0", members: [ { _id: 0, host: "mongodb:27017" }, { _id: 1, host: "mongodb-2:27017" }, { _id: 2, host: "mongodb-3:27017" } ] }); print("INITIATED"); }' 2>/dev/null
+          out=$$(mongosh --host mongodb --quiet --eval 'try { const s = rs.status(); print(s.ok === 1 && s.members.length >= 3 ? "READY" : "WAIT"); } catch (e) { print("WAIT"); }' 2>/dev/null | tail -1)
+          echo "mongodb-init attempt $$i: $$out"
+          if [ "$$out" = "READY" ]; then exit 0; fi
+          sleep 3
+        done
+        exit 1
 
   mongodb-exporter:
     image: percona/mongodb_exporter:0.40
@@ -981,6 +1048,8 @@ volumes:
   service_logs:
   rabbitmq_data:
   mongodb_data:
+  mongodb2_data:
+  mongodb3_data:
   nginx_logs:
   prometheus_data:
   grafana_data:
