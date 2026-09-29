@@ -210,6 +210,30 @@ describe('DeliveryService (unit, fake repositories)', () => {
     });
   }
 
+  for (const [url, label] of [
+    ['https://10.13.13.13/hooks', 'RFC1918 address'],
+    ['https://169.254.169.254/latest/meta-data', 'cloud metadata address'],
+    ['https://[::1]/hooks', 'IPv6 loopback'],
+  ] as const) {
+    test(`deliverWebhook: a private destination (${label}) is dead-lettered without a request`, async () => {
+      http.setResponse({ status: 200, body: 'nope' });
+
+      const result = await service.deliverWebhook(deliveryInput({ url }));
+
+      expect(result).toEqual({ success: false, deadLetter: true });
+      expect(http.calls).toHaveLength(0); // the request never happens
+
+      const [, attempt] = logs.pushAttempt.mock.calls[0] as [string, any];
+      expect(attempt.responseBody).toBe('');
+      expect(attempt.error).toBe('Hostname resolves to a private address (SSRF protection)');
+      expect(attempt.statusCode).toBeUndefined();
+
+      expect(logs.updateStatus).toHaveBeenCalledWith(deliveryLogId, { status: 'dead_letter' });
+      expect(endpoints.updateEndpoint).toHaveBeenCalledWith(endpointId, { active: false });
+      expect(redis.set).toHaveBeenCalledWith(`webhook:endpoint:${endpointId}:active`, '0', 'EX', 3600);
+    });
+  }
+
   for (const status of [400, 404, 410]) {
     test(`deliverWebhook: a ${status} response dead-letters, records the body and deactivates`, async () => {
       http.setResponse({ status, body: 'endpoint says no' });
