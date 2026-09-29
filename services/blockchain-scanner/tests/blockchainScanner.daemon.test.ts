@@ -477,40 +477,52 @@ describe('BlockchainScannerDaemon (unit, fake provider/contract + fake repositor
   });
 
   test('start: runs scan cycles until stop(), publishes events and is idempotent on stop', async () => {
-    internals.lastProcessedBlock = 999;
-    provider.state.blockNumber = 1500;
-    contract.state.events = [rwaDeployedLog(1000, 0, 'business-1', 100)];
+    // Capture this test's harness locally. The module-level bindings above are
+    // reassigned by beforeEach, and under `bun test --concurrent` the runner
+    // starts the next test before this one settles — the neighbouring test
+    // rebuilds the module state mid-flight, so rely only on these locals.
+    const testDaemon = daemon;
+    const testInternals = internals;
+    const testState = scannerState;
+    const testProvider = provider;
+    const testContract = contract;
+    const testRabbitMQ = rabbitMQClient;
+    const testEvents = events;
 
-    await daemon.start();
-    expect(internals.isRunning).toBe(true);
+    testInternals.lastProcessedBlock = 999;
+    testProvider.state.blockNumber = 1500;
+    testContract.state.events = [rwaDeployedLog(1000, 0, 'business-1', 100)];
+
+    await testDaemon.start();
+    expect(testInternals.isRunning).toBe(true);
 
     try {
       // First cycle writes two state rows: the per-block update (1000) and the
       // batch-level update (1049).
-      await waitFor(() => scannerState.updateLastScannedBlock.mock.calls.length >= 2);
+      await waitFor(() => testState.updateLastScannedBlock.mock.calls.length >= 2);
 
       // The first cycle processed block 1000 and advanced the batch pointer.
-      expect(scannerState.updateLastScannedBlock.mock.calls).toContainEqual([CHAIN_ID, 1000]);
-      expect(scannerState.updateLastScannedBlock.mock.calls).toContainEqual([CHAIN_ID, 1049]);
-      expect(internals.lastProcessedBlock).toBeGreaterThanOrEqual(1049);
-      expect(events.store.size).toBe(1);
-      expect(rabbitMQClient.publish).toHaveBeenCalledTimes(1);
-      expect(rabbitMQClient.published[0].routingKey).toBe('RWA_Deployed');
-      expect(rabbitMQClient.published[0].content).toMatchObject({ blockNumber: 1000, data: { entityId: 'business-1' } });
+      expect(testState.updateLastScannedBlock.mock.calls).toContainEqual([CHAIN_ID, 1000]);
+      expect(testState.updateLastScannedBlock.mock.calls).toContainEqual([CHAIN_ID, 1049]);
+      expect(testInternals.lastProcessedBlock).toBeGreaterThanOrEqual(1049);
+      expect(testEvents.store.size).toBe(1);
+      expect(testRabbitMQ.publish).toHaveBeenCalledTimes(1);
+      expect(testRabbitMQ.published[0].routingKey).toBe('RWA_Deployed');
+      expect(testRabbitMQ.published[0].content).toMatchObject({ blockNumber: 1000, data: { entityId: 'business-1' } });
     } finally {
-      await daemon.stop();
+      await testDaemon.stop();
     }
 
-    expect(internals.isRunning).toBe(false);
+    expect(testInternals.isRunning).toBe(false);
 
     // stop() is idempotent on a stopped daemon.
-    await daemon.stop();
-    expect(internals.isRunning).toBe(false);
+    await testDaemon.stop();
+    expect(testInternals.isRunning).toBe(false);
 
     // Let the loop drain its sleeping timer, then confirm no further publishes.
-    const publishedAfterStop = rabbitMQClient.published.length;
+    const publishedAfterStop = testRabbitMQ.published.length;
     await Bun.sleep(SCAN_INTERVAL_MS * 4);
-    expect(rabbitMQClient.published.length).toBe(publishedAfterStop);
+    expect(testRabbitMQ.published.length).toBe(publishedAfterStop);
   });
 
   test('stop: is a no-op when the daemon was never started', async () => {
