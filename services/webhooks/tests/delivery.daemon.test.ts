@@ -165,7 +165,10 @@ describe('DeliveryDaemon (unit, fake broker and repositories)', () => {
 
   test('handler: reuses the slowest bucket when the attempt runs past the schedule', async () => {
     http.setResponse({ status: 500, body: 'boom' });
-    const message = deliveryMessage({ attempt: 99 });
+    // maxAttempts must be above the attempt count, otherwise the service
+    // dead-letters before a retry is ever scheduled. Attempt 99 is past the
+    // 6-step schedule, so the policy has to clamp to the slowest bucket.
+    const message = deliveryMessage({ attempt: 99, maxAttempts: 1000 });
 
     await handler!(createSyntheticMessage(message));
 
