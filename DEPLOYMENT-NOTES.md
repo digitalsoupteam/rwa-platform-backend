@@ -85,7 +85,9 @@ Put the certificate files on the host and point `NGINX_HOST_SSL_CERT_PATH` / `NG
 ## Step 5: Start the Infrastructure
 ```bash
 bun run app:up
+./deployments/scripts/init-mongo-replicaset.sh
 ```
+*The second command initializes the MongoDB replica set `rs0` (on the first run) or just verifies it is ready (on later runs). It runs over the Docker CLI with a one-shot helper container that is removed automatically — nothing stays in the stack.*
 
 ## Step 6: Import Uptime Kuma Configuration
 Upon first run, you must manually import the monitoring configuration:
