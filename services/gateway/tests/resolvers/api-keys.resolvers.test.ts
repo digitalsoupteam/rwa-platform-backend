@@ -128,10 +128,23 @@ describe('api-keys resolvers (unit, fake clients)', () => {
       expect(fake.clients.apiKeysClient.updateApiKey.post).toHaveBeenCalledTimes(0);
     });
 
-    test('maps a failed ownership lookup to 404 NOT_FOUND and does not call update', async () => {
+    test('maps a failed ownership lookup (5xx) to 502 BAD_GATEWAY and does not call update', async () => {
       const fake = createFakeContext({ user: fakeUser });
       fake.clients.apiKeysClient.getApiKeyById.post.mockImplementation(async () =>
         edenError(500, 'INTERNAL_ERROR', 'boom'),
+      );
+
+      await expect(
+        updateApiKey(null as never, { input: { id: 'key-1', name: 'Renamed' } } as never, asContext(fake)),
+      ).rejects.toMatchObject({ statusCode: 502, code: 'BAD_GATEWAY' });
+
+      expect(fake.clients.apiKeysClient.updateApiKey.post).toHaveBeenCalledTimes(0);
+    });
+
+    test('keeps 404 NOT_FOUND when the ownership lookup answers with a non-5xx error', async () => {
+      const fake = createFakeContext({ user: fakeUser });
+      fake.clients.apiKeysClient.getApiKeyById.post.mockImplementation(async () =>
+        edenError(404, 'NOT_FOUND', 'no key'),
       );
 
       await expect(
@@ -188,6 +201,20 @@ describe('api-keys resolvers (unit, fake clients)', () => {
       await expect(deleteApiKey(null as never, { id: 'key-2' } as never, asContext(fake))).rejects.toMatchObject({
         statusCode: 404,
         code: 'NOT_FOUND',
+      });
+
+      expect(fake.clients.apiKeysClient.deleteApiKey.post).toHaveBeenCalledTimes(0);
+    });
+
+    test('maps a failed ownership lookup (5xx) to 502 BAD_GATEWAY and does not call delete', async () => {
+      const fake = createFakeContext({ user: fakeUser });
+      fake.clients.apiKeysClient.getApiKeyById.post.mockImplementation(async () =>
+        edenError(500, 'INTERNAL_ERROR', 'boom'),
+      );
+
+      await expect(deleteApiKey(null as never, { id: 'key-1' } as never, asContext(fake))).rejects.toMatchObject({
+        statusCode: 502,
+        code: 'BAD_GATEWAY',
       });
 
       expect(fake.clients.apiKeysClient.deleteApiKey.post).toHaveBeenCalledTimes(0);
@@ -279,6 +306,20 @@ describe('api-keys resolvers (unit, fake clients)', () => {
       await expect(getApiKey(null as never, { id: 'key-2' } as never, asContext(fake))).rejects.toMatchObject({
         statusCode: 404,
         code: 'NOT_FOUND',
+      });
+
+      expect(fake.clients.apiKeysClient.getApiKey.post).toHaveBeenCalledTimes(0);
+    });
+
+    test('maps a failed ownership lookup (5xx) to 502 BAD_GATEWAY and does not re-fetch', async () => {
+      const fake = createFakeContext({ user: fakeUser });
+      fake.clients.apiKeysClient.getApiKeyById.post.mockImplementation(async () =>
+        edenError(500, 'INTERNAL_ERROR', 'boom'),
+      );
+
+      await expect(getApiKey(null as never, { id: 'key-1' } as never, asContext(fake))).rejects.toMatchObject({
+        statusCode: 502,
+        code: 'BAD_GATEWAY',
       });
 
       expect(fake.clients.apiKeysClient.getApiKey.post).toHaveBeenCalledTimes(0);

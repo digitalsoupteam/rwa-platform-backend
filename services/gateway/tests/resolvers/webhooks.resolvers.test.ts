@@ -82,6 +82,17 @@ describe('gateway webhooks resolvers (unit, fake eden clients)', () => {
     ).rejects.toMatchObject({ statusCode: 404, code: 'NOT_FOUND' });
   });
 
+  test('getWebhookEndpoint: maps an upstream 5xx failure to 502 BAD_GATEWAY', async () => {
+    const fake = createFakeContext({ user: fakeUser });
+    fake.clients.webhooksClient.getEndpoint.post.mockImplementation(async () =>
+      edenError(500, 'INTERNAL_ERROR', 'boom'),
+    );
+
+    await expect(
+      getWebhookEndpoint(null as never, { id: 'wh-1' } as never, fake as unknown as GraphQLContext),
+    ).rejects.toMatchObject({ statusCode: 502, code: 'BAD_GATEWAY' });
+  });
+
   test('getWebhookEndpoints: rejects an anonymous caller with 401 UNAUTHORIZED', async () => {
     const fake = createFakeContext();
 
@@ -283,6 +294,22 @@ describe('gateway webhooks resolvers (unit, fake eden clients)', () => {
     expect(fake.clients.webhooksClient.updateEndpoint.post).not.toHaveBeenCalled();
   });
 
+  test('updateWebhookEndpoint: a failed ownership pre-check (5xx) maps to 502 BAD_GATEWAY', async () => {
+    const fake = createFakeContext({ user: fakeUser });
+    fake.clients.webhooksClient.getEndpoint.post.mockImplementation(async () =>
+      edenError(500, 'INTERNAL_ERROR', 'boom'),
+    );
+
+    await expect(
+      updateWebhookEndpoint(
+        null as never,
+        { input: { id: 'wh-1', url: 'https://new.example.com/hooks' } } as never,
+        fake as unknown as GraphQLContext,
+      ),
+    ).rejects.toMatchObject({ statusCode: 502, code: 'BAD_GATEWAY' });
+    expect(fake.clients.webhooksClient.updateEndpoint.post).not.toHaveBeenCalled();
+  });
+
   test('updateWebhookEndpoint: maps a failed update to 502 BAD_GATEWAY', async () => {
     const fake = createFakeContext({ user: fakeUser });
     fake.clients.webhooksClient.getEndpoint.post.mockImplementation(async () => edenOk(ENDPOINT));
@@ -343,6 +370,19 @@ describe('gateway webhooks resolvers (unit, fake eden clients)', () => {
     await expect(
       deleteWebhookEndpoint(null as never, { id: 'wh-1' } as never, fake as unknown as GraphQLContext),
     ).rejects.toMatchObject({ statusCode: 404, code: 'NOT_FOUND' });
+
+    expect(fake.clients.webhooksClient.deleteEndpoint.post).not.toHaveBeenCalled();
+  });
+
+  test('deleteWebhookEndpoint: a failed ownership pre-check (5xx) maps to 502 BAD_GATEWAY', async () => {
+    const fake = createFakeContext({ user: fakeUser });
+    fake.clients.webhooksClient.getEndpoint.post.mockImplementation(async () =>
+      edenError(500, 'INTERNAL_ERROR', 'boom'),
+    );
+
+    await expect(
+      deleteWebhookEndpoint(null as never, { id: 'wh-1' } as never, fake as unknown as GraphQLContext),
+    ).rejects.toMatchObject({ statusCode: 502, code: 'BAD_GATEWAY' });
 
     expect(fake.clients.webhooksClient.deleteEndpoint.post).not.toHaveBeenCalled();
   });
