@@ -130,7 +130,10 @@ describe('files HTTP layer (component, fake repository + fake storage)', () => {
   });
 
   test('createFile: content that contradicts the declared type maps to 400 VALIDATION_ERROR', async () => {
-    const response = await postFile(app, '/createFile', makeUpload('photo.png', 'image/jpeg', PNG_BYTES));
+    // Bun's multipart parser derives File.type from the filename (the part's
+    // Content-Type header is ignored here), so the contradiction must live in
+    // the name/content pair: a .jpg upload that actually carries PNG bytes.
+    const response = await postFile(app, '/createFile', makeUpload('photo.jpg', 'image/jpeg', PNG_BYTES));
 
     expect(response.status).toBe(400);
     expect(response.body.error.code).toBe('VALIDATION_ERROR');
