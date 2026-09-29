@@ -1102,7 +1102,11 @@
         },
         "options": {
           "basemap": {
-            "type": "default"
+            "name": "OpenFreeMap Dark",
+            "type": "maplibre",
+            "config": {
+              "url": "https://tiles.openfreemap.org/styles/dark"
+            }
           },
           "controls": {
             "showZoom": true,

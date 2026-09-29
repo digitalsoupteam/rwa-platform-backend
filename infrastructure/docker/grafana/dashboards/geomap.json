@@ -55,8 +55,11 @@
       "id": 1,
       "options": {
         "basemap": {
-          "name": "Layer 0",
-          "type": "default"
+          "name": "OpenFreeMap Dark",
+          "type": "maplibre",
+          "config": {
+            "url": "https://tiles.openfreemap.org/styles/dark"
+          }
         },
         "controls": {
           "mouseWheelZoom": true,
