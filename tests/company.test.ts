@@ -504,7 +504,7 @@ describe("Company Flow", () => {
       );
 
       expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toContain("belongs to this company");
+      expect(result.errors[0].message).toContain("does not belong to this company");
 
       // Verify the foreign member is still alive
       const companyResult = await makeGraphQLRequest(
@@ -533,7 +533,7 @@ describe("Company Flow", () => {
       );
 
       expect(result.errors).toBeDefined();
-      expect(result.errors[0].message).toContain("belongs to this company");
+      expect(result.errors[0].message).toContain("does not belong to this company");
 
       // Verify the foreign permission is still alive
       const companyResult = await makeGraphQLRequest(
