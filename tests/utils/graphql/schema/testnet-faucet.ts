@@ -27,6 +27,20 @@ export const REQUEST_HOLD = `
   }
 `;
 
+export const REQUEST_PLATFORM = `
+  mutation RequestPlatform($input: RequestTokenInput!) {
+    requestPlatform(input: $input) {
+      id
+      userId
+      wallet
+      tokenType
+      amount
+      transactionHash
+      createdAt
+    }
+  }
+`;
+
 export const GET_HISTORY = `
   query GetHistory($pagination: PaginationInput) {
     getHistory(pagination: $pagination) {
@@ -46,6 +60,7 @@ export const GET_UNLOCK_TIME = `
     getUnlockTime {
       gasUnlockTime
       holdUnlockTime
+      platformUnlockTime
     }
   }
 `;

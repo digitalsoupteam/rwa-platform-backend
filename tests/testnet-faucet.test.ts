@@ -1,8 +1,14 @@
 import { expect, test, describe, beforeAll } from "bun:test";
 import { ethers, HDNodeWallet } from "ethers";
+import { TESTNET_RPC, PLATFORM_TOKEN_ADDRESS } from "./utils/config";
 import { makeGraphQLRequest } from "./utils/graphql/makeGraphQLRequest";
-import { REQUEST_GAS, REQUEST_HOLD, GET_HISTORY, GET_UNLOCK_TIME } from "./utils/graphql/schema/testnet-faucet";
+import { REQUEST_GAS, REQUEST_HOLD, REQUEST_PLATFORM, GET_HISTORY, GET_UNLOCK_TIME } from "./utils/graphql/schema/testnet-faucet";
 import { authenticate } from "./utils/authenticate";
+
+const ERC20_ABI = [
+  "function balanceOf(address owner) view returns (uint256)",
+  "function decimals() view returns (uint8)",
+];
 
 
 describe("Testnet Faucet Flow Tests", () => {
@@ -11,6 +17,8 @@ describe("Testnet Faucet Flow Tests", () => {
   let userId: string;
   let gasRequestId: string;
   let holdRequestId: string;
+  let platformRequestId: string;
+  let platformAmount: number;
 
   beforeAll(async () => {
     wallet = ethers.Wallet.createRandom();
@@ -63,6 +71,47 @@ describe("Testnet Faucet Flow Tests", () => {
     holdRequestId = result.data.requestHold.id;
   });
 
+  test("should request platform token", async () => {
+    const amount = 10;
+    const result = await makeGraphQLRequest(
+      REQUEST_PLATFORM,
+      {
+        input: {
+          amount,
+        },
+      },
+      accessToken
+    );
+
+    expect(result.errors).toBeUndefined();
+    expect(result.data.requestPlatform).toBeDefined();
+    expect(result.data.requestPlatform.userId).toBe(userId);
+    expect(result.data.requestPlatform.wallet).toBe(wallet.address.toLowerCase());
+    expect(result.data.requestPlatform.tokenType).toBe("platform");
+    expect(result.data.requestPlatform.amount).toBe(amount);
+    expect(result.data.requestPlatform.transactionHash).toBeDefined();
+
+    platformRequestId = result.data.requestPlatform.id;
+    platformAmount = result.data.requestPlatform.amount;
+  }, 90000);
+
+  test("should credit the platform tokens to the wallet on chain", async () => {
+    const provider = new ethers.JsonRpcProvider(TESTNET_RPC);
+    const platformToken = new ethers.Contract(PLATFORM_TOKEN_ADDRESS, ERC20_ABI, provider);
+    const decimals = await platformToken.decimals();
+    const expected = ethers.parseUnits(String(platformAmount), decimals);
+
+    let balance = BigInt(0);
+    for (let attempt = 0; attempt < 6; attempt++) {
+      balance = await platformToken.balanceOf(wallet.address);
+      if (balance === expected) break;
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+    }
+
+    expect(balance).toBe(expected);
+    provider.destroy();
+  }, 60000);
+
   test("should get request history", async () => {
     const result = await makeGraphQLRequest(
       GET_HISTORY,
@@ -78,12 +127,13 @@ describe("Testnet Faucet Flow Tests", () => {
     expect(result.errors).toBeUndefined();
     expect(result.data.getHistory).toBeDefined();
     expect(Array.isArray(result.data.getHistory)).toBe(true);
-    expect(result.data.getHistory.length).toBe(2); // Gas and Hold requests
+    expect(result.data.getHistory.length).toBe(3); // Gas, Hold and Platform requests
 
-    // Check requests order (newest first)
+    // Check requests order (oldest first)
     const requests = result.data.getHistory;
     expect(requests[0].id).toBe(gasRequestId);
     expect(requests[1].id).toBe(holdRequestId);
+    expect(requests[2].id).toBe(platformRequestId);
   });
 
   test("should get unlock time", async () => {
@@ -97,6 +147,7 @@ describe("Testnet Faucet Flow Tests", () => {
     expect(result.data.getUnlockTime).toBeDefined();
     expect(typeof result.data.getUnlockTime.gasUnlockTime).toBe("number");
     expect(typeof result.data.getUnlockTime.holdUnlockTime).toBe("number");
+    expect(typeof result.data.getUnlockTime.platformUnlockTime).toBe("number");
   });
 
   test("should fail operations without auth", async () => {
@@ -115,6 +166,15 @@ describe("Testnet Faucet Flow Tests", () => {
     result = await makeGraphQLRequest(REQUEST_HOLD, {
       input: {
         amount: holdAmount,
+      },
+    });
+    expect(result.errors).toBeDefined();
+    expect(result.errors[0].message).toBe("Authentication required");
+
+    // Test request platform
+    result = await makeGraphQLRequest(REQUEST_PLATFORM, {
+      input: {
+        amount: 10,
       },
     });
     expect(result.errors).toBeDefined();

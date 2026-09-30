@@ -1,5 +1,5 @@
 import { makeGraphQLRequest } from "./graphql/makeGraphQLRequest";
-import { REQUEST_GAS, REQUEST_HOLD } from "./graphql/schema/testnet-faucet";
+import { REQUEST_GAS, REQUEST_HOLD, REQUEST_PLATFORM } from "./graphql/schema/testnet-faucet";
 
 export async function requestGas(accessToken: string, amount?: number) {
   amount ??= 0.0001;
@@ -29,4 +29,18 @@ export async function requestHold(accessToken: string, amount?: number) {
   );
 
   if (result.errors) throw `requestHold error ${result.errors}`;
+}
+
+export async function requestPlatform(accessToken: string, amount: number) {
+  const result = await makeGraphQLRequest(
+    REQUEST_PLATFORM,
+    {
+      input: {
+        amount,
+      },
+    },
+    accessToken
+  );
+
+  if (result.errors) throw `requestPlatform error ${result.errors}`;
 }
