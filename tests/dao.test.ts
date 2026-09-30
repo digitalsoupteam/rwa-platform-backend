@@ -1,9 +1,9 @@
-import { expect, test, describe, beforeAll } from "bun:test";
+import { expect, test, describe, beforeAll, afterAll } from "bun:test";
 import { ethers, HDNodeWallet, JsonRpcProvider, ContractFactory } from "ethers";
-import { TESTNET_RPC, PLATFORM_TOKEN_ADDRESS, DAO_STAKING_ADDRESS, GOVERNANCE_ADDRESS } from "./utils/config";
+import { TESTNET_RPC, PLATFORM_TOKEN_ADDRESS, DAO_STAKING_ADDRESS, GOVERNANCE_ADDRESS, FAUCET_ADDRESS } from "./utils/config";
 import { makeGraphQLRequest } from "./utils/graphql/makeGraphQLRequest";
 import { authenticate } from "./utils/authenticate";
-import { requestGas } from "./utils/requestTokens";
+import { requestGas, requestPlatform } from "./utils/requestTokens";
 import {
   GET_PROPOSALS,
   GET_STAKING,
@@ -12,6 +12,17 @@ import {
   GET_TREASURY_WITHDRAWS,
   GET_VOTES,
 } from "./utils/graphql/schema/dao";
+
+/**
+ * TEST STAND REQUIREMENTS:
+ * - Raise the testnet-faucet platform-token request limit to ~10,000,000
+ *   (env TESTNET_FAUCET_PLATFORM_TOKEN_AMOUNT). user1 requests 1,000,000 tokens
+ *   because the live Governance proposalThreshold is 1,000,000; keep the faucet funded.
+ * - "Return all" is at the bottom of this file (afterAll): it always returns the platform
+ *   tokens to the faucet wallet, even if the test failed. NOTE: a stake that cast a vote
+ *   is locked until the proposal endTime (~7 days, DaoStaking voting lock) and cannot be
+ *   unstaked before that date.
+ */
 
 // ABIs based on the provided contracts
 const PlatformTokenABI = [
@@ -23,7 +34,9 @@ const PlatformTokenABI = [
 const DaoStakingABI = [
   "function stake(uint256 amount) external",
   "function unstake(uint256 amount) external",
-  "function getVotingPower(address user) view returns (uint256)"
+  "function getVotingPower(address user) view returns (uint256)",
+  "function votingLockTimestamp(address user) view returns (uint256)",
+  "function stakedAmount(address user) view returns (uint256)"
 ];
 
 const GovernanceABI = [
@@ -34,7 +47,6 @@ const GovernanceABI = [
 describe("DAO Flow", () => {
     let chainId: string;
     let provider: JsonRpcProvider;
-    let deployer: HDNodeWallet;
     let user1: HDNodeWallet;
     let user2: HDNodeWallet;
 
@@ -52,7 +64,6 @@ describe("DAO Flow", () => {
         provider = new ethers.JsonRpcProvider(TESTNET_RPC);
 
         // Setup wallets
-        deployer = ethers.Wallet.createRandom().connect(provider);
         user1 = ethers.Wallet.createRandom().connect(provider);
         user2 = ethers.Wallet.createRandom().connect(provider);
 
@@ -70,19 +81,15 @@ describe("DAO Flow", () => {
         daoStaking = new ethers.Contract(DAO_STAKING_ADDRESS, DaoStakingABI, user1);
         governance = new ethers.Contract(GOVERNANCE_ADDRESS, GovernanceABI, user1);
         
-        // Distribute Platform Tokens to users for staking
-        // This would typically be done by a deployer/minter role
-        // For this test, we assume user1 has tokens and sends them to user2
-        const tokenDeployerSigner = new ethers.Contract(PLATFORM_TOKEN_ADDRESS, PlatformTokenABI, deployer);
-        // Assuming deployer has initial supply
-        await (await tokenDeployerSigner.transfer(user1.address, ethers.parseEther("2000"))).wait();
-        await (await tokenDeployerSigner.transfer(user2.address, ethers.parseEther("1000"))).wait();
+        // Fund users with platform tokens via the faucet (tokens land on each authenticated user's wallet)
+        await requestPlatform(accessTokenUser1, 1000000); // live proposalThreshold is 1M
+        await requestPlatform(accessTokenUser2, 1000);
 
-        // User 1 stakes 2000 tokens
+        // User 1 stakes 1,000,000 tokens (>= live proposalThreshold, required to propose)
         const user1Staking = new ethers.Contract(DAO_STAKING_ADDRESS, DaoStakingABI, user1);
         const user1Token = new ethers.Contract(PLATFORM_TOKEN_ADDRESS, PlatformTokenABI, user1);
-        await (await user1Token.approve(DAO_STAKING_ADDRESS, ethers.parseEther("2000"))).wait();
-        await (await user1Staking.stake(ethers.parseEther("2000"))).wait();
+        await (await user1Token.approve(DAO_STAKING_ADDRESS, ethers.parseEther("1000000"))).wait();
+        await (await user1Staking.stake(ethers.parseEther("1000000"))).wait();
 
         // User 2 stakes 1000 tokens
         const user2Staking = new ethers.Contract(DAO_STAKING_ADDRESS, DaoStakingABI, user2);
@@ -94,11 +101,11 @@ describe("DAO Flow", () => {
 
         // User 1 creates a proposal
         const user1Governance = new ethers.Contract(GOVERNANCE_ADDRESS, GovernanceABI, user1);
-        const proposeTx = await user1Governance.propose(ethers.ZeroAddress, "0x", "Test Proposal");
-        const receipt = await proposeTx.wait();
-        
-        // This is a naive way to get proposalId, proper way is to parse logs
-        proposalId = "1"; 
+        // Non-zero target required ("Invalid target"); user1 is an EOA, so an auto-executed
+        // target.call("0x") would be a harmless no-op
+        const proposeTarget = user1.address;
+        proposalId = (await user1Governance.propose.staticCall(proposeTarget, "0x", "Test Proposal")).toString();
+        await (await user1Governance.propose(proposeTarget, "0x", "Test Proposal")).wait();
 
         await new Promise(resolve => setTimeout(resolve, 15000));
 
@@ -123,7 +130,7 @@ describe("DAO Flow", () => {
         const user1Stake = result.data.getStaking.find((s:any) => s.staker === user1.address.toLowerCase());
         const user2Stake = result.data.getStaking.find((s:any) => s.staker === user2.address.toLowerCase());
 
-        expect(user1Stake.amount).toBe(ethers.parseEther("2000").toString());
+        expect(user1Stake.amount).toBe(ethers.parseEther("1000000").toString());
         expect(user1Stake.chainId).toBe(chainId);
         expect(user2Stake.amount).toBe(ethers.parseEther("1000").toString());
         expect(user2Stake.chainId).toBe(chainId);
@@ -172,7 +179,7 @@ describe("DAO Flow", () => {
         const vote2 = result.data.getVotes.find((v: any) => v.voterWallet === user2.address.toLowerCase());
 
         expect(vote1.support).toBe(true);
-        expect(vote1.weight).toBe(ethers.parseEther("2000").toString());
+        expect(vote1.weight).toBe(ethers.parseEther("1000000").toString());
         expect(vote1.reason).toBe("I support this!");
         expect(vote1.chainId).toBe(chainId);
         expect(vote1.governanceAddress.toLowerCase()).toBe(GOVERNANCE_ADDRESS.toLowerCase());
@@ -199,4 +206,38 @@ describe("DAO Flow", () => {
         expect(result.data.getTreasuryWithdraws).toBeArray();
         expect(result.data.getTreasuryWithdraws.length).toBe(0);
     });
+
+    // «Return all»: всегда возвращает платформенные токены на кран — срабатывает и при упавшем тесте
+    // (bun выполняет afterAll даже после падения beforeAll/тестов — проверено). Снимает стейк (если он
+    // не залочен голосованием) и шлёт весь баланс кошелька на FAUCET_ADDRESS. Если по стейку голосовали —
+    // он залочен до endTime предложения (~7 дней) и досрочно снять его нельзя: печатает дату разлока.
+    async function returnAllTokensToFaucet() {
+        for (const wallet of [user1, user2]) {
+            try {
+                const staking = new ethers.Contract(DAO_STAKING_ADDRESS, DaoStakingABI, wallet);
+                const token = new ethers.Contract(PLATFORM_TOKEN_ADDRESS, PlatformTokenABI, wallet);
+
+                const staked = await staking.stakedAmount(wallet.address);
+                if (staked > BigInt(0)) {
+                    const lockUntil = Number(await staking.votingLockTimestamp(wallet.address));
+                    if (Date.now() / 1000 < lockUntil) {
+                        console.log(`[return] ${wallet.address}: стейк залочен голосованием до ${new Date(lockUntil * 1000).toISOString()} — раньше снять нельзя`);
+                        continue;
+                    }
+                    await (await staking.unstake(staked)).wait();
+                }
+
+                const balance = await token.balanceOf(wallet.address);
+                if (balance > BigInt(0)) {
+                    const tx = await token.transfer(FAUCET_ADDRESS, balance);
+                    await tx.wait();
+                    console.log(`[return] ${wallet.address}: вернул ${ethers.formatEther(balance)} токенов на кран ${FAUCET_ADDRESS} (${tx.hash})`);
+                }
+            } catch (error) {
+                console.error(`[return] ${wallet.address}: не удалось вернуть:`, error instanceof Error ? error.message : error);
+            }
+        }
+    }
+
+    afterAll(returnAllTokensToFaucet);
 });

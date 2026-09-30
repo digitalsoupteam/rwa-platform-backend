@@ -20,3 +20,6 @@ export const TIMELOCK_ADDRESS = "0xEE4B4338E22c542967334E4C0098fc42869f4750";
 export const TREASURY_ADDRESS = "0x92d89379C79FD3Ad6127D841C8a36a98db4e05f0";
 
 export const REFERRAL_TREASURY_ADDRESS = "0xcf56E77069cC2aBfA6c1Df9bfD4155F782697B9D";
+
+// Testnet-faucet wallet on the stand: platform tokens are returned here by tests/dao.test.ts ("return all" in afterAll)
+export const FAUCET_ADDRESS = "0x221f2cd0cd36fb55eb8e3acaa601c6e98d9980b8";
