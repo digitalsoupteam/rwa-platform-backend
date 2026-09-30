@@ -331,9 +331,9 @@ describe("RWA Flow", () => {
       expect(result.data.updateBusinessRiskScore.id).toBe(businessId);
 
       // Wait for async evaluation to complete — poll until riskScore appears
-      // Poll until riskScore appears (async evaluation via RabbitMQ)
+      // LLM evaluation via OpenRouter takes 40-60s+ (upstream retries): allow up to 120s
       let riskScore: number | undefined;
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 40; i++) {
         await new Promise(resolve => setTimeout(resolve, 3000));
         const riskPoll = await makeGraphQLRequest(
           GET_BUSINESS,
@@ -723,9 +723,9 @@ describe("RWA Flow", () => {
       expect(result.data.updatePoolRiskScore.id).toBe(poolId);
 
       // Wait for async evaluation to complete — poll until riskScore appears
-      // Poll until riskScore appears (async evaluation via RabbitMQ)
+      // LLM evaluation via OpenRouter takes 40-60s+ (upstream retries): allow up to 120s
       let riskScore: number | undefined;
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 40; i++) {
         await new Promise(resolve => setTimeout(resolve, 3000));
         const riskPoll = await makeGraphQLRequest(
           GET_POOL,
