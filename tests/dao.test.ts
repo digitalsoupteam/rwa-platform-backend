@@ -21,7 +21,11 @@ import {
  * - "Return all" is at the bottom of this file (afterAll): it always returns the platform
  *   tokens to the faucet wallet, even if the test failed. NOTE: a stake that cast a vote
  *   is locked until the proposal endTime (~7 days, DaoStaking voting lock) and cannot be
- *   unstaked before that date.
+ *   unstaked before that date (the "return all" step warps the chain clock +7 days first).
+ * - Mass voting: node accounts #1..#8 receive 1M platform tokens each from the deployer
+ *   (account #0, the faucet wallet), stake them and vote FOR. Together with user1's 1M
+ *   this reaches 9M >= the 8.4M quorum (40% of the 21M supply); the proposal
+ *   auto-executes inside the 8th mass vote.
  */
 
 // ABIs based on the provided contracts
@@ -41,7 +45,8 @@ const DaoStakingABI = [
 
 const GovernanceABI = [
   "function propose(address target, bytes memory data, string memory description) external returns (uint256 proposalId)",
-  "function vote(uint256 proposalId, bool support, string memory reason) external"
+  "function vote(uint256 proposalId, bool support, string memory reason) external",
+  "function proposals(uint256) view returns (address proposer, address target, bytes data, string description, uint256 votesFor, uint256 votesAgainst, uint256 creationTime, uint256 endTime, bool executed, bool cancelled)"
 ];
 
 describe("DAO Flow", () => {
@@ -58,10 +63,13 @@ describe("DAO Flow", () => {
     let governance: ethers.Contract;
 
     let proposalId: string;
+    let massVoters: ethers.JsonRpcSigner[] = [];
 
     beforeAll(async () => {
         chainId = "97";
-        provider = new ethers.JsonRpcProvider(TESTNET_RPC);
+        // cacheTimeout -1 disables the ethers 250ms request cache: it serves a stale nonce
+        // when txs from the same wallet are sent back-to-back on an automine node.
+        provider = new ethers.JsonRpcProvider(TESTNET_RPC, undefined, { cacheTimeout: -1 });
 
         // Setup wallets
         user1 = ethers.Wallet.createRandom().connect(provider);
@@ -115,35 +123,68 @@ describe("DAO Flow", () => {
         const user2Governance = new ethers.Contract(GOVERNANCE_ADDRESS, GovernanceABI, user2);
         await (await user2Governance.vote(proposalId, false, "I do not support this.")).wait();
 
+        // Mass voting: reach the 40% quorum (8.4M out of the 21M total supply).
+        // Node accounts #1..#8 get 1M platform tokens each from the deployer (account #0,
+        // the same wallet the faucet uses), stake them and vote FOR. Together with user1's
+        // 1M this totals 9M, and the proposal auto-executes inside the 8th mass vote.
+        const funder = await provider.getSigner(0);
+        const funderToken = new ethers.Contract(PLATFORM_TOKEN_ADDRESS, PlatformTokenABI, funder);
+        for (let i = 1; i <= 8; i++) {
+            const massSigner = await provider.getSigner(i);
+            const massAddress = await massSigner.getAddress();
+            massVoters.push(massSigner);
+
+            await (await funderToken.transfer(massAddress, ethers.parseEther("1000000"))).wait();
+
+            const massToken = new ethers.Contract(PLATFORM_TOKEN_ADDRESS, PlatformTokenABI, massSigner);
+            await (await massToken.approve(DAO_STAKING_ADDRESS, ethers.parseEther("1000000"))).wait();
+
+            const massStaking = new ethers.Contract(DAO_STAKING_ADDRESS, DaoStakingABI, massSigner);
+            await (await massStaking.stake(ethers.parseEther("1000000"))).wait();
+
+            const massGovernance = new ethers.Contract(GOVERNANCE_ADDRESS, GovernanceABI, massSigner);
+            await (await massGovernance.vote(proposalId, true, `Mass support vote #${i}`)).wait();
+        }
+
         await new Promise(resolve => setTimeout(resolve, 15000));
-    });
+    }, 900000); // the full happy path (faucet + ~50 txs + indexing waits) needs minutes
 
     test("should get staking records", async () => {
+        const massAddresses = await Promise.all(massVoters.map((voter) => voter.getAddress()));
+        const allStakers = [user1.address, user2.address, ...massAddresses]; // dao stores checksummed addresses
         const result = await makeGraphQLRequest(GET_STAKING, {
-            input: { filter: { staker: { $in: [user1.address.toLowerCase(), user2.address.toLowerCase()] } } }
+            input: { filter: { staker: { $in: allStakers } } }
         }, accessTokenUser1);
         
         expect(result.errors).toBeUndefined();
         expect(result.data.getStaking).toBeArray();
-        expect(result.data.getStaking.length).toBe(2);
+        expect(result.data.getStaking.length).toBe(10);
 
-        const user1Stake = result.data.getStaking.find((s:any) => s.staker === user1.address.toLowerCase());
-        const user2Stake = result.data.getStaking.find((s:any) => s.staker === user2.address.toLowerCase());
+        const user1Stake = result.data.getStaking.find((s:any) => s.staker.toLowerCase() === user1.address.toLowerCase());
+        const user2Stake = result.data.getStaking.find((s:any) => s.staker.toLowerCase() === user2.address.toLowerCase());
 
         expect(user1Stake.amount).toBe(ethers.parseEther("1000000").toString());
         expect(user1Stake.chainId).toBe(chainId);
         expect(user2Stake.amount).toBe(ethers.parseEther("1000").toString());
         expect(user2Stake.chainId).toBe(chainId);
+
+        for (const massAddress of massAddresses) {
+            const massStake = result.data.getStaking.find((s:any) => s.staker.toLowerCase() === massAddress.toLowerCase());
+            expect(massStake.amount).toBe(ethers.parseEther("1000000").toString());
+            expect(massStake.chainId).toBe(chainId);
+        }
     });
 
     test("should get staking history", async () => {
+        const massAddresses = await Promise.all(massVoters.map((voter) => voter.getAddress()));
+        const allStakers = [user1.address, user2.address, ...massAddresses]; // dao stores checksummed addresses
         const result = await makeGraphQLRequest(GET_STAKING_HISTORY, {
-            input: { filter: { staker: { $in: [user1.address.toLowerCase(), user2.address.toLowerCase()] } } }
+            input: { filter: { staker: { $in: allStakers } } }
         }, accessTokenUser1);
 
         expect(result.errors).toBeUndefined();
         expect(result.data.getStakingHistory).toBeArray();
-        expect(result.data.getStakingHistory.length).toBe(2);
+        expect(result.data.getStakingHistory.length).toBe(10);
         expect(result.data.getStakingHistory.every((h: any) => h.operation === 'staked')).toBe(true);
         expect(result.data.getStakingHistory.every((h: any) => h.chainId === chainId)).toBe(true);
         expect(result.data.getStakingHistory.every((h: any) => typeof h.transactionHash === 'string')).toBe(true);
@@ -162,21 +203,22 @@ describe("DAO Flow", () => {
         expect(proposal.proposalId).toBe(proposalId);
         expect(proposal.proposer.toLowerCase()).toBe(user1.address.toLowerCase());
         expect(proposal.description).toBe("Test Proposal");
-        expect(proposal.state).toBeDefined();
+        expect(proposal.state).toBe("executed");
         expect(proposal.chainId).toBe(chainId);
     });
 
     test("should get votes for the proposal", async () => {
+        const massAddresses = await Promise.all(massVoters.map((voter) => voter.getAddress()));
         const result = await makeGraphQLRequest(GET_VOTES, {
             input: { filter: { proposalId: { $eq: proposalId } } }
         }, accessTokenUser1);
 
         expect(result.errors).toBeUndefined();
         expect(result.data.getVotes).toBeArray();
-        expect(result.data.getVotes.length).toBe(2);
+        expect(result.data.getVotes.length).toBe(10);
 
-        const vote1 = result.data.getVotes.find((v: any) => v.voterWallet === user1.address.toLowerCase());
-        const vote2 = result.data.getVotes.find((v: any) => v.voterWallet === user2.address.toLowerCase());
+        const vote1 = result.data.getVotes.find((v: any) => v.voterWallet.toLowerCase() === user1.address.toLowerCase());
+        const vote2 = result.data.getVotes.find((v: any) => v.voterWallet.toLowerCase() === user2.address.toLowerCase());
 
         expect(vote1.support).toBe(true);
         expect(vote1.weight).toBe(ethers.parseEther("1000000").toString());
@@ -191,8 +233,24 @@ describe("DAO Flow", () => {
         expect(vote2.chainId).toBe(chainId);
         expect(vote2.governanceAddress.toLowerCase()).toBe(GOVERNANCE_ADDRESS.toLowerCase());
         expect(vote2.voterWallet.toLowerCase()).toBe(user2.address.toLowerCase());
+
+        for (const massAddress of massAddresses) {
+            const massVote = result.data.getVotes.find((v: any) => v.voterWallet.toLowerCase() === massAddress.toLowerCase());
+            expect(massVote.support).toBe(true);
+            expect(massVote.weight).toBe(ethers.parseEther("1000000").toString());
+            expect(massVote.chainId).toBe(chainId);
+        }
     });
     
+    test("should reach the 40% quorum and auto-execute the proposal", async () => {
+        const proposal = await governance.proposals(proposalId);
+
+        // 40% of the 21M total supply = 8.4M; votesFor must clear the quorum
+        expect(proposal.votesFor).toBeGreaterThanOrEqual(ethers.parseEther("8400000"));
+        expect(proposal.votesFor).toBeGreaterThan(proposal.votesAgainst);
+        expect(proposal.executed).toBe(true);
+    });
+
     test("should get empty array for timelock tasks", async () => {
         const result = await makeGraphQLRequest(GET_TIMELOCK_TASKS, {}, accessTokenUser1);
         expect(result.errors).toBeUndefined();
@@ -209,35 +267,47 @@ describe("DAO Flow", () => {
 
     // «Return all»: всегда возвращает платформенные токены на кран — срабатывает и при упавшем тесте
     // (bun выполняет afterAll даже после падения beforeAll/тестов — проверено). Снимает стейк (если он
-    // не залочен голосованием) и шлёт весь баланс кошелька на FAUCET_ADDRESS. Если по стейку голосовали —
-    // он залочен до endTime предложения (~7 дней) и досрочно снять его нельзя: печатает дату разлока.
+    // не залочен голосованием) и шлёт весь баланс кошелька на FAUCET_ADDRESS. Перед возвратом время
+    // цепи сдвигается на votingPeriod (+7 дней), чтобы разлочить стейки, залоченные голосованием.
     async function returnAllTokensToFaucet() {
-        for (const wallet of [user1, user2]) {
+        try {
+            await provider.send("evm_increaseTime", [7 * 24 * 60 * 60 + 60]);
+            await provider.send("evm_mine", []);
+            console.log("[return] chain clock moved +7 days to unlock voted stakes");
+        } catch (error) {
+            console.error("[return] time warp failed:", error instanceof Error ? error.message : error);
+        }
+
+        const wallets: ethers.Signer[] = [user1, user2, ...massVoters];
+        const latestBlock = await provider.getBlock("latest");
+        const chainNow = Number(latestBlock?.timestamp ?? 0);
+        for (const wallet of wallets) {
+            const walletAddress = await wallet.getAddress();
             try {
                 const staking = new ethers.Contract(DAO_STAKING_ADDRESS, DaoStakingABI, wallet);
                 const token = new ethers.Contract(PLATFORM_TOKEN_ADDRESS, PlatformTokenABI, wallet);
 
-                const staked = await staking.stakedAmount(wallet.address);
+                const staked = await staking.stakedAmount(walletAddress);
                 if (staked > BigInt(0)) {
-                    const lockUntil = Number(await staking.votingLockTimestamp(wallet.address));
-                    if (Date.now() / 1000 < lockUntil) {
-                        console.log(`[return] ${wallet.address}: стейк залочен голосованием до ${new Date(lockUntil * 1000).toISOString()} — раньше снять нельзя`);
+                    const lockUntil = Number(await staking.votingLockTimestamp(walletAddress));
+                    if (chainNow < lockUntil) {
+                        console.log(`[return] ${walletAddress}: стейк залочен голосованием до ${new Date(lockUntil * 1000).toISOString()} — раньше снять нельзя`);
                         continue;
                     }
                     await (await staking.unstake(staked)).wait();
                 }
 
-                const balance = await token.balanceOf(wallet.address);
+                const balance = await token.balanceOf(walletAddress);
                 if (balance > BigInt(0)) {
                     const tx = await token.transfer(FAUCET_ADDRESS, balance);
                     await tx.wait();
-                    console.log(`[return] ${wallet.address}: вернул ${ethers.formatEther(balance)} токенов на кран ${FAUCET_ADDRESS} (${tx.hash})`);
+                    console.log(`[return] ${walletAddress}: вернул ${ethers.formatEther(balance)} токенов на кран ${FAUCET_ADDRESS} (${tx.hash})`);
                 }
             } catch (error) {
-                console.error(`[return] ${wallet.address}: не удалось вернуть:`, error instanceof Error ? error.message : error);
+                console.error(`[return] ${walletAddress}: не удалось вернуть:`, error instanceof Error ? error.message : error);
             }
         }
     }
 
-    afterAll(returnAllTokensToFaucet);
+    afterAll(returnAllTokensToFaucet, 900000);
 });
