@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { isIP } from 'node:net';
-import { isPrivateAddress, normalizeHostname, resolveHostnameAddresses } from '../utils/ssrf';
+import { isAllowedHost, isPrivateAddress, normalizeHostname, resolveHostnameAddresses } from '../utils/ssrf';
 import { DeliveryLogRepository } from '../repositories/deliveryLog.repository';
 import { EndpointRepository } from '../repositories/endpoint.repository';
 import { RedisWithTracing } from '@shared/monitoring/src/redis';
@@ -86,28 +86,33 @@ export class DeliveryService {
       // endpoint deactivated; a temporary resolver failure stays a normal,
       // retryable delivery failure.
       const target = normalizeHostname(new URL(data.url).hostname);
-      const addresses = isIP(target) ? [target] : await resolveHostnameAddresses(target);
 
-      if (addresses.some(isPrivateAddress)) {
-        logger.warn('Refusing webhook delivery: hostname resolves to a private address', {
-          endpointId: data.endpointId,
-          eventId: data.eventId,
-        });
-        await this.recordFailure(
-          data.deliveryLogId,
-          data.attempt,
-          undefined,
-          '',
-          'Hostname resolves to a private address (SSRF protection)',
-        );
-        await this.markDeadLetter(data.deliveryLogId);
-        await this.deactivateEndpoint(data.endpointId);
-        metrics.counter('webhook_delivery_total', { status: 'dead_letter' });
-        return { success: false, deadLetter: true };
-      }
+      // Same dev/test allowlist as at subscription time (SSRF_ALLOWED_HOSTS):
+      // an explicitly allowlisted host skips the resolve + private checks.
+      if (!isAllowedHost(target)) {
+        const addresses = isIP(target) ? [target] : await resolveHostnameAddresses(target);
 
-      if (addresses.length === 0) {
-        throw new Error('Failed to resolve hostname for delivery');
+        if (addresses.some(isPrivateAddress)) {
+          logger.warn('Refusing webhook delivery: hostname resolves to a private address', {
+            endpointId: data.endpointId,
+            eventId: data.eventId,
+          });
+          await this.recordFailure(
+            data.deliveryLogId,
+            data.attempt,
+            undefined,
+            '',
+            'Hostname resolves to a private address (SSRF protection)',
+          );
+          await this.markDeadLetter(data.deliveryLogId);
+          await this.deactivateEndpoint(data.endpointId);
+          metrics.counter('webhook_delivery_total', { status: 'dead_letter' });
+          return { success: false, deadLetter: true };
+        }
+
+        if (addresses.length === 0) {
+          throw new Error('Failed to resolve hostname for delivery');
+        }
       }
 
       const response = await fetch(data.url, {

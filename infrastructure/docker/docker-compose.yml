@@ -115,6 +115,10 @@ services:
       PORT: ${WEBHOOKS_PORT}
       REDIS_URL: ${REDIS_URL}
       WEBHOOKS_ENCRYPTION_KEY: ${WEBHOOKS_ENCRYPTION_KEY}
+      # Dev stand only: webhook egress exemptions. The e2e receiver
+      # (tests/webhooks.test.ts) runs on the Docker host and is reached as
+      # host.docker.internal. Keep empty / unset on production hosts.
+      SSRF_ALLOWED_HOSTS: ${WEBHOOKS_SSRF_ALLOWED_HOSTS:-}
       # Keep TLS verification on for outbound webhook deliveries by default;
       # set NODE_TLS_REJECT_UNAUTHORIZED=0 explicitly only in dev/test envs.
       NODE_TLS_REJECT_UNAUTHORIZED: ${NODE_TLS_REJECT_UNAUTHORIZED:-1}

@@ -234,6 +234,24 @@ describe('DeliveryService (unit, fake repositories)', () => {
     });
   }
 
+  test('deliverWebhook: an allowlisted host skips the private check and is delivered', async () => {
+    // Dev stand only: the receiver on the Docker host resolves to a private
+    // gateway address, but SSRF_ALLOWED_HOSTS exempts it from the blocklist.
+    process.env.SSRF_ALLOWED_HOSTS = 'host.docker.internal';
+    http.setResponse({ status: 200, body: 'ok' });
+    try {
+      const result = await service.deliverWebhook(
+        deliveryInput({ url: 'https://host.docker.internal:4000/webhook' }),
+      );
+
+      expect(result).toEqual({ success: true });
+      expect(http.calls).toHaveLength(1);
+      expect(http.calls[0].url).toBe('https://host.docker.internal:4000/webhook');
+    } finally {
+      delete process.env.SSRF_ALLOWED_HOSTS;
+    }
+  });
+
   for (const status of [400, 404, 410]) {
     test(`deliverWebhook: a ${status} response dead-letters, records the body and deactivates`, async () => {
       http.setResponse({ status, body: 'endpoint says no' });

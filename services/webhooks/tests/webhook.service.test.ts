@@ -173,6 +173,23 @@ describe('WebhookService (unit, fake repositories)', () => {
     });
   }
 
+  test('createEndpoint: an allowlisted host skips the private-address check', async () => {
+    // Dev stand only: the e2e receiver runs on the Docker host and is reached
+    // as host.docker.internal; SSRF_ALLOWED_HOSTS exempts it from the blocklist.
+    process.env.SSRF_ALLOWED_HOSTS = ' Host.Docker.Internal ';
+    try {
+      const created = await service.createEndpoint({
+        ...ENDPOINT,
+        url: 'https://host.docker.internal:4000/webhook',
+      });
+
+      expect(created.url).toBe('https://host.docker.internal:4000/webhook');
+      expect(endpoints.createEndpoint).toHaveBeenCalledTimes(1);
+    } finally {
+      delete process.env.SSRF_ALLOWED_HOSTS;
+    }
+  });
+
   test('createEndpoint: enforces the 50-endpoint limit per user', async () => {
     for (let index = 0; index < 50; index++) {
       await service.createEndpoint({ ...ENDPOINT, url: `${PUBLIC_URL}/${index}` });

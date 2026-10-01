@@ -45,6 +45,22 @@ export const isPrivateAddress = (address: string): boolean => {
   return false;
 };
 
+/**
+ * Comma-separated allowlist of hostnames exempt from the private-address
+ * blocklist (`SSRF_ALLOWED_HOSTS`). Dev/test only: on the local stand the
+ * webhooks service delivers to the e2e receiver running on the Docker host
+ * (reached as host.docker.internal). Empty — i.e. no exemptions — by
+ * default; production behaviour is unchanged.
+ */
+export const isAllowedHost = (hostname: string): boolean => {
+  const allowed = (process.env.SSRF_ALLOWED_HOSTS ?? '')
+    .split(',')
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean);
+
+  return allowed.includes(hostname.toLowerCase());
+};
+
 /** Hostnames in URLs may arrive IPv6-bracketed: `[::1]`. */
 export const normalizeHostname = (hostname: string): string => hostname.replace(/^\[|\]$/g, '');
 

@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { isIP } from 'node:net';
 import { AppError } from '@shared/errors/app-errors';
-import { isPrivateAddress, normalizeHostname, resolveHostnameAddresses } from '../utils/ssrf';
+import { isAllowedHost, isPrivateAddress, normalizeHostname, resolveHostnameAddresses } from '../utils/ssrf';
 import { EndpointRepository } from '../repositories/endpoint.repository';
 import { RedisWithTracing } from '@shared/monitoring/src/redis';
 import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
@@ -275,6 +275,13 @@ export class WebhookService {
     }
 
     const hostname = normalizeHostname(parsed.hostname);
+
+    // Dev/test escape hatch: an explicitly allowlisted host (SSRF_ALLOWED_HOSTS)
+    // skips the private-address check — the e2e receiver on the Docker host.
+    if (isAllowedHost(hostname)) {
+      return;
+    }
+
     const addresses = isIP(hostname) ? [hostname] : await resolveHostnameAddresses(hostname);
 
     if (addresses.length === 0) {
