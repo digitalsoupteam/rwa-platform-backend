@@ -48,7 +48,7 @@ echo "network: $NETWORK"
 # 3. One-shot helper container: creates the set on the first run, adds missing
 #    members on later runs, and exits 0 as soon as the set reports READY.
 #    The in-container logic lives in init-mongo-container.sh (shared with app-up.ts).
-docker run --rm -i --network "$NETWORK" mongo:latest bash -s < "$SCRIPT_DIR/init-mongo-container.sh"
+docker run --rm -i --network "$NETWORK" mongo:8.3.11 bash -s < "$SCRIPT_DIR/init-mongo-container.sh"
 
 echo "--------------------------------------------------"
 echo "✅ MongoDB replica set rs0 is ready"

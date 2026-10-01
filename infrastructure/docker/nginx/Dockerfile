@@ -1,5 +1,5 @@
 # Build stage for VTS module
-FROM alpine:latest AS build-stage
+FROM alpine:3.24.2 AS build-stage
 
 ENV NGINX_VERSION=1.29.0
 

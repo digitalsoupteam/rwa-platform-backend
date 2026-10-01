@@ -78,7 +78,7 @@ async function main(): Promise<void> {
   //    the set on the first run, adds missing members on later runs, exits 0
   //    as soon as the set is READY.
   const payload = await Bun.file(join(scriptDir, 'init-mongo-container.sh')).text();
-  const initProc = Bun.spawn(['docker', 'run', '--rm', '-i', '--network', network, 'mongo:latest', 'bash', '-s'], {
+  const initProc = Bun.spawn(['docker', 'run', '--rm', '-i', '--network', network, 'mongo:8.3.11', 'bash', '-s'], {
     stdin: Buffer.from(payload),
     stdout: 'inherit',
     stderr: 'inherit',

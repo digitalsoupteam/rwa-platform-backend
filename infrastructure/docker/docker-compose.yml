@@ -691,7 +691,7 @@ services:
 
   mongodb:
     restart: unless-stopped
-    image: mongo:latest
+    image: mongo:8.3.11
     # Member of the 3-node replica set `rs0` (multi-document transactions and
     # automatic failover). Bring the stack up via `bun run app:up`
     # (`deployments/scripts/app-up.ts`) — it initiates/verifies the set with
@@ -717,7 +717,7 @@ services:
 
   mongodb-2:
     restart: unless-stopped
-    image: mongo:latest
+    image: mongo:8.3.11
     # Member of the 3-node replica set `rs0` (see `mongodb`).
     command: ["--replSet", "rs0", "--bind_ip_all"]
     volumes:
@@ -739,7 +739,7 @@ services:
 
   mongodb-3:
     restart: unless-stopped
-    image: mongo:latest
+    image: mongo:8.3.11
     # Member of the 3-node replica set `rs0` (see `mongodb`).
     command: ["--replSet", "rs0", "--bind_ip_all"]
     volumes:
@@ -777,7 +777,7 @@ services:
 
   mongo_express:
     restart: unless-stopped
-    image: mongo-express:latest
+    image: mongo-express:1.0.2
     environment:
       ME_CONFIG_MONGODB_SERVER: "mongodb"
       ME_CONFIG_BASICAUTH: "false"
@@ -790,7 +790,7 @@ services:
 
   redis:
     restart: unless-stopped
-    image: redis:latest
+    image: redis:8.10.2
     volumes:
       - redis_data:/data
     healthcheck:
@@ -803,7 +803,7 @@ services:
       - app-network
 
   redis-exporter:
-    image: oliver006/redis_exporter:latest
+    image: oliver006/redis_exporter:v1.93.0
     container_name: redis-exporter
     environment:
       REDIS_ADDR: redis://redis:6379
@@ -815,7 +815,7 @@ services:
 
   redisinsight:
     restart: unless-stopped
-    image: redis/redisinsight:latest
+    image: redis/redisinsight:3.8.0
     environment:
       - REDISINSIGHT_HOST=0.0.0.0
       - RI_APP_PORT=5540
@@ -828,7 +828,7 @@ services:
 
   rabbitmq:
     restart: unless-stopped
-    image: rabbitmq:management
+    image: rabbitmq:4.3.6-management
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
@@ -845,7 +845,7 @@ services:
   # Monitoring Stack
   prometheus:
     restart: unless-stopped
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.15.0
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - ./prometheus/rules:/etc/prometheus/rules:ro
@@ -866,7 +866,7 @@ services:
   alertmanager:
     container_name: alertmanager
     restart: unless-stopped
-    image: prom/alertmanager:latest
+    image: prom/alertmanager:v0.34.1
     environment:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID}
@@ -885,7 +885,7 @@ services:
 
   loki:
     restart: unless-stopped
-    image: grafana/loki:latest
+    image: grafana/loki:3.7.8
     volumes:
       - ./loki/loki.yml:/etc/loki/local-config.yaml
       - loki_data:/loki
@@ -905,7 +905,7 @@ services:
 
   grafana:
     restart: unless-stopped
-    image: grafana/grafana:latest
+    image: grafana/grafana:13.2.3
     environment:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
       GF_USERS_ALLOW_SIGN_UP: "${GRAFANA_ALLOW_SIGN_UP}"
@@ -928,7 +928,7 @@ services:
 
   alloy:
     restart: unless-stopped
-    image: grafana/alloy:latest
+    image: grafana/alloy:v1.20.1
     volumes:
       - ./alloy/config.alloy:/etc/alloy/config.alloy
       - /var/run/docker.sock:/var/run/docker.sock
@@ -944,7 +944,7 @@ services:
   # System monitoring
   node-exporter:
     restart: unless-stopped
-    image: prom/node-exporter:latest
+    image: prom/node-exporter:v1.12.1
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -959,7 +959,7 @@ services:
 
   cadvisor:
     restart: unless-stopped
-    image: gcr.io/cadvisor/cadvisor:latest
+    image: gcr.io/cadvisor/cadvisor:v0.55.1
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
@@ -973,7 +973,7 @@ services:
       - app-network
 
   portainer:
-    image: portainer/portainer-ce:latest
+    image: portainer/portainer-ce:2.45.1
     container_name: portainer
     restart: unless-stopped
     security_opt:
@@ -985,7 +985,7 @@ services:
       - app-network
 
   uptime-kuma:
-    image: louislam/uptime-kuma:latest
+    image: louislam/uptime-kuma:1.23.17
     container_name: uptime-kuma
     volumes:
       - uptime_kuma_data:/app/data
@@ -994,7 +994,7 @@ services:
       - app-network
 
   authelia:
-    image: authelia/authelia:latest
+    image: authelia/authelia:4.39.28
     container_name: authelia
     environment:
       - LLDAP_USER_PASS=${LLDAP_ADMIN_PASSWORD}
@@ -1016,7 +1016,7 @@ services:
         condition: service_healthy
 
   lldap:
-    image: lldap/lldap:latest
+    image: lldap/lldap:v0.6.3-alpine
     container_name: lldap
     environment:
       - LLDAP_JWT_SECRET_FILE=/secrets/LLDAP_JWT_SECRET
@@ -1030,7 +1030,7 @@ services:
     restart: unless-stopped
 
   homer:
-    image: b4bz/homer:latest
+    image: b4bz/homer:v26.08.3
     container_name: homer
     environment:
       - BASE_DOMAIN=${BASE_DOMAIN}

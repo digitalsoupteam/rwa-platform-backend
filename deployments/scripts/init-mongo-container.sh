@@ -1,7 +1,7 @@
 # In-container part of the MongoDB replica set `rs0` initializer.
 #
 # Fed over stdin to a throwaway `mongo` container:
-#   docker run --rm -i --network <network> mongo:latest bash -s < init-mongo-container.sh
+#   docker run --rm -i --network <network> mongo:8.3.11 bash -s < init-mongo-container.sh
 #
 # Shared by both host wrappers — `init-mongo-replicaset.sh` (git-bash / Linux)
 # and `app-up.ts` (`bun run app:up`, works from any shell) — single source of
