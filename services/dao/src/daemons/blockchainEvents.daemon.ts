@@ -1,5 +1,9 @@
 import { BaseBlockchainDaemon } from '@shared/blockchain-daemon/src/baseBlockchain.daemon';
-import type { BlockchainEvent, EventRouting } from '@shared/blockchain-daemon/src/baseBlockchain.daemon';
+import type {
+  BlockchainDaemonRetryOptions,
+  BlockchainEvent,
+  EventRouting,
+} from '@shared/blockchain-daemon/src/baseBlockchain.daemon';
 import { RabbitMQClient } from '@shared/rabbitmq/src/rabbitmq.client';
 import { DaoService } from '../services/dao.service';
 import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
@@ -16,8 +20,9 @@ export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
   constructor(
     rabbitClient: RabbitMQClient,
     private readonly daoService: DaoService,
+    retryOptions?: BlockchainDaemonRetryOptions,
   ) {
-    super(rabbitClient, 'blockchain.events.dao');
+    super(rabbitClient, 'blockchain.events.dao', retryOptions);
   }
 
   @TraceDecorator()

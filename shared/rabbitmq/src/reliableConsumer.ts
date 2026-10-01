@@ -1,8 +1,13 @@
 import type { ConsumeMessage } from 'amqplib';
 import type { RabbitMQClient } from './rabbitmq.client';
-import { getMessageAttempt, getRetryCount, type ReliabilityPolicy } from './reliability';
+import { getMessageAttempt, getRetryCount, type ReliabilityPolicy, type RetryStrategy } from './reliability';
 import { logger } from '@shared/monitoring/src/monitoring.plugin';
 import { metrics } from '@shared/monitoring/src/metrics';
+
+/** Promise-based pause for the in-place retry backoff. */
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 /**
  * The single reliability contract for every queue consumer on the platform.
@@ -10,8 +15,8 @@ import { metrics } from '@shared/monitoring/src/metrics';
  * A handler processes one message and returns an outcome:
  * - `done` — the work is finished, acknowledge;
  * - `retry` — the work failed but may succeed later; retried through the
- *   policy's mechanism (broker delay, backoff bucket or one immediate
- *   redelivery);
+ *   policy's mechanism (broker delay, backoff bucket, one immediate
+ *   redelivery, or in place for strict ordering);
  * - `park { reason }` — the message cannot be processed any further; parked
  *   for manual inspection (or passed to the queue's dead-letter setup);
  * - `drop { reason }` — the message is knowingly discarded (logged + metric).
@@ -20,6 +25,10 @@ import { metrics } from '@shared/monitoring/src/metrics';
  * transient infrastructure errors are retried without counting towards
  * exhaustion, everything else is retried until the attempts run out and then
  * goes through the exhausted action. Returning `undefined` is `done`.
+ *
+ * With the `in-place` retry policy (strict ordering for blockchain events) a
+ * thrown error is never mapped to nack/park: the message stays unacknowledged
+ * and the handler is re-run for the same message until it succeeds.
  */
 export type ConsumeOutcome =
   | { kind: 'done' }
@@ -31,6 +40,13 @@ export type ConsumeOutcome =
 export const done: ConsumeOutcome = { kind: 'done' };
 
 export class ReliableConsumer {
+  /**
+   * Serializes in-place processing (strict-ordering mode): the next message
+   * is not processed until the full retry loop of the current one finishes,
+   * even if more than one message is ever delivered concurrently.
+   */
+  private inPlaceChain: Promise<void> = Promise.resolve();
+
   constructor(
     private readonly rabbitClient: RabbitMQClient,
     private readonly queueName: string,
@@ -45,6 +61,17 @@ export class ReliableConsumer {
       this.queueName,
       async (message: ConsumeMessage | null) => {
         if (!message) return;
+
+        if (this.policy.retry.mode === 'in-place') {
+          const run = this.inPlaceChain.then(() => this.handleMessage(message, handler));
+          this.inPlaceChain = run.then(
+            () => undefined,
+            () => undefined,
+          );
+          await run;
+          return;
+        }
+
         await this.handleMessage(message, handler);
       },
       { noAck: false, ...(options?.prefetch !== undefined ? { prefetch: options.prefetch } : {}) },
@@ -55,6 +82,12 @@ export class ReliableConsumer {
     message: ConsumeMessage,
     handler: (message: ConsumeMessage) => Promise<ConsumeOutcome | void>,
   ): Promise<void> {
+    const retry = this.policy.retry;
+    if (retry.mode === 'in-place') {
+      await this.processInPlace(message, handler, retry);
+      return;
+    }
+
     let outcome: ConsumeOutcome;
     try {
       outcome = (await handler(message)) ?? done;
@@ -64,6 +97,59 @@ export class ReliableConsumer {
     }
 
     await this.execute(outcome, message);
+  }
+
+  /**
+   * Strictly ordered processing (the `in-place` policy): the message stays
+   * unacknowledged and the handler is re-run for THE SAME message until it
+   * succeeds — new messages keep piling up in the queue behind it (with
+   * prefetch=1 the broker never delivers the next one while this one is
+   * held). A failure is never turned into a nack: nothing is skipped,
+   * reordered, parked or dropped. The pause between attempts grows
+   * exponentially from `delayMs` up to `maxDelayMs`. The loop never gives
+   * up: a permanently failing message blocks the queue on purpose until a
+   * fix is deployed.
+   */
+  private async processInPlace(
+    message: ConsumeMessage,
+    handler: (message: ConsumeMessage) => Promise<ConsumeOutcome | void>,
+    retry: Extract<RetryStrategy, { mode: 'in-place' }>,
+  ): Promise<void> {
+    let attempt = 0;
+    let delayMs = retry.delayMs;
+    const maxDelayMs = retry.maxDelayMs ?? Number.POSITIVE_INFINITY;
+
+    for (;;) {
+      let outcome: ConsumeOutcome;
+      try {
+        outcome = (await handler(message)) ?? done;
+      } catch (error) {
+        attempt += 1;
+        const transient = this.policy.isTransient?.(error) ?? false;
+        this.count(transient ? this.policy.metricNames?.transientRetried : this.policy.metricNames?.retried);
+        logger.error(
+          `${this.queueName}: attempt ${attempt} failed; holding the queue and retrying the same message in ${delayMs}ms`,
+          error,
+        );
+        await delay(delayMs);
+        delayMs = Math.min(delayMs * 2, maxDelayMs);
+        continue;
+      }
+
+      if (outcome.kind === 'retry') {
+        attempt += 1;
+        this.count(this.policy.metricNames?.retried);
+        logger.warn(
+          `${this.queueName}: handler asked for a retry; holding the queue and retrying the same message in ${delayMs}ms`,
+        );
+        await delay(delayMs);
+        delayMs = Math.min(delayMs * 2, maxDelayMs);
+        continue;
+      }
+
+      await this.execute(outcome, message);
+      return;
+    }
   }
 
   /** Maps a thrown error to an outcome according to the policy. */
@@ -126,6 +212,13 @@ export class ReliableConsumer {
 
   private async executeRetry(outcome: { kind: 'retry'; transient?: boolean }, message: ConsumeMessage): Promise<void> {
     const retry = this.policy.retry;
+    if (retry.mode === 'in-place') {
+      // Unreachable by construction: processInPlace() loops on retry outcomes
+      // itself and execute() only ever receives final outcomes (done/park/drop).
+      // Safety net: keep the message unacknowledged rather than ack a failed event.
+      logger.error(`Unexpected in-place retry outcome on ${this.queueName}; leaving the message unacknowledged`);
+      return;
+    }
 
     switch (retry.mode) {
       case 'dlx':

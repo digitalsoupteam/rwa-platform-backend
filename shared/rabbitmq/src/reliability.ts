@@ -8,8 +8,11 @@ import type { RabbitMQClient } from './rabbitmq.client';
  * `ReliableConsumer` in ./reliableConsumer.ts): a message is acknowledged only
  * after the handler succeeded; failures are retried through broker-side delays
  * and, once the policy gives up, land in a park queue (or are dropped) — they
- * are never silently lost. The strategies below are the three retry mechanics
- * used across the services; everything else is per-consumer configuration.
+ * are never silently lost. The `in-place` strategy is the strict-ordering
+ * exception: it never gives up and never moves on — the queue is held and the
+ * same message is retried until it succeeds. The strategies below are the
+ * retry mechanics used across the services; everything else is per-consumer
+ * configuration.
  */
 
 /** All errors in the `cause` chain (services wrap low-level errors). */
@@ -77,11 +80,18 @@ export interface RetryBucketStep {
  *   schedules); the handler decides when attempts are exhausted.
  * - `immediate-once`: requeue(true) once (the broker redelivers right away);
  *   a failure on an already-redelivered message counts as exhausted.
+ * - `in-place`: strict ordering — the message is never nacked: it stays
+ *   unacknowledged and the handler is re-run for the same message with an
+ *   exponential backoff (`delayMs`, doubling up to `maxDelayMs`) until it
+ *   succeeds; new messages keep accumulating in the queue behind it
+ *   (prefetch=1). Never exhausted: a permanently failing message blocks the
+ *   queue on purpose (blockchain events must be applied in chain order).
  */
 export type RetryStrategy =
   | { mode: 'dlx'; retryQueue: string; maxAttempts: number }
   | { mode: 'buckets'; steps: readonly RetryBucketStep[]; attemptField?: string }
-  | { mode: 'immediate-once' };
+  | { mode: 'immediate-once' }
+  | { mode: 'in-place'; delayMs: number; maxDelayMs?: number };
 
 /** Where messages that cannot be processed any further end up. */
 export type ParkStrategy =

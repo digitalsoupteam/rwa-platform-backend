@@ -8,6 +8,9 @@
  * processEventExactlyOnce() — a MongoDB transaction plus a dedup-marker
  * insert — so the tests replace those two persistence primitives with
  * in-memory no-ops (see stubExactlyOncePersistence) and never touch a database.
+ * Processing failures hold the queue: the same message is retried in place
+ * (blocking every later event) instead of being nacked, so the daemon is
+ * constructed with tiny retry delays and the tests observe in-flight retries.
  * Run with `bun test` from services/dao.
  */
 import { beforeEach, describe, expect, test } from 'bun:test';
@@ -72,6 +75,19 @@ function messageFor(event: BlockchainEvent): FakeConsumeMessage {
   };
 }
 
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/** Polls until the predicate is true (used to observe in-flight retries). */
+async function waitFor(predicate: () => boolean, timeoutMs = 3_000): Promise<void> {
+  const startedAt = Date.now();
+  while (!predicate()) {
+    if (Date.now() - startedAt > timeoutMs) {
+      throw new Error('waitFor: timed out');
+    }
+    await sleep(5);
+  }
+}
+
 /** event.data exactly as the scanner decodes it (contract fields only). */
 const PROPOSAL_CREATED_DATA = {
   emittedFrom: '0xGovernance',
@@ -131,6 +147,7 @@ describe('BlockchainEventsDaemon (unit, fake rabbit client and fake service)', (
     daemon = new TestableBlockchainEventsDaemon(
       rabbit as unknown as RabbitMQClient,
       daoService as unknown as DaoService,
+      { initialDelayMs: 1, maxDelayMs: 2 },
     );
   });
 
@@ -321,7 +338,7 @@ describe('BlockchainEventsDaemon (unit, fake rabbit client and fake service)', (
     expect(rabbit.nack).not.toHaveBeenCalled();
   });
 
-  test('consume callback: a service failure is not acknowledged and is dead-lettered for retry', async () => {
+  test('consume callback: a failed event is retried in place — same message, ack only after it succeeds, never a nack', async () => {
     await daemon.initialize();
     const consumer = rabbit.consumerFor(QUEUE_NAME)!;
 
@@ -329,15 +346,94 @@ describe('BlockchainEventsDaemon (unit, fake rabbit client and fake service)', (
       throw new AppError({ message: 'Vote write failed', statusCode: 500, code: 'INTERNAL_ERROR' });
     });
 
-    const message = messageFor(blockchainEvent('Governance_VoteCast', VOTE_CAST_DATA));
+    const event = blockchainEvent('Governance_VoteCast', VOTE_CAST_DATA);
+    const message = messageFor(event);
 
     await consumer(message);
 
-    expect(daoService.processVoteCast).toHaveBeenCalledTimes(1);
+    // The failure did not move the message anywhere: the same event was
+    // re-processed and only then acknowledged.
+    expect(daoService.processVoteCast).toHaveBeenCalledTimes(2);
+    expect(daoService.processVoteCast.mock.calls[1][0]).toEqual(daoService.processVoteCast.mock.calls[0][0]);
+    expect(daoService.processVoteCast.mock.calls[1][0]).toMatchObject({
+      name: 'Governance_VoteCast',
+      transactionHash: event.transactionHash,
+      logIndex: event.logIndex,
+    });
+
+    expect(rabbit.ack).toHaveBeenCalledTimes(1);
+    expect(rabbit.ack).toHaveBeenCalledWith(message);
+    expect(rabbit.nack).not.toHaveBeenCalled();
+    expect(rabbit.sendToQueue).not.toHaveBeenCalled();
+  });
+
+  test('consume callback: a held event blocks the queue — no ack, no nack, no later event until it succeeds', async () => {
+    await daemon.initialize();
+    const consumer = rabbit.consumerFor(QUEUE_NAME)!;
+
+    const processed: string[] = [];
+    let releaseHeld: () => void = () => {};
+    const held = new Promise<void>((resolve) => {
+      releaseHeld = resolve;
+    });
+    let firstAttempts = 0;
+
+    daoService.processVoteCast.mockImplementation(async (event: any) => {
+      if (event.data.proposalId === '1') {
+        firstAttempts += 1;
+        if (firstAttempts === 1) {
+          throw new AppError({ message: 'db down', statusCode: 503, code: 'SERVICE_UNAVAILABLE' });
+        }
+        await held;
+        processed.push('1');
+        return;
+      }
+      processed.push(event.data.proposalId);
+    });
+
+    const first = messageFor(blockchainEvent('Governance_VoteCast', { ...VOTE_CAST_DATA, proposalId: '1' }));
+    const second = messageFor(blockchainEvent('Governance_VoteCast', { ...VOTE_CAST_DATA, proposalId: '2' }));
+
+    const processingFirst = consumer(first);
+    await waitFor(() => firstAttempts >= 2);
+
+    // The next event arrives while the first one is still held mid-retry.
+    const processingSecond = consumer(second);
+    await sleep(30);
+
+    // Nothing acknowledged, nothing nacked: the queue is held and the second
+    // event is still waiting behind the first one.
     expect(rabbit.ack).not.toHaveBeenCalled();
-    // Non-transient failure with no retries recorded yet: nack without requeue,
-    // the broker dead-letters it to the retry queue.
-    expect(rabbit.nack).toHaveBeenCalledTimes(1);
-    expect(rabbit.nack).toHaveBeenCalledWith(message, false);
+    expect(rabbit.nack).not.toHaveBeenCalled();
+    expect(processed).toEqual([]);
+
+    releaseHeld();
+    await processingFirst;
+    await processingSecond;
+
+    // Strict order: the first event finished before the second started.
+    expect(processed).toEqual(['1', '2']);
+    expect(rabbit.acked).toEqual([first, second]);
+  });
+
+  test('consume callback: an unparseable payload is parked and acknowledged — the only non-blocking exception', async () => {
+    await daemon.initialize();
+    const consumer = rabbit.consumerFor(QUEUE_NAME)!;
+
+    const message: FakeConsumeMessage = {
+      content: Buffer.from('not-json'),
+      fields: { deliveryTag: 1 },
+      properties: { headers: {} },
+    };
+
+    await consumer(message);
+
+    expect(rabbit.sendToQueue).toHaveBeenCalledWith(
+      `${QUEUE_NAME}.parked`,
+      expect.objectContaining({ reason: 'Invalid payload (not a JSON event)', content: 'not-json' }),
+    );
+    expect(rabbit.ack).toHaveBeenCalledWith(message);
+    expect(rabbit.nack).not.toHaveBeenCalled();
+    for (const method of Object.values(daoService)) expect(method).not.toHaveBeenCalled();
   });
 });
