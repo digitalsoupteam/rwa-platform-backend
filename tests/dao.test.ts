@@ -412,7 +412,7 @@ describe("DAO Flow", () => {
             expect(typeof row.blockNumber).toBe("number");
         }
         console.log("[S1] stake/unstake mirror verified for", addr9);
-    }, 600000);
+    });
 
     test("S2: the proposer self-cancel is indexed as canceled with the canceller", async () => {
         const user1Governance = new ethers.Contract(GOVERNANCE_ADDRESS, GovernanceABI, user1);
@@ -432,7 +432,7 @@ describe("DAO Flow", () => {
         expect(proposal.state).toBe("canceled");
         expect(proposal.canceller.toLowerCase()).toBe(user1.address.toLowerCase());
         console.log("[S2] self-cancel indexed, canceller =", proposal.canceller);
-    }, 600000);
+    });
 
     test("S3: a proposal below the quorum stays pending", async () => {
         const user1Governance = new ethers.Contract(GOVERNANCE_ADDRESS, GovernanceABI, user1);
@@ -455,7 +455,7 @@ describe("DAO Flow", () => {
         expect(onChain.executed).toBe(false);
         expect(onChain.cancelled).toBe(false);
         console.log("[S3] below-quorum proposal stays pending");
-    }, 600000);
+    });
 
     test("S4: a timelock-queued treasury withdrawal executes and is indexed", async () => {
         // Lower the timelock delay for the test (impersonate governance), restore afterwards.
@@ -523,13 +523,13 @@ describe("DAO Flow", () => {
         expect(withdrawal.isNative).toBe(false);
 
         const holdAfter = await holdContract.balanceOf(user1.address);
-        expect(holdAfter - holdBefore).toBe(ethers.parseEther("1"));
+        expect((holdAfter - holdBefore).toString()).toBe(ethers.parseEther("1").toString());
         console.log("[S4] withdrawal executed and indexed: 1 HOLD ->", user1.address);
 
         // Restore the original delay and stop impersonating.
         await (await config.updateTimelockDelay(originalDelay)).wait();
         await provider.send("hardhat_stopImpersonatingAccount", [GOVERNANCE_ADDRESS]);
-    }, 900000);
+    });
 
     test("S5: a queued then cancelled timelock transaction is marked cancelled", async () => {
         await provider.send("hardhat_impersonateAccount", [GOVERNANCE_ADDRESS]);
@@ -569,7 +569,7 @@ describe("DAO Flow", () => {
         console.log("[S5] cancelled task indexed as cancelled");
 
         await provider.send("hardhat_stopImpersonatingAccount", [GOVERNANCE_ADDRESS]);
-    }, 600000);
+    });
 
     test("S6: a majority-against vote auto-cancels the proposal (contract as canceller)", async () => {
         // Account #10 joins to push votesAgainst over the quorum (8x1M + 1M = 9M >= 8.4M).
@@ -609,6 +609,6 @@ describe("DAO Flow", () => {
         expect(onChain.cancelled).toBe(true);
         expect(onChain.votesAgainst).toBeGreaterThanOrEqual(ethers.parseEther("8400000"));
         console.log("[S6] auto-cancel indexed, canceller =", proposal.canceller);
-    }, 900000);
+    });
 
 });
