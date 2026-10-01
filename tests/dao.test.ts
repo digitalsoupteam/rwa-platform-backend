@@ -1,9 +1,9 @@
-import { expect, test, describe, beforeAll, afterAll } from "bun:test";
+import { expect, test, describe, beforeAll } from "bun:test";
 import { ethers, HDNodeWallet, JsonRpcProvider, ContractFactory } from "ethers";
-import { TESTNET_RPC, PLATFORM_TOKEN_ADDRESS, DAO_STAKING_ADDRESS, GOVERNANCE_ADDRESS, FAUCET_ADDRESS } from "./utils/config";
+import { TESTNET_RPC, PLATFORM_TOKEN_ADDRESS, DAO_STAKING_ADDRESS, GOVERNANCE_ADDRESS, DEPLOYER_ADDRESS } from "./utils/config";
 import { makeGraphQLRequest } from "./utils/graphql/makeGraphQLRequest";
 import { authenticate } from "./utils/authenticate";
-import { requestGas, requestPlatform } from "./utils/requestTokens";
+import { requestGas } from "./utils/requestTokens";
 import {
   GET_PROPOSALS,
   GET_STAKING,
@@ -15,17 +15,16 @@ import {
 
 /**
  * TEST STAND REQUIREMENTS:
- * - Raise the testnet-faucet platform-token request limit to ~10,000,000
- *   (env TESTNET_FAUCET_PLATFORM_TOKEN_AMOUNT). user1 requests 1,000,000 tokens
- *   because the live Governance proposalThreshold is 1,000,000; keep the faucet funded.
- * - "Return all" is at the bottom of this file (afterAll): it always returns the platform
- *   tokens to the faucet wallet, even if the test failed. NOTE: a stake that cast a vote
- *   is locked until the proposal endTime (~7 days, DaoStaking voting lock) and cannot be
- *   unstaked before that date (the "return all" step warps the chain clock +7 days first).
- * - Mass voting: node accounts #1..#8 receive 1M platform tokens each from the deployer
- *   (account #0, the faucet wallet), stake them and vote FOR. Together with user1's 1M
- *   this reaches 9M >= the 8.4M quorum (40% of the 21M supply); the proposal
- *   auto-executes inside the 8th mass vote.
+ * - Platform tokens for user1/user2/mass voters come from the stand deployer account
+ *   (wired into the local `node` network via env keys). The test funds the deployer
+ *   itself at start by writing 15M directly into the token's ERC-7201 balance slot
+ *   (no mint — totalSupply stays 21M); no external bootstrap is needed. The faucet
+ *   serves gas only.
+ * - No cleanup by design: the test does NOT warp the chain clock and does NOT return
+ *   tokens. Stakes stay in DaoStaking, voting-locked until the proposal endTime (~7 days).
+ *   For a rerun, reset the stand: restart the node (the test re-funds the deployer).
+ * - Mass voting: node accounts #1..#8 receive platform tokens from the stand deployer,
+ *   stake them and vote FOR; the proposal auto-executes inside the 8th mass vote.
  */
 
 // ABIs based on the provided contracts
@@ -89,9 +88,57 @@ describe("DAO Flow", () => {
         daoStaking = new ethers.Contract(DAO_STAKING_ADDRESS, DaoStakingABI, user1);
         governance = new ethers.Contract(GOVERNANCE_ADDRESS, GovernanceABI, user1);
         
-        // Fund users with platform tokens via the faucet (tokens land on each authenticated user's wallet)
-        await requestPlatform(accessTokenUser1, 1000000); // live proposalThreshold is 1M
-        await requestPlatform(accessTokenUser2, 1000);
+        // Fund users with platform tokens from the stand deployer account (wired into the
+        // `node` network accounts via env keys; it holds the forked testnet token supply).
+        // The faucet keeps serving gas requests only.
+        const deployer = await provider.getSigner(DEPLOYER_ADDRESS);
+        const deployerToken = new ethers.Contract(PLATFORM_TOKEN_ADDRESS, PlatformTokenABI, deployer);
+
+        // Fund the deployer for the whole run by writing its PLATFORM balance directly
+        // into the ERC-7201 namespaced ERC20 storage slot of the token (no mint and no
+        // transfer — totalSupply stays 21M). The write overwrites any leftover balance
+        // with an exact 15M, so reruns on the same node start clean. Slot math is
+        // verified against the live balanceOf() before the write.
+        const DEPLOYER_FUND_AMOUNT = ethers.parseEther("15000000");
+        const erc7201Base = (namespace: string): bigint => {
+            const inner = ethers.AbiCoder.defaultAbiCoder().encode(
+                ["uint256"],
+                [BigInt(ethers.keccak256(ethers.toUtf8Bytes(namespace))) - 1n],
+            );
+            const hash = ethers.keccak256(inner).slice(2);
+            return BigInt("0x" + hash.slice(0, 62) + "00");
+        };
+        const deployerBalanceSlot = ethers.keccak256(
+            ethers.AbiCoder.defaultAbiCoder().encode(
+                ["address", "uint256"],
+                [deployer.address, erc7201Base("openzeppelin.storage.ERC20")],
+            ),
+        );
+        const liveDeployerBalance = await deployerToken.balanceOf(deployer.address);
+        const rawSlotValue = BigInt(
+            await provider.getStorage(PLATFORM_TOKEN_ADDRESS, deployerBalanceSlot),
+        );
+        if (rawSlotValue !== liveDeployerBalance) {
+            throw new Error(
+                `PLATFORM balance slot mismatch (slot=${rawSlotValue}, balanceOf=${liveDeployerBalance})`,
+            );
+        }
+        await provider.send("hardhat_setStorageAt", [
+            PLATFORM_TOKEN_ADDRESS,
+            deployerBalanceSlot,
+            "0x" + DEPLOYER_FUND_AMOUNT.toString(16).padStart(64, "0"),
+        ]);
+        const fundedDeployerBalance = await deployerToken.balanceOf(deployer.address);
+        if (fundedDeployerBalance !== DEPLOYER_FUND_AMOUNT) {
+            throw new Error(
+                `deployer funding failed (got ${fundedDeployerBalance}, expected ${DEPLOYER_FUND_AMOUNT})`,
+            );
+        }
+        console.log(`deployer funded: ${ethers.formatEther(fundedDeployerBalance)} PLATFORM`);
+
+        await (await deployerToken.transfer(user1.address, ethers.parseEther("1000000"))).wait();
+
+        await (await deployerToken.transfer(user2.address, ethers.parseEther("1000"))).wait();
 
         // User 1 stakes 1,000,000 tokens (>= live proposalThreshold, required to propose)
         const user1Staking = new ethers.Contract(DAO_STAKING_ADDRESS, DaoStakingABI, user1);
@@ -123,12 +170,10 @@ describe("DAO Flow", () => {
         const user2Governance = new ethers.Contract(GOVERNANCE_ADDRESS, GovernanceABI, user2);
         await (await user2Governance.vote(proposalId, false, "I do not support this.")).wait();
 
-        // Mass voting: reach the 40% quorum (8.4M out of the 21M total supply).
-        // Node accounts #1..#8 get 1M platform tokens each from the deployer (account #0,
-        // the same wallet the faucet uses), stake them and vote FOR. Together with user1's
-        // 1M this totals 9M, and the proposal auto-executes inside the 8th mass vote.
-        const funder = await provider.getSigner(0);
-        const funderToken = new ethers.Contract(PLATFORM_TOKEN_ADDRESS, PlatformTokenABI, funder);
+        // Mass voting: reach the quorum — node accounts #1..#8 get 1M platform tokens
+        // each from the same deployer, stake them and vote FOR; the proposal
+        // auto-executes inside the 8th mass vote.
+        const funderToken = deployerToken;
         for (let i = 1; i <= 8; i++) {
             const massSigner = await provider.getSigner(i);
             const massAddress = await massSigner.getAddress();
@@ -147,7 +192,7 @@ describe("DAO Flow", () => {
         }
 
         await new Promise(resolve => setTimeout(resolve, 15000));
-    }, 900000); // the full happy path (faucet + ~50 txs + indexing waits) needs minutes
+    }); // the full happy path (faucet + ~50 txs + indexing waits) needs minutes
 
     test("should get staking records", async () => {
         const massAddresses = await Promise.all(massVoters.map((voter) => voter.getAddress()));
@@ -265,49 +310,4 @@ describe("DAO Flow", () => {
         expect(result.data.getTreasuryWithdraws.length).toBe(0);
     });
 
-    // «Return all»: всегда возвращает платформенные токены на кран — срабатывает и при упавшем тесте
-    // (bun выполняет afterAll даже после падения beforeAll/тестов — проверено). Снимает стейк (если он
-    // не залочен голосованием) и шлёт весь баланс кошелька на FAUCET_ADDRESS. Перед возвратом время
-    // цепи сдвигается на votingPeriod (+7 дней), чтобы разлочить стейки, залоченные голосованием.
-    async function returnAllTokensToFaucet() {
-        try {
-            await provider.send("evm_increaseTime", [7 * 24 * 60 * 60 + 60]);
-            await provider.send("evm_mine", []);
-            console.log("[return] chain clock moved +7 days to unlock voted stakes");
-        } catch (error) {
-            console.error("[return] time warp failed:", error instanceof Error ? error.message : error);
-        }
-
-        const wallets: ethers.Signer[] = [user1, user2, ...massVoters];
-        const latestBlock = await provider.getBlock("latest");
-        const chainNow = Number(latestBlock?.timestamp ?? 0);
-        for (const wallet of wallets) {
-            const walletAddress = await wallet.getAddress();
-            try {
-                const staking = new ethers.Contract(DAO_STAKING_ADDRESS, DaoStakingABI, wallet);
-                const token = new ethers.Contract(PLATFORM_TOKEN_ADDRESS, PlatformTokenABI, wallet);
-
-                const staked = await staking.stakedAmount(walletAddress);
-                if (staked > BigInt(0)) {
-                    const lockUntil = Number(await staking.votingLockTimestamp(walletAddress));
-                    if (chainNow < lockUntil) {
-                        console.log(`[return] ${walletAddress}: стейк залочен голосованием до ${new Date(lockUntil * 1000).toISOString()} — раньше снять нельзя`);
-                        continue;
-                    }
-                    await (await staking.unstake(staked)).wait();
-                }
-
-                const balance = await token.balanceOf(walletAddress);
-                if (balance > BigInt(0)) {
-                    const tx = await token.transfer(FAUCET_ADDRESS, balance);
-                    await tx.wait();
-                    console.log(`[return] ${walletAddress}: вернул ${ethers.formatEther(balance)} токенов на кран ${FAUCET_ADDRESS} (${tx.hash})`);
-                }
-            } catch (error) {
-                console.error(`[return] ${walletAddress}: не удалось вернуть:`, error instanceof Error ? error.message : error);
-            }
-        }
-    }
-
-    afterAll(returnAllTokensToFaucet, 900000);
 });
