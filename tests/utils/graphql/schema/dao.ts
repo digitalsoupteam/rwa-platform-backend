@@ -6,6 +6,7 @@ export const GET_STAKING = gql`
       id
       staker
       amount
+      unlockTimestamp
       lastStakeTimestamp
       chainId
       createdAt
@@ -26,6 +27,8 @@ export const GET_PROPOSALS = gql`
       creationTime
       endTime
       state
+      executor
+      canceller
       chainId
       transactionHash
       logIndex
@@ -61,10 +64,12 @@ export const GET_STAKING_HISTORY = gql`
       id
       staker
       amount
+      rewards
       operation
       chainId
       transactionHash
       logIndex
+      blockNumber
       createdAt
       updatedAt
     }
@@ -80,7 +85,11 @@ export const GET_TIMELOCK_TASKS = gql`
       data
       eta
       executed
+      cancelled
       chainId
+      transactionHash
+      logIndex
+      blockNumber
       createdAt
       updatedAt
     }
@@ -93,6 +102,7 @@ export const GET_TREASURY_WITHDRAWS = gql`
       id
       recipient
       token
+      isNative
       amount
       chainId
       transactionHash

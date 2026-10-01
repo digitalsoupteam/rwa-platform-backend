@@ -1,6 +1,6 @@
 import { expect, test, describe, beforeAll } from "bun:test";
 import { ethers, HDNodeWallet, JsonRpcProvider, ContractFactory } from "ethers";
-import { TESTNET_RPC, PLATFORM_TOKEN_ADDRESS, DAO_STAKING_ADDRESS, GOVERNANCE_ADDRESS, DEPLOYER_ADDRESS } from "./utils/config";
+import { TESTNET_RPC, PLATFORM_TOKEN_ADDRESS, DAO_STAKING_ADDRESS, GOVERNANCE_ADDRESS, DEPLOYER_ADDRESS, TIMELOCK_ADDRESS, TREASURY_ADDRESS, HOLD_TOKEN_ADDRESS, CONFIG_ADDRESS } from "./utils/config";
 import { makeGraphQLRequest } from "./utils/graphql/makeGraphQLRequest";
 import { authenticate } from "./utils/authenticate";
 import { requestGas } from "./utils/requestTokens";
@@ -39,12 +39,14 @@ const DaoStakingABI = [
   "function unstake(uint256 amount) external",
   "function getVotingPower(address user) view returns (uint256)",
   "function votingLockTimestamp(address user) view returns (uint256)",
+  "function stakingTimestamp(address user) view returns (uint256)",
   "function stakedAmount(address user) view returns (uint256)"
 ];
 
 const GovernanceABI = [
   "function propose(address target, bytes memory data, string memory description) external returns (uint256 proposalId)",
   "function vote(uint256 proposalId, bool support, string memory reason) external",
+  "function cancel(uint256 proposalId) external",
   "function proposals(uint256) view returns (address proposer, address target, bytes data, string description, uint256 votesFor, uint256 votesAgainst, uint256 creationTime, uint256 endTime, bool executed, bool cancelled)"
 ];
 
@@ -309,5 +311,304 @@ describe("DAO Flow", () => {
         expect(result.data.getTreasuryWithdraws).toBeArray();
         expect(result.data.getTreasuryWithdraws.length).toBe(0);
     });
+
+    // --------------------------------------------------------------------
+    // Extended scenarios (S1-S6): the full DAO event lifecycle.
+    // The stakes above stay untouched; extra node accounts are used where an
+    // unlocked (never-voting) stake is required. S1 mirrors the chain values
+    // one-to-one (amount === stakedAmount, lastStakeTimestamp === stakingTimestamp).
+    // --------------------------------------------------------------------
+
+    const TimelockABI = [
+        "function queueTransaction(address target, bytes memory data, uint256 eta) external returns (bytes32)",
+        "function executeTransaction(address target, bytes memory data, uint256 eta) external",
+        "function cancelTransaction(address target, bytes memory data, uint256 eta) external"
+    ];
+    const TreasuryABI = [
+        "function withdrawERC20(address token, address to, uint256 amount) external"
+    ];
+    const ConfigABI = [
+        "function timelockDelay() view returns (uint256)",
+        "function updateTimelockDelay(uint256 newDelay) external"
+    ];
+
+    const indexWait = () => new Promise((resolve) => setTimeout(resolve, 15000));
+
+    async function waitForChainTime(targetTs: number, timeoutMs = 300000): Promise<void> {
+        const startedAt = Date.now();
+        for (;;) {
+            const block = await provider.getBlock("latest");
+            if (block && Number(block.timestamp) >= targetTs) return;
+            if (Date.now() - startedAt > timeoutMs) throw new Error("waitForChainTime: timed out");
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+    }
+
+    function getDaoStaking(signer: ethers.Signer) {
+        return new ethers.Contract(DAO_STAKING_ADDRESS, DaoStakingABI, signer);
+    }
+
+    function getPlatformToken(signer: ethers.Signer) {
+        return new ethers.Contract(PLATFORM_TOKEN_ADDRESS, PlatformTokenABI, signer);
+    }
+
+    async function readStakingRecord(staker: string) {
+        const result = await makeGraphQLRequest(GET_STAKING, {
+            input: { filter: { staker: { $eq: staker } } }
+        }, accessTokenUser1);
+        expect(result.errors).toBeUndefined();
+        return result.data.getStaking[0];
+    }
+
+    test("S1: the staking record mirrors the chain through stake, partial and full unstake", async () => {
+        // Account #9 never votes, so its stake is never voting-locked.
+        const wallet9 = await provider.getSigner(9);
+        const addr9 = await wallet9.getAddress();
+        const deployer = await provider.getSigner(DEPLOYER_ADDRESS);
+
+        await (await getPlatformToken(deployer).transfer(addr9, ethers.parseEther("150000"))).wait();
+        const token9 = getPlatformToken(wallet9);
+        await (await token9.approve(DAO_STAKING_ADDRESS, ethers.parseEther("100000"))).wait();
+        const staking9 = getDaoStaking(wallet9);
+        await (await staking9.stake(ethers.parseEther("100000"))).wait();
+        await indexWait();
+
+        const afterStake = await readStakingRecord(addr9);
+        // The stored amount is the absolute newVotingPower == the on-chain stakedAmount.
+        expect(afterStake.amount).toBe((await staking9.stakedAmount(addr9)).toString());
+        expect(afterStake.amount).toBe(ethers.parseEther("100000").toString());
+        // No votes yet -> no voting lock.
+        expect(afterStake.unlockTimestamp).toBe(0);
+        expect(afterStake.lastStakeTimestamp).toBe(Number(await staking9.stakingTimestamp(addr9)));
+
+        // Partial unstake: the remainder is reinvested and the contract resets
+        // stakingTimestamp, so lastStakeTimestamp moves with the block time.
+        await (await staking9.unstake(ethers.parseEther("40000"))).wait();
+        await indexWait();
+        const tsBeforeFullExit = afterStake.lastStakeTimestamp;
+        const afterPartial = await readStakingRecord(addr9);
+        expect(afterPartial.amount).toBe((await staking9.stakedAmount(addr9)).toString());
+        expect(afterPartial.amount).toBe(ethers.parseEther("60000").toString());
+        expect(afterPartial.lastStakeTimestamp).toBe(Number(await staking9.stakingTimestamp(addr9)));
+        expect(afterPartial.lastStakeTimestamp).toBeGreaterThanOrEqual(tsBeforeFullExit);
+
+        // Full exit: the amount zeroes out and lastStakeTimestamp is left untouched.
+        await (await staking9.unstake(ethers.parseEther("60000"))).wait();
+        await indexWait();
+        const afterFull = await readStakingRecord(addr9);
+        expect(afterFull.amount).toBe("0");
+        expect((await staking9.stakedAmount(addr9)).toString()).toBe("0");
+        expect(afterFull.lastStakeTimestamp).toBe(afterPartial.lastStakeTimestamp);
+
+        // History: staked + two unstakes, with rewards and block numbers.
+        const history = await makeGraphQLRequest(GET_STAKING_HISTORY, {
+            input: { filter: { staker: { $eq: addr9 } } }
+        }, accessTokenUser1);
+        expect(history.errors).toBeUndefined();
+        expect(history.data.getStakingHistory.length).toBe(3);
+        expect(history.data.getStakingHistory.map((h: any) => h.operation).sort()).toEqual(["staked", "unstaked", "unstaked"]);
+        for (const row of history.data.getStakingHistory) {
+            expect(typeof row.rewards).toBe("string");
+            expect(typeof row.blockNumber).toBe("number");
+        }
+        console.log("[S1] stake/unstake mirror verified for", addr9);
+    }, 600000);
+
+    test("S2: the proposer self-cancel is indexed as canceled with the canceller", async () => {
+        const user1Governance = new ethers.Contract(GOVERNANCE_ADDRESS, GovernanceABI, user1);
+        const s2Id = (await user1Governance.propose.staticCall(user1.address, "0x", "S2 self-cancel")).toString();
+        await (await user1Governance.propose(user1.address, "0x", "S2 self-cancel")).wait();
+        await indexWait();
+
+        await (await user1Governance.cancel(s2Id)).wait();
+        await indexWait();
+
+        const result = await makeGraphQLRequest(GET_PROPOSALS, {
+            input: { filter: { proposalId: { $eq: s2Id } } }
+        }, accessTokenUser1);
+        expect(result.errors).toBeUndefined();
+        expect(result.data.getProposals.length).toBe(1);
+        const proposal = result.data.getProposals[0];
+        expect(proposal.state).toBe("canceled");
+        expect(proposal.canceller.toLowerCase()).toBe(user1.address.toLowerCase());
+        console.log("[S2] self-cancel indexed, canceller =", proposal.canceller);
+    }, 600000);
+
+    test("S3: a proposal below the quorum stays pending", async () => {
+        const user1Governance = new ethers.Contract(GOVERNANCE_ADDRESS, GovernanceABI, user1);
+        const user2Governance = new ethers.Contract(GOVERNANCE_ADDRESS, GovernanceABI, user2);
+
+        const s3Id = (await user1Governance.propose.staticCall(user1.address, "0x", "S3 below quorum")).toString();
+        await (await user1Governance.propose(user1.address, "0x", "S3 below quorum")).wait();
+        await indexWait();
+
+        await (await user2Governance.vote(s3Id, true, "tiny support")).wait();
+        await indexWait();
+
+        const result = await makeGraphQLRequest(GET_PROPOSALS, {
+            input: { filter: { proposalId: { $eq: s3Id } } }
+        }, accessTokenUser1);
+        expect(result.errors).toBeUndefined();
+        expect(result.data.getProposals[0].state).toBe("pending");
+
+        const onChain = await governance.proposals(s3Id);
+        expect(onChain.executed).toBe(false);
+        expect(onChain.cancelled).toBe(false);
+        console.log("[S3] below-quorum proposal stays pending");
+    }, 600000);
+
+    test("S4: a timelock-queued treasury withdrawal executes and is indexed", async () => {
+        // Lower the timelock delay for the test (impersonate governance), restore afterwards.
+        await provider.send("hardhat_impersonateAccount", [GOVERNANCE_ADDRESS]);
+        await provider.send("hardhat_setBalance", [GOVERNANCE_ADDRESS, "0x" + ethers.parseEther("1").toString(16)]);
+        // HH3: hardhat_impersonateAccount does not list the address in eth_accounts, so
+        // provider.getSigner() rejects it; build the JSON-RPC signer directly instead.
+        const govSigner = new ethers.JsonRpcSigner(provider, GOVERNANCE_ADDRESS);
+        const config = new ethers.Contract(CONFIG_ADDRESS, ConfigABI, govSigner);
+        const originalDelay = await config.timelockDelay();
+        await (await config.updateTimelockDelay(60)).wait();
+        console.log("[S4] timelockDelay lowered:", originalDelay.toString(), "-> 60");
+
+        const timelock = new ethers.Contract(TIMELOCK_ADDRESS, TimelockABI, user1);
+        const treasuryIface = new ethers.Interface(TreasuryABI);
+        const withdrawData = treasuryIface.encodeFunctionData("withdrawERC20", [
+            HOLD_TOKEN_ADDRESS, user1.address, ethers.parseEther("1")
+        ]);
+
+        const latest = await provider.getBlock("latest");
+        const eta = Number(latest!.timestamp) + 220;
+        const queueData = timelock.interface.encodeFunctionData("queueTransaction", [TREASURY_ADDRESS, withdrawData, eta]);
+
+        const user1Governance = new ethers.Contract(GOVERNANCE_ADDRESS, GovernanceABI, user1);
+        const s4Id = (await user1Governance.propose.staticCall(TIMELOCK_ADDRESS, queueData, "S4 treasury via timelock")).toString();
+        await (await user1Governance.propose(TIMELOCK_ADDRESS, queueData, "S4 treasury via timelock")).wait();
+        await indexWait();
+
+        // user1 + the 8 mass voters reach the quorum; the execution queues the tx in the timelock.
+        await (await user1Governance.vote(s4Id, true, "S4 for")).wait();
+        for (const massSigner of massVoters) {
+            const massGovernance = new ethers.Contract(GOVERNANCE_ADDRESS, GovernanceABI, massSigner);
+            await (await massGovernance.vote(s4Id, true, "S4 mass")).wait();
+        }
+        await indexWait();
+
+        const queued = await makeGraphQLRequest(GET_TIMELOCK_TASKS, {}, accessTokenUser1);
+        expect(queued.errors).toBeUndefined();
+        expect(queued.data.getTimelockTasks.length).toBe(1);
+        const task = queued.data.getTimelockTasks[0];
+        expect(task.executed).toBe(false);
+        expect(task.cancelled).toBe(false);
+        expect(task.eta).toBe(eta);
+        expect(task.target.toLowerCase()).toBe(TREASURY_ADDRESS.toLowerCase());
+        console.log("[S4] queued task indexed, eta =", eta);
+
+        // Wait for the eta and execute; anyone may call the timelock.
+        await waitForChainTime(eta);
+        const holdContract = new ethers.Contract(HOLD_TOKEN_ADDRESS, PlatformTokenABI, user1);
+        const holdBefore = await holdContract.balanceOf(user1.address);
+        await (await timelock.executeTransaction(TREASURY_ADDRESS, withdrawData, eta)).wait();
+        await indexWait();
+
+        const after = await makeGraphQLRequest(GET_TIMELOCK_TASKS, {}, accessTokenUser1);
+        expect(after.data.getTimelockTasks[0].executed).toBe(true);
+        expect(after.data.getTimelockTasks[0].cancelled).toBe(false);
+
+        const withdraws = await makeGraphQLRequest(GET_TREASURY_WITHDRAWS, {}, accessTokenUser1);
+        expect(withdraws.errors).toBeUndefined();
+        expect(withdraws.data.getTreasuryWithdraws.length).toBe(1);
+        const withdrawal = withdraws.data.getTreasuryWithdraws[0];
+        expect(withdrawal.recipient.toLowerCase()).toBe(user1.address.toLowerCase());
+        expect(withdrawal.token.toLowerCase()).toBe(HOLD_TOKEN_ADDRESS.toLowerCase());
+        expect(withdrawal.amount).toBe(ethers.parseEther("1").toString());
+        expect(withdrawal.isNative).toBe(false);
+
+        const holdAfter = await holdContract.balanceOf(user1.address);
+        expect(holdAfter - holdBefore).toBe(ethers.parseEther("1"));
+        console.log("[S4] withdrawal executed and indexed: 1 HOLD ->", user1.address);
+
+        // Restore the original delay and stop impersonating.
+        await (await config.updateTimelockDelay(originalDelay)).wait();
+        await provider.send("hardhat_stopImpersonatingAccount", [GOVERNANCE_ADDRESS]);
+    }, 900000);
+
+    test("S5: a queued then cancelled timelock transaction is marked cancelled", async () => {
+        await provider.send("hardhat_impersonateAccount", [GOVERNANCE_ADDRESS]);
+        await provider.send("hardhat_setBalance", [GOVERNANCE_ADDRESS, "0x" + ethers.parseEther("1").toString(16)]);
+        // HH3: hardhat_impersonateAccount does not list the address in eth_accounts, so
+        // provider.getSigner() rejects it; build the JSON-RPC signer directly instead.
+        const govSigner = new ethers.JsonRpcSigner(provider, GOVERNANCE_ADDRESS);
+
+        const timelock = new ethers.Contract(TIMELOCK_ADDRESS, TimelockABI, govSigner);
+        const treasuryIface = new ethers.Interface(TreasuryABI);
+        const withdrawData = treasuryIface.encodeFunctionData("withdrawERC20", [
+            HOLD_TOKEN_ADDRESS, user2.address, ethers.parseEther("2")
+        ]);
+        const latest = await provider.getBlock("latest");
+        const eta = Number(latest!.timestamp) + 200000; // far away: the tx is queued and cancelled, never executed
+
+        await (await timelock.queueTransaction(TREASURY_ADDRESS, withdrawData, eta)).wait();
+        await indexWait();
+
+        const queued = await makeGraphQLRequest(GET_TIMELOCK_TASKS, {}, accessTokenUser1);
+        const s5Task = queued.data.getTimelockTasks.find((t: any) => t.eta === eta);
+        expect(s5Task).toBeDefined();
+        expect(s5Task.cancelled).toBe(false);
+        expect(s5Task.executed).toBe(false);
+
+        await (await timelock.cancelTransaction(TREASURY_ADDRESS, withdrawData, eta)).wait();
+        await indexWait();
+
+        const after = await makeGraphQLRequest(GET_TIMELOCK_TASKS, {}, accessTokenUser1);
+        const cancelledTask = after.data.getTimelockTasks.find((t: any) => t.eta === eta);
+        expect(cancelledTask.cancelled).toBe(true);
+        expect(cancelledTask.executed).toBe(false);
+
+        // The cancelled withdrawal never executed: only S4's withdrawal exists.
+        const withdraws = await makeGraphQLRequest(GET_TREASURY_WITHDRAWS, {}, accessTokenUser1);
+        expect(withdraws.data.getTreasuryWithdraws.length).toBe(1);
+        console.log("[S5] cancelled task indexed as cancelled");
+
+        await provider.send("hardhat_stopImpersonatingAccount", [GOVERNANCE_ADDRESS]);
+    }, 600000);
+
+    test("S6: a majority-against vote auto-cancels the proposal (contract as canceller)", async () => {
+        // Account #10 joins to push votesAgainst over the quorum (8x1M + 1M = 9M >= 8.4M).
+        const wallet10 = await provider.getSigner(10);
+        const addr10 = await wallet10.getAddress();
+        const deployer = await provider.getSigner(DEPLOYER_ADDRESS);
+
+        await (await getPlatformToken(deployer).transfer(addr10, ethers.parseEther("1000000"))).wait();
+        const token10 = getPlatformToken(wallet10);
+        await (await token10.approve(DAO_STAKING_ADDRESS, ethers.parseEther("1000000"))).wait();
+        await (await getDaoStaking(wallet10).stake(ethers.parseEther("1000000"))).wait();
+
+        const user1Governance = new ethers.Contract(GOVERNANCE_ADDRESS, GovernanceABI, user1);
+        const s6Id = (await user1Governance.propose.staticCall(user1.address, "0x", "S6 auto-cancel")).toString();
+        await (await user1Governance.propose(user1.address, "0x", "S6 auto-cancel")).wait();
+        await indexWait();
+
+        await (await user1Governance.vote(s6Id, true, "S6 lone for")).wait();
+        for (const massSigner of massVoters) {
+            const massGovernance = new ethers.Contract(GOVERNANCE_ADDRESS, GovernanceABI, massSigner);
+            await (await massGovernance.vote(s6Id, false, "S6 mass against")).wait();
+        }
+        const gov10 = new ethers.Contract(GOVERNANCE_ADDRESS, GovernanceABI, wallet10);
+        await (await gov10.vote(s6Id, false, "S6 tipping against")).wait();
+        await indexWait();
+
+        const result = await makeGraphQLRequest(GET_PROPOSALS, {
+            input: { filter: { proposalId: { $eq: s6Id } } }
+        }, accessTokenUser1);
+        expect(result.errors).toBeUndefined();
+        expect(result.data.getProposals.length).toBe(1);
+        const proposal = result.data.getProposals[0];
+        expect(proposal.state).toBe("canceled");
+        expect(proposal.canceller.toLowerCase()).toBe(GOVERNANCE_ADDRESS.toLowerCase());
+
+        const onChain = await governance.proposals(s6Id);
+        expect(onChain.cancelled).toBe(true);
+        expect(onChain.votesAgainst).toBeGreaterThanOrEqual(ethers.parseEther("8400000"));
+        console.log("[S6] auto-cancel indexed, canceller =", proposal.canceller);
+    }, 900000);
 
 });
