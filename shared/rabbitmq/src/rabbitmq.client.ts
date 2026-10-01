@@ -72,8 +72,12 @@ export class RabbitMQClient {
       },
     });
 
-    this.channelWrapper.on('error', (error: Error, { name }: { name: string }) =>
-      logger.error(`RabbitMQ channel error (${name}): ${error?.message ?? error}`),
+    // The ChannelWrapper typings promise an info object, but some runtime
+    // paths emit 'error' with the error only (e.g. `this.emit('error', err)`
+    // in consumer reconnects), so the context must stay optional to avoid an
+    // unhandled TypeError inside the listener.
+    this.channelWrapper.on('error', (error: Error, info?: { name?: string }) =>
+      logger.error(`RabbitMQ channel error (${info?.name ?? 'unknown'}): ${error?.message ?? error}`),
     );
   }
 
