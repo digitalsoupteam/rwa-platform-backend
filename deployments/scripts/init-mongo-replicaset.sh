@@ -1,7 +1,9 @@
 #!/bin/bash
 #
 # One-shot initializer for the MongoDB replica set `rs0`
-# (members: mongodb, mongodb-2, mongodb-3).
+# (members: mongodb, mongodb-2, mongodb-3). Run from git-bash / Linux.
+# `bun run app:up` performs the same steps via `deployments/scripts/app-up.ts`
+# and additionally works from any shell (PowerShell, cmd, ...).
 #
 # Deliberately NOT part of docker-compose.yml: this step runs over the plain
 # Docker CLI, and the helper container is removed right after it exits
@@ -13,9 +15,11 @@
 #
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # All docker commands below run from the compose directory: the Docker CLI
 # resolves the compose file natively there, and the compose project name stays stable.
-cd "$(dirname "${BASH_SOURCE[0]}")/../../infrastructure/docker"
+cd "$SCRIPT_DIR/../../infrastructure/docker"
 if [ ! -f docker-compose.yml ]; then
     echo "❌ docker-compose.yml not found in $(pwd)" >&2
     exit 1
@@ -43,32 +47,8 @@ echo "network: $NETWORK"
 
 # 3. One-shot helper container: creates the set on the first run, adds missing
 #    members on later runs, and exits 0 as soon as the set reports READY.
-docker run --rm -i --network "$NETWORK" mongo:latest bash -s <<'INIT_SCRIPT'
-for i in $(seq 1 40); do
-  mongosh --host mongodb --quiet --eval '
-    try {
-      const st = rs.status();
-      const want = ["mongodb:27017", "mongodb-2:27017", "mongodb-3:27017"];
-      const have = st.members.map(m => m.name);
-      for (const w of want) { if (!have.includes(w)) { rs.add(w); print("ADDED " + w); } }
-    } catch (e) {
-      rs.initiate({ _id: "rs0", members: [
-        { _id: 0, host: "mongodb:27017" },
-        { _id: 1, host: "mongodb-2:27017" },
-        { _id: 2, host: "mongodb-3:27017" }
-      ]});
-      print("INITIATED");
-    }
-  ' 2>/dev/null
-  out=$(mongosh --host mongodb --quiet --eval '
-    try { const s = rs.status(); print(s.ok === 1 && s.members.length >= 3 ? "READY" : "WAIT"); } catch (e) { print("WAIT"); }
-  ' 2>/dev/null | tail -1)
-  echo "mongo replica set attempt $i: $out"
-  if [ "$out" = "READY" ]; then exit 0; fi
-  sleep 3
-done
-exit 1
-INIT_SCRIPT
+#    The in-container logic lives in init-mongo-container.sh (shared with app-up.ts).
+docker run --rm -i --network "$NETWORK" mongo:latest bash -s < "$SCRIPT_DIR/init-mongo-container.sh"
 
 echo "--------------------------------------------------"
 echo "✅ MongoDB replica set rs0 is ready"

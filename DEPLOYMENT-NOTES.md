@@ -85,9 +85,8 @@ Put the certificate files on the host and point `NGINX_HOST_SSL_CERT_PATH` / `NG
 ## Step 5: Start the Infrastructure
 ```bash
 bun run app:up
-./deployments/scripts/init-mongo-replicaset.sh
 ```
-*The second command initializes the MongoDB replica set `rs0` (on the first run) or just verifies it is ready (on later runs). It runs over the Docker CLI with a one-shot helper container that is removed automatically — nothing stays in the stack.*
+*`app:up` starts the stack in the correct order, from any shell (PowerShell, cmd, git-bash): it brings the MongoDB members up, initializes/verifies the replica set `rs0` via a one-shot helper container that is removed automatically (nothing stays in the stack), waits until all members are healthy, and only then starts the rest of the stack. The order matters: before the set exists the members never pass their healthcheck and Docker Compose fail-fasts on the unhealthy dependency. Idempotent — safe on a fresh volume and on a running stack. To (re)initialize MongoDB only: `./deployments/scripts/init-mongo-replicaset.sh` (git-bash / Linux).*
 
 ## Step 6: Import Uptime Kuma Configuration
 Upon first run, you must manually import the monitoring configuration:
@@ -111,36 +110,3 @@ Creates an archive of databases, configs, and SSL:
 ```bash
 ./deployments/scripts/backup.sh
 ```
-
----
-
-## 🪝 Webhooks Service Upgrade (one-time, existing environments)
-
-1.  **Recreate the events queue.** The webhooks consumer now declares
-    `webhooks.events.webhooks` with dead-letter configuration, and RabbitMQ
-    queue arguments are immutable. In RabbitMQ Management UI → Queues, delete
-    `webhooks.events.webhooks` once before starting the new version — it will
-    be re-created automatically with the new arguments.
-2.  **Update legacy subscriptions.** Endpoints subscribed to removed event
-    types (`pool.created`, `pool.staked`, `business.created`, `vote.cast`, …)
-    stay readable but never fire. Re-subscribe them to the current events:
-    `pool.deployed`, `business.deployed`. New/updated subscriptions are
-    validated against this list.
-3.  **Receiver-side signature check.** Deliveries are signed per the Standard
-    Webhooks scheme (`webhook-id`, `webhook-timestamp`,
-    `webhook-signature: v1,<base64>`), computed over
-    `<id>.<timestamp>.<raw body>`; new endpoint secrets use the `whsec_…`
-    format. Verify the signature and reject timestamps older than ~5 minutes.
-
-## 🔁 Queue Reliability Upgrade (one-time, existing environments)
-
-All queue consumers now share one reliability contract (retries with broker
-delays + park queues for failed messages). The following existing queues
-changed their arguments and must be **recreated once** before the first start
-of the upgraded services (RabbitMQ queue arguments are immutable):
-
-- `webhooks.events.webhooks` (see the webhooks section above),
-- `evaluation.requests`, `evaluation.results`, `sign.responses`.
-
-The retry/parked queues (`<queue>.retry`, `<queue>.parked`, retry exchanges)
-are new and are created automatically. Fresh stands need no manual steps.
