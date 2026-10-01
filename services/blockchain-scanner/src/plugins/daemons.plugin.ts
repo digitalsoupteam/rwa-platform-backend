@@ -12,6 +12,7 @@ export const createDaemonsPlugin = async (
   scanIntervalMs: number,
   batchSize: number,
   chainId: number,
+  initScanBlockNumber: number,
 ) => {
   const blockchainScanner = withTraceSync(
     'blockchain-scanner.init.daemons.blockchain_scanner',
@@ -23,6 +24,7 @@ export const createDaemonsPlugin = async (
         scanIntervalMs,
         batchSize,
         chainId,
+        initScanBlockNumber,
         servicesPlugin.decorator.blockchainScannerService,
       ),
   );

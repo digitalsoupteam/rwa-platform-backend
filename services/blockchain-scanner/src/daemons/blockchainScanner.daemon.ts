@@ -32,6 +32,7 @@ export class BlockchainScannerDaemon {
     private scanIntervalMs: number,
     private batchSize: number,
     private chainId: number,
+    private initScanBlockNumber: number,
     private scannerService: BlockchainScannerService,
   ) {
     this.provider = new ethers.JsonRpcProvider(rpcUrl);
@@ -58,7 +59,13 @@ export class BlockchainScannerDaemon {
 
       this.lastProcessedBlock = await this.scannerService.getLastProcessedBlock();
       if (this.lastProcessedBlock === 0) {
-        this.lastProcessedBlock = (await this.getGenesisBlock()) - 1;
+        // No stored state: an explicit initScanBlockNumber (env) wins over the emitter genesis block.
+        if (Number.isInteger(this.initScanBlockNumber) && this.initScanBlockNumber > 0) {
+          this.lastProcessedBlock = this.initScanBlockNumber - 1;
+          logger.info(`No stored scanner state, starting scan from INIT_SCAN_BLOCK_NUMBER=${this.initScanBlockNumber}`);
+        } else {
+          this.lastProcessedBlock = (await this.getGenesisBlock()) - 1;
+        }
       }
     } catch (error) {
       throw new AppError({

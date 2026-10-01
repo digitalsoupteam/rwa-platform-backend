@@ -131,7 +131,7 @@ function rwaDeployedLog(blockNumber: number, index: number, entityId: string, bl
   });
 }
 
-function buildHarness() {
+function buildHarness(initScanBlockNumber: number = 0) {
   const events = createFakeEventRepository();
   const scannerState = createFakeScannerStateRepository();
   const rabbitMQClient = createFakeRabbitMQClient();
@@ -154,6 +154,7 @@ function buildHarness() {
     SCAN_INTERVAL_MS,
     BATCH_SIZE,
     CHAIN_ID,
+    initScanBlockNumber,
     service,
   );
 
@@ -216,6 +217,40 @@ describe('BlockchainScannerDaemon (unit, fake provider/contract + fake repositor
 
     expect(internals.lastProcessedBlock).toBe(500);
     expect(contract.genesisBlock).toHaveBeenCalledTimes(0);
+  });
+
+  test('initialize: starts from initScanBlockNumber when no state is stored yet', async () => {
+    ({ daemon, internals, provider, scannerState, contract } = buildHarness(5000));
+
+    await daemon.initialize();
+
+    // The first scanned block is initScanBlockNumber itself, so the cursor is one behind it.
+    expect(provider.getNetwork).toHaveBeenCalledTimes(1);
+    expect(scannerState.getLastScannedBlock).toHaveBeenCalledWith(CHAIN_ID);
+    expect(contract.genesisBlock).toHaveBeenCalledTimes(0);
+    expect(internals.lastProcessedBlock).toBe(4999);
+  });
+
+  test('initialize: initScanBlockNumber does not override the stored scanner state', async () => {
+    ({ daemon, internals, scannerState, contract } = buildHarness(5000));
+    seedScannerState(scannerState, 500);
+
+    await daemon.initialize();
+
+    expect(internals.lastProcessedBlock).toBe(500);
+    expect(contract.genesisBlock).toHaveBeenCalledTimes(0);
+  });
+
+  test('initialize: zero, negative or non-integer initScanBlockNumber falls back to the genesis block', async () => {
+    for (const invalidValue of [0, -5, 12.5, Number.NaN]) {
+      ({ daemon, internals, contract } = buildHarness(invalidValue));
+      contract.state.genesisBlock = GENESIS_BLOCK;
+
+      await daemon.initialize();
+
+      expect(contract.genesisBlock).toHaveBeenCalledTimes(1);
+      expect(internals.lastProcessedBlock).toBe(Number(GENESIS_BLOCK) - 1);
+    }
   });
 
   test('initialize: a provider chain id mismatch is wrapped into BLOCKCHAIN_ERROR', async () => {

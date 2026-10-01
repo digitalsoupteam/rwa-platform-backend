@@ -21,6 +21,7 @@ export async function createApp(
   scanIntervalMs: number,
   batchSize: number,
   chainId: number,
+  initScanBlockNumber: number,
 ) {
   const repositoriesPlugin = await withTraceAsync(
     'blockchain-scanner.init.repositories_plugin',
@@ -51,6 +52,7 @@ export async function createApp(
         scanIntervalMs,
         batchSize,
         chainId,
+        initScanBlockNumber,
       ),
   );
 
