@@ -12,6 +12,11 @@ const stakingHistorySchemaDefinition = {
     type: mongoose.Schema.Types.Decimal128,
     required: true,
   },
+  /** Rewards received with an unstake (TokensUnstaked.rewardsReceived); 0 for stakes. */
+  rewards: {
+    type: mongoose.Schema.Types.Decimal128,
+    default: () => mongoose.Types.Decimal128.fromString('0'),
+  },
   operation: {
     type: String,
     required: true,
@@ -30,6 +35,10 @@ const stakingHistorySchemaDefinition = {
     trim: true,
   },
   logIndex: {
+    type: Number,
+    required: true,
+  },
+  blockNumber: {
     type: Number,
     required: true,
   },

@@ -60,10 +60,12 @@ const VOTE = {
 const STAKING_HISTORY = {
   staker: '0xBob',
   amount: '250',
+  rewards: '0',
   operation: 'staked' as const,
   chainId: '1',
   transactionHash: '0xtx4',
   logIndex: 1,
+  blockNumber: 123_456,
 };
 
 const TIMELOCK_TASK = {
@@ -72,6 +74,9 @@ const TIMELOCK_TASK = {
   data: '0xdeadbeef',
   eta: 1_700_090_000,
   chainId: '1',
+  transactionHash: '0xtx6',
+  logIndex: 3,
+  blockNumber: 123_456,
 };
 
 const TREASURY_WITHDRAWAL = {
@@ -218,9 +223,11 @@ describe('dao HTTP layer (component, fake repositories)', () => {
     expect(response.body[0]).toMatchObject({
       staker: '0xBob',
       amount: '250',
+      rewards: '0',
       operation: 'staked',
       chainId: '1',
       transactionHash: '0xtx4',
+      blockNumber: 123_456,
     });
     expect(response.body[0]).not.toHaveProperty('_id');
   });
@@ -236,9 +243,13 @@ describe('dao HTTP layer (component, fake repositories)', () => {
       target: '0xTreasury',
       eta: 1_700_090_000,
       executed: false,
+      cancelled: false,
+      transactionHash: '0xtx6',
+      logIndex: 3,
+      blockNumber: 123_456,
     });
 
-    await timelockTasks.updateExecuted('0xtimelock1', true);
+    await timelockTasks.updateExecuted('1', '0xtimelock1', true);
 
     const executed = await post(app, '/getTimelockTasks', {});
     expect(executed.status).toBe(200);
@@ -255,15 +266,16 @@ describe('dao HTTP layer (component, fake repositories)', () => {
     expect(response.body[0]).toMatchObject({
       recipient: '0xBob',
       token: '0xToken',
+      isNative: false,
       amount: '500',
       chainId: '1',
       transactionHash: '0xtx8',
     });
   });
 
-  test('getStaking: staked amounts are aggregated per staker', async () => {
-    await staking.addStake('0xBob', '1', '100', 1_700_000_000);
-    await staking.addStake('0xBob', '1', '50.5', 1_700_000_100);
+  test('getStaking: the record exposes the mirrored amount and the lock timestamp', async () => {
+    await staking.setAmount('0xBob', '1', '150.5', 1_700_000_100);
+    await staking.setUnlockTimestamp('0xBob', '1', 1_700_086_400);
 
     const response = await post(app, '/getStaking', { filter: { staker: '0xBob' } });
 
@@ -272,6 +284,7 @@ describe('dao HTTP layer (component, fake repositories)', () => {
     expect(response.body[0]).toMatchObject({
       staker: '0xBob',
       amount: '150.5',
+      unlockTimestamp: 1_700_086_400,
       lastStakeTimestamp: 1_700_000_100,
       chainId: '1',
     });

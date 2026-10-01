@@ -16,12 +16,19 @@ export type FakeTimelockTaskDoc = {
   data: string;
   eta: number;
   executed: boolean;
+  cancelled: boolean;
   chainId: string;
+  transactionHash: string;
+  logIndex: number;
+  blockNumber: number;
   createdAt: number;
   updatedAt: number;
 };
 
-export type CreateTimelockTaskInput = Omit<FakeTimelockTaskDoc, '_id' | 'createdAt' | 'updatedAt' | 'executed'>;
+export type CreateTimelockTaskInput = Omit<
+  FakeTimelockTaskDoc,
+  '_id' | 'createdAt' | 'updatedAt' | 'executed' | 'cancelled'
+>;
 
 function matchesFilter(doc: Record<string, unknown>, filter: Record<string, unknown>): boolean {
   // Equality matching is enough for the filters used by tests ({ txHash }, { chainId }, ...).
@@ -42,6 +49,7 @@ export function createFakeTimelockTaskRepository() {
       const doc: FakeTimelockTaskDoc = {
         _id: new Types.ObjectId(),
         executed: false, // schema default, same as TimelockTaskEntity
+        cancelled: false, // schema default, same as TimelockTaskEntity
         createdAt: timestamp,
         updatedAt: timestamp,
         ...data,
@@ -50,12 +58,22 @@ export function createFakeTimelockTaskRepository() {
       return doc;
     }),
 
-    updateExecuted: mock(async (txHash: string, executed: boolean = true) => {
+    updateExecuted: mock(async (chainId: string, txHash: string, executed: boolean = true) => {
       // Mirrors findOneAndUpdate without upsert: an unknown txHash resolves to null.
       const doc = store.get(txHash);
-      if (!doc) return null;
+      if (!doc || doc.chainId !== chainId) return null;
 
       const next: FakeTimelockTaskDoc = { ...doc, executed, updatedAt: now() };
+      store.set(txHash, next);
+      return next;
+    }),
+
+    updateCancelled: mock(async (chainId: string, txHash: string) => {
+      // Mirrors findOneAndUpdate without upsert: an unknown txHash resolves to null.
+      const doc = store.get(txHash);
+      if (!doc || doc.chainId !== chainId) return null;
+
+      const next: FakeTimelockTaskDoc = { ...doc, cancelled: true, updatedAt: now() };
       store.set(txHash, next);
       return next;
     }),

@@ -4,6 +4,7 @@ type Staking {
   id: ID!
   staker: String!
   amount: String!
+  unlockTimestamp: Float!
   lastStakeTimestamp: Float!
   chainId: String!
   createdAt: Float!
@@ -20,6 +21,8 @@ type Proposal {
   creationTime: Float!
   endTime: Float!
   state: String!
+  executor: String
+  canceller: String
   chainId: String!
   transactionHash: String!
   logIndex: Float!
@@ -47,10 +50,12 @@ type StakingHistory {
   id: ID!
   staker: String!
   amount: String!
+  rewards: String!
   operation: String!
   chainId: String!
   transactionHash: String!
   logIndex: Float!
+  blockNumber: Float
   createdAt: Float!
   updatedAt: Float!
 }
@@ -62,7 +67,11 @@ type TimelockTask {
   data: String!
   eta: Float!
   executed: Boolean!
+  cancelled: Boolean!
   chainId: String!
+  transactionHash: String
+  logIndex: Float
+  blockNumber: Float
   createdAt: Float!
   updatedAt: Float!
 }
@@ -71,6 +80,7 @@ type TreasuryWithdraw {
   id: ID!
   recipient: String!
   token: String!
+  isNative: Boolean!
   amount: String!
   chainId: String!
   transactionHash: String!

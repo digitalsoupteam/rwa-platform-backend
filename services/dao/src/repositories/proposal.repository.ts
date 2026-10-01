@@ -27,12 +27,17 @@ export class ProposalRepository {
   }
 
   @TraceDecorator()
-  async updateState(proposalId: string, state: 'pending' | 'executed' | 'canceled') {
+  async updateState(
+    proposalId: string,
+    state: 'pending' | 'executed' | 'canceled',
+    extra: Partial<Pick<IProposalEntity, 'executor' | 'canceller'>> = {},
+  ) {
     const doc = await this.model
       .findOneAndUpdate(
         { proposalId },
         {
           state,
+          ...extra,
           updatedAt: Math.floor(Date.now() / 1000),
         },
         { new: true },

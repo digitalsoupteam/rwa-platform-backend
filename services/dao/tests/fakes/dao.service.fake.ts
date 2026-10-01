@@ -15,6 +15,7 @@ export function createFakeDaoService() {
     processVoteCast: mock(async (_event: unknown): Promise<void> => {}),
     processTokensStaked: mock(async (_event: unknown): Promise<void> => {}),
     processTokensUnstaked: mock(async (_event: unknown): Promise<void> => {}),
+    processTokensLocked: mock(async (_event: unknown): Promise<void> => {}),
     processTransactionQueued: mock(async (_event: unknown): Promise<void> => {}),
     processTransactionExecuted: mock(async (_event: unknown): Promise<void> => {}),
     processTransactionCancelled: mock(async (_event: unknown): Promise<void> => {}),

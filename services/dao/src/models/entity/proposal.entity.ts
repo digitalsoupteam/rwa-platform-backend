@@ -39,6 +39,16 @@ const proposalSchemaDefinition = {
     enum: ProposalStateList,
     default: 'pending',
   },
+  /** Who auto-executed (the Governance contract) - Governance_ProposalExecuted. */
+  executor: {
+    type: String,
+    trim: true,
+  },
+  /** Who cancelled: the proposer (manual, <=12h) or the Governance contract (votes against). */
+  canceller: {
+    type: String,
+    trim: true,
+  },
   chainId: {
     type: String,
     required: true,

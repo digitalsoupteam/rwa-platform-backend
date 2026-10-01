@@ -114,7 +114,9 @@ export class DaoService {
       chainId: String(event.chainId),
       transactionHash: event.transactionHash,
     });
-    await this.proposalRepository.updateState(event.data.proposalId, 'executed');
+    await this.proposalRepository.updateState(event.data.proposalId, 'executed', {
+      executor: event.data.executor,
+    });
   }
 
   /**
@@ -148,7 +150,9 @@ export class DaoService {
       chainId: String(event.chainId),
       transactionHash: event.transactionHash,
     });
-    await this.proposalRepository.updateState(event.data.proposalId, 'canceled');
+    await this.proposalRepository.updateState(event.data.proposalId, 'canceled', {
+      canceller: event.data.canceller,
+    });
   }
 
   /**
@@ -218,33 +222,39 @@ export class DaoService {
       emittedFrom: string;
       staker: string;
       amount: string;
+      newVotingPower: string;
     };
     chainId: number;
     transactionHash: string;
     logIndex: number;
     blockNumber: number;
+    timestamp: number;
   }) {
     setSpanAttributes({
       wallet: event.data.staker,
       chainId: String(event.chainId),
       transactionHash: event.transactionHash,
     });
-    // Add stake amount to user's total
-    await this.stakingRepository.addStake(
+    // The event carries the full post-event stake (= on-chain stakedAmount,
+    // rewards reinvested), so mirror the amount as-is instead of accumulating
+    // deltas; events arrive strictly in chain order.
+    await this.stakingRepository.setAmount(
       event.data.staker,
       String(event.chainId),
-      event.data.amount,
-      Math.floor(Date.now() / 1000),
+      event.data.newVotingPower,
+      event.timestamp,
     );
 
     // Record staking history
     await this.stakingHistoryRepository.create({
       staker: event.data.staker,
       amount: event.data.amount,
+      rewards: '0',
       operation: 'staked',
       chainId: String(event.chainId),
       transactionHash: event.transactionHash,
       logIndex: event.logIndex,
+      blockNumber: event.blockNumber,
     });
   }
 
@@ -267,29 +277,82 @@ export class DaoService {
       emittedFrom: string;
       staker: string;
       amount: string;
+      rewardsReceived: string;
+      newVotingPower: string;
     };
     chainId: number;
     transactionHash: string;
     logIndex: number;
     blockNumber: number;
+    timestamp: number;
   }) {
     setSpanAttributes({
       wallet: event.data.staker,
       chainId: String(event.chainId),
       transactionHash: event.transactionHash,
     });
-    // Subtract stake amount from user's total
-    await this.stakingRepository.subStake(event.data.staker, String(event.chainId), event.data.amount);
+    // Mirror the absolute stake amount from the event. A partial unstake
+    // reinvests the remainder and resets the contract stakingTimestamp, so
+    // lastStakeTimestamp moves with it; a full exit leaves it untouched.
+    const newVotingPower = String(event.data.newVotingPower);
+    await this.stakingRepository.setAmount(
+      event.data.staker,
+      String(event.chainId),
+      newVotingPower,
+      BigInt(newVotingPower) === 0n ? undefined : event.timestamp,
+    );
 
     // Record staking history
     await this.stakingHistoryRepository.create({
       staker: event.data.staker,
       amount: event.data.amount,
+      rewards: event.data.rewardsReceived,
       operation: 'unstaked',
       chainId: String(event.chainId),
       transactionHash: event.transactionHash,
       logIndex: event.logIndex,
+      blockNumber: event.blockNumber,
     });
+  }
+
+  /**
+   * Process DaoStaking_TokensLocked event
+   */
+  @TraceDecorator()
+  @MetricsDecorator()
+  @LogDecorator({
+    args: (a) => ({
+      emittedFrom: a[0].data.emittedFrom,
+      user: a[0].data.user,
+      chainId: a[0].chainId,
+      transactionHash: a[0].transactionHash,
+      logIndex: a[0].logIndex,
+    }),
+  })
+  async processTokensLocked(event: {
+    data: {
+      emittedFrom: string;
+      user: string;
+      unlockTimestamp: string;
+    };
+    chainId: number;
+    transactionHash: string;
+    logIndex: number;
+    blockNumber: number;
+    timestamp: number;
+  }) {
+    setSpanAttributes({
+      wallet: event.data.user,
+      chainId: String(event.chainId),
+      transactionHash: event.transactionHash,
+    });
+    // Governance locks the voter's stake until the proposal end; the event
+    // carries the resulting votingLockTimestamp (the max of all prior locks).
+    await this.stakingRepository.setUnlockTimestamp(
+      event.data.user,
+      String(event.chainId),
+      Number(event.data.unlockTimestamp),
+    );
   }
 
   /**
@@ -329,6 +392,9 @@ export class DaoService {
       data: event.data.data,
       eta: Number(event.data.eta),
       chainId: String(event.chainId),
+      transactionHash: event.transactionHash,
+      logIndex: event.logIndex,
+      blockNumber: event.blockNumber,
     });
   }
 
@@ -363,7 +429,7 @@ export class DaoService {
       chainId: String(event.chainId),
       transactionHash: event.transactionHash,
     });
-    await this.timelockTaskRepository.updateExecuted(event.data.txHash, true);
+    await this.timelockTaskRepository.updateExecuted(String(event.chainId), event.data.txHash, true);
   }
 
   /**
@@ -397,8 +463,9 @@ export class DaoService {
       chainId: String(event.chainId),
       transactionHash: event.transactionHash,
     });
-    // For cancelled transactions, we might want to remove them or mark as cancelled
-    // For now, we'll just log it since the entity doesn't have a cancelled state
+    // Mirror the chain: the timelock deletes the transaction from
+    // queuedTransactions, so the task must stop counting as pending.
+    await this.timelockTaskRepository.updateCancelled(String(event.chainId), event.data.txHash);
   }
 
   /**
@@ -454,6 +521,8 @@ export class DaoService {
       creationTime: proposal.creationTime,
       endTime: proposal.endTime,
       state: proposal.state ?? undefined,
+      executor: proposal.executor ?? undefined,
+      canceller: proposal.canceller ?? undefined,
       chainId: proposal.chainId,
       transactionHash: proposal.transactionHash,
       logIndex: proposal.logIndex,
@@ -485,10 +554,12 @@ export class DaoService {
       id: stakingHistory._id.toString(),
       staker: stakingHistory.staker,
       amount: stakingHistory.amount.toString(),
+      rewards: stakingHistory.rewards?.toString() ?? '0',
       operation: stakingHistory.operation,
       chainId: stakingHistory.chainId,
       transactionHash: stakingHistory.transactionHash,
       logIndex: stakingHistory.logIndex,
+      blockNumber: stakingHistory.blockNumber,
       createdAt: stakingHistory.createdAt,
       updatedAt: stakingHistory.updatedAt,
     };
@@ -502,7 +573,11 @@ export class DaoService {
       data: timelockTask.data,
       eta: timelockTask.eta,
       executed: timelockTask.executed,
+      cancelled: timelockTask.cancelled ?? false,
       chainId: timelockTask.chainId,
+      transactionHash: timelockTask.transactionHash,
+      logIndex: timelockTask.logIndex,
+      blockNumber: timelockTask.blockNumber,
       createdAt: timelockTask.createdAt,
       updatedAt: timelockTask.updatedAt,
     };
@@ -513,6 +588,7 @@ export class DaoService {
       id: treasuryWithdraw._id.toString(),
       recipient: treasuryWithdraw.recipient,
       token: treasuryWithdraw.token,
+      isNative: String(treasuryWithdraw.token ?? '').toLowerCase() === '0x0000000000000000000000000000000000000000',
       amount: treasuryWithdraw.amount.toString(),
       chainId: treasuryWithdraw.chainId,
       transactionHash: treasuryWithdraw.transactionHash,
@@ -527,6 +603,7 @@ export class DaoService {
       id: staking._id.toString(),
       staker: staking.staker,
       amount: staking.amount.toString(),
+      unlockTimestamp: staking.unlockTimestamp ?? 0,
       lastStakeTimestamp: staking.lastStakeTimestamp,
       chainId: staking.chainId,
       createdAt: staking.createdAt,

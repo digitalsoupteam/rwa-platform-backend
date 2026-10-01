@@ -74,12 +74,14 @@ const STAKING_EVENT = {
     emittedFrom: '0xStaking',
     staker: '0xBob',
     amount: '250',
+    rewardsReceived: '0',
     newVotingPower: '250',
   },
   chainId: 1,
   transactionHash: '0xtx4',
   logIndex: 1,
   blockNumber: 123_456,
+  timestamp: 1_700_000_000,
 };
 
 const TIMELOCK_EVENT = {
@@ -164,8 +166,9 @@ describe('DaoService (unit, fake repositories)', () => {
     ).resolves.toBeUndefined();
 
     expect(proposals.updateState).toHaveBeenCalledTimes(1);
-    expect(proposals.updateState).toHaveBeenCalledWith('7', 'executed');
+    expect(proposals.updateState).toHaveBeenCalledWith('7', 'executed', { executor: '0xAlice' });
     expect(Array.from(proposals.store.values())[0].state).toBe('executed');
+    expect(Array.from(proposals.store.values())[0].executor).toBe('0xAlice');
   });
 
   test('processProposalExecuted: an unknown proposal is ignored (current behavior)', async () => {
@@ -185,7 +188,7 @@ describe('DaoService (unit, fake repositories)', () => {
       }),
     ).resolves.toBeUndefined();
 
-    expect(proposals.updateState).toHaveBeenCalledWith('unknown', 'executed');
+    expect(proposals.updateState).toHaveBeenCalledWith('unknown', 'executed', { executor: '0xAlice' });
     expect(proposals.store.size).toBe(0);
   });
 
@@ -205,8 +208,9 @@ describe('DaoService (unit, fake repositories)', () => {
     });
 
     // 'canceled' (single l) is the value pinned in ProposalStateList.
-    expect(proposals.updateState).toHaveBeenCalledWith('7', 'canceled');
+    expect(proposals.updateState).toHaveBeenCalledWith('7', 'canceled', { canceller: '0xAlice' });
     expect(Array.from(proposals.store.values())[0].state).toBe('canceled');
+    expect(Array.from(proposals.store.values())[0].canceller).toBe('0xAlice');
   });
 
   test('processVoteCast: stores the vote with governanceAddress mapped from emittedFrom', async () => {
@@ -246,90 +250,129 @@ describe('DaoService (unit, fake repositories)', () => {
     expect(storedVote.weight).toBe('123.45');
   });
 
-  test('processTokensStaked: adds the stake and records the staking history', async () => {
-    const before = Math.floor(Date.now() / 1000);
-
+  test('processTokensStaked: mirrors the absolute amount from the event and records the staking history', async () => {
     await service.processTokensStaked(STAKING_EVENT);
 
-    const after = Math.floor(Date.now() / 1000);
-
-    expect(staking.addStake).toHaveBeenCalledTimes(1);
-    const [staker, chainId, amount, lastStakeTimestamp] = staking.addStake.mock.calls[0];
-    expect({ staker, chainId, amount }).toEqual({ staker: '0xBob', chainId: '1', amount: '250' });
-    // The service stamps the write with the current time, not with the event timestamp.
-    expect(lastStakeTimestamp).toBeGreaterThanOrEqual(before);
-    expect(lastStakeTimestamp).toBeLessThanOrEqual(after);
+    expect(staking.setAmount).toHaveBeenCalledTimes(1);
+    // The event carries the full post-state and the block time; both are stored as-is.
+    expect(staking.setAmount).toHaveBeenCalledWith('0xBob', '1', '250', 1_700_000_000);
 
     expect(stakingHistory.create).toHaveBeenCalledTimes(1);
     expect(stakingHistory.create).toHaveBeenCalledWith({
       staker: '0xBob',
       amount: '250',
+      rewards: '0',
       operation: 'staked',
       chainId: '1',
       transactionHash: '0xtx4',
       logIndex: 1,
+      blockNumber: 123_456,
     });
 
-    // newVotingPower is part of the event but the service does not persist it.
     const stake = staking.store.get('0xBob|1');
     expect(stake?.amount).toBe('250');
-    expect(stake).not.toHaveProperty('newVotingPower');
+    expect(stake?.lastStakeTimestamp).toBe(1_700_000_000);
   });
 
-  test('processTokensStaked: repeated stakes accumulate per staker and chain', async () => {
-    await service.processTokensStaked({ ...STAKING_EVENT, data: { ...STAKING_EVENT.data, amount: '100' } });
+  test('processTokensStaked: each event replaces the stored amount with the full post-state', async () => {
     await service.processTokensStaked({
       ...STAKING_EVENT,
-      data: { ...STAKING_EVENT.data, amount: '50.5' },
+      data: { ...STAKING_EVENT.data, amount: '100', newVotingPower: '100' },
+    });
+    await service.processTokensStaked({
+      ...STAKING_EVENT,
+      data: { ...STAKING_EVENT.data, amount: '50.5', newVotingPower: '150.5' },
       transactionHash: '0xtx5',
     });
-    await service.processTokensStaked({ ...STAKING_EVENT, data: { ...STAKING_EVENT.data, amount: '7' }, chainId: 137 });
+    await service.processTokensStaked({
+      ...STAKING_EVENT,
+      data: { ...STAKING_EVENT.data, amount: '7', newVotingPower: '7' },
+      chainId: 137,
+    });
 
-    expect(staking.addStake).toHaveBeenCalledTimes(3);
+    expect(staking.setAmount).toHaveBeenCalledTimes(3);
     expect(staking.store.get('0xBob|1')?.amount).toBe('150.5');
     expect(staking.store.get('0xBob|137')?.amount).toBe('7');
   });
 
-  test('processTokensUnstaked: subtracts the stake and records the staking history', async () => {
-    await service.processTokensStaked({ ...STAKING_EVENT, data: { ...STAKING_EVENT.data, amount: '100' } });
+  test('processTokensUnstaked: mirrors the absolute amount and keeps rewards in the history', async () => {
+    await service.processTokensStaked({
+      ...STAKING_EVENT,
+      data: { ...STAKING_EVENT.data, amount: '100', newVotingPower: '100' },
+    });
 
     await service.processTokensUnstaked({
       ...STAKING_EVENT,
-      data: { ...STAKING_EVENT.data, amount: '40' },
+      data: { ...STAKING_EVENT.data, amount: '40', rewardsReceived: '1.5', newVotingPower: '60' },
       transactionHash: '0xtx5',
       logIndex: 2,
+      timestamp: 1_700_000_500,
     });
 
-    // The service forwards the raw decimal string; the sign is added inside the repository.
-    expect(staking.subStake).toHaveBeenCalledTimes(1);
-    expect(staking.subStake).toHaveBeenCalledWith('0xBob', '1', '40');
+    // Partial unstake: the event value is the full post-state, and the contract
+    // resets its stakingTimestamp -> lastStakeTimestamp moves with the block time.
+    expect(staking.setAmount).toHaveBeenLastCalledWith('0xBob', '1', '60', 1_700_000_500);
     expect(stakingHistory.create).toHaveBeenLastCalledWith({
       staker: '0xBob',
       amount: '40',
+      rewards: '1.5',
       operation: 'unstaked',
       chainId: '1',
       transactionHash: '0xtx5',
       logIndex: 2,
+      blockNumber: 123_456,
     });
     expect(staking.store.get('0xBob|1')?.amount).toBe('60');
+    expect(staking.store.get('0xBob|1')?.lastStakeTimestamp).toBe(1_700_000_500);
+
+    // Full exit: voting power zeroes out and lastStakeTimestamp is left untouched.
+    await service.processTokensUnstaked({
+      ...STAKING_EVENT,
+      data: { ...STAKING_EVENT.data, amount: '61.5', rewardsReceived: '1.5', newVotingPower: '0' },
+      transactionHash: '0xtx6',
+      logIndex: 3,
+      timestamp: 1_700_000_900,
+    });
+    expect(staking.store.get('0xBob|1')?.amount).toBe('0');
+    expect(staking.store.get('0xBob|1')?.lastStakeTimestamp).toBe(1_700_000_500);
+  });
+
+  test('processTokensLocked: stores the voting lock timestamp on the staking record', async () => {
+    await service.processTokensStaked(STAKING_EVENT);
+
+    await service.processTokensLocked({
+      data: { emittedFrom: '0xStaking', user: '0xBob', unlockTimestamp: '1700086400' },
+      chainId: 1,
+      transactionHash: '0xtx11',
+      logIndex: 4,
+      blockNumber: 123_457,
+      timestamp: 1_700_000_100,
+    });
+
+    expect(staking.setUnlockTimestamp).toHaveBeenCalledTimes(1);
+    expect(staking.setUnlockTimestamp).toHaveBeenCalledWith('0xBob', '1', 1_700_086_400);
+    expect(staking.store.get('0xBob|1')?.unlockTimestamp).toBe(1_700_086_400);
   });
 
   test('processTransactionQueued: stores the timelock task as not executed', async () => {
     await expect(service.processTransactionQueued(TIMELOCK_EVENT)).resolves.toBeUndefined();
 
     expect(timelockTasks.create).toHaveBeenCalledTimes(1);
-    // Only the task fields are persisted: the queuing transaction hash/logIndex
-    // are not part of TimelockTaskEntity.
+    // The task carries the envelope of the queuing event as well.
     expect(timelockTasks.create).toHaveBeenCalledWith({
       txHash: '0xtimelock1',
       target: '0xTreasury',
       data: '0xdeadbeef',
       eta: 1_700_090_000,
       chainId: '1',
+      transactionHash: '0xtx6',
+      logIndex: 3,
+      blockNumber: 123_456,
     });
 
     const [storedTask] = Array.from(timelockTasks.store.values());
     expect(storedTask.executed).toBe(false);
+    expect(storedTask.cancelled).toBe(false);
   });
 
   test('processTransactionExecuted: flips executed on the queued task', async () => {
@@ -339,29 +382,37 @@ describe('DaoService (unit, fake repositories)', () => {
       data: '0xdeadbeef',
       eta: 1_700_090_000,
       chainId: '1',
+      transactionHash: '0xtx6',
+      logIndex: 3,
+      blockNumber: 123_456,
     });
     expect(queued.executed).toBe(false);
 
     await service.processTransactionExecuted({ ...TIMELOCK_EVENT, transactionHash: '0xtx7', logIndex: 5 });
 
     expect(timelockTasks.updateExecuted).toHaveBeenCalledTimes(1);
-    expect(timelockTasks.updateExecuted).toHaveBeenCalledWith('0xtimelock1', true);
+    expect(timelockTasks.updateExecuted).toHaveBeenCalledWith('1', '0xtimelock1', true);
     expect(queued.executed).toBe(false); // the stored copy is replaced, not mutated
     expect(timelockTasks.store.get('0xtimelock1')?.executed).toBe(true);
   });
 
-  test('processTransactionCancelled: performs no repository writes (current behavior)', async () => {
-    // TimelockTaskEntity has no cancelled state: the handler only emits
-    // span/log entries and leaves every repository untouched.
+  test('processTransactionCancelled: marks the stored task cancelled', async () => {
+    await timelockTasks.create({
+      txHash: '0xtimelock1',
+      target: '0xTreasury',
+      data: '0xdeadbeef',
+      eta: 1_700_090_000,
+      chainId: '1',
+      transactionHash: '0xtx6',
+      logIndex: 3,
+      blockNumber: 123_456,
+    });
+
     await expect(service.processTransactionCancelled(TIMELOCK_EVENT)).resolves.toBeUndefined();
 
-    expect(proposals.updateState).not.toHaveBeenCalled();
-    expect(votes.create).not.toHaveBeenCalled();
-    expect(staking.addStake).not.toHaveBeenCalled();
-    expect(stakingHistory.create).not.toHaveBeenCalled();
-    expect(timelockTasks.create).not.toHaveBeenCalled();
-    expect(timelockTasks.updateExecuted).not.toHaveBeenCalled();
-    expect(treasuryWithdrawals.create).not.toHaveBeenCalled();
+    expect(timelockTasks.updateCancelled).toHaveBeenCalledTimes(1);
+    expect(timelockTasks.updateCancelled).toHaveBeenCalledWith('1', '0xtimelock1');
+    expect(timelockTasks.store.get('0xtimelock1')?.cancelled).toBe(true);
   });
 
   test('processTreasuryWithdrawal: maps `to` to recipient and stores the withdrawal', async () => {
@@ -483,10 +534,12 @@ describe('DaoService (unit, fake repositories)', () => {
     const created = await stakingHistory.create({
       staker: '0xBob',
       amount: '75.5',
+      rewards: '0',
       operation: 'staked',
       chainId: '1',
       transactionHash: '0xtx10',
       logIndex: 0,
+      blockNumber: 123_456,
     });
 
     const result = await service.getStakingHistory({ filter: { staker: '0xBob' } });
@@ -499,10 +552,12 @@ describe('DaoService (unit, fake repositories)', () => {
       id: created._id.toString(),
       staker: '0xBob',
       amount: '75.5',
+      rewards: '0',
       operation: 'staked',
       chainId: '1',
       transactionHash: '0xtx10',
       logIndex: 0,
+      blockNumber: 123_456,
     });
     expect(typeof history.amount).toBe('string');
     expect(history).not.toHaveProperty('_id');
@@ -516,6 +571,9 @@ describe('DaoService (unit, fake repositories)', () => {
       data: '0xdeadbeef',
       eta: 1_700_090_000,
       chainId: '1',
+      transactionHash: '0xtx6',
+      logIndex: 3,
+      blockNumber: 123_456,
     });
 
     const [task] = await service.getTimelockTasks({ filter: { chainId: '1' } });
@@ -527,11 +585,15 @@ describe('DaoService (unit, fake repositories)', () => {
       data: '0xdeadbeef',
       eta: 1_700_090_000,
       executed: false,
+      cancelled: false,
       chainId: '1',
+      transactionHash: '0xtx6',
+      logIndex: 3,
+      blockNumber: 123_456,
     });
     expect(task).not.toHaveProperty('_id');
 
-    await timelockTasks.updateExecuted('0xtimelock1', true);
+    await timelockTasks.updateExecuted('1', '0xtimelock1', true);
 
     const [executedTask] = await service.getTimelockTasks({});
     expect(executedTask.executed).toBe(true);
@@ -556,6 +618,7 @@ describe('DaoService (unit, fake repositories)', () => {
       id: created._id.toString(),
       recipient: '0xBob',
       token: '0xToken',
+      isNative: false,
       amount: '500',
       chainId: '1',
       transactionHash: '0xtx8',
@@ -566,8 +629,25 @@ describe('DaoService (unit, fake repositories)', () => {
     expect(JSON.parse(JSON.stringify(withdrawal))).toEqual(withdrawal);
   });
 
-  test('getStaking: maps the aggregated amount and lastStakeTimestamp', async () => {
-    await staking.addStake('0xBob', '1', '999.5', 1_700_000_000);
+  test('getTreasuryWithdrawals: a zero-address token is flagged as native', async () => {
+    await treasuryWithdrawals.create({
+      recipient: '0xBee',
+      token: '0x0000000000000000000000000000000000000000',
+      amount: '7',
+      chainId: '1',
+      transactionHash: '0xtx13',
+      logIndex: 6,
+    });
+
+    const [native] = await service.getTreasuryWithdrawals({});
+
+    expect(native.token).toBe('0x0000000000000000000000000000000000000000');
+    expect(native.isNative).toBe(true);
+  });
+
+  test('getStaking: maps the mirrored amount, unlock timestamp and lastStakeTimestamp', async () => {
+    await staking.setAmount('0xBob', '1', '999.5', 1_700_000_000);
+    await staking.setUnlockTimestamp('0xBob', '1', 1_700_086_400);
 
     const result = await service.getStaking({ filter: { staker: '0xBob' } });
 
@@ -578,6 +658,7 @@ describe('DaoService (unit, fake repositories)', () => {
     expect(record).toMatchObject({
       staker: '0xBob',
       amount: '999.5',
+      unlockTimestamp: 1_700_086_400,
       lastStakeTimestamp: 1_700_000_000,
       chainId: '1',
     });

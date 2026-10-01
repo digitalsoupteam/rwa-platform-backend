@@ -7,9 +7,20 @@ const stakingSchemaDefinition = {
     required: true,
     trim: true,
   },
+  /**
+   * Staked amount, mirrored from the event's newVotingPower - exactly what the
+   * contract returns from getVotingPower()/stakedAmount(). Rewards reinvest
+   * into it, so it is NOT a sum of stake deltas. Kept under the historical
+   * `amount` name: the stored VALUE is the absolute voting power.
+   */
   amount: {
     type: mongoose.Schema.Types.Decimal128,
     required: true,
+  },
+  /** Timestamp until which the stake is voting-locked (DaoStaking_TokensLocked). */
+  unlockTimestamp: {
+    type: Number,
+    default: 0,
   },
   lastStakeTimestamp: {
     type: Number,

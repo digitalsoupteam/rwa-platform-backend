@@ -16,48 +16,12 @@ export type FakeStakingDoc = {
   _id: Types.ObjectId;
   staker: string;
   amount: string;
+  unlockTimestamp: number;
   lastStakeTimestamp: number;
   chainId: string;
   createdAt: number;
   updatedAt: number;
 };
-
-const DECIMALS = 18n;
-const SCALE = 10n ** DECIMALS;
-
-/** Parses a decimal string into a scaled integer (18 fractional digits). */
-function toScaled(value: string): bigint {
-  const negative = value.startsWith('-');
-  const digits = negative ? value.slice(1) : value;
-  const [whole = '0', fraction = ''] = digits.split('.');
-  const paddedFraction = (fraction + '0'.repeat(Number(DECIMALS))).slice(0, Number(DECIMALS));
-  const scaled = BigInt(whole === '' ? '0' : whole) * SCALE + BigInt(paddedFraction === '' ? '0' : paddedFraction);
-  return negative ? -scaled : scaled;
-}
-
-/** Formats a scaled integer back into the shortest decimal string. */
-function fromScaled(scaled: bigint): string {
-  const negative = scaled < 0n;
-  const absolute = negative ? -scaled : scaled;
-  const whole = absolute / SCALE;
-  const fraction = (absolute % SCALE)
-    .toString()
-    .padStart(Number(DECIMALS), '0')
-    .replace(/0+$/, '');
-  return `${negative ? '-' : ''}${whole}${fraction === '' ? '' : `.${fraction}`}`;
-}
-
-/**
- * The real repository lets MongoDB do the arithmetic ($inc over Decimal128);
- * the fake reproduces the observable outcome in memory.
- */
-function addDecimalStrings(left: string, right: string): string {
-  return fromScaled(toScaled(left) + toScaled(right));
-}
-
-function negateDecimalString(value: string): string {
-  return value.startsWith('-') ? value.slice(1) : `-${value}`;
-}
 
 function matchesFilter(doc: Record<string, unknown>, filter: Record<string, unknown>): boolean {
   // Equality matching is enough for the filters used by tests ({ staker }, { chainId }, ...).
@@ -73,19 +37,30 @@ export function createFakeStakingRepository() {
     store,
     keyOf,
 
-    addStake: mock(async (staker: string, chainId: string, amount: string, lastStakeTimestamp: number) => {
+    /**
+     * Mirrors findOneAndUpdate($set) with upsert: the stored amount is replaced
+     * with the absolute value from the event (newVotingPower); lastStakeTimestamp
+     * moves only when provided (a stake, or a partial unstake).
+     */
+    setAmount: mock(async (staker: string, chainId: string, amount: string, lastStakeTimestamp?: number) => {
       const key = keyOf(staker, chainId);
       const existing = store.get(key);
       const timestamp = Math.floor(Date.now() / 1000);
 
       const doc: FakeStakingDoc = existing
-        ? { ...existing, amount: addDecimalStrings(existing.amount, amount), lastStakeTimestamp, updatedAt: timestamp }
+        ? {
+            ...existing,
+            amount,
+            lastStakeTimestamp: lastStakeTimestamp ?? existing.lastStakeTimestamp,
+            updatedAt: timestamp,
+          }
         : {
             _id: new Types.ObjectId(),
             staker,
             chainId,
             amount,
-            lastStakeTimestamp,
+            unlockTimestamp: 0,
+            lastStakeTimestamp: lastStakeTimestamp ?? 0,
             createdAt: timestamp,
             updatedAt: timestamp,
           };
@@ -94,28 +69,15 @@ export function createFakeStakingRepository() {
       return doc;
     }),
 
-    subStake: mock(async (staker: string, chainId: string, amount: string) => {
+    setUnlockTimestamp: mock(async (staker: string, chainId: string, unlockTimestamp: number) => {
+      // Mirrors findOneAndUpdate without upsert: an unknown staker resolves to null.
       const key = keyOf(staker, chainId);
       const existing = store.get(key);
-      const timestamp = Math.floor(Date.now() / 1000);
+      if (!existing) return null;
 
-      // The real findOneAndUpdate upserts: subtracting from a missing record
-      // creates it with a negative amount and without lastStakeTimestamp
-      // (update validators are not run for findOneAndUpdate).
-      const doc: FakeStakingDoc = existing
-        ? { ...existing, amount: addDecimalStrings(existing.amount, negateDecimalString(amount)), updatedAt: timestamp }
-        : {
-            _id: new Types.ObjectId(),
-            staker,
-            chainId,
-            amount: negateDecimalString(amount),
-            lastStakeTimestamp: 0,
-            createdAt: timestamp,
-            updatedAt: timestamp,
-          };
-
-      store.set(key, doc);
-      return doc;
+      const next: FakeStakingDoc = { ...existing, unlockTimestamp, updatedAt: Math.floor(Date.now() / 1000) };
+      store.set(key, next);
+      return next;
     }),
 
     findAll: mock(

@@ -6,18 +6,24 @@ import { TraceDecorator } from '@shared/monitoring/src/traceDecorator';
 export class StakingRepository {
   constructor(private readonly model = StakingEntity) {}
 
+  /**
+   * Mirrors the absolute staked amount from a staking event ($set, not $inc):
+   * the events carry the full post-state (newVotingPower - the same number the
+   * contract returns from getVotingPower()), and blockchain events are applied
+   * strictly in chain order, so the value can be assigned as-is.
+   * `lastStakeTimestamp` moves only when the contract stakingTimestamp does
+   * (stake, and partial unstake - not a full exit).
+   */
   @TraceDecorator()
-  async addStake(staker: string, chainId: string, amount: string, lastStakeTimestamp: number) {
+  async setAmount(staker: string, chainId: string, amount: string, lastStakeTimestamp?: number) {
     const doc = await this.model
       .findOneAndUpdate(
         { staker, chainId },
         {
-          $inc: {
-            amount: mongoose.Types.Decimal128.fromString(amount),
-          },
           $set: {
-            lastStakeTimestamp,
+            amount: mongoose.Types.Decimal128.fromString(amount),
             updatedAt: Math.floor(Date.now() / 1000),
+            ...(lastStakeTimestamp !== undefined && { lastStakeTimestamp }),
           },
         },
         {
@@ -32,23 +38,17 @@ export class StakingRepository {
   }
 
   @TraceDecorator()
-  async subStake(staker: string, chainId: string, amount: string) {
+  async setUnlockTimestamp(staker: string, chainId: string, unlockTimestamp: number) {
     const doc = await this.model
       .findOneAndUpdate(
         { staker, chainId },
         {
-          $inc: {
-            amount: mongoose.Types.Decimal128.fromString(`-${amount}`),
-          },
           $set: {
+            unlockTimestamp,
             updatedAt: Math.floor(Date.now() / 1000),
           },
         },
-        {
-          new: true,
-          upsert: true,
-          setDefaultsOnInsert: true,
-        },
+        { new: true },
       )
       .lean();
 

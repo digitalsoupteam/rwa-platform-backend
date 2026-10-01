@@ -19,6 +19,8 @@ export type FakeProposalDoc = {
   creationTime: number;
   endTime: number;
   state: 'pending' | 'executed' | 'canceled';
+  executor?: string;
+  canceller?: string;
   chainId: string;
   transactionHash: string;
   logIndex: number;
@@ -54,15 +56,21 @@ export function createFakeProposalRepository() {
       return doc;
     }),
 
-    updateState: mock(async (proposalId: string, state: 'pending' | 'executed' | 'canceled') => {
-      // Mirrors findOneAndUpdate without upsert: an unknown proposalId resolves to null.
-      const doc = Array.from(store.values()).find((candidate) => candidate.proposalId === proposalId);
-      if (!doc) return null;
+    updateState: mock(
+      async (
+        proposalId: string,
+        state: 'pending' | 'executed' | 'canceled',
+        extra: { executor?: string; canceller?: string } = {},
+      ) => {
+        // Mirrors findOneAndUpdate without upsert: an unknown proposalId resolves to null.
+        const doc = Array.from(store.values()).find((candidate) => candidate.proposalId === proposalId);
+        if (!doc) return null;
 
-      const next: FakeProposalDoc = { ...doc, state, updatedAt: now() };
-      store.set(doc._id.toString(), next);
-      return next;
-    }),
+        const next: FakeProposalDoc = { ...doc, state, ...extra, updatedAt: now() };
+        store.set(doc._id.toString(), next);
+        return next;
+      },
+    ),
 
     findAll: mock(
       async (

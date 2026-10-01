@@ -9,13 +9,18 @@ export class StakingHistoryRepository {
 
   @TraceDecorator()
   async create(
-    data: Pick<IStakingHistoryEntity, 'staker' | 'operation' | 'chainId' | 'transactionHash' | 'logIndex'> & {
+    data: Pick<
+      IStakingHistoryEntity,
+      'staker' | 'operation' | 'chainId' | 'transactionHash' | 'logIndex' | 'blockNumber'
+    > & {
       amount: string;
+      rewards: string;
     },
   ) {
     const doc = await this.model.create({
       ...data,
       amount: mongoose.Types.Decimal128.fromString(data.amount),
+      rewards: mongoose.Types.Decimal128.fromString(data.rewards),
     });
     return doc.toObject();
   }

@@ -24,10 +24,28 @@ const timelockTaskSchemaDefinition = {
     type: Boolean,
     default: false,
   },
+  cancelled: {
+    type: Boolean,
+    default: false,
+  },
   chainId: {
     type: String,
     required: true,
     trim: true,
+  },
+  /** Envelope of the event that queued the task (see the blockchain event root). */
+  transactionHash: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  logIndex: {
+    type: Number,
+    required: true,
+  },
+  blockNumber: {
+    type: Number,
+    required: true,
   },
 
   // Timestamps
@@ -46,9 +64,10 @@ const timelockTaskSchema = new Schema(timelockTaskSchemaDefinition, {
 });
 
 // Indexes for efficient queries
-timelockTaskSchema.index({ txHash: 1 }, { unique: true });
+timelockTaskSchema.index({ chainId: 1, txHash: 1 }, { unique: true });
 timelockTaskSchema.index({ chainId: 1 });
 timelockTaskSchema.index({ executed: 1 });
+timelockTaskSchema.index({ cancelled: 1 });
 timelockTaskSchema.index({ eta: 1 });
 timelockTaskSchema.index({ createdAt: -1 });
 

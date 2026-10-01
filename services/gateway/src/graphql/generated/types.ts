@@ -1319,16 +1319,18 @@ export type PriceUpdateEvent = {
 
 export type Proposal = {
   __typename?: 'Proposal';
+  canceller?: Maybe<Scalars['String']['output']>;
   chainId: Scalars['String']['output'];
   createdAt: Scalars['Float']['output'];
+  creationTime: Scalars['Float']['output'];
   data: Scalars['String']['output'];
   description: Scalars['String']['output'];
   endTime: Scalars['Float']['output'];
+  executor?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   logIndex: Scalars['Float']['output'];
   proposalId: Scalars['String']['output'];
   proposer: Scalars['String']['output'];
-  creationTime: Scalars['Float']['output'];
   state: Scalars['String']['output'];
   target: Scalars['String']['output'];
   transactionHash: Scalars['String']['output'];
@@ -1713,16 +1715,20 @@ export type RemoveMemberInput = {
 
 export type RequestBusinessApprovalSignaturesInput = {
   createRWAFee: Scalars['String']['input'];
-  deployerWallet: Scalars['String']['input'];
+  /** @deprecated Ignored: the deployer wallet is derived server-side from the authenticated user */
+  deployerWallet?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
-  ownerWallet: Scalars['String']['input'];
+  /** @deprecated Ignored: the owner wallet is derived server-side from the entity owner */
+  ownerWallet?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type RequestPoolApprovalSignaturesInput = {
   createPoolFeeRatio: Scalars['String']['input'];
-  deployerWallet: Scalars['String']['input'];
+  /** @deprecated Ignored: the deployer wallet is derived server-side from the authenticated user */
+  deployerWallet?: InputMaybe<Scalars['String']['input']>;
   id: Scalars['ID']['input'];
-  ownerWallet: Scalars['String']['input'];
+  /** @deprecated Ignored: the owner wallet is derived server-side from the entity owner */
+  ownerWallet?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type RequestTokenInput = {
@@ -1793,17 +1799,20 @@ export type Staking = {
   id: Scalars['ID']['output'];
   lastStakeTimestamp: Scalars['Float']['output'];
   staker: Scalars['String']['output'];
+  unlockTimestamp: Scalars['Float']['output'];
   updatedAt: Scalars['Float']['output'];
 };
 
 export type StakingHistory = {
   __typename?: 'StakingHistory';
   amount: Scalars['String']['output'];
+  blockNumber?: Maybe<Scalars['Float']['output']>;
   chainId: Scalars['String']['output'];
   createdAt: Scalars['Float']['output'];
   id: Scalars['ID']['output'];
   logIndex: Scalars['Float']['output'];
   operation: Scalars['String']['output'];
+  rewards: Scalars['String']['output'];
   staker: Scalars['String']['output'];
   transactionHash: Scalars['String']['output'];
   updatedAt: Scalars['Float']['output'];
@@ -1827,13 +1836,17 @@ export type SubscriptionTransactionUpdatesArgs = {
 
 export type TimelockTask = {
   __typename?: 'TimelockTask';
+  blockNumber?: Maybe<Scalars['Float']['output']>;
+  cancelled: Scalars['Boolean']['output'];
   chainId: Scalars['String']['output'];
   createdAt: Scalars['Float']['output'];
   data: Scalars['String']['output'];
   eta: Scalars['Float']['output'];
   executed: Scalars['Boolean']['output'];
   id: Scalars['ID']['output'];
+  logIndex?: Maybe<Scalars['Float']['output']>;
   target: Scalars['String']['output'];
+  transactionHash?: Maybe<Scalars['String']['output']>;
   txHash: Scalars['String']['output'];
   updatedAt: Scalars['Float']['output'];
 };
@@ -1900,6 +1913,7 @@ export type TreasuryWithdraw = {
   chainId: Scalars['String']['output'];
   createdAt: Scalars['Float']['output'];
   id: Scalars['ID']['output'];
+  isNative: Scalars['Boolean']['output'];
   logIndex: Scalars['Float']['output'];
   recipient: Scalars['String']['output'];
   token: Scalars['String']['output'];
@@ -3543,16 +3557,18 @@ export type ProposalResolvers<
   ContextType = GraphQLContext,
   ParentType extends ResolversParentTypes['Proposal'] = ResolversParentTypes['Proposal'],
 > = ResolversObject<{
+  canceller?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   chainId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  creationTime?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   data?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   description?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   endTime?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
+  executor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   logIndex?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   proposalId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   proposer?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  creationTime?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   state?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   target?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   transactionHash?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -3919,6 +3935,7 @@ export type StakingResolvers<
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   lastStakeTimestamp?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   staker?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  unlockTimestamp?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -3928,11 +3945,13 @@ export type StakingHistoryResolvers<
   ParentType extends ResolversParentTypes['StakingHistory'] = ResolversParentTypes['StakingHistory'],
 > = ResolversObject<{
   amount?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  blockNumber?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   chainId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   logIndex?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   operation?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  rewards?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   staker?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   transactionHash?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
@@ -3965,13 +3984,17 @@ export type TimelockTaskResolvers<
   ContextType = GraphQLContext,
   ParentType extends ResolversParentTypes['TimelockTask'] = ResolversParentTypes['TimelockTask'],
 > = ResolversObject<{
+  blockNumber?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
+  cancelled?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   chainId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   data?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   eta?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   executed?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  logIndex?: Resolver<Maybe<ResolversTypes['Float']>, ParentType, ContextType>;
   target?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  transactionHash?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   txHash?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -4053,6 +4076,7 @@ export type TreasuryWithdrawResolvers<
   chainId?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  isNative?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   logIndex?: Resolver<ResolversTypes['Float'], ParentType, ContextType>;
   recipient?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   token?: Resolver<ResolversTypes['String'], ParentType, ContextType>;

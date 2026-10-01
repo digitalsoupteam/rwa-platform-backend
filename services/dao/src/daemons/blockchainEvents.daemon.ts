@@ -52,6 +52,10 @@ export class BlockchainEventsDaemon extends BaseBlockchainDaemon {
         await this.daoService.processTokensUnstaked(event as any);
       },
 
+      DaoStaking_TokensLocked: async (event: BlockchainEvent) => {
+        await this.daoService.processTokensLocked(event as any);
+      },
+
       Timelock_TransactionQueued: async (event: BlockchainEvent) => {
         await this.daoService.processTransactionQueued(event as any);
       },

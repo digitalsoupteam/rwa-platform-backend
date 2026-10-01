@@ -120,6 +120,12 @@ const STAKING_DATA = {
   newVotingPower: '250',
 };
 
+const TOKENS_LOCKED_DATA = {
+  emittedFrom: '0xStaking',
+  user: '0xBob',
+  unlockTimestamp: '1700086400',
+};
+
 const TIMELOCK_DATA = {
   emittedFrom: '0xTimelock',
   txHash: '0xtimelock1',
@@ -175,7 +181,7 @@ describe('BlockchainEventsDaemon (unit, fake rabbit client and fake service)', (
     expect(rabbit.setupQueue).toHaveBeenCalledWith(`${QUEUE_NAME}.parked`, { durable: true });
 
     // One binding per routed event, plus the retry binding.
-    expect(rabbit.bindQueue).toHaveBeenCalledTimes(11);
+    expect(rabbit.bindQueue).toHaveBeenCalledTimes(12);
     for (const eventName of Object.keys(daemon.getRouting())) {
       expect(rabbit.bindQueue).toHaveBeenCalledWith(QUEUE_NAME, EXCHANGE_NAME, eventName);
     }
@@ -193,6 +199,7 @@ describe('BlockchainEventsDaemon (unit, fake rabbit client and fake service)', (
     const routing = daemon.getRouting();
 
     expect(Object.keys(routing).sort()).toEqual([
+      'DaoStaking_TokensLocked',
       'DaoStaking_TokensStaked',
       'DaoStaking_TokensUnstaked',
       'Governance_ProposalCancelled',
@@ -271,6 +278,15 @@ describe('BlockchainEventsDaemon (unit, fake rabbit client and fake service)', (
 
     expect(daoService.processTokensUnstaked).toHaveBeenCalledTimes(1);
     expect(daoService.processTokensUnstaked).toHaveBeenCalledWith(event);
+  });
+
+  test('DaoStaking_TokensLocked routes to processTokensLocked', async () => {
+    const event = blockchainEvent('DaoStaking_TokensLocked', TOKENS_LOCKED_DATA);
+
+    await daemon.getRouting()[event.name](event);
+
+    expect(daoService.processTokensLocked).toHaveBeenCalledTimes(1);
+    expect(daoService.processTokensLocked).toHaveBeenCalledWith(event);
   });
 
   test('Timelock_TransactionQueued routes to processTransactionQueued', async () => {

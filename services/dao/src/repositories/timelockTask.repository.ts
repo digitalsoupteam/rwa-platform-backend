@@ -7,18 +7,43 @@ export class TimelockTaskRepository {
   constructor(private readonly model = TimelockTaskEntity) {}
 
   @TraceDecorator()
-  async create(data: Pick<ITimelockTaskEntity, 'txHash' | 'target' | 'data' | 'eta' | 'chainId'>) {
+  async create(
+    data: Pick<
+      ITimelockTaskEntity,
+      'txHash' | 'target' | 'data' | 'eta' | 'chainId' | 'transactionHash' | 'logIndex' | 'blockNumber'
+    >,
+  ) {
     const doc = await this.model.create(data);
     return doc.toObject();
   }
 
   @TraceDecorator()
-  async updateExecuted(txHash: string, executed: boolean = true) {
+  async updateExecuted(chainId: string, txHash: string, executed: boolean = true) {
     const doc = await this.model
       .findOneAndUpdate(
-        { txHash },
+        { chainId, txHash },
         {
           executed,
+          updatedAt: Math.floor(Date.now() / 1000),
+        },
+        { new: true },
+      )
+      .lean();
+
+    return doc;
+  }
+
+  /**
+   * Mirrors Timelock.cancelTransaction: the chain deletes the queued entry,
+   * so the task stops counting as pending; the record itself is kept for audit.
+   */
+  @TraceDecorator()
+  async updateCancelled(chainId: string, txHash: string) {
+    const doc = await this.model
+      .findOneAndUpdate(
+        { chainId, txHash },
+        {
+          cancelled: true,
           updatedAt: Math.floor(Date.now() / 1000),
         },
         { new: true },

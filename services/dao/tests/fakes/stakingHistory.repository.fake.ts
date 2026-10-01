@@ -15,10 +15,12 @@ export type FakeStakingHistoryDoc = {
   // The real schema stores Decimal128; the fake keeps the decimal string
   // (the service only calls .toString() on it).
   amount: string;
+  rewards: string;
   operation: 'staked' | 'unstaked';
   chainId: string;
   transactionHash: string;
   logIndex: number;
+  blockNumber: number;
   createdAt: number;
   updatedAt: number;
 };
