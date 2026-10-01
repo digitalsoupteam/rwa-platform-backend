@@ -99,6 +99,9 @@ export function createWebhookTestServer(): WebhookTestServer {
         server = Bun.serve({
           key,
           cert,
+          // The webhooks service runs in Docker and reaches the receiver on
+          // the host via host.docker.internal — listen on all interfaces.
+          hostname: "0.0.0.0",
           port: 0,
           fetch: handler,
         });
@@ -134,7 +137,11 @@ export function createWebhookTestServer(): WebhookTestServer {
     },
 
     getUrl(): string {
-      return `https://localhost:${port}/webhook`;
+      // The webhooks service delivers from inside Docker, so the receiver must
+      // be addressed by a hostname the container resolves (host.docker.internal
+      // on Docker Desktop; override for other setups).
+      const host = process.env.WEBHOOK_TEST_SERVER_HOST ?? "host.docker.internal";
+      return `https://${host}:${port}/webhook`;
     },
   };
 }
